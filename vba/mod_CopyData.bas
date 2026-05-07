@@ -1,4 +1,4 @@
-Attribute VB_Name = "mod_CopyData"
+ÔªøAttribute VB_Name = "mod_CopyData"
 Option Explicit
 
 Private Const PID_FIRST_ROW As Long = 3
@@ -6,16 +6,16 @@ Private Const PID_LAST_ROW As Long = 82
 Private Const PID_PASSWORD As String = "company"
 
 ' Geschwindigkeit / Verhalten:
-' True  = minden hónaplap A1-re visszaáll a makró végén, lassabb, de tisztább felület.
-' False = csak az eredeti lapra megy vissza A1-re, gyorsabb.
+' True  = Jedes Monatsblatt springt am Ende des Makros auf A1 zur√ºck, langsamer, aber saubere Ansicht.
+' False = Nur das urspr√ºngliche Blatt kehrt zu A1 zur√ºck, schneller.
 Private Const PID_RESET_ALL_MONTH_SELECTIONS As Boolean = True
 
-' True  = CopyData közben minden érintett hónaplap pénz/szám formátumait újra beállítja, lassabb.
-' False = nem formáz újra minden hónapot, gyorsabb. A meglévõ formátumok megmaradnak.
+' True  = CopyData setzt w√§hrend der Ausf√ºhrung die Geld-/Zahlenformate aller betroffenen Monatsbl√§tter neu, langsamer.
+' False = Formatiert nicht alle Monate neu, schneller. Vorhandene Formate bleiben erhalten.
 Private Const PID_APPLY_FORMATS_DURING_COPY As Boolean = False
 
-' True  = CopyData közben Q31 havi fluktuáció is frissül.
-' False = csak dirty flag marad, Fluktuation késõbb frissül.
+' True  = Die monatliche Fluktuation in Q31 wird auch w√§hrend CopyData aktualisiert.
+' False = Nur das Dirty-Flag bleibt gesetzt, Fluktuation wird sp√§ter aktualisiert.
 Private Const PID_CALCULATE_FLUCTUATION_DURING_COPY As Boolean = True
 
 

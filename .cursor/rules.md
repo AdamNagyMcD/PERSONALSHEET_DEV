@@ -25,6 +25,7 @@
 - Avoid breaking existing module dependencies.
 - Prefer readable VBA over overly complex optimizations.
 - Preserve existing naming conventions unless requested.
+- Write everything in German, every comments, every codes.
 
 ---
 
