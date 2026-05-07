@@ -10,18 +10,22 @@ Attribute VB_Exposed = True
 Option Explicit
 
 Private Sub Worksheet_Change(ByVal Target As Range)
+    Dim rng As Range
+
     On Error GoTo SafeExit
+
+    ' Fuer Monatsblaetter uebernimmt DieseArbeitsmappe.Workbook_SheetChange den Einfuege-Schutz.
+    If PID_IsWorkerMonthSheet(Me) Then Exit Sub
 
     If Application.CutCopyMode <> False Then
         Application.EnableEvents = False
 
-        Dim rng As Range
         Set rng = Target
 
-        ' Beilleszt_s visszavonösa, hogy a cella formötuma megmaradjon
+        ' Einfuegen rueckgaengig machen, damit das Zellenformat erhalten bleibt
         Application.Undo
 
-        ' Csak _rt_k vissza ugyanoda
+        ' Nur Wert an gleicher Stelle einfuegen
         rng.PasteSpecial Paste:=xlPasteValues
     End If
 

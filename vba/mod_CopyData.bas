@@ -1,21 +1,19 @@
 ﻿Attribute VB_Name = "mod_CopyData"
 Option Explicit
 
-Private Const PID_FIRST_ROW As Long = 3
-Private Const PID_LAST_ROW As Long = 82
 Private Const PID_PASSWORD As String = "company"
 
 ' Geschwindigkeit / Verhalten:
-' True  = Jedes Monatsblatt springt am Ende des Makros auf A1 zurück, langsamer, aber saubere Ansicht.
-' False = Nur das ursprüngliche Blatt kehrt zu A1 zurück, schneller.
+' True  = Jedes Monatsblatt springt am Ende des Makros auf A1 zurueck, langsamer, aber saubere Ansicht.
+' False = Nur das urspruengliche Blatt kehrt zu A1 zurueck, schneller.
 Private Const PID_RESET_ALL_MONTH_SELECTIONS As Boolean = True
 
-' True  = CopyData setzt während der Ausführung die Geld-/Zahlenformate aller betroffenen Monatsblätter neu, langsamer.
+' True  = CopyData setzt waehrend der Ausfuehrung die Geld-/Zahlenformate aller betroffenen Monatsblaetter neu, langsamer.
 ' False = Formatiert nicht alle Monate neu, schneller. Vorhandene Formate bleiben erhalten.
 Private Const PID_APPLY_FORMATS_DURING_COPY As Boolean = False
 
-' True  = Die monatliche Fluktuation in Q31 wird auch während CopyData aktualisiert.
-' False = Nur das Dirty-Flag bleibt gesetzt, Fluktuation wird später aktualisiert.
+' True  = Die monatliche Fluktuation in Q31 wird auch waehrend CopyData aktualisiert.
+' False = Nur das Dirty-Flag bleibt gesetzt, Fluktuation wird spaeter aktualisiert.
 Private Const PID_CALCULATE_FLUCTUATION_DURING_COPY As Boolean = True
 
 
@@ -510,17 +508,11 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     ws.Range("I3:J82").Value = arrIJ
     ws.Range("M3:N82").Value = arrMN
     
-    ws.Range("H3:H82").FormulaR1C1 = formulaH
-    ws.Range("K3:K82").FormulaR1C1 = formulaK
-    ws.Range("L3:L82").FormulaR1C1 = formulaL
-    ws.Range("O18:Q25").FormulaR1C1 = infoOQ
+    PID_RestoreFormulas ws, formulaH, formulaK, formulaL, infoOQ
     
     PID_SortMonthSheet ws
     
-    ws.Range("H3:H82").FormulaR1C1 = formulaH
-    ws.Range("K3:K82").FormulaR1C1 = formulaK
-    ws.Range("L3:L82").FormulaR1C1 = formulaL
-    ws.Range("O18:Q25").FormulaR1C1 = infoOQ
+    PID_RestoreFormulas ws, formulaH, formulaK, formulaL, infoOQ
     
     RefreshKVLohnForSheet ws
     
@@ -592,6 +584,18 @@ Private Function PID_ShouldEmployeeExistInMonth(ByVal exitDate As Variant, _
         PID_ShouldEmployeeExistInMonth = False
     End If
 End Function
+
+
+Private Sub PID_RestoreFormulas(ByVal ws As Worksheet, _
+                               ByVal formulaH As Variant, _
+                               ByVal formulaK As Variant, _
+                               ByVal formulaL As Variant, _
+                               ByVal infoOQ As Variant)
+    ws.Range("H" & PID_FIRST_ROW & ":H" & PID_LAST_ROW).FormulaR1C1 = formulaH
+    ws.Range("K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW).FormulaR1C1 = formulaK
+    ws.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW).FormulaR1C1 = formulaL
+    ws.Range("O18:Q25").FormulaR1C1 = infoOQ
+End Sub
 
 
 Private Sub PID_SortMonthSheet(ByVal ws As Worksheet)

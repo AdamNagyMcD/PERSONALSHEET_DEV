@@ -342,7 +342,7 @@ Private Sub FormatLohntabelleTest(ByVal ws As Worksheet, ByVal lastRow As Long)
     
     ws.Range("B4:C" & lastRow).NumberFormat = "dd.mm.yyyy"
     ws.Range("G4:G" & lastRow).NumberFormatLocal = "0,00"
-    ApplyEuroNumberFormatToRange ws.Range("H4:H" & lastRow)
+    PID_ApplyEuroNumberFormat ws.Range("H4:H" & lastRow)
     
     inputRange.Interior.Color = RGB(255, 242, 204)
     
@@ -458,27 +458,4 @@ Private Function GetKVDurationByIndex(ByVal indexNumber As Long) As String
             GetKVDurationByIndex = ""
     End Select
 End Function
-
-
-Private Sub ApplyEuroNumberFormatToRange(ByVal targetRange As Range)
-    Dim euroSymbol As String
-    
-    If targetRange Is Nothing Then Exit Sub
-    
-    euroSymbol = ChrW(8364)
-    
-    On Error GoTo TryEnglishFormat
-    
-    ' Deutsch / Oesterreich Excel: Û 2.328,00
-    targetRange.NumberFormatLocal = euroSymbol & " #.##0,00"
-    Exit Sub
-
-TryEnglishFormat:
-    On Error GoTo SafeExit
-    
-    ' Fallback fuer andere Excel-Sprachen: Û 2,328.00
-    targetRange.NumberFormat = euroSymbol & " #,##0.00"
-
-SafeExit:
-End Sub
 

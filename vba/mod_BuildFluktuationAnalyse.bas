@@ -109,6 +109,7 @@ Public Sub BuildFluktuationAnalyse()
         .Rows.RowHeight = 15
     End With
     
+    ' --- Abschnitt 1: Daten aus FLUKTUATION_DATEN aggregieren ---
     lastRow = dataWs.Cells(dataWs.Rows.count, "A").End(xlUp).Row
     
     If lastRow >= 2 Then
@@ -172,6 +173,7 @@ Public Sub BuildFluktuationAnalyse()
         avgLoss = 0
     End If
     
+    ' --- Abschnitt 2: Monatliche Fluktuation und YTD berechnen ---
     For i = 1 To 12
         monthPersonalEnde(i) = GetPersonalEndeForMonth(CStr(monthNames(i - 1)), currentYear, i)
         
@@ -217,6 +219,7 @@ Public Sub BuildFluktuationAnalyse()
         ytdFluctuation = 0
     End If
     
+    ' --- Abschnitt 3: Risikobewertung und Empfehlungstext ---
     riskLevel = GetFluktuationRiskLevel(totalLoss, totalExits, earlyExits, experiencedLoss, importantExits, incompleteExits)
     focusText = GetFluktuationFocusText(totalExits, neutralExits, earlyExits, experiencedLoss, importantExits, incompleteExits, totalLoss)
     
@@ -224,6 +227,7 @@ Public Sub BuildFluktuationAnalyse()
     explanationText = explanationText & " Ein Austritt eines langjaehrigen Mitarbeiters zaehlt staerker als ein Austritt in den ersten Wochen."
     explanationText = explanationText & " Neutrale Bewegungen wie Storetransfer, Befoerderung, Karenz oder Nicht eingetreten werden nicht negativ bewertet."
     
+    ' --- Abschnitt 4: Ausgabe in Fluktuation-Blatt schreiben ---
     With analyseWs
         .Range("A1").Value = "Fluktuation"
         .Range("A2").Value = "Jahresanalyse"
@@ -285,6 +289,7 @@ Public Sub BuildFluktuationAnalyse()
         .Range("A21:A22").Merge
         .Range("B21:E22").Merge
         
+        ' --- Abschnitt 4b: Monatstabelle ---
         monthlyTitleRow = 25
         headerRow = 27
         firstDataRow = 28
@@ -412,35 +417,7 @@ Public Sub BuildFluktuationAnalyse()
         
         explanationStartRow = outputRow + 3
         
-        .Range("A" & explanationStartRow).Value = "Kurz erklaert"
-        
-        .Range("A" & explanationStartRow + 1).Value = "Aktuelle Jahresfluktuation"
-        .Range("B" & explanationStartRow + 1).Value = "Zeigt die Fluktuation vom Jahresbeginn bis zum aktuellen Auswertungsmonat. Der Wert wird nicht auf das ganze Jahr hochgerechnet."
-        
-        .Range("A" & explanationStartRow + 2).Value = "Verlust-Score"
-        .Range("B" & explanationStartRow + 2).Value = "Der Verlust-Score zeigt, wie schwer ein Austritt fuer das Restaurant bewertet wird. Er besteht aus Austrittsgrund und Dauer der Betriebszugehoerigkeit."
-        
-        .Range("A" & explanationStartRow + 3).Value = "Durchschnittlicher Verlust-Score"
-        .Range("B" & explanationStartRow + 3).Value = "Durchschnittlicher Verlust-Score pro Austritt. Je hoeher der Wert, desto schwerer wiegen die Austritte im Durchschnitt."
-        
-        .Range("A" & explanationStartRow + 4).Value = "Austritt in den ersten 90 Tagen"
-        .Range("B" & explanationStartRow + 4).Value = "Ein Austritt kurz nach Eintritt. Das kann auf Recruiting, Onboarding, Training oder erste Dienstplaene hinweisen."
-        
-        .Range("A" & explanationStartRow + 5).Value = "Verlust erfahrener Mitarbeiter"
-        .Range("B" & explanationStartRow + 5).Value = "Ein erfahrener Mitarbeiter verlaesst das Restaurant. Das bedeutet meist Wissensverlust, Stabilitaetsverlust und hoeheren Nachbesetzungsaufwand."
-        
-        .Range("A" & explanationStartRow + 6).Value = "Wichtiger Austritt"
-        .Range("B" & explanationStartRow + 6).Value = "Ein Austritt mit erhoehtem Verlust-Score. Die Bewertung entsteht automatisch aus Austrittsgrund und Betriebszugehoerigkeit."
-        
-        .Range("A" & explanationStartRow + 7).Value = "Neutrale Bewegung"
-        .Range("B" & explanationStartRow + 7).Value = "Storetransfer, Befoerderung, Karenz oder Nicht eingetreten werden nicht negativ bewertet."
-        
-        .Range("A" & explanationStartRow + 8).Value = "Unvollstaendiger Austritt"
-        .Range("B" & explanationStartRow + 8).Value = "Der Austrittsgrund fehlt oder ist unbekannt. Diese Austritte muessen geprueft und ergaenzt werden."
-        
-        For i = explanationStartRow + 1 To explanationStartRow + 8
-            .Range("B" & i & ":E" & i).Merge
-        Next i
+        PID_WriteFluktuationExplanationRows analyseWs, explanationStartRow
         
         FormatFluktuationSheet analyseWs, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
         
@@ -877,3 +854,37 @@ Public Sub ApplyRiskFormatting(ByVal targetCell As Range, ByVal riskLevel As Str
     End With
 End Sub
 
+
+Private Sub PID_WriteFluktuationExplanationRows(ByVal ws As Worksheet, ByVal startRow As Long)
+    Dim i As Long
+    
+    ws.Range("A" & startRow).Value = "Kurz erklaert"
+    
+    ws.Range("A" & startRow + 1).Value = "Aktuelle Jahresfluktuation"
+    ws.Range("B" & startRow + 1).Value = "Zeigt die Fluktuation vom Jahresbeginn bis zum aktuellen Auswertungsmonat. Der Wert wird nicht auf das ganze Jahr hochgerechnet."
+    
+    ws.Range("A" & startRow + 2).Value = "Verlust-Score"
+    ws.Range("B" & startRow + 2).Value = "Der Verlust-Score zeigt, wie schwer ein Austritt fuer das Restaurant bewertet wird. Er besteht aus Austrittsgrund und Dauer der Betriebszugehoerigkeit."
+    
+    ws.Range("A" & startRow + 3).Value = "Durchschnittlicher Verlust-Score"
+    ws.Range("B" & startRow + 3).Value = "Durchschnittlicher Verlust-Score pro Austritt. Je hoeher der Wert, desto schwerer wiegen die Austritte im Durchschnitt."
+    
+    ws.Range("A" & startRow + 4).Value = "Austritt in den ersten 90 Tagen"
+    ws.Range("B" & startRow + 4).Value = "Ein Austritt kurz nach Eintritt. Das kann auf Recruiting, Onboarding, Training oder erste Dienstplaene hinweisen."
+    
+    ws.Range("A" & startRow + 5).Value = "Verlust erfahrener Mitarbeiter"
+    ws.Range("B" & startRow + 5).Value = "Ein erfahrener Mitarbeiter verlaesst das Restaurant. Das bedeutet meist Wissensverlust, Stabilitaetsverlust und hoeheren Nachbesetzungsaufwand."
+    
+    ws.Range("A" & startRow + 6).Value = "Wichtiger Austritt"
+    ws.Range("B" & startRow + 6).Value = "Ein Austritt mit erhoehtem Verlust-Score. Die Bewertung entsteht automatisch aus Austrittsgrund und Betriebszugehoerigkeit."
+    
+    ws.Range("A" & startRow + 7).Value = "Neutrale Bewegung"
+    ws.Range("B" & startRow + 7).Value = "Storetransfer, Befoerderung, Karenz oder Nicht eingetreten werden nicht negativ bewertet."
+    
+    ws.Range("A" & startRow + 8).Value = "Unvollstaendiger Austritt"
+    ws.Range("B" & startRow + 8).Value = "Der Austrittsgrund fehlt oder ist unbekannt. Diese Austritte muessen geprueft und ergaenzt werden."
+    
+    For i = startRow + 1 To startRow + 8
+        ws.Range("B" & i & ":E" & i).Merge
+    Next i
+End Sub

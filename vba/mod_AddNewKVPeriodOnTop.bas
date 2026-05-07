@@ -409,7 +409,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Range("A4:A" & lastRow).NumberFormat = "@"
         .Range("G4:G" & lastRow).NumberFormatLocal = "0,00"
         
-        ApplyEuroNumberFormatToRange .Range("H4:H" & lastRow)
+        PID_ApplyEuroNumberFormat .Range("H4:H" & lastRow)
         
         .Columns("A").ColumnWidth = 16
         .Columns("D").ColumnWidth = 14
@@ -417,27 +417,6 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Columns("H").ColumnWidth = 14
         .Columns("I").ColumnWidth = 10
     End With
-
-SafeExit:
-End Sub
-
-
-Private Sub ApplyEuroNumberFormatToRange(ByVal targetRange As Range)
-    Dim euroSymbol As String
-    
-    If targetRange Is Nothing Then Exit Sub
-    
-    euroSymbol = ChrW(8364)
-    
-    On Error GoTo TryEnglishFormat
-    
-    targetRange.NumberFormatLocal = euroSymbol & " #.##0,00"
-    Exit Sub
-
-TryEnglishFormat:
-    On Error GoTo SafeExit
-    
-    targetRange.NumberFormat = euroSymbol & " #,##0.00"
 
 SafeExit:
 End Sub

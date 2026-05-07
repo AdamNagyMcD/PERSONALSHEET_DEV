@@ -2,8 +2,6 @@ Attribute VB_Name = "mod_DataClear"
 Option Explicit
 
 Private Const PID_PASSWORD As String = "company"
-Private Const PID_FIRST_ROW As Long = 3
-Private Const PID_LAST_ROW As Long = 82
 
 
 Public Sub DataClear()

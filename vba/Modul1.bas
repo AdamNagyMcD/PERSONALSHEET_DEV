@@ -1,6 +1,9 @@
 Attribute VB_Name = "Modul1"
 Option Explicit
 
+Public Const PID_FIRST_ROW As Long = 3
+Public Const PID_LAST_ROW As Long = 82
+
 Private Const PID_PASSWORD As String = "company"
 
 

@@ -23,8 +23,8 @@ Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal chan
     monthNumber = CLng(wsMonth.Range("A1").Value)
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
-    firstRow = 3
-    lastRow = 82
+    firstRow = PID_FIRST_ROW
+    lastRow = PID_LAST_ROW
     
     oldEnableEvents = Application.EnableEvents
     oldScreenUpdating = Application.ScreenUpdating
@@ -81,7 +81,7 @@ Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Lo
     On Error GoTo SafeExit
     
     If wsMonth Is Nothing Then Exit Sub
-    If rowNumber < 3 Or rowNumber > 82 Then Exit Sub
+    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
     kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
@@ -97,13 +97,13 @@ Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Lo
             wsMonth.Cells(rowNumber, "G").NumberFormat = "General"
         Else
             wsMonth.Cells(rowNumber, "G").Value = CDbl(lohnValue)
-            ApplyEuroNumberFormatToRange wsMonth.Cells(rowNumber, "G")
+            PID_ApplyEuroNumberFormat wsMonth.Cells(rowNumber, "G")
         End If
         
     Else
         
         wsMonth.Cells(rowNumber, "G").ClearContents
-        ApplyEuroNumberFormatToRange wsMonth.Cells(rowNumber, "G")
+        PID_ApplyEuroNumberFormat wsMonth.Cells(rowNumber, "G")
         
     End If
 
@@ -372,27 +372,4 @@ Public Function CollectionHasKey_KVLohn(ByVal col As Collection, ByVal key As St
 NotFound:
     CollectionHasKey_KVLohn = False
 End Function
-
-
-Private Sub ApplyEuroNumberFormatToRange(ByVal targetRange As Range)
-    Dim euroSymbol As String
-    
-    If targetRange Is Nothing Then Exit Sub
-    
-    euroSymbol = ChrW(8364)
-    
-    On Error GoTo TryEnglishFormat
-    
-    ' Deutsch / Oesterreich Excel: Û 2.328,00
-    targetRange.NumberFormatLocal = euroSymbol & " #.##0,00"
-    Exit Sub
-
-TryEnglishFormat:
-    On Error GoTo SafeExit
-    
-    ' Fallback fuer andere Excel-Sprachen: Û 2,328.00
-    targetRange.NumberFormat = euroSymbol & " #,##0.00"
-
-SafeExit:
-End Sub
 

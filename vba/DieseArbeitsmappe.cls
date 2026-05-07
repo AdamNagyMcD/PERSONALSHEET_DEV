@@ -22,9 +22,9 @@ Private Sub Workbook_Open()
     
     PID_SetupSheetProtectionForMacros
     
-    ' Fontos:
-    ' Megnyitaskor NEM frissitunk teljes Fluktuation elemzest.
-    ' Ez gyorsabb megnyitast ad, es csak akkor frissitunk, ha tenyleg kell.
+    ' Wichtig:
+    ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
+    ' Das ermoeglicht schnelleres Oeffnen - aktualisiert wird nur wenn wirklich noetig.
     gFluktuationDirty = True
     
     On Error Resume Next
@@ -49,8 +49,8 @@ Private Sub Workbook_BeforeSave(ByVal SaveAsUI As Boolean, Cancel As Boolean)
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
-    ' Mentes elott csak akkor frissitjuk a Fluktuation elemzest,
-    ' ha kozben relevans adat valtozott.
+    ' Vor dem Speichern wird die Fluktuation-Analyse nur dann aktualisiert,
+    ' wenn sich in der Zwischenzeit relevante Daten geaendert haben.
     If gFluktuationDirty Then
         RefreshFluktuationAll
     End If
@@ -78,16 +78,16 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
-    ' Fluktuation csak akkor frissul, amikor a felhasznalo megnyitja a Fluktuation lapot.
+    ' Fluktuation wird nur dann aktualisiert, wenn der Benutzer das Fluktuation-Blatt oeffnet.
     If Sh.Name = "Fluktuation" Then
         RefreshFluktuationIfDirty
         GoTo SafeExit
     End If
     
-    ' Honaplap aktivacional NEM futtatunk teljes KV-lohn frissitest.
-    ' Ez volt az egyik lassito pont.
+    ' Bei Aktivierung eines Monatsblatts wird KEINE vollstaendige KV-Lohn-Aktualisierung ausgefuehrt.
+    ' Das war einer der Leistungsengpaesse.
     '
-    ' Ha a KV tabla valtozott, a dropdownokat csak dirty flag alapjan frissitjuk.
+    ' Wenn die KV-Tabelle geaendert wurde, werden die Dropdowns nur per Dirty-Flag aktualisiert.
     If PID_IsWorkerMonthSheet(Sh) Then
         RefreshKVDropdownsIfDirty
         GoTo SafeExit
@@ -108,7 +108,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     If mInternalChange Then Exit Sub
     If Not TypeOf Sh Is Worksheet Then Exit Sub
     
-    ' Ha a KV alap tabla valtozik, akkor a dropdown lista kesobb ujraepul.
+    ' Wenn die KV-Basistabelle geaendert wird, wird die Dropdown-Liste spaeter neu aufgebaut.
     If Sh.Name = "LOHNTABELLE_TEST" Then
         If Not Intersect(Target, Sh.Range("G:H")) Is Nothing Then
             MarkKVDropdownsDirty
@@ -123,25 +123,25 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
-    ' Beillesztes-vedelem:
-    ' regi fajlbol vagy mas forrasbol torteno masolasnal csak ertek maradjon.
+    ' Einfuege-Schutz:
+    ' Beim Einfuegen aus alten Dateien oder anderen Quellen soll nur der Wert uebernommen werden.
     pasteHandled = False
     EnforcePasteValuesOnly Sh, Target, pasteHandled
     
-    ' Ha E oszlop valtozik:
+    ' Wenn Spalte E sich aendert:
     ' E = KV-Code / BG
-    ' F oszlop dropdownja frissul az adott sorban.
+    ' Dropdown der Spalte F wird in der betreffenden Zeile aktualisiert.
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
         RefreshKVStundenDropdownForSheet Sh, Target
     End If
     
-    ' Ha E vagy F valtozik:
-    ' G = Monatslohn frissul csak az adott sorban.
+    ' Wenn E oder F sich aendert:
+    ' G = Monatslohn wird nur in der betreffenden Zeile aktualisiert.
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
         RefreshKVLohnForSheet Sh, Target
     End If
     
-    ' Fluktuation jeloles frissitesre:
+    ' Fluktuation-Markierung fuer Aktualisierung:
     ' D = Eintrittsdatum
     ' I = Austrittsdatum
     ' N = Austrittsgrund
@@ -169,10 +169,10 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     
     Application.EnableEvents = False
     
-    ' Csak Eintrittsdatum oszlop D.
+    ' Nur Eintrittsdatum Spalte D.
     If Intersect(Target, Sh.Range("D3:D82")) Is Nothing Then
         
-        ' Csak akkor toroljuk, ha tenyleg van benne valami.
+        ' Nur loeschen, wenn tatsaechlich etwas drin ist.
         If Sh.Range("O45").Value <> "" Then
             Sh.Range("O45").Value = ""
         End If
@@ -268,12 +268,12 @@ Private Function IsProbablyPaste(ByVal Target As Range) As Boolean
         Exit Function
     End If
     
-    If InStr(undoText, "einfugen") > 0 Then
+    If InStr(undoText, "einf" & Chr(252) & "gen") > 0 Then
         IsProbablyPaste = True
         Exit Function
     End If
     
-    If InStr(undoText, "einfŸgen") > 0 Then
+    If InStr(undoText, "einfuegen") > 0 Then
         IsProbablyPaste = True
         Exit Function
     End If
