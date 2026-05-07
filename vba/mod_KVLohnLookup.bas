@@ -1,6 +1,46 @@
 Attribute VB_Name = "mod_KVLohnLookup"
 Option Explicit
 
+' Module-level cache for LOHNTABELLE_TEST data.
+' Populated once per RefreshKVLohnForSheet call, cleared afterwards.
+' Columns in cache match Range("A4:I<lastRow>"):
+'   1=A(Period), 2=B, 3=C, 4=D(KVCode), 5=E, 6=F, 7=G(Stunden), 8=H(Lohn), 9=I(Status)
+Private mLohnTableCache As Variant
+Private mLohnTableCacheLoaded As Boolean
+
+
+Private Sub PID_LoadLohnTableCache()
+    Dim wsKV As Worksheet
+    Dim lastRow As Long
+    
+    mLohnTableCacheLoaded = False
+    
+    On Error Resume Next
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    On Error GoTo 0
+    
+    If wsKV Is Nothing Then
+        mLohnTableCacheLoaded = True
+        Exit Sub
+    End If
+    
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    
+    If lastRow >= 4 Then
+        mLohnTableCache = wsKV.Range("A4:I" & lastRow).Value
+    End If
+    
+    mLohnTableCacheLoaded = True
+End Sub
+
+
+Private Sub PID_ClearLohnTableCache()
+    mLohnTableCacheLoaded = False
+    On Error Resume Next
+    Erase mLohnTableCache
+    On Error GoTo 0
+End Sub
+
 Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal changedRange As Range)
     Dim r As Long
     Dim firstRow As Long
@@ -34,6 +74,8 @@ Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal chan
     
     Set checkedRows = New Collection
     
+    PID_LoadLohnTableCache
+    
     If changedRange Is Nothing Then
         
         For r = firstRow To lastRow
@@ -58,11 +100,13 @@ Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal chan
     End If
 
 CleanExit:
+    PID_ClearLohnTableCache
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
     Exit Sub
 
 CleanFail:
+    PID_ClearLohnTableCache
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
     
@@ -216,6 +260,7 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
     Dim wsKV As Worksheet
     Dim lastRow As Long
     Dim r As Long
+    Dim rowCount As Long
     
     Dim rowPeriod As String
     Dim rowKVCode As String
@@ -228,44 +273,73 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
     If Trim$(periodName) = "" Then GoTo NotFound
     If Trim$(kvCode) = "" Then GoTo NotFound
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
-    
-    lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
-    
-    For r = 4 To lastRow
-        rowPeriod = Trim$(CStr(wsKV.Cells(r, "A").Value))
+    If mLohnTableCacheLoaded And Not IsEmpty(mLohnTableCache) Then
         
-        If rowPeriod = periodName Then
+        rowCount = UBound(mLohnTableCache, 1)
+        
+        For r = 1 To rowCount
+            rowPeriod = Trim$(CStr(mLohnTableCache(r, 1)))
             
-            rowKVCode = NormalizeKVCodeForLookup(CStr(wsKV.Cells(r, "D").Value))
-            
-            If rowKVCode = kvCode Then
+            If rowPeriod = periodName Then
+                rowKVCode = NormalizeKVCodeForLookup(CStr(mLohnTableCache(r, 4)))
                 
-                rowMonatsstunden = wsKV.Cells(r, "G").Value
-                
-                If IsNumeric(rowMonatsstunden) Then
+                If rowKVCode = kvCode Then
+                    rowMonatsstunden = mLohnTableCache(r, 7)
                     
-                    If Abs(CDbl(rowMonatsstunden) - monatsstunden) < 0.001 Then
-                        
-                        rowLohn = wsKV.Cells(r, "H").Value
-                        rowStatus = Trim$(CStr(wsKV.Cells(r, "I").Value))
-                        
-                        If rowStatus = "OK" Then
-                            If IsNumeric(rowLohn) Then
-                                FindKVLohnInPeriod = CDbl(rowLohn)
-                                Exit Function
+                    If IsNumeric(rowMonatsstunden) Then
+                        If Abs(CDbl(rowMonatsstunden) - monatsstunden) < 0.001 Then
+                            rowLohn = mLohnTableCache(r, 8)
+                            rowStatus = Trim$(CStr(mLohnTableCache(r, 9)))
+                            
+                            If rowStatus = "OK" Then
+                                If IsNumeric(rowLohn) Then
+                                    FindKVLohnInPeriod = CDbl(rowLohn)
+                                    Exit Function
+                                End If
                             End If
+                            
+                            GoTo NotFound
                         End If
-                        
-                        GoTo NotFound
                     End If
-                    
                 End If
-                
             End If
+        Next r
+        
+    Else
+        
+        Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+        
+        lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+        
+        For r = 4 To lastRow
+            rowPeriod = Trim$(CStr(wsKV.Cells(r, "A").Value))
             
-        End If
-    Next r
+            If rowPeriod = periodName Then
+                rowKVCode = NormalizeKVCodeForLookup(CStr(wsKV.Cells(r, "D").Value))
+                
+                If rowKVCode = kvCode Then
+                    rowMonatsstunden = wsKV.Cells(r, "G").Value
+                    
+                    If IsNumeric(rowMonatsstunden) Then
+                        If Abs(CDbl(rowMonatsstunden) - monatsstunden) < 0.001 Then
+                            rowLohn = wsKV.Cells(r, "H").Value
+                            rowStatus = Trim$(CStr(wsKV.Cells(r, "I").Value))
+                            
+                            If rowStatus = "OK" Then
+                                If IsNumeric(rowLohn) Then
+                                    FindKVLohnInPeriod = CDbl(rowLohn)
+                                    Exit Function
+                                End If
+                            End If
+                            
+                            GoTo NotFound
+                        End If
+                    End If
+                End If
+            End If
+        Next r
+        
+    End If
 
 NotFound:
     FindKVLohnInPeriod = CVErr(xlErrNA)

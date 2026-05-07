@@ -535,22 +535,7 @@ End Sub
 
 
 Private Function PID_ReadMonthData(ByVal ws As Worksheet) As Variant
-    Dim arr As Variant
-    Dim resultData As Variant
-    Dim r As Long
-    Dim c As Long
-    
-    arr = ws.Range("B3:N82").Value
-    
-    ReDim resultData(1 To UBound(arr, 1), 1 To 13)
-    
-    For r = 1 To UBound(arr, 1)
-        For c = 1 To 13
-            resultData(r, c) = arr(r, c)
-        Next c
-    Next r
-    
-    PID_ReadMonthData = resultData
+    PID_ReadMonthData = ws.Range("B3:N82").Value
 End Function
 
 
@@ -920,8 +905,15 @@ Private Sub PID_ResetMonthSelections(ByVal sourceSheetName As String)
     Dim monthNames As Variant
     Dim ws As Worksheet
     Dim i As Long
+    Dim oldScreenUpdating As Boolean
+    Dim oldEnableEvents As Boolean
     
     On Error Resume Next
+    
+    oldScreenUpdating = Application.ScreenUpdating
+    oldEnableEvents = Application.EnableEvents
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
     
     monthNames = PID_MonthNames()
     
@@ -938,6 +930,9 @@ Private Sub PID_ResetMonthSelections(ByVal sourceSheetName As String)
             End If
         End If
     Next i
+    
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
     
     PID_ReturnToSourceSheet sourceSheetName
     
