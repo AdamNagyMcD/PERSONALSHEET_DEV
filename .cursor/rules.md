@@ -24,8 +24,10 @@
 
 - Avoid breaking existing module dependencies.
 - Prefer readable VBA over overly complex optimizations.
-- Preserve existing naming conventions unless requested.
-- Write everything in German, every comments, every codes.
+- Preserve existing naming conventions unless explicitly requested.
+- Write all VBA comments in German.
+- Write all user-facing texts and messages in German.
+- Do not rename existing procedures, variables or modules unless explicitly requested.
 
 ---
 
