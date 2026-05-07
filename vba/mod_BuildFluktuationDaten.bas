@@ -268,13 +268,13 @@ Public Function ReasonKey(ByVal textValue As String) As String
     k = Replace(k, ChrW(220), "ue")
     k = Replace(k, ChrW(223), "ss")
     
-    k = Replace(k, "Š", "ae")
-    k = Replace(k, "š", "oe")
-    k = Replace(k, "Ÿ", "ue")
-    k = Replace(k, "€", "ae")
-    k = Replace(k, "…", "oe")
-    k = Replace(k, "†", "ue")
-    k = Replace(k, "§", "ss")
+    k = Replace(k, "ï¿½", "ae")
+    k = Replace(k, "ï¿½", "oe")
+    k = Replace(k, "ï¿½", "ue")
+    k = Replace(k, "ï¿½", "ae")
+    k = Replace(k, "ï¿½", "oe")
+    k = Replace(k, "ï¿½", "ue")
+    k = Replace(k, "ï¿½", "ss")
     
     Do While InStr(k, "  ") > 0
         k = Replace(k, "  ", " ")

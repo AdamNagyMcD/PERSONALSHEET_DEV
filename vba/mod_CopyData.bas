@@ -1,4 +1,4 @@
-﻿Attribute VB_Name = "mod_CopyData"
+Attribute VB_Name = "mod_CopyData"
 Option Explicit
 
 Private Const PID_PASSWORD As String = "company"

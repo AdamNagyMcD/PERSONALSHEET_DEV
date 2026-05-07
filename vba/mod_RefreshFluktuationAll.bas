@@ -63,7 +63,7 @@ CleanExit:
 CleanFail:
     gFluktuationDirty = True
     
-    MsgBox "Die Fluktuation konnte nicht vollständig aktualisiert werden." & vbCrLf & vbCrLf & _
+    MsgBox "Die Fluktuation konnte nicht vollstaendig aktualisiert werden." & vbCrLf & vbCrLf & _
            "Fehler " & Err.Number & ": " & Err.Description, _
            vbExclamation, "Fluktuation aktualisieren"
     
@@ -82,11 +82,11 @@ Public Sub ResetExcelEvents()
     
     On Error GoTo 0
     
-    MsgBox "Excel wurde zurückgesetzt:" & vbCrLf & _
+    MsgBox "Excel wurde zurueckgesetzt:" & vbCrLf & _
            "- Events aktiv" & vbCrLf & _
            "- ScreenUpdating aktiv" & vbCrLf & _
            "- DisplayAlerts aktiv" & vbCrLf & _
-           "- StatusBar zurückgesetzt", _
+           "- StatusBar zurueckgesetzt", _
            vbInformation, "Reset abgeschlossen"
 End Sub
 
