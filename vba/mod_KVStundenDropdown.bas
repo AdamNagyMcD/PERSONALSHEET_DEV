@@ -107,9 +107,9 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     Set wsHelper = GetOrCreateKVDropdownHelperSheet()
     
     On Error Resume Next
-    wsMonth.Unprotect Password:="company"
+    wsMonth.Unprotect Password:=PID_WORKBOOK_PASSWORD
     wsHelper.Visible = xlSheetVisible
-    wsHelper.Unprotect Password:="company"
+    wsHelper.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
     
     If changedRange Is Nothing Then
@@ -139,10 +139,10 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
         
     End If
     
-    wsHelper.Protect Password:="company", UserInterfaceOnly:=True
+    wsHelper.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     wsHelper.Visible = xlSheetVeryHidden
     
-    wsMonth.Protect Password:="company", UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
 
 CleanExit:
     Application.DisplayAlerts = oldDisplayAlerts
@@ -152,12 +152,12 @@ CleanFail:
     On Error Resume Next
     
     If Not wsHelper Is Nothing Then
-        wsHelper.Protect Password:="company", UserInterfaceOnly:=True
+        wsHelper.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
         wsHelper.Visible = xlSheetVeryHidden
     End If
     
     If Not wsMonth Is Nothing Then
-        wsMonth.Protect Password:="company", UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
     
     Application.DisplayAlerts = oldDisplayAlerts

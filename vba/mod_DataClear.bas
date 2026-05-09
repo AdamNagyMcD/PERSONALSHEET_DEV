@@ -1,8 +1,6 @@
 Attribute VB_Name = "mod_DataClear"
 Option Explicit
 
-Private Const PID_PASSWORD As String = "company"
-
 
 Public Sub DataClear()
     PID_ClearCurrentMonthData
@@ -27,6 +25,8 @@ Public Sub PID_ClearCurrentMonthData()
     Dim oldScreenUpdating As Boolean
     Dim oldDisplayAlerts As Boolean
     Dim oldCalculation As XlCalculation
+    Dim originalErrNumber As Long
+    Dim originalErrDescription As String
     
     On Error GoTo CleanFail
     
@@ -45,7 +45,8 @@ Public Sub PID_ClearCurrentMonthData()
         "Geloescht werden:" & vbCrLf & _
         "- Mitarbeiterdaten B:N" & vbCrLf & _
         "- Monatsinfo O18:Q25" & vbCrLf & _
-        "- Hinweis O45" & vbCrLf & vbCrLf & _
+        "- Hinweis O45" & vbCrLf & _
+        "- Fluktuation Q31" & vbCrLf & vbCrLf & _
         "Nicht geloescht werden:" & vbCrLf & _
         "- Formate" & vbCrLf & _
         "- Kopfzeilen" & vbCrLf & _
@@ -67,9 +68,7 @@ Public Sub PID_ClearCurrentMonthData()
     Application.DisplayAlerts = False
     Application.Calculation = xlCalculationManual
     
-    On Error Resume Next
-    ws.Unprotect Password:=PID_PASSWORD
-    On Error GoTo CleanFail
+    PID_TryUnprotectMonthSheet ws
     
     PID_ClearMonthInputAreas ws
     PID_ApplyMonthSheetFormatsAfterClear ws
@@ -81,7 +80,7 @@ Public Sub PID_ClearCurrentMonthData()
     MarkFluktuationDirty
     MarkKVDropdownsDirty
     
-    ws.Protect Password:=PID_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    PID_TryProtectMonthSheet ws
     
     MsgBox "Die Monatsdaten wurden geloescht.", _
            vbInformation, "Daten loeschen"
@@ -94,11 +93,10 @@ CleanExit:
     Exit Sub
 
 CleanFail:
-    On Error Resume Next
+    originalErrNumber = Err.Number
+    originalErrDescription = Err.Description
     
-    If Not ws Is Nothing Then
-        ws.Protect Password:=PID_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
-    End If
+    PID_TryProtectMonthSheet ws
     
     Application.Calculation = oldCalculation
     Application.DisplayAlerts = oldDisplayAlerts
@@ -106,7 +104,7 @@ CleanFail:
     Application.EnableEvents = oldEnableEvents
     
     MsgBox "Fehler bei PID_ClearCurrentMonthData:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
+           originalErrNumber & " - " & originalErrDescription, _
            vbExclamation, "Daten loeschen"
 End Sub
 
@@ -156,7 +154,7 @@ Private Sub PID_ApplyMonthSheetFormatsAfterClear(ByVal ws As Worksheet)
     GoTo SafeExit
 
 TryEnglishNumberFormat:
-    On Error Resume Next
+    On Error GoTo SafeExit
     
     ws.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).NumberFormat = "0.00"
     ws.Range("G" & PID_FIRST_ROW & ":G" & PID_LAST_ROW).NumberFormat = euroSymbol & " #,##0.00"
@@ -180,6 +178,8 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
     Dim oldDisplayAlerts As Boolean
+    Dim originalErrNumber As Long
+    Dim originalErrDescription As String
     
     On Error GoTo CleanFail
     
@@ -194,6 +194,12 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     End If
     
     If Selection Is Nothing Then Exit Sub
+    
+    If TypeName(Selection) <> "Range" Then
+        MsgBox "Bitte zuerst einen gueltigen Zellbereich markieren.", _
+               vbExclamation, "Zeilen loeschen"
+        Exit Sub
+    End If
     
     Set area = Intersect(Selection, ws.Range("B" & PID_FIRST_ROW & ":N" & PID_LAST_ROW))
     
@@ -231,9 +237,7 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
     
-    On Error Resume Next
-    ws.Unprotect Password:=PID_PASSWORD
-    On Error GoTo CleanFail
+    PID_TryUnprotectMonthSheet ws
     
     For Each rowNumber In selectedRows
         ws.Range("B" & CLng(rowNumber) & ":N" & CLng(rowNumber)).ClearContents
@@ -246,7 +250,7 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     MarkFluktuationDirty
     MarkKVDropdownsDirty
     
-    ws.Protect Password:=PID_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    PID_TryProtectMonthSheet ws
     
     MsgBox "Ausgewaehlte Mitarbeiterzeile(n) wurden geloescht.", _
            vbInformation, "Zeilen loeschen"
@@ -258,19 +262,38 @@ CleanExit:
     Exit Sub
 
 CleanFail:
-    On Error Resume Next
+    originalErrNumber = Err.Number
+    originalErrDescription = Err.Description
     
-    If Not ws Is Nothing Then
-        ws.Protect Password:=PID_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
-    End If
+    PID_TryProtectMonthSheet ws
     
     Application.DisplayAlerts = oldDisplayAlerts
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
     
     MsgBox "Fehler bei PID_ClearOnlySelectedEmployeeRows:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
+           originalErrNumber & " - " & originalErrDescription, _
            vbExclamation, "Zeilen loeschen"
+End Sub
+
+
+Private Sub PID_TryUnprotectMonthSheet(ByVal ws As Worksheet)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    
+SafeExit:
+End Sub
+
+
+Private Sub PID_TryProtectMonthSheet(ByVal ws As Worksheet)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    
+SafeExit:
 End Sub
 
 

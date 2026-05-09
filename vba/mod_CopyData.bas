@@ -1,8 +1,6 @@
 Attribute VB_Name = "mod_CopyData"
 Option Explicit
 
-Private Const PID_PASSWORD As String = "company"
-
 ' Geschwindigkeit / Verhalten:
 ' True  = Jedes Monatsblatt springt am Ende des Makros auf A1 zurueck, langsamer, aber saubere Ansicht.
 ' False = Nur das urspruengliche Blatt kehrt zu A1 zurueck, schneller.
@@ -482,7 +480,7 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     If ws Is Nothing Then Exit Sub
     
     On Error Resume Next
-    ws.Unprotect Password:=PID_PASSWORD
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo SafeExit
     
     ReDim arrBG(1 To PID_LAST_ROW - PID_FIRST_ROW + 1, 1 To 6)
@@ -524,12 +522,12 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
         PID_ApplyMonthSheetFormats ws
     End If
     
-    ws.Protect Password:=PID_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
 
 SafeExit:
     On Error Resume Next
     If Not ws Is Nothing Then
-        ws.Protect Password:=PID_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
 End Sub
 

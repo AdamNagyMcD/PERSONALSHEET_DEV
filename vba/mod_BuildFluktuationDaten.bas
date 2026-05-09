@@ -57,7 +57,7 @@ Public Sub BuildFluktuationDaten()
     outRow = 0
     
     outWs.Visible = xlSheetVisible
-    outWs.Unprotect Password:="company"
+    outWs.Unprotect Password:=PID_WORKBOOK_PASSWORD
     outWs.Cells.Clear
     
     For i = LBound(monthNames) To UBound(monthNames)
@@ -150,7 +150,7 @@ Public Sub BuildFluktuationDaten()
         .Range("D:E").NumberFormat = "dd.mm.yyyy"
         .Range("H:J").NumberFormat = "0.00"
         
-        .Protect Password:="company", UserInterfaceOnly:=True
+        .Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
         .Visible = xlSheetVeryHidden
     End With
 
@@ -163,7 +163,7 @@ CleanExit:
 CleanFail:
     On Error Resume Next
     If Not outWs Is Nothing Then
-        outWs.Protect Password:="company", UserInterfaceOnly:=True
+        outWs.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
         outWs.Visible = xlSheetVeryHidden
     End If
     

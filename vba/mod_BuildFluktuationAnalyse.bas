@@ -94,7 +94,7 @@ Public Sub BuildFluktuationAnalyse()
     End If
     
     On Error Resume Next
-    analyseWs.Unprotect Password:="company"
+    analyseWs.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
     
     With analyseWs
@@ -421,7 +421,7 @@ Public Sub BuildFluktuationAnalyse()
         
         FormatFluktuationSheet analyseWs, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
         
-        .Protect Password:="company", UserInterfaceOnly:=True
+        .Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     End With
 
 CleanExit:
@@ -434,7 +434,7 @@ CleanFail:
     On Error Resume Next
     
     If Not analyseWs Is Nothing Then
-        analyseWs.Protect Password:="company", UserInterfaceOnly:=True
+        analyseWs.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     End If
     
     Application.DisplayAlerts = oldDisplayAlerts

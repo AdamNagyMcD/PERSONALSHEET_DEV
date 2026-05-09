@@ -90,7 +90,7 @@ Public Sub BuildLohntabelleTest()
     Set ws = GetOrCreateKVTestSheet("LOHNTABELLE_TEST")
     
     On Error Resume Next
-    ws.Unprotect Password:="company"
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
     
     ws.Cells.Clear
@@ -106,7 +106,7 @@ Public Sub BuildLohntabelleTest()
     
     FormatLohntabelleTest ws, nextRow - 1
     
-    ws.Protect Password:="company", UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     
     MarkKVDropdownsDirty
     
@@ -125,7 +125,7 @@ CleanFail:
     On Error Resume Next
     
     If Not ws Is Nothing Then
-        ws.Protect Password:="company", UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
     
     Application.Calculation = oldCalculation

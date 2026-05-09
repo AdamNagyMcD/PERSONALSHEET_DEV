@@ -37,7 +37,7 @@ Public Sub AddNewKVPeriodOnTop()
     Application.Calculation = xlCalculationManual
     
     On Error Resume Next
-    wsKV.Unprotect Password:="company"
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
     
     lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
@@ -127,7 +127,7 @@ Public Sub AddNewKVPeriodOnTop()
 
 CleanExit:
     On Error Resume Next
-    wsKV.Protect Password:="company", UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     
     Application.Calculation = oldCalculation
     Application.DisplayAlerts = oldDisplayAlerts
@@ -140,7 +140,7 @@ CleanFail:
     On Error Resume Next
     
     If Not wsKV Is Nothing Then
-        wsKV.Protect Password:="company", UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
     
     Application.Calculation = oldCalculation

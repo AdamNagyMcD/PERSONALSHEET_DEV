@@ -3,8 +3,7 @@ Option Explicit
 
 Public Const PID_FIRST_ROW As Long = 3
 Public Const PID_LAST_ROW As Long = 82
-
-Private Const PID_PASSWORD As String = "company"
+Public Const PID_WORKBOOK_PASSWORD As String = "company"
 
 
 Public Sub PID_FullSystemRefresh()
@@ -149,7 +148,7 @@ Public Sub PID_FormatAllMoneyColumns()
         
         If Not ws Is Nothing Then
             On Error Resume Next
-            ws.Unprotect Password:=PID_PASSWORD
+            ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
             On Error GoTo CleanFail
             
             PID_ApplyEuroNumberFormat ws.Range("G3:G82")
@@ -160,7 +159,7 @@ Public Sub PID_FormatAllMoneyColumns()
             ws.Columns("J").ColumnWidth = 13
             ws.Columns("K").ColumnWidth = 14
             
-            ws.Protect Password:=PID_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
         End If
     Next i
     
@@ -171,13 +170,13 @@ Public Sub PID_FormatAllMoneyColumns()
     
     If Not ws Is Nothing Then
         On Error Resume Next
-        ws.Unprotect Password:=PID_PASSWORD
+        ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
         On Error GoTo CleanFail
         
         PID_ApplyEuroNumberFormat ws.Range("H:H")
         ws.Columns("H").ColumnWidth = 14
         
-        ws.Protect Password:=PID_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
     
     Set ws = Nothing
@@ -187,13 +186,13 @@ Public Sub PID_FormatAllMoneyColumns()
     
     If Not ws Is Nothing Then
         On Error Resume Next
-        ws.Unprotect Password:=PID_PASSWORD
+        ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
         On Error GoTo CleanFail
         
         PID_ApplyEuroNumberFormat ws.Range("H:H")
         ws.Columns("H").ColumnWidth = 14
         
-        ws.Protect Password:=PID_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
 
 CleanExit:

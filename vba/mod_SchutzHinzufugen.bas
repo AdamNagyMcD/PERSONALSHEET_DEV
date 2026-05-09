@@ -1,8 +1,6 @@
 Attribute VB_Name = "mod_SchutzHinzufugen"
 Option Explicit
 
-Private Const PID_PASSWORD As String = "company"
-
 
 Public Sub PID_SetupSheetProtectionForMacros()
     Dim ws As Worksheet
@@ -14,47 +12,47 @@ Public Sub PID_SetupSheetProtectionForMacros()
     For Each ws In ThisWorkbook.Worksheets
         
         On Error Resume Next
-        ws.Unprotect Password:=PID_PASSWORD
+        ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
         On Error GoTo SafeExit
         
         If PID_IsWorkerMonthSheetSafe(ws) Then
             
-            ws.Protect Password:=PID_PASSWORD, _
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                        UserInterfaceOnly:=True, _
                        AllowFiltering:=True, _
                        AllowSorting:=True
             
         ElseIf ws.Name = "LOHNTABELLE_TEST" Then
             
-            ws.Protect Password:=PID_PASSWORD, _
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                        UserInterfaceOnly:=True, _
                        AllowFiltering:=True, _
                        AllowSorting:=True
             
         ElseIf ws.Name = "LOHNTABELLE" Then
             
-            ws.Protect Password:=PID_PASSWORD, _
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                        UserInterfaceOnly:=True, _
                        AllowFiltering:=True, _
                        AllowSorting:=True
             
         ElseIf ws.Name = "FLUKTUATION_DATEN" Then
             
-            ws.Protect Password:=PID_PASSWORD, _
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                        UserInterfaceOnly:=True
             
             ws.Visible = xlSheetVeryHidden
             
         ElseIf ws.Name = "KV_DROPDOWN_HELPER" Then
             
-            ws.Protect Password:=PID_PASSWORD, _
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                        UserInterfaceOnly:=True
             
             ws.Visible = xlSheetVeryHidden
             
         Else
             
-            ws.Protect Password:=PID_PASSWORD, _
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                        UserInterfaceOnly:=True, _
                        AllowFiltering:=True, _
                        AllowSorting:=True

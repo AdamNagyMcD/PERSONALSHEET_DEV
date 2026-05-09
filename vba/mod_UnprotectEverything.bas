@@ -1,8 +1,6 @@
 Attribute VB_Name = "mod_UnprotectEverything"
 Option Explicit
 
-Private Const PID_PASSWORD As String = "company"
-
 
 Public Sub UnprotectEverything()
     Dim ws As Worksheet
@@ -19,14 +17,14 @@ Public Sub UnprotectEverything()
         On Error Resume Next
         
         ws.Visible = xlSheetVisible
-        ws.Unprotect Password:=PID_PASSWORD
+        ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
         
         On Error GoTo CleanFail
         
     Next ws
     
     On Error Resume Next
-    ThisWorkbook.Unprotect Password:=PID_PASSWORD
+    ThisWorkbook.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
     
     Application.CutCopyMode = False
