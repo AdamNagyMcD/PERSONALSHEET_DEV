@@ -751,7 +751,98 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Columns("H").ColumnWidth = 14
         .Columns("I").ColumnWidth = 10
     End With
+    
+    PID_ApplyKVVisualGrouping wsKV, 4, lastRow
 
+SafeExit:
+End Sub
+
+
+Public Sub ApplyKVVisualGrouping()
+    Dim wsKV As Worksheet
+    Dim lastRow As Long
+    Dim wasProtected As Boolean
+    
+    On Error GoTo SafeExit
+    
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    If wsKV Is Nothing Then Exit Sub
+    
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    If lastRow < 4 Then Exit Sub
+    
+    wasProtected = wsKV.ProtectContents
+    
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo SafeExit
+    
+    PID_ApplyKVVisualGrouping wsKV, 4, lastRow
+    
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+End Sub
+
+
+Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
+    Dim r As Long
+    Dim currentPeriod As String
+    Dim prevPeriod As String
+    Dim groupText As String
+    Dim rowRange As Range
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    If firstRow > lastRow Then Exit Sub
+    
+    For r = firstRow To lastRow
+        Set rowRange = wsKV.Range("A" & r & ":J" & r)
+        currentPeriod = NormalizeKVPeriodText(CStr(wsKV.Cells(r, "A").Value))
+        groupText = UCase$(Trim$(CStr(wsKV.Cells(r, "E").Value)))
+        
+        ' Reset per-row visual baseline first.
+        rowRange.Interior.Pattern = xlSolid
+        rowRange.Interior.PatternColorIndex = xlAutomatic
+        rowRange.Interior.TintAndShade = 0
+        rowRange.Interior.PatternTintAndShade = 0
+        rowRange.Interior.ColorIndex = xlNone
+        
+        rowRange.Borders(xlEdgeTop).LineStyle = xlContinuous
+        rowRange.Borders(xlEdgeTop).Weight = xlThin
+        rowRange.Borders(xlEdgeTop).Color = RGB(180, 180, 180)
+        
+        ' Soft BG color blocks.
+        Select Case True
+            Case InStr(1, groupText, "BG1", vbTextCompare) > 0
+                rowRange.Interior.Color = RGB(242, 248, 255)
+            Case InStr(1, groupText, "BG2", vbTextCompare) > 0
+                rowRange.Interior.Color = RGB(241, 250, 241)
+            Case InStr(1, groupText, "BG3", vbTextCompare) > 0
+                rowRange.Interior.Color = RGB(255, 246, 237)
+        End Select
+        
+        ' Strong separator when a new KV period starts.
+        If currentPeriod <> "" Then
+            If currentPeriod <> prevPeriod Then
+                rowRange.Borders(xlEdgeTop).LineStyle = xlContinuous
+                rowRange.Borders(xlEdgeTop).Weight = xlMedium
+                rowRange.Borders(xlEdgeTop).Color = RGB(90, 90, 90)
+                
+                ' Slightly emphasize first row of each period.
+                If rowRange.Interior.ColorIndex = xlNone Then
+                    rowRange.Interior.Color = RGB(245, 245, 245)
+                Else
+                    rowRange.Interior.TintAndShade = -0.04
+                End If
+            End If
+            prevPeriod = currentPeriod
+        End If
+    Next r
+    
 SafeExit:
 End Sub
 
