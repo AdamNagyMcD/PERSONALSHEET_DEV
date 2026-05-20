@@ -6,7 +6,12 @@ Public Sub AddNewKVPeriodOnTop()
     Dim wsKV As Worksheet
     Dim newPeriod As String
     Dim templatePeriod As String
-    Dim defaultPeriod As String
+    Dim templateStartYear As Long
+    Dim newStartYear As Long
+    Dim currentSchemaCount As Long
+    Dim newSchemaCount As Long
+    Dim newPeriodData As Variant
+    Dim newRowCount As Long
     
     Dim firstDataRow As Long
     Dim lastRow As Long
@@ -57,26 +62,13 @@ Public Sub AddNewKVPeriodOnTop()
         GoTo CleanExit
     End If
     
-    defaultPeriod = GetNextKVPeriodName(templatePeriod)
+    templateStartYear = GetStartYearFromKVPeriod(templatePeriod)
+    If templateStartYear = 0 Then templateStartYear = Year(Date)
     
-    newPeriod = InputBox( _
-        Prompt:="Bitte neuen KV-Zeitraum eingeben." & vbCrLf & vbCrLf & _
-                "Beispiel: KV 2025/2026", _
-        Title:="Neuen KV-Zeitraum hinzufuegen", _
-        Default:=defaultPeriod _
-    )
+    newStartYear = AskForKVStartYear(templateStartYear + 1)
+    If newStartYear = 0 Then GoTo CleanExit
     
-    newPeriod = NormalizeKVPeriodText(newPeriod)
-    
-    If newPeriod = "" Then GoTo CleanExit
-    
-    If Not IsValidKVPeriodName(newPeriod) Then
-        MsgBox "Der eingegebene KV-Zeitraum ist ungueltig." & vbCrLf & vbCrLf & _
-               "Bitte Format verwenden, zum Beispiel:" & vbCrLf & _
-               "KV 2025/2026", _
-               vbExclamation, "Neuer KV-Zeitraum"
-        GoTo CleanExit
-    End If
+    newPeriod = BuildKVPeriodName(newStartYear)
     
     If KVPeriodExists(wsKV, newPeriod, firstDataRow) Then
         MsgBox "Dieser KV-Zeitraum existiert bereits:" & vbCrLf & vbCrLf & _
@@ -102,12 +94,28 @@ Public Sub AddNewKVPeriodOnTop()
         GoTo CleanExit
     End If
     
+    currentSchemaCount = GetSchemaCountFromPeriod(wsKV, templateFirstRow, templateLastRow)
+    If currentSchemaCount <= 0 Then currentSchemaCount = 13
+    
+    newSchemaCount = AskForSchemaCount(currentSchemaCount)
+    If newSchemaCount <= 0 Then GoTo CleanExit
+    
+    newPeriodData = BuildNewPeriodDataFromTemplate(wsKV, templateFirstRow, templateLastRow, newPeriod, newStartYear, newSchemaCount)
+    If Not IsArray(newPeriodData) Then
+        MsgBox "Die neue KV-Vorlage konnte nicht erstellt werden.", vbExclamation, "Neuer KV-Zeitraum"
+        GoTo CleanExit
+    End If
+    
+    newRowCount = UBound(newPeriodData, 1)
+    If newRowCount <= 0 Then GoTo CleanExit
+    
     answer = MsgBox( _
         "Neuer KV-Zeitraum wird oben eingefuegt:" & vbCrLf & vbCrLf & _
         newPeriod & vbCrLf & vbCrLf & _
         "Vorlage:" & vbCrLf & _
         templatePeriod & vbCrLf & vbCrLf & _
-        "Anzahl Zeilen: " & templateRowCount & vbCrLf & vbCrLf & _
+        "Vertraege pro KV-Code (alt -> neu): " & currentSchemaCount & " -> " & newSchemaCount & vbCrLf & _
+        "Anzahl Zeilen (neu): " & newRowCount & vbCrLf & vbCrLf & _
         "Fortfahren?", _
         vbQuestion + vbYesNo, _
         "Neuer KV-Zeitraum" _
@@ -115,7 +123,7 @@ Public Sub AddNewKVPeriodOnTop()
     
     If answer <> vbYes Then GoTo CleanExit
     
-    InsertNewKVPeriodRows wsKV, firstDataRow, templateFirstRow, templateLastRow, newPeriod
+    InsertNewKVPeriodRows wsKV, firstDataRow, templateFirstRow, templateLastRow, newPeriodData
     
     FormatKVPeriodArea wsKV
     PID_NormalizeKVTableHeader wsKV
@@ -344,6 +352,203 @@ CleanFail:
 End Sub
 
 
+Private Function AskForKVStartYear(ByVal defaultYear As Long) As Long
+    Dim inputText As String
+    
+    inputText = InputBox( _
+        Prompt:="Bitte Startjahr fuer den neuen KV-Zeitraum eingeben." & vbCrLf & vbCrLf & _
+                "Beispiel: 2026 -> KV 2026/2027", _
+        Title:="Neuen KV-Zeitraum hinzufuegen", _
+        Default:=CStr(defaultYear) _
+    )
+    
+    inputText = Trim$(inputText)
+    If inputText = "" Then Exit Function
+    
+    If Not IsNumeric(inputText) Then
+        MsgBox "Ungueltige Eingabe. Bitte nur das Startjahr eingeben (z.B. 2026).", _
+               vbExclamation, "Neuer KV-Zeitraum"
+        Exit Function
+    End If
+    
+    AskForKVStartYear = CLng(inputText)
+    
+    If AskForKVStartYear < 2000 Or AskForKVStartYear > 2100 Then
+        MsgBox "Das Startjahr liegt ausserhalb des erlaubten Bereichs (2000-2100).", _
+               vbExclamation, "Neuer KV-Zeitraum"
+        AskForKVStartYear = 0
+    End If
+End Function
+
+
+Private Function AskForSchemaCount(ByVal defaultCount As Long) As Long
+    Dim inputText As String
+    
+    inputText = InputBox( _
+        Prompt:="Wie viele Vertraege/Monatsstunden-Zeilen pro KV-Code sollen erzeugt werden?" & vbCrLf & vbCrLf & _
+                "Beispiel: 13 (wie bisher).", _
+        Title:="Vertragsanzahl pro KV-Code", _
+        Default:=CStr(defaultCount) _
+    )
+    
+    inputText = Trim$(inputText)
+    If inputText = "" Then Exit Function
+    
+    If Not IsNumeric(inputText) Then
+        MsgBox "Ungueltige Eingabe. Bitte eine ganze Zahl eingeben (z.B. 13).", _
+               vbExclamation, "Vertragsanzahl"
+        Exit Function
+    End If
+    
+    AskForSchemaCount = CLng(inputText)
+    
+    If AskForSchemaCount < 1 Or AskForSchemaCount > 50 Then
+        MsgBox "Die Vertragsanzahl muss zwischen 1 und 50 liegen.", _
+               vbExclamation, "Vertragsanzahl"
+        AskForSchemaCount = 0
+    End If
+End Function
+
+
+Private Function BuildKVPeriodName(ByVal startYear As Long) As String
+    BuildKVPeriodName = "KV " & CStr(startYear) & "/" & CStr(startYear + 1)
+End Function
+
+
+Private Function GetStartYearFromKVPeriod(ByVal periodName As String) As Long
+    Dim s As String
+    Dim parts As Variant
+    
+    s = NormalizeKVPeriodText(periodName)
+    If Left$(s, 3) <> "KV " Then Exit Function
+    
+    s = Mid$(s, 4)
+    parts = Split(s, "/")
+    
+    If UBound(parts) <> 1 Then Exit Function
+    If Not IsNumeric(parts(0)) Then Exit Function
+    
+    GetStartYearFromKVPeriod = CLng(parts(0))
+End Function
+
+
+Private Function GetSchemaCountFromPeriod(ByVal wsKV As Worksheet, _
+                                          ByVal periodFirstRow As Long, _
+                                          ByVal periodLastRow As Long) As Long
+    Dim firstCode As String
+    Dim r As Long
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Function
+    If periodFirstRow <= 0 Or periodLastRow < periodFirstRow Then Exit Function
+    
+    firstCode = Trim$(CStr(wsKV.Cells(periodFirstRow, "D").Value))
+    If firstCode = "" Then Exit Function
+    
+    For r = periodFirstRow To periodLastRow
+        If Trim$(CStr(wsKV.Cells(r, "D").Value)) = firstCode Then
+            GetSchemaCountFromPeriod = GetSchemaCountFromPeriod + 1
+        Else
+            Exit Function
+        End If
+    Next r
+    
+SafeExit:
+End Function
+
+
+Private Function BuildNewPeriodDataFromTemplate(ByVal wsKV As Worksheet, _
+                                                ByVal templateFirstRow As Long, _
+                                                ByVal templateLastRow As Long, _
+                                                ByVal newPeriod As String, _
+                                                ByVal newStartYear As Long, _
+                                                ByVal newSchemaCount As Long) As Variant
+    Dim templateData As Variant
+    Dim blockStarts As Collection
+    Dim blockEnds As Collection
+    Dim totalRows As Long
+    Dim r As Long
+    Dim outRow As Long
+    Dim blockIndex As Long
+    Dim blockStart As Long
+    Dim blockEnd As Long
+    Dim blockRows As Long
+    Dim schemaIndex As Long
+    Dim sourceOffset As Long
+    Dim validFrom As Date
+    Dim validTo As Date
+    Dim resultData As Variant
+    
+    On Error GoTo BuildFail
+    
+    If wsKV Is Nothing Then Exit Function
+    If templateLastRow < templateFirstRow Then Exit Function
+    If newSchemaCount <= 0 Then Exit Function
+    
+    templateData = wsKV.Range("A" & templateFirstRow & ":I" & templateLastRow).Value
+    
+    Set blockStarts = New Collection
+    Set blockEnds = New Collection
+    
+    blockStarts.Add 1
+    
+    For r = 2 To UBound(templateData, 1)
+        If Trim$(CStr(templateData(r, 4))) <> Trim$(CStr(templateData(r - 1, 4))) Then
+            blockEnds.Add r - 1
+            blockStarts.Add r
+        End If
+    Next r
+    blockEnds.Add UBound(templateData, 1)
+    
+    totalRows = blockStarts.Count * newSchemaCount
+    ReDim resultData(1 To totalRows, 1 To 9)
+    
+    validFrom = DateSerial(newStartYear, 5, 1)
+    validTo = DateSerial(newStartYear + 1, 4, 30)
+    
+    outRow = 0
+    
+    For blockIndex = 1 To blockStarts.Count
+        blockStart = CLng(blockStarts(blockIndex))
+        blockEnd = CLng(blockEnds(blockIndex))
+        blockRows = blockEnd - blockStart + 1
+        
+        For schemaIndex = 1 To newSchemaCount
+            outRow = outRow + 1
+            
+            resultData(outRow, 1) = newPeriod
+            resultData(outRow, 2) = validFrom
+            resultData(outRow, 3) = validTo
+            resultData(outRow, 4) = templateData(blockStart, 4)
+            resultData(outRow, 5) = templateData(blockStart, 5)
+            resultData(outRow, 6) = templateData(blockStart, 6)
+            
+            sourceOffset = schemaIndex - 1
+            If sourceOffset < blockRows Then
+                resultData(outRow, 7) = templateData(blockStart + sourceOffset, 7)
+                resultData(outRow, 8) = templateData(blockStart + sourceOffset, 8)
+                resultData(outRow, 9) = templateData(blockStart + sourceOffset, 9)
+                
+                If Trim$(CStr(resultData(outRow, 9))) = "" Then
+                    resultData(outRow, 9) = "OK"
+                End If
+            Else
+                resultData(outRow, 7) = ""
+                resultData(outRow, 8) = ""
+                resultData(outRow, 9) = "Werte fehlen"
+            End If
+        Next schemaIndex
+    Next blockIndex
+    
+    BuildNewPeriodDataFromTemplate = resultData
+    Exit Function
+    
+BuildFail:
+    Erase resultData
+End Function
+
+
 Private Function GetBottomKVPeriod(ByVal wsKV As Worksheet, ByVal firstDataRow As Long) As String
     Dim r As Long
     Dim lastRow As Long
@@ -492,44 +697,47 @@ Private Sub InsertNewKVPeriodRows(ByVal wsKV As Worksheet, _
                                   ByVal firstDataRow As Long, _
                                   ByVal templateFirstRow As Long, _
                                   ByVal templateLastRow As Long, _
-                                  ByVal newPeriod As String)
+                                  ByVal newPeriodData As Variant)
     Dim templateRowCount As Long
+    Dim newRowCount As Long
+    Dim copyRowCount As Long
     Dim sourceRange As Range
-    Dim targetRange As Range
-    Dim r As Long
-    Dim newRow As Long
+    Dim sourceLastRow As Long
+    Dim pasteStartRow As Long
     
     On Error GoTo SafeExit
     
     templateRowCount = templateLastRow - templateFirstRow + 1
+    newRowCount = UBound(newPeriodData, 1)
+    
     If templateRowCount <= 0 Then Exit Sub
+    If newRowCount <= 0 Then Exit Sub
     
     Set sourceRange = wsKV.Rows(templateFirstRow & ":" & templateLastRow)
     
-    wsKV.Rows(firstDataRow & ":" & firstDataRow + templateRowCount - 1).Insert Shift:=xlDown
+    wsKV.Rows(firstDataRow & ":" & firstDataRow + newRowCount - 1).Insert Shift:=xlDown
     
-    sourceRange.Copy
-    wsKV.Rows(firstDataRow & ":" & firstDataRow + templateRowCount - 1).PasteSpecial Paste:=xlPasteFormats
-    wsKV.Rows(firstDataRow & ":" & firstDataRow + templateRowCount - 1).PasteSpecial Paste:=xlPasteValidation
-    wsKV.Rows(firstDataRow & ":" & firstDataRow + templateRowCount - 1).PasteSpecial Paste:=xlPasteColumnWidths
+    copyRowCount = templateRowCount
+    If copyRowCount > newRowCount Then copyRowCount = newRowCount
     
-    Application.CutCopyMode = False
+    If copyRowCount > 0 Then
+        wsKV.Rows(templateFirstRow & ":" & templateFirstRow + copyRowCount - 1).Copy
+        wsKV.Rows(firstDataRow & ":" & firstDataRow + copyRowCount - 1).PasteSpecial Paste:=xlPasteFormats
+        wsKV.Rows(firstDataRow & ":" & firstDataRow + copyRowCount - 1).PasteSpecial Paste:=xlPasteValidation
+        wsKV.Rows(firstDataRow & ":" & firstDataRow + copyRowCount - 1).PasteSpecial Paste:=xlPasteColumnWidths
+    End If
     
-    Set targetRange = wsKV.Range("A" & firstDataRow & ":I" & firstDataRow + templateRowCount - 1)
-    
-    wsKV.Range("A" & templateFirstRow + templateRowCount & ":I" & templateLastRow + templateRowCount).Copy
-    wsKV.Range("A" & firstDataRow).PasteSpecial Paste:=xlPasteValues
-    Application.CutCopyMode = False
-    
-    For r = 0 To templateRowCount - 1
-        newRow = firstDataRow + r
+    If newRowCount > copyRowCount Then
+        sourceLastRow = templateLastRow
+        pasteStartRow = firstDataRow + copyRowCount
         
-        wsKV.Cells(newRow, "A").Value = newPeriod
-        
-        If Trim$(CStr(wsKV.Cells(newRow, "I").Value)) = "" Then
-            wsKV.Cells(newRow, "I").Value = "OK"
-        End If
-    Next r
+        wsKV.Rows(sourceLastRow & ":" & sourceLastRow).Copy
+        wsKV.Rows(pasteStartRow & ":" & firstDataRow + newRowCount - 1).PasteSpecial Paste:=xlPasteFormats
+        wsKV.Rows(pasteStartRow & ":" & firstDataRow + newRowCount - 1).PasteSpecial Paste:=xlPasteValidation
+    End If
+    
+    wsKV.Range("A" & firstDataRow & ":I" & firstDataRow + newRowCount - 1).Value = newPeriodData
+    Application.CutCopyMode = False
     
 SafeExit:
     Application.CutCopyMode = False
