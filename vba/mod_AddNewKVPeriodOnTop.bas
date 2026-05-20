@@ -170,7 +170,6 @@ Public Sub AddCustomKVMonatsstunden()
     Dim blockFirst As Long
     Dim blockLast As Long
     Dim insertRow As Long
-    Dim templateRow As Long
     
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -181,7 +180,7 @@ Public Sub AddCustomKVMonatsstunden()
     On Error GoTo CleanFail
     
     Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
-    firstDataRow = 4
+    firstDataRow = PID_GetKVTableFirstDataRow(wsKV)
     
     If PID_GetKVTableLastRow(wsKV, firstDataRow) < firstDataRow Then
         MsgBox "Keine KV-Daten in LOHNTABELLE_TEST gefunden.", _
@@ -213,7 +212,6 @@ Public Sub AddCustomKVMonatsstunden()
     End If
     
     insertRow = PID_FindSortedInsertRowInBlock(wsKV, blockFirst, blockLast, newHours)
-    templateRow = blockFirst
     
     oldEnableEvents = Application.EnableEvents
     oldScreenUpdating = Application.ScreenUpdating
@@ -232,7 +230,7 @@ Public Sub AddCustomKVMonatsstunden()
     
     wsKV.Rows(insertRow).Insert Shift:=xlDown
     
-    PID_WriteCustomKVRow wsKV, insertRow, templateRow, selectedKVCode, newHours, newLohn, hasLohn
+    PID_WriteCustomKVRow wsKV, insertRow, selectedPeriod, selectedKVCode, firstDataRow, newHours, newLohn, hasLohn
     
     FormatKVPeriodArea wsKV
     PID_EnsureLOHNTABELLE_TESTButtons
@@ -1634,6 +1632,7 @@ End Function
 
 
 Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
+    Dim firstDataRow As Long
     Dim lastRow As Long
     Dim wasProtected As Boolean
     
@@ -1646,41 +1645,42 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
     wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo SafeExit
     
-    lastRow = PID_GetKVTableLastRow(wsKV, 4)
+    firstDataRow = PID_GetKVTableFirstDataRow(wsKV)
+    lastRow = PID_GetKVTableLastRow(wsKV, firstDataRow)
     
-    If lastRow < 4 Then GoTo SafeExit
+    If lastRow < firstDataRow Then GoTo SafeExit
     
     With wsKV
-        .Range("A4:I" & lastRow).VerticalAlignment = xlCenter
-        .Range("A4:I" & lastRow).HorizontalAlignment = xlCenter
-        .Range("B4:C" & lastRow).NumberFormat = "dd.mm.yyyy"
+        .Range("A" & firstDataRow & ":I" & lastRow).VerticalAlignment = xlCenter
+        .Range("A" & firstDataRow & ":I" & lastRow).HorizontalAlignment = xlCenter
+        .Range("B" & firstDataRow & ":C" & lastRow).NumberFormat = "dd.mm.yyyy"
         
         ' Gesamte Datenflaeche einheitlich mit duennem Raster versehen.
-        .Range("A4:J" & lastRow).Borders.LineStyle = xlContinuous
-        .Range("A4:J" & lastRow).Borders.Weight = xlThin
-        .Range("A4:J" & lastRow).Borders.Color = RGB(150, 150, 150)
+        .Range("A" & firstDataRow & ":J" & lastRow).Borders.LineStyle = xlContinuous
+        .Range("A" & firstDataRow & ":J" & lastRow).Borders.Weight = xlThin
+        .Range("A" & firstDataRow & ":J" & lastRow).Borders.Color = RGB(150, 150, 150)
         
-        .Range("A4:A" & lastRow).NumberFormat = "@"
-        .Range("G4:G" & lastRow).NumberFormatLocal = "0,00"
+        .Range("A" & firstDataRow & ":A" & lastRow).NumberFormat = "@"
+        .Range("G" & firstDataRow & ":G" & lastRow).NumberFormatLocal = "0,00"
         
-        PID_ApplyEuroNumberFormat .Range("H4:H" & lastRow)
+        PID_ApplyEuroNumberFormat .Range("H" & firstDataRow & ":H" & lastRow)
         
         .Columns("A").ColumnWidth = 16
         .Columns("D").ColumnWidth = 14
         .Columns("G").ColumnWidth = 13
         .Columns("H").ColumnWidth = 14
-        PID_ConfigureKVStatusColumnWidths wsKV, 4, lastRow
+        PID_ConfigureKVStatusColumnWidths wsKV, firstDataRow, lastRow
     End With
     
     ' Status- und Pruefungsformeln auf allen gueltigen Datenzeilen wiederherstellen.
-    PID_ApplyKVStatusFormulas wsKV, 4, lastRow
+    PID_ApplyKVStatusFormulas wsKV, firstDataRow, lastRow
     
     ' Eingabefelder fuer Monatsstunden/Monatslohn muessen editierbar bleiben.
-    PID_ConfigureKVInputCellLocks wsKV, 4, lastRow
+    PID_ConfigureKVInputCellLocks wsKV, firstDataRow, lastRow
     
-    PID_ApplyKVVisualGrouping wsKV, 4, lastRow
-    PID_FormatKVRowTypography wsKV, 4, lastRow
-    PID_TrimKVSheetBelowTable wsKV, 4
+    PID_ApplyKVVisualGrouping wsKV, firstDataRow, lastRow
+    PID_FormatKVRowTypography wsKV, firstDataRow, lastRow
+    PID_TrimKVSheetBelowTable wsKV, firstDataRow
 
 SafeExit:
     On Error Resume Next
@@ -2216,12 +2216,22 @@ Private Function PID_FindSortedInsertRowInBlock(ByVal wsKV As Worksheet, _
                                                ByVal newHours As Double) As Long
     Dim r As Long
     Dim rowHours As Double
+    Dim sortDescending As Boolean
+    
+    sortDescending = PID_BlockUsesDescendingHours(wsKV, blockFirst, blockLast)
     
     For r = blockFirst To blockLast
         If PID_TryReadDouble(wsKV.Cells(r, "G").Value, rowHours) Then
-            If newHours + 0.001 < rowHours Then
-                PID_FindSortedInsertRowInBlock = r
-                Exit Function
+            If sortDescending Then
+                If newHours + 0.001 > rowHours Then
+                    PID_FindSortedInsertRowInBlock = r
+                    Exit Function
+                End If
+            Else
+                If newHours + 0.001 < rowHours Then
+                    PID_FindSortedInsertRowInBlock = r
+                    Exit Function
+                End If
             End If
         Else
             PID_FindSortedInsertRowInBlock = r
@@ -2233,26 +2243,58 @@ Private Function PID_FindSortedInsertRowInBlock(ByVal wsKV As Worksheet, _
 End Function
 
 
+Private Function PID_BlockUsesDescendingHours(ByVal wsKV As Worksheet, _
+                                              ByVal blockFirst As Long, _
+                                              ByVal blockLast As Long) As Boolean
+    Dim firstHours As Double
+    Dim lastHours As Double
+    
+    If blockFirst >= blockLast Then
+        PID_BlockUsesDescendingHours = True
+        Exit Function
+    End If
+    
+    If PID_TryReadDouble(wsKV.Cells(blockFirst, "G").Value, firstHours) _
+       And PID_TryReadDouble(wsKV.Cells(blockLast, "G").Value, lastHours) Then
+        PID_BlockUsesDescendingHours = (firstHours >= lastHours)
+    Else
+        PID_BlockUsesDescendingHours = True
+    End If
+End Function
+
+
 Private Sub PID_WriteCustomKVRow(ByVal wsKV As Worksheet, _
                                ByVal targetRow As Long, _
-                               ByVal templateRow As Long, _
+                               ByVal periodName As String, _
                                ByVal kvCode As String, _
+                               ByVal firstDataRow As Long, _
                                ByVal newHours As Double, _
                                ByVal newLohn As Variant, _
                                ByVal hasLohn As Boolean)
-    Dim c As Long
+    Dim validFrom As Variant
+    Dim validTo As Variant
     
     If wsKV Is Nothing Then Exit Sub
-    If targetRow < 1 Or templateRow < 1 Then Exit Sub
+    If targetRow < 1 Then Exit Sub
+    
+    PID_GetPeriodValidDates wsKV, periodName, firstDataRow, validFrom, validTo
     
     wsKV.Range("A" & targetRow & ":J" & targetRow).UnMerge
     wsKV.Range("A" & targetRow & ":J" & targetRow).ClearContents
     
-    For c = 1 To 6
-        wsKV.Cells(targetRow, c).Value = wsKV.Cells(templateRow, c).Value
-    Next c
+    wsKV.Cells(targetRow, "A").Value = periodName
+    
+    If IsDate(validFrom) Then
+        wsKV.Cells(targetRow, "B").Value = CDate(validFrom)
+    End If
+    
+    If IsDate(validTo) Then
+        wsKV.Cells(targetRow, "C").Value = CDate(validTo)
+    End If
     
     wsKV.Cells(targetRow, "D").Value = kvCode
+    wsKV.Cells(targetRow, "E").Value = PID_GetStandardKVGroupByCode(kvCode)
+    wsKV.Cells(targetRow, "F").Value = PID_GetStandardKVDurationByCode(kvCode)
     wsKV.Cells(targetRow, "G").Value = newHours
     
     If hasLohn Then
@@ -2261,6 +2303,99 @@ Private Sub PID_WriteCustomKVRow(ByVal wsKV As Worksheet, _
         wsKV.Cells(targetRow, "H").ClearContents
     End If
 End Sub
+
+
+Private Sub PID_GetPeriodValidDates(ByVal wsKV As Worksheet, _
+                                    ByVal periodName As String, _
+                                    ByVal firstDataRow As Long, _
+                                    ByRef validFrom As Variant, _
+                                    ByRef validTo As Variant)
+    Dim periodFirst As Long
+    Dim periodLast As Long
+    Dim r As Long
+    
+    validFrom = Empty
+    validTo = Empty
+    
+    If wsKV Is Nothing Then Exit Sub
+    
+    periodName = NormalizeKVPeriodText(periodName)
+    If periodName = "" Then Exit Sub
+    
+    If Not PID_GetPeriodRowBounds(wsKV, periodName, firstDataRow, periodFirst, periodLast) Then Exit Sub
+    
+    For r = periodFirst To periodLast
+        If IsDate(wsKV.Cells(r, "B").Value) And IsDate(wsKV.Cells(r, "C").Value) Then
+            validFrom = wsKV.Cells(r, "B").Value
+            validTo = wsKV.Cells(r, "C").Value
+            Exit Sub
+        End If
+    Next r
+End Sub
+
+
+Private Function PID_GetKVTableFirstDataRow(ByVal wsKV As Worksheet) As Long
+    Dim r As Long
+    Dim lastRow As Long
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then
+        PID_GetKVTableFirstDataRow = 4
+        Exit Function
+    End If
+    
+    If StrComp(Trim$(CStr(wsKV.Cells(3, "A").Value)), "KV-Periode", vbTextCompare) = 0 Then
+        PID_GetKVTableFirstDataRow = 4
+        Exit Function
+    End If
+    
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    
+    For r = 1 To lastRow
+        If Not wsKV.Range("A" & r).MergeCells Then
+            If Trim$(CStr(wsKV.Cells(r, "D").Value)) <> "" Then
+                PID_GetKVTableFirstDataRow = r
+                Exit Function
+            End If
+        End If
+    Next r
+    
+SafeExit:
+    PID_GetKVTableFirstDataRow = 4
+End Function
+
+
+Private Function PID_GetStandardKVGroupByCode(ByVal kvCode As String) As String
+    Dim normalizedCode As String
+    
+    normalizedCode = UCase$(NormalizeKVCodeForLookup(kvCode))
+    
+    If InStr(1, normalizedCode, "BG1", vbTextCompare) > 0 Then
+        PID_GetStandardKVGroupByCode = "BG1"
+    ElseIf InStr(1, normalizedCode, "BG2", vbTextCompare) > 0 Then
+        PID_GetStandardKVGroupByCode = "BG2"
+    ElseIf InStr(1, normalizedCode, "BG3", vbTextCompare) > 0 Then
+        PID_GetStandardKVGroupByCode = "BG3"
+    End If
+End Function
+
+
+Private Function PID_GetStandardKVDurationByCode(ByVal kvCode As String) As String
+    Dim normalizedCode As String
+    
+    normalizedCode = UCase$(NormalizeKVCodeForLookup(kvCode))
+    
+    If InStr(1, normalizedCode, "_15", vbTextCompare) > 0 Then
+        PID_GetStandardKVDurationByCode = "ueber 15 Jahre"
+    ElseIf InStr(1, normalizedCode, "_10", vbTextCompare) > 0 Then
+        PID_GetStandardKVDurationByCode = "10 bis 15 Jahre"
+    ElseIf InStr(1, normalizedCode, "_5", vbTextCompare) > 0 Then
+        PID_GetStandardKVDurationByCode = "5 bis 10 Jahre"
+    ElseIf InStr(1, normalizedCode, "BASIS", vbTextCompare) > 0 Then
+        PID_GetStandardKVDurationByCode = "Basis / bis 5 Jahre"
+    End If
+End Function
 
 
 Private Function PID_FormatHoursText(ByVal hoursValue As Double) As String
