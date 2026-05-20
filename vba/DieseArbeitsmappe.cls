@@ -28,6 +28,7 @@ Private Sub Workbook_Open()
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
     ' Das ermoeglicht schnelleres Oeffnen - aktualisiert wird nur wenn wirklich noetig.
     gFluktuationDirty = True
+    MarkKVLohnDirty
     
     On Error Resume Next
     ThisWorkbook.Sheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden
@@ -92,10 +93,10 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         GoTo SafeExit
     End If
     
-    ' Bei Aktivierung eines Monatsblatts wird KEINE globale Dropdown-/Lohn-Aktualisierung ausgefuehrt.
-    ' So vermeiden wir die einmalige 15-20s Ladepause nach CopyData.
+    ' Nur das aktive Monatsblatt mit LOHNTABELLE_TEST-Cache (schnell, kein 12-Monats-Refresh).
     If PID_IsWorkerMonthSheet(Sh) Then
         PID_ResetMonthView Sh
+        RefreshKVLohnForSheet Sh
         GoTo SafeExit
     End If
 
@@ -143,6 +144,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     If Sh.Name = "LOHNTABELLE_TEST" Then
         If Not Intersect(Target, Sh.Range("G:H")) Is Nothing Then
             MarkKVDropdownsDirty
+            MarkKVLohnDirty
         End If
         Exit Sub
     End If

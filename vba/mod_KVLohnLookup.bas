@@ -5,6 +5,7 @@ Option Explicit
 ' Populated once per RefreshKVLohnForSheet call, cleared afterwards.
 ' Columns in cache match Range("A4:I<lastRow>"):
 '   1=A(Period), 2=B, 3=C, 4=D(KVCode), 5=E, 6=F, 7=G(Stunden), 8=H(Lohn), 9=I(Status)
+Public gKVLohnDirty As Boolean
 Private mLohnTableCache As Variant
 Private mLohnTableCacheLoaded As Boolean
 
@@ -321,10 +322,12 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
     Dim rowMonatsstunden As Variant
     Dim rowLohn As Variant
     Dim rowStatus As String
+    Dim normalizedTargetPeriod As String
     
     On Error GoTo NotFound
     
-    If Trim$(periodName) = "" Then GoTo NotFound
+    normalizedTargetPeriod = NormalizeKVPeriodForLookup(periodName)
+    If normalizedTargetPeriod = "" Then GoTo NotFound
     If Trim$(kvCode) = "" Then GoTo NotFound
     
     If mLohnTableCacheLoaded And Not IsEmpty(mLohnTableCache) Then
@@ -332,9 +335,9 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
         rowCount = UBound(mLohnTableCache, 1)
         
         For r = 1 To rowCount
-            rowPeriod = Trim$(CStr(mLohnTableCache(r, 1)))
+            rowPeriod = NormalizeKVPeriodForLookup(CStr(mLohnTableCache(r, 1)))
             
-            If rowPeriod = periodName Then
+            If rowPeriod = normalizedTargetPeriod Then
                 rowKVCode = NormalizeKVCodeForLookup(CStr(mLohnTableCache(r, 4)))
                 
                 If rowKVCode = kvCode Then
@@ -345,14 +348,10 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
                             rowLohn = mLohnTableCache(r, 8)
                             rowStatus = Trim$(CStr(mLohnTableCache(r, 9)))
                             
-                            If rowStatus = "OK" Then
-                                If IsNumeric(rowLohn) Then
-                                    FindKVLohnInPeriod = CDbl(rowLohn)
-                                    Exit Function
-                                End If
+                            If PID_IsUsableKVLookupLohn(rowLohn, rowStatus) Then
+                                FindKVLohnInPeriod = CDbl(rowLohn)
+                                Exit Function
                             End If
-                            
-                            GoTo NotFound
                         End If
                     End If
                 End If
@@ -366,9 +365,9 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
         lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
         
         For r = 4 To lastRow
-            rowPeriod = Trim$(CStr(wsKV.Cells(r, "A").Value))
+            rowPeriod = NormalizeKVPeriodForLookup(CStr(wsKV.Cells(r, "A").Value))
             
-            If rowPeriod = periodName Then
+            If rowPeriod = normalizedTargetPeriod Then
                 rowKVCode = NormalizeKVCodeForLookup(CStr(wsKV.Cells(r, "D").Value))
                 
                 If rowKVCode = kvCode Then
@@ -379,14 +378,10 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
                             rowLohn = wsKV.Cells(r, "H").Value
                             rowStatus = Trim$(CStr(wsKV.Cells(r, "I").Value))
                             
-                            If rowStatus = "OK" Then
-                                If IsNumeric(rowLohn) Then
-                                    FindKVLohnInPeriod = CDbl(rowLohn)
-                                    Exit Function
-                                End If
+                            If PID_IsUsableKVLookupLohn(rowLohn, rowStatus) Then
+                                FindKVLohnInPeriod = CDbl(rowLohn)
+                                Exit Function
                             End If
-                            
-                            GoTo NotFound
                         End If
                     End If
                 End If
@@ -397,6 +392,42 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
 
 NotFound:
     FindKVLohnInPeriod = CVErr(xlErrNA)
+End Function
+
+
+Private Function NormalizeKVPeriodForLookup(ByVal periodText As String) As String
+    Dim s As String
+    
+    s = Trim$(CStr(periodText))
+    If s = "" Then Exit Function
+    
+    If InStr(1, s, "|", vbTextCompare) > 0 Then
+        s = Trim$(Left$(s, InStr(1, s, "|", vbTextCompare) - 1))
+    End If
+    
+    Do While InStr(s, "  ") > 0
+        s = Replace(s, "  ", " ")
+    Loop
+    
+    NormalizeKVPeriodForLookup = s
+End Function
+
+
+Private Function PID_IsUsableKVLookupLohn(ByVal rowLohn As Variant, ByVal rowStatus As String) As Boolean
+    On Error GoTo SafeExit
+    
+    If Not IsNumeric(rowLohn) Then Exit Function
+    If CDbl(rowLohn) <= 0# Then Exit Function
+    
+    If UCase$(Trim$(rowStatus)) = "OK" Then
+        PID_IsUsableKVLookupLohn = True
+        Exit Function
+    End If
+    
+    ' Leerer Lohn in neuer Periode: trotzdem gueltigen numerischen Lohn aus Vorperiode zulassen.
+    PID_IsUsableKVLookupLohn = True
+    
+SafeExit:
 End Function
 
 
@@ -485,6 +516,31 @@ Public Function GetPreviousKVPeriodForWorkbookYear(ByVal workbookYear As Long, B
         GetPreviousKVPeriodForWorkbookYear = "KV " & CStr(workbookYear - 1) & "/" & CStr(workbookYear)
     End If
 End Function
+
+
+Public Sub MarkKVLohnDirty()
+    gKVLohnDirty = True
+End Sub
+
+
+Public Sub ClearKVLohnDirty()
+    gKVLohnDirty = False
+End Sub
+
+
+Public Function IsKVLohnDirty() As Boolean
+    IsKVLohnDirty = gKVLohnDirty
+End Function
+
+
+Public Sub RefreshKVLohnIfDirty(ByVal wsMonth As Worksheet)
+    If Not gKVLohnDirty Then Exit Sub
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    
+    RefreshKVLohnForSheet wsMonth
+    ClearKVLohnDirty
+End Sub
 
 
 Public Function CollectionHasKey_KVLohn(ByVal col As Collection, ByVal key As String) As Boolean

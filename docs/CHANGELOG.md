@@ -37,6 +37,7 @@
 - mod_AddNewKVPeriodOnTop.bas: new KV periods no longer copy `Monatslohn` from template; column `H` stays empty for manual entry.
 - mod_AddNewKVPeriodOnTop.bas: restore/rebuild now removes trailing empty rows after shorter periods (15-row test -> 13-row base), filters rows without hours/wage, and clears leftover formats reliably.
 - mod_AddNewKVPeriodOnTop.bas: removed extra confirmation dialog before inserting a new KV period; trims/deletes rows below table end to shrink scroll area (`CleanupLOHNTABELLE_TESTTrailingArea` / auto after format).
+- mod_KVLohnLookup.bas: fixed period fallback when new KV period has empty `Monatslohn` (no longer aborts lookup on non-OK rows); month sheets refresh `G` on activate via cached single-sheet lookup (CopyData unchanged).
 - VBA encoding: all 16 .bas/.cls files confirmed BOM-free and pure ASCII-compatible for Windows-1252 import; fixed garbled bytes (0x8A, 0x9F) in mod_RefreshFluktuationAll.bas MsgBox strings ("vollstaendig", "zurueckgesetzt").
 
 ### Notes

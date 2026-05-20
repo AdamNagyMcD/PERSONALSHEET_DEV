@@ -115,6 +115,7 @@ Public Sub AddNewKVPeriodOnTop()
     EnsureAddNewKVPeriodButton
     
     MarkKVDropdownsDirty
+    MarkKVLohnDirty
     
     MsgBox "Der neue KV-Zeitraum wurde erfolgreich oben eingefuegt:" & vbCrLf & vbCrLf & _
            newPeriod & vbCrLf & vbCrLf & _
@@ -346,6 +347,7 @@ Public Sub RebuildLOHNTABELLE_TEST()
     FormatKVPeriodArea wsKV
     PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount + 1, cleanupLastRow
     MarkKVDropdownsDirty
+    MarkKVLohnDirty
     
     On Error Resume Next
     PID_ResetHourOverrideLog
@@ -457,6 +459,7 @@ Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
     FormatKVPeriodArea wsKV
     PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount + 1, cleanupLastRow
     EnsureAddNewKVPeriodButton
+    MarkKVLohnDirty
     
     On Error Resume Next
     PID_ResetHourOverrideLog

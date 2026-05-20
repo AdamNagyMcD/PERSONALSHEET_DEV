@@ -107,6 +107,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     Next i
     
     MarkFluktuationDirty
+    MarkKVLohnDirty
     PID_HideUnwantedTechnicalSheets
 
 CleanExit:
