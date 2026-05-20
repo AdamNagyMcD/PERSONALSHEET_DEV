@@ -716,47 +716,92 @@ Private Sub InsertNewKVPeriodRows(ByVal wsKV As Worksheet, _
                                   ByVal newPeriodData As Variant)
     Dim templateRowCount As Long
     Dim newRowCount As Long
+    Dim insertRowCount As Long
     Dim copyRowCount As Long
     Dim sourceRange As Range
     Dim sourceLastRow As Long
     Dim pasteStartRow As Long
+    Dim validFrom As Variant
+    Dim validTo As Variant
     
     On Error GoTo SafeExit
     
     templateRowCount = templateLastRow - templateFirstRow + 1
     newRowCount = UBound(newPeriodData, 1)
+    insertRowCount = newRowCount + 1
     
     If templateRowCount <= 0 Then Exit Sub
     If newRowCount <= 0 Then Exit Sub
     
     Set sourceRange = wsKV.Rows(templateFirstRow & ":" & templateLastRow)
     
-    wsKV.Rows(firstDataRow & ":" & firstDataRow + newRowCount - 1).Insert Shift:=xlDown
+    wsKV.Rows(firstDataRow & ":" & firstDataRow + insertRowCount - 1).Insert Shift:=xlDown
     
     copyRowCount = templateRowCount
     If copyRowCount > newRowCount Then copyRowCount = newRowCount
     
     If copyRowCount > 0 Then
         wsKV.Rows(templateFirstRow & ":" & templateFirstRow + copyRowCount - 1).Copy
-        wsKV.Rows(firstDataRow & ":" & firstDataRow + copyRowCount - 1).PasteSpecial Paste:=xlPasteFormats
-        wsKV.Rows(firstDataRow & ":" & firstDataRow + copyRowCount - 1).PasteSpecial Paste:=xlPasteValidation
-        wsKV.Rows(firstDataRow & ":" & firstDataRow + copyRowCount - 1).PasteSpecial Paste:=xlPasteColumnWidths
+        wsKV.Rows(firstDataRow + 1 & ":" & firstDataRow + copyRowCount).PasteSpecial Paste:=xlPasteFormats
+        wsKV.Rows(firstDataRow + 1 & ":" & firstDataRow + copyRowCount).PasteSpecial Paste:=xlPasteValidation
+        wsKV.Rows(firstDataRow + 1 & ":" & firstDataRow + copyRowCount).PasteSpecial Paste:=xlPasteColumnWidths
     End If
     
     If newRowCount > copyRowCount Then
         sourceLastRow = templateLastRow
-        pasteStartRow = firstDataRow + copyRowCount
+        pasteStartRow = firstDataRow + copyRowCount + 1
         
         wsKV.Rows(sourceLastRow & ":" & sourceLastRow).Copy
-        wsKV.Rows(pasteStartRow & ":" & firstDataRow + newRowCount - 1).PasteSpecial Paste:=xlPasteFormats
-        wsKV.Rows(pasteStartRow & ":" & firstDataRow + newRowCount - 1).PasteSpecial Paste:=xlPasteValidation
+        wsKV.Rows(pasteStartRow & ":" & firstDataRow + newRowCount).PasteSpecial Paste:=xlPasteFormats
+        wsKV.Rows(pasteStartRow & ":" & firstDataRow + newRowCount).PasteSpecial Paste:=xlPasteValidation
     End If
     
-    wsKV.Range("A" & firstDataRow & ":I" & firstDataRow + newRowCount - 1).Value = newPeriodData
+    wsKV.Range("A" & firstDataRow + 1 & ":I" & firstDataRow + newRowCount).Value = newPeriodData
+    
+    validFrom = newPeriodData(1, 2)
+    validTo = newPeriodData(1, 3)
+    PID_WriteKVPeriodTitleRow wsKV, firstDataRow, CStr(newPeriodData(1, 1)), validFrom, validTo
+    
     Application.CutCopyMode = False
     
 SafeExit:
     Application.CutCopyMode = False
+End Sub
+
+
+Private Sub PID_WriteKVPeriodTitleRow(ByVal wsKV As Worksheet, _
+                                      ByVal rowNumber As Long, _
+                                      ByVal periodName As String, _
+                                      ByVal validFrom As Variant, _
+                                      ByVal validTo As Variant)
+    Dim titleText As String
+    
+    If wsKV Is Nothing Then Exit Sub
+    If rowNumber < 1 Then Exit Sub
+    
+    titleText = periodName
+    
+    If IsDate(validFrom) And IsDate(validTo) Then
+        titleText = titleText & "   |   gueltig von " & Format$(CDate(validFrom), "dd.mm.yyyy") & _
+                    " bis " & Format$(CDate(validTo), "dd.mm.yyyy")
+    End If
+    
+    wsKV.Range("A" & rowNumber & ":J" & rowNumber).UnMerge
+    wsKV.Range("A" & rowNumber & ":J" & rowNumber).ClearContents
+    
+    wsKV.Cells(rowNumber, "A").Value = titleText
+    
+    With wsKV.Range("A" & rowNumber & ":J" & rowNumber)
+        .Font.Bold = True
+        .Font.Size = 11
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .Interior.Color = RGB(235, 235, 235)
+        .Borders(xlEdgeTop).LineStyle = xlContinuous
+        .Borders(xlEdgeTop).Weight = xlMedium
+        .Borders(xlEdgeBottom).LineStyle = xlContinuous
+        .Borders(xlEdgeBottom).Weight = xlThin
+    End With
 End Sub
 
 

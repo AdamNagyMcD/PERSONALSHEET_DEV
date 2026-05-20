@@ -86,6 +86,11 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         GoTo SafeExit
     End If
     
+    If Sh.Name = "LOHNTABELLE_TEST" Then
+        PID_ConfigureLohntabelleTestView
+        GoTo SafeExit
+    End If
+    
     ' Bei Aktivierung eines Monatsblatts wird KEINE globale Dropdown-/Lohn-Aktualisierung ausgefuehrt.
     ' So vermeiden wir die einmalige 15-20s Ladepause nach CopyData.
     If PID_IsWorkerMonthSheet(Sh) Then
@@ -97,6 +102,16 @@ SafeExit:
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
+End Sub
+
+
+Private Sub PID_ConfigureLohntabelleTestView()
+    On Error GoTo SafeExit
+    
+    If ActiveWindow Is Nothing Then Exit Sub
+    ActiveWindow.DisplayGridlines = False
+    
+SafeExit:
 End Sub
 
 

@@ -36,3 +36,17 @@
 - If uncertain, ask before modifying critical logic.
 - Never perform destructive refactors automatically.
 - Respect TEST_CASES.md requirements.
+
+---
+
+## Git / Commit Rules
+
+- After every completed implementation, bugfix or refactor:
+  - always provide a suggested git commit message.
+- Prefix the suggestion with:
+  - "Empfohlener Commit-Name:"
+- Commit names must:
+  - be written in English,
+  - use lowercase,
+  - be concise and technical,
+  - describe ONLY the actual implemented change.
