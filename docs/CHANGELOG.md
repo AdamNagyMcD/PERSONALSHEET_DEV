@@ -27,8 +27,10 @@
 - mod_AddNewKVPeriodOnTop.bas: `FormatKVPeriodArea` now enforces uniform row font/border styling across `A4:J(lastRow)` so trailing rows match the rest of the table.
 - mod_AddNewKVPeriodOnTop.bas: visual grouping now adds medium separator lines between KV code subgroups (`Basis`, `_5`, `_10`, `_15`) inside BG1/BG2/BG3 blocks.
 - mod_AddNewKVPeriodOnTop.bas: status/check formulas in `I:J` are now reapplied for all valid data rows during formatting, so `Status` and `Pruefung` update dynamically after edits.
+- mod_AddNewKVPeriodOnTop.bas: added `FixLOHNTABELLE_TEST_StatusFormulas`, auto-repair on open/sheet activate, removed static `OK` writes during rebuild/restore, and hardened formula application on protected sheets.
 
 ### Fixed
+- LOHNTABELLE_TEST: `Status`/`Pruefung` no longer stay as static `OK` text; formulas are restored automatically and update when `G`/`H` values are cleared.
 - VBA encoding: all 16 .bas/.cls files confirmed BOM-free and pure ASCII-compatible for Windows-1252 import; fixed garbled bytes (0x8A, 0x9F) in mod_RefreshFluktuationAll.bas MsgBox strings ("vollstaendig", "zurueckgesetzt").
 
 ### Notes

@@ -219,11 +219,49 @@ Public Sub FixLOHNTABELLE_TEST_HeaderText()
     PID_NormalizeKVTableHeader wsKV
     wsKV.Range("A2").WrapText = True
     
+    ' Status/Pruefung duerfen keine statischen OK-Werte sein.
+    PID_EnsureKVStatusFormulas wsKV
+    
 SafeExit:
     On Error Resume Next
     If wasProtected Then
         wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
+End Sub
+
+
+Public Sub FixLOHNTABELLE_TEST_StatusFormulas()
+    Dim wsKV As Worksheet
+    Dim wasProtected As Boolean
+    
+    On Error GoTo CleanFail
+    
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    If wsKV Is Nothing Then Exit Sub
+    
+    wasProtected = wsKV.ProtectContents
+    
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
+    FormatKVPeriodArea wsKV
+    
+    MsgBox "Status- und Pruefungsformeln in LOHNTABELLE_TEST wurden wiederhergestellt.", _
+           vbInformation, "LOHNTABELLE_TEST"
+    
+CleanExit:
+    On Error Resume Next
+    If wasProtected Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+    Exit Sub
+    
+CleanFail:
+    MsgBox "Fehler bei FixLOHNTABELLE_TEST_StatusFormulas:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "LOHNTABELLE_TEST"
+    Resume CleanExit
 End Sub
 
 
@@ -311,11 +349,6 @@ Public Sub RebuildLOHNTABELLE_TEST()
     PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount + 1, cleanupLastRow
     PID_NormalizeKVWarningText wsKV
     PID_NormalizeKVTableHeader wsKV
-    
-    If firstDataRow + periodRowCount <= wsKV.Rows.Count Then
-        wsKV.Range("I" & firstDataRow + 1 & ":I" & firstDataRow + periodRowCount).Replace What:="", Replacement:="OK", LookAt:=xlWhole
-    End If
-    
     FormatKVPeriodArea wsKV
     MarkKVDropdownsDirty
     
@@ -490,11 +523,7 @@ Private Function PID_FilterValidKVRows(ByVal sourceData As Variant, ByVal period
             resultData(outRow, 6) = PID_GetNearestTextValue(sourceData, r, 6)
             resultData(outRow, 7) = sourceData(r, 7)
             resultData(outRow, 8) = sourceData(r, 8)
-            resultData(outRow, 9) = sourceData(r, 9)
-            
-            If Trim$(CStr(resultData(outRow, 9))) = "" Then
-                resultData(outRow, 9) = "OK"
-            End If
+            resultData(outRow, 9) = ""
         End If
     Next r
     
@@ -568,7 +597,7 @@ Private Function PID_EnsureBG1Basis173Row(ByVal sourceData As Variant, ByVal per
             resultData(outRow, 6) = PID_GetNearestTextValue(sourceData, first151Row, 6)
             resultData(outRow, 7) = 173#
             resultData(outRow, 8) = 2021#
-            resultData(outRow, 9) = "OK"
+            resultData(outRow, 9) = ""
             outRow = outRow + 1
         End If
         
@@ -844,15 +873,11 @@ Private Function BuildNewPeriodDataFromTemplate(ByVal wsKV As Worksheet, _
             If sourceOffset < blockRows Then
                 resultData(outRow, 7) = templateData(blockStart + sourceOffset, 7)
                 resultData(outRow, 8) = templateData(blockStart + sourceOffset, 8)
-                resultData(outRow, 9) = templateData(blockStart + sourceOffset, 9)
-                
-                If Trim$(CStr(resultData(outRow, 9))) = "" Then
-                    resultData(outRow, 9) = "OK"
-                End If
+                resultData(outRow, 9) = ""
             Else
                 resultData(outRow, 7) = ""
                 resultData(outRow, 8) = ""
-                resultData(outRow, 9) = "Werte fehlen"
+                resultData(outRow, 9) = ""
             End If
         Next schemaIndex
     Next blockIndex
@@ -1300,12 +1325,20 @@ End Function
 
 Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
     Dim lastRow As Long
+    Dim wasProtected As Boolean
     
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    
+    wasProtected = wsKV.ProtectContents
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo SafeExit
     
     lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
     
-    If lastRow < 4 Then Exit Sub
+    If lastRow < 4 Then GoTo SafeExit
     
     With wsKV
         .Range("A4:I" & lastRow).VerticalAlignment = xlCenter
@@ -1339,6 +1372,27 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
     PID_ApplyKVVisualGrouping wsKV, 4, lastRow
 
 SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+End Sub
+
+
+Private Sub PID_EnsureKVStatusFormulas(ByVal wsKV As Worksheet)
+    Dim lastRow As Long
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    If lastRow < 4 Then Exit Sub
+    
+    PID_ApplyKVStatusFormulas wsKV, 4, lastRow
+    PID_ConfigureKVInputCellLocks wsKV, 4, lastRow
+    
+SafeExit:
 End Sub
 
 
@@ -1346,12 +1400,13 @@ Private Sub PID_ApplyKVStatusFormulas(ByVal wsKV As Worksheet, ByVal firstRow As
     Dim r As Long
     Dim hasKeyData As Boolean
     
-    On Error GoTo SafeExit
-    
     If wsKV Is Nothing Then Exit Sub
     If firstRow > lastRow Then Exit Sub
     
     For r = firstRow To lastRow
+        On Error Resume Next
+        Err.Clear
+        
         If wsKV.Range("A" & r).MergeCells Then
             wsKV.Cells(r, "I").ClearContents
             wsKV.Cells(r, "J").ClearContents
@@ -1369,9 +1424,9 @@ Private Sub PID_ApplyKVStatusFormulas(ByVal wsKV As Worksheet, ByVal firstRow As
                 wsKV.Cells(r, "J").ClearContents
             End If
         End If
+        
+        On Error GoTo 0
     Next r
-    
-SafeExit:
 End Sub
 
 

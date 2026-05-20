@@ -88,6 +88,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     
     If Sh.Name = "LOHNTABELLE_TEST" Then
         PID_ConfigureLohntabelleTestView
+        FixLOHNTABELLE_TEST_HeaderText
         GoTo SafeExit
     End If
     
