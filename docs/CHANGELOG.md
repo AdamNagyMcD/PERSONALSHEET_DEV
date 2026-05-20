@@ -14,6 +14,7 @@
 - Added `.gitignore` entry for `.DS_Store` to prevent accidental macOS metadata commits.
 
 ### Changed
+- mod_AddNewKVPeriodOnTop.bas: team-friendly KV button labels (1/2/3 + Hilfe), step-by-step dialogs, single-period delete with double confirm, plain-language errors, and updated A2 guidance text.
 - mod_AddNewKVPeriodOnTop.bas: `EnsureAddNewKVPeriodButton` now creates both KV sheet action buttons via `PID_EnsureLOHNTABELLE_TESTButtons`.
 - mod_DataClear.bas: error handling tightened by replacing broad `On Error Resume Next` blocks with focused sheet protect/unprotect helper procedures and preserved original error details in failure messages.
 - Password handling centralized: introduced `PID_WORKBOOK_PASSWORD` in Modul1 and replaced module-local password constants plus hardcoded `"company"` literals across VBA modules.

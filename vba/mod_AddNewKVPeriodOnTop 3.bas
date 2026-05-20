@@ -3,6 +3,7 @@ Option Explicit
 Private Const PID_ADD_PERIOD_BUTTON_NAME As String = "btn_AddNewKVPeriodOnTop"
 Private Const PID_ADD_CUSTOM_HOURS_BUTTON_NAME As String = "btn_AddCustomKVMonatsstunden"
 Private Const PID_DELETE_PERIODS_BUTTON_NAME As String = "btn_DeleteKVPeriods"
+Private Const PID_HELP_BUTTON_NAME As String = "btn_LOHNTABELLE_TESTHelp"
 Private Const PID_KV_CODE_COUNT As Long = 12
 
 Public Sub AddNewKVPeriodOnTop()
@@ -120,11 +121,11 @@ Public Sub AddNewKVPeriodOnTop()
     MarkAllKVDropdownsDirty
     MarkAllKVLohnDirty
     
-    MsgBox "Der neue KV-Zeitraum wurde erfolgreich oben eingefuegt:" & vbCrLf & vbCrLf & _
+    MsgBox "Der neue KV-Zeitraum wurde eingefuegt:" & vbCrLf & vbCrLf & _
            newPeriod & vbCrLf & vbCrLf & _
-           "Monatsstunden wurden aus der Vorlage uebernommen." & vbCrLf & _
-           "Monatslohn (Spalte H) bitte jetzt neu erfassen.", _
-           vbInformation, "Neuer KV-Zeitraum"
+           "Bitte jetzt Monatslohn (Spalte H) in der neuen Periode erfassen." & vbCrLf & vbCrLf & _
+           PID_GetKVTeamAfterChangeHint(), _
+           vbInformation, "Neue Periode"
 
 CleanExit:
     On Error Resume Next
@@ -160,17 +161,18 @@ Public Sub EnsureAddNewKVPeriodButton()
 End Sub
 
 
+Public Sub ShowLOHNTABELLE_TESTButtonHelp()
+    MsgBox PID_GetLOHNTABELLE_TESTTeamHelpText(), vbInformation, "Hilfe - LOHNTABELLE_TEST"
+End Sub
+
+
 Public Sub DeleteSelectedKVPeriods()
     Dim wsKV As Worksheet
     Dim firstDataRow As Long
-    Dim periodsToDelete As Collection
-    Dim sortedPeriods As Collection
     Dim allPeriods As Collection
+    Dim periodToDelete As String
     Dim confirmText As String
     Dim answer As VbMsgBoxResult
-    Dim deletedCount As Long
-    Dim i As Long
-    Dim periodName As String
     Dim periodFirstRow As Long
     Dim periodLastRow As Long
     
@@ -187,32 +189,45 @@ Public Sub DeleteSelectedKVPeriods()
     
     Set allPeriods = PID_CollectKVPeriods(wsKV, firstDataRow)
     If allPeriods Is Nothing Or allPeriods.Count = 0 Then
-        MsgBox "Keine KV-Zeitraeume in LOHNTABELLE_TEST gefunden.", _
-               vbExclamation, "KV-Zeitraeume loeschen"
+        MsgBox "Keine KV-Zeitraeume gefunden.", vbExclamation, "Alte Periode loeschen"
         Exit Sub
     End If
     
-    Set periodsToDelete = AskForKVPeriodsToDelete(wsKV, firstDataRow)
-    If periodsToDelete Is Nothing Then Exit Sub
-    If periodsToDelete.Count = 0 Then Exit Sub
-    
-    If allPeriods.Count - periodsToDelete.Count < 1 Then
-        MsgBox "Mindestens ein KV-Zeitraum muss in LOHNTABELLE_TEST erhalten bleiben.", _
-               vbExclamation, "KV-Zeitraeume loeschen"
+    If allPeriods.Count <= 1 Then
+        MsgBox "Es ist nur ein KV-Zeitraum vorhanden." & vbCrLf & vbCrLf & _
+               "Mindestens ein Zeitraum muss erhalten bleiben. Loeschen ist nicht moeglich.", _
+               vbInformation, "Alte Periode loeschen"
         Exit Sub
     End If
     
-    confirmText = "Folgende KV-Zeitraeume werden dauerhaft geloescht:" & vbCrLf & vbCrLf
-    confirmText = confirmText & PID_BuildPeriodDeleteSummary(periodsToDelete)
-    confirmText = confirmText & vbCrLf & vbCrLf & _
-                  "Monatsblaetter und Dropdowns nutzen danach die verbleibenden Perioden." & vbCrLf & _
-                  "Dieser Schritt kann nicht rueckgaengig gemacht werden." & vbCrLf & vbCrLf & _
-                  "Fortfahren?"
+    periodToDelete = AskForKVPeriodSelection( _
+        wsKV, firstDataRow, _
+        "Alte Periode loeschen", _
+        "Schritt 1 von 2 - Welche Periode?", _
+        "Nur EINE Nummer eingeben (z.B. 2)." & vbCrLf & _
+        "Nur sehr alte Perioden loeschen, die niemand mehr braucht." & vbCrLf & _
+        "Abbrechen oder leer lassen = nichts aendern.")
     
-    answer = MsgBox(confirmText, vbQuestion + vbYesNo, "KV-Zeitraeume loeschen")
-    If answer <> vbYes Then Exit Sub
+    If periodToDelete = "" Then Exit Sub
     
-    Set sortedPeriods = PID_SortPeriodsByFirstRowDesc(wsKV, periodsToDelete, firstDataRow)
+    confirmText = "Wirklich loeschen?" & vbCrLf & vbCrLf & _
+                  periodToDelete & vbCrLf & vbCrLf & _
+                  "NEIN = abbrechen (empfohlen bei Unsicherheit)." & vbCrLf & _
+                  "JA = endgueltig loeschen."
+    
+    answer = MsgBox(confirmText, vbCritical + vbYesNo, "Schritt 2 von 2 - Letzte Rueckfrage")
+    If answer <> vbYes Then
+        MsgBox "Loeschen abgebrochen. Es wurde nichts geaendert.", vbInformation, "Alte Periode loeschen"
+        Exit Sub
+    End If
+    
+    periodFirstRow = FindFirstRowOfPeriod(wsKV, periodToDelete, firstDataRow)
+    periodLastRow = FindLastRowOfPeriod(wsKV, periodToDelete, firstDataRow)
+    
+    If periodFirstRow <= 0 Or periodLastRow < periodFirstRow Then
+        MsgBox "Der gewaehlte Zeitraum konnte nicht gefunden werden.", vbExclamation, "Alte Periode loeschen"
+        Exit Sub
+    End If
     
     oldEnableEvents = Application.EnableEvents
     oldScreenUpdating = Application.ScreenUpdating
@@ -229,16 +244,7 @@ Public Sub DeleteSelectedKVPeriods()
     wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
     
-    For i = 1 To sortedPeriods.Count
-        periodName = CStr(sortedPeriods(i))
-        periodFirstRow = FindFirstRowOfPeriod(wsKV, periodName, firstDataRow)
-        periodLastRow = FindLastRowOfPeriod(wsKV, periodName, firstDataRow)
-        
-        If periodFirstRow > 0 And periodLastRow >= periodFirstRow Then
-            wsKV.Rows(periodFirstRow & ":" & periodLastRow).Delete Shift:=xlShiftUp
-            deletedCount = deletedCount + 1
-        End If
-    Next i
+    wsKV.Rows(periodFirstRow & ":" & periodLastRow).Delete Shift:=xlShiftUp
     
     FormatKVPeriodArea wsKV
     PID_EnsureLOHNTABELLE_TESTButtons
@@ -246,9 +252,8 @@ Public Sub DeleteSelectedKVPeriods()
     MarkAllKVDropdownsDirty
     MarkAllKVLohnDirty
     
-    MsgBox deletedCount & " KV-Zeitraum/Zeitraeume geloescht." & vbCrLf & vbCrLf & _
-           "Verbleibende Perioden: " & CStr(allPeriods.Count - deletedCount), _
-           vbInformation, "KV-Zeitraeume loeschen"
+    MsgBox "Geloescht: " & periodToDelete & vbCrLf & vbCrLf & PID_GetKVTeamAfterChangeHint(), _
+           vbInformation, "Alte Periode loeschen"
     GoTo CleanExit
 
 CleanExit:
@@ -278,9 +283,9 @@ CleanFail:
         Application.EnableEvents = oldEnableEvents
     End If
     
-    MsgBox "Fehler bei DeleteSelectedKVPeriods:" & vbCrLf & _
+    MsgBox "Fehler beim Loeschen:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
-           vbExclamation, "KV-Zeitraeume loeschen"
+           vbExclamation, "Alte Periode loeschen"
 End Sub
 
 
@@ -313,10 +318,15 @@ Public Sub AddCustomKVMonatsstunden()
         Exit Sub
     End If
     
-    selectedPeriod = AskForKVPeriodSelection(wsKV, firstDataRow)
+    selectedPeriod = AskForKVPeriodSelection( _
+        wsKV, firstDataRow, _
+        "Eigene Stunden", _
+        "Schritt 1 von 4 - Welcher Zeitraum?", _
+        "Nummer eingeben und OK klicken. Meist ist das ""1"" (oben).")
     If selectedPeriod = "" Then Exit Sub
     
-    selectedKVCode = AskForKVCodeSelection()
+    selectedKVCode = AskForKVCodeSelection("Eigene Stunden", "Schritt 2 von 4 - Welche Gruppe?", _
+        "Beispiel: 1 = BG1_Basis (Standard-Vertrag).")
     If selectedKVCode = "" Then Exit Sub
     
     If Not AskForCustomMonatsstunden(newHours) Then Exit Sub
@@ -363,12 +373,12 @@ Public Sub AddCustomKVMonatsstunden()
     MarkAllKVDropdownsDirty
     MarkAllKVLohnDirty
     
-    MsgBox "Individuelle Monatsstunden eingefuegt:" & vbCrLf & vbCrLf & _
+    MsgBox "Fertig - eigene Stunden eingefuegt:" & vbCrLf & vbCrLf & _
            "Zeitraum: " & selectedPeriod & vbCrLf & _
-           "KV-Code: " & selectedKVCode & vbCrLf & _
-           "Monatsstunden: " & PID_FormatHoursText(newHours) & vbCrLf & _
-           "Position: Zeile " & insertRow & " (sortiert nach Stunden)", _
-           vbInformation, "Individuelle Monatsstunden"
+           "Gruppe: " & selectedKVCode & vbCrLf & _
+           "Stunden: " & PID_FormatHoursText(newHours) & vbCrLf & vbCrLf & _
+           PID_GetKVTeamAfterChangeHint(), _
+           vbInformation, "Eigene Stunden"
     GoTo CleanExit
 
 CleanExit:
@@ -428,19 +438,20 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     wsKV.Shapes(PID_ADD_PERIOD_BUTTON_NAME).Delete
     wsKV.Shapes(PID_ADD_CUSTOM_HOURS_BUTTON_NAME).Delete
     wsKV.Shapes(PID_DELETE_PERIODS_BUTTON_NAME).Delete
+    wsKV.Shapes(PID_HELP_BUTTON_NAME).Delete
     On Error GoTo SafeExit
     
     PID_ConfigureLOHNTABELLE_TESTHeaderLayout wsKV
     
     buttonLeft = wsKV.Range("I2").Left + 1
     buttonWidth = wsKV.Range("I2:J2").Width - 2
-    buttonHeight = 17
-    buttonGap = 3
-    totalButtonsHeight = (3 * buttonHeight) + (2 * buttonGap)
+    buttonHeight = 15
+    buttonGap = 2
+    totalButtonsHeight = (4 * buttonHeight) + (3 * buttonGap)
     rowHeight = wsKV.Rows(2).RowHeight
     
-    If rowHeight < totalButtonsHeight + 4 Then
-        wsKV.Rows(2).RowHeight = totalButtonsHeight + 4
+    If rowHeight < totalButtonsHeight + 6 Then
+        wsKV.Rows(2).RowHeight = totalButtonsHeight + 6
         rowHeight = wsKV.Rows(2).RowHeight
     End If
     
@@ -453,18 +464,18 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
                                    Height:=buttonHeight)
     
     btn.Name = PID_ADD_PERIOD_BUTTON_NAME
-    btn.TextFrame.Characters.Text = "Neuen KV-Zeitraum oben einfuegen"
+    btn.TextFrame.Characters.Text = "1) Neue Periode"
     btn.OnAction = "AddNewKVPeriodOnTop"
     PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(54, 96, 146), RGB(33, 64, 99)
     
     Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
                                    Left:=buttonLeft, _
-                                   Top:=buttonTop + buttonHeight + buttonGap, _
+                                   Top:=buttonTop + (buttonHeight + buttonGap), _
                                    Width:=buttonWidth, _
                                    Height:=buttonHeight)
     
     btn.Name = PID_ADD_CUSTOM_HOURS_BUTTON_NAME
-    btn.TextFrame.Characters.Text = "Individuelle Monatsstunden einfuegen"
+    btn.TextFrame.Characters.Text = "2) Eigene Stunden"
     btn.OnAction = "AddCustomKVMonatsstunden"
     PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(84, 130, 53), RGB(56, 87, 35)
     
@@ -475,9 +486,20 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
                                    Height:=buttonHeight)
     
     btn.Name = PID_DELETE_PERIODS_BUTTON_NAME
-    btn.TextFrame.Characters.Text = "KV-Zeitraeume loeschen"
+    btn.TextFrame.Characters.Text = "3) Alte Periode loeschen"
     btn.OnAction = "DeleteSelectedKVPeriods"
     PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(192, 80, 77), RGB(132, 46, 43)
+    
+    Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                   Left:=buttonLeft, _
+                                   Top:=buttonTop + (3 * (buttonHeight + buttonGap)), _
+                                   Width:=buttonWidth, _
+                                   Height:=buttonHeight)
+    
+    btn.Name = PID_HELP_BUTTON_NAME
+    btn.TextFrame.Characters.Text = "Hilfe"
+    btn.OnAction = "ShowLOHNTABELLE_TESTButtonHelp"
+    PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(120, 120, 120), RGB(80, 80, 80)
     
 SafeExit:
     On Error Resume Next
@@ -530,7 +552,7 @@ Private Sub PID_ConfigureLOHNTABELLE_TESTHeaderLayout(ByVal wsKV As Worksheet)
     wsKV.Range("I2:J2").Interior.Pattern = xlNone
     
     wsKV.Rows(2).AutoFit
-    If wsKV.Rows(2).RowHeight < 62 Then wsKV.Rows(2).RowHeight = 62
+    If wsKV.Rows(2).RowHeight < 74 Then wsKV.Rows(2).RowHeight = 74
     
 SafeExit:
 End Sub
@@ -1135,9 +1157,10 @@ Private Function AskForKVStartYear(ByVal defaultYear As Long) As Long
     Dim inputText As String
     
     inputText = InputBox( _
-        Prompt:="Bitte Startjahr fuer den neuen KV-Zeitraum eingeben." & vbCrLf & vbCrLf & _
-                "Beispiel: 2026 -> KV 2026/2027", _
-        Title:="Neuen KV-Zeitraum hinzufuegen", _
+        Prompt:="Schritt 1 von 1 - Startjahr eingeben." & vbCrLf & vbCrLf & _
+                "Beispiel: 2026 erzeugt die Periode KV 2026/2027." & vbCrLf & _
+                "Nur die vier Ziffern des Jahres eingeben.", _
+        Title:="Neue Periode", _
         Default:=CStr(defaultYear) _
     )
     
@@ -1384,10 +1407,10 @@ Private Sub PID_NormalizeKVWarningText(ByVal wsKV As Worksheet)
     If wsKV Is Nothing Then Exit Sub
     
     wsKV.Range("A2").Value = _
-        "Wichtig: Alte KV-Perioden niemals loeschen oder ueberschreiben. " & _
-        "Wenn ab Mai neue Werte gueltig sind, immer eine neue KV-Periode hinzufuegen. " & _
-        "In den Monatsblaettern wird spaeter nur der KV-Code ausgewaehlt. " & _
-        "Nur Zeilen mit Status OK verwenden."
+        "Wichtig: Alte Perioden nicht von Hand loeschen. Dafuer Button ""3) Alte Periode loeschen"" nutzen. " & _
+        "Neue Werte ab Mai = Button ""1) Neue Periode"". " & _
+        "Sondervertrag-Stunden = Button ""2) Eigene Stunden"". " & _
+        "Bei Unsicherheit: Button ""Hilfe"". Nur Zeilen mit Status OK verwenden."
     
     PID_ConfigureLOHNTABELLE_TESTHeaderLayout wsKV
 End Sub
@@ -2127,41 +2150,61 @@ SafeExit:
 End Sub
 
 
-Private Function AskForKVPeriodSelection(ByVal wsKV As Worksheet, ByVal firstDataRow As Long) As String
+Private Function AskForKVPeriodSelection(ByVal wsKV As Worksheet, _
+                                         ByVal firstDataRow As Long, _
+                                         Optional ByVal dialogTitle As String = "KV-Zeitraum", _
+                                         Optional ByVal stepText As String = "", _
+                                         Optional ByVal extraHint As String = "") As String
     Dim periods As Collection
     Dim promptText As String
     Dim inputText As String
     Dim selectedIndex As Long
     Dim defaultIndex As Long
+    Dim titleText As String
     
     Set periods = PID_CollectKVPeriods(wsKV, firstDataRow)
     
     If periods Is Nothing Then Exit Function
     If periods.Count = 0 Then
-        MsgBox "Kein gueltiger KV-Zeitraum gefunden.", vbExclamation, "Individuelle Monatsstunden"
+        MsgBox "Kein gueltiger KV-Zeitraum gefunden.", vbExclamation, dialogTitle
         Exit Function
     End If
     
     defaultIndex = 1
-    promptText = "Bitte Nummer des KV-Zeitraums waehlen:" & vbCrLf & vbCrLf
-    promptText = promptText & PID_BuildNumberedListFromCollection(periods)
-    promptText = promptText & vbCrLf & "Standard: 1 = aktuellster Zeitraum oben"
+    promptText = ""
     
-    inputText = InputBox(Prompt:=promptText, Title:="Individuelle Monatsstunden", Default:=CStr(defaultIndex))
+    If stepText <> "" Then
+        promptText = stepText & vbCrLf & vbCrLf
+    End If
+    
+    promptText = promptText & "Liste:" & vbCrLf & vbCrLf
+    promptText = promptText & PID_BuildNumberedListFromCollection(periods)
+    promptText = promptText & vbCrLf & "Nur die Nummer eintippen (meist ""1"") und OK klicken."
+    
+    If extraHint <> "" Then
+        promptText = promptText & vbCrLf & vbCrLf & extraHint
+    End If
+    
+    titleText = dialogTitle
+    If stepText <> "" Then titleText = dialogTitle & " - " & stepText
+    
+    inputText = InputBox(Prompt:=promptText, Title:=titleText, Default:=CStr(defaultIndex))
     inputText = Trim$(inputText)
     If inputText = "" Then Exit Function
     
     If Not IsNumeric(inputText) Then
-        MsgBox "Ungueltige Eingabe. Bitte die Nummer des KV-Zeitraums eingeben.", _
-               vbExclamation, "Individuelle Monatsstunden"
+        MsgBox "Das war keine gueltige Nummer." & vbCrLf & _
+               "Bitte nur die Zahl aus der Liste eingeben (z.B. 1).", _
+               vbExclamation, dialogTitle
         Exit Function
     End If
     
     selectedIndex = CLng(inputText)
     
     If selectedIndex < 1 Or selectedIndex > periods.Count Then
-        MsgBox "Die gewaehlte Nummer liegt ausserhalb der verfuegbaren Zeitraeume.", _
-               vbExclamation, "Individuelle Monatsstunden"
+        MsgBox "Diese Nummer steht nicht in der Liste." & vbCrLf & _
+               "Bitte eine Nummer zwischen 1 und " & CStr(periods.Count) & " eingeben.", _
+               vbExclamation, dialogTitle
         Exit Function
     End If
     
@@ -2169,33 +2212,53 @@ Private Function AskForKVPeriodSelection(ByVal wsKV As Worksheet, ByVal firstDat
 End Function
 
 
-Private Function AskForKVCodeSelection() As String
+Private Function AskForKVCodeSelection(Optional ByVal dialogTitle As String = "Eigene Stunden", _
+                                       Optional ByVal stepText As String = "Schritt 2 von 4 - Welche Gruppe?", _
+                                       Optional ByVal extraHint As String = "") As String
     Dim promptText As String
     Dim inputText As String
     Dim selectedIndex As Long
     Dim i As Long
+    Dim titleText As String
     
-    promptText = "Bitte Nummer des KV-Codes waehlen:" & vbCrLf & vbCrLf
+    promptText = ""
+    
+    If stepText <> "" Then
+        promptText = stepText & vbCrLf & vbCrLf
+    End If
+    
+    promptText = promptText & "Liste:" & vbCrLf & vbCrLf
     
     For i = 1 To PID_KV_CODE_COUNT
         promptText = promptText & CStr(i) & " = " & PID_GetStandardKVCodeByIndex(i) & vbCrLf
     Next i
     
-    inputText = InputBox(Prompt:=promptText, Title:="Individuelle Monatsstunden", Default:="1")
+    promptText = promptText & vbCrLf & "Nummer eintippen und OK klicken."
+    
+    If extraHint <> "" Then
+        promptText = promptText & vbCrLf & vbCrLf & extraHint
+    End If
+    
+    titleText = dialogTitle
+    If stepText <> "" Then titleText = dialogTitle & " - " & stepText
+    
+    inputText = InputBox(Prompt:=promptText, Title:=titleText, Default:="1")
     inputText = Trim$(inputText)
     If inputText = "" Then Exit Function
     
     If Not IsNumeric(inputText) Then
-        MsgBox "Ungueltige Eingabe. Bitte die Nummer des KV-Codes eingeben.", _
-               vbExclamation, "Individuelle Monatsstunden"
+        MsgBox "Das war keine gueltige Nummer." & vbCrLf & _
+               "Bitte nur die Zahl aus der Liste eingeben (z.B. 1).", _
+               vbExclamation, dialogTitle
         Exit Function
     End If
     
     selectedIndex = CLng(inputText)
     
     If selectedIndex < 1 Or selectedIndex > PID_KV_CODE_COUNT Then
-        MsgBox "Die gewaehlte Nummer liegt ausserhalb der verfuegbaren KV-Codes.", _
-               vbExclamation, "Individuelle Monatsstunden"
+        MsgBox "Diese Nummer steht nicht in der Liste." & vbCrLf & _
+               "Bitte eine Nummer zwischen 1 und " & CStr(PID_KV_CODE_COUNT) & " eingeben.", _
+               vbExclamation, dialogTitle
         Exit Function
     End If
     
@@ -2207,9 +2270,10 @@ Private Function AskForCustomMonatsstunden(ByRef outHours As Double) As Boolean
     Dim inputText As String
     
     inputText = InputBox( _
-        Prompt:="Bitte individuelle Monatsstunden eingeben." & vbCrLf & vbCrLf & _
-                "Beispiel: 160 oder 160,00", _
-        Title:="Individuelle Monatsstunden", _
+        Prompt:="Schritt 3 von 4 - Wie viele Stunden pro Monat?" & vbCrLf & vbCrLf & _
+                "Beispiel: 64 oder 160,00" & vbCrLf & _
+                "Zahl eintippen und OK klicken.", _
+        Title:="Eigene Stunden", _
         Default:="" _
     )
     
@@ -2217,13 +2281,14 @@ Private Function AskForCustomMonatsstunden(ByRef outHours As Double) As Boolean
     If inputText = "" Then Exit Function
     
     If Not PID_TryReadDouble(inputText, outHours) Then
-        MsgBox "Ungueltige Monatsstunden. Bitte eine positive Zahl eingeben.", _
-               vbExclamation, "Individuelle Monatsstunden"
+        MsgBox "Das war keine gueltige Zahl." & vbCrLf & _
+               "Bitte nur Stunden eingeben (z.B. 64).", _
+               vbExclamation, "Eigene Stunden"
         Exit Function
     End If
     
     If outHours <= 0# Then
-        MsgBox "Monatsstunden muessen groesser als 0 sein.", vbExclamation, "Individuelle Monatsstunden"
+        MsgBox "Stunden muessen groesser als 0 sein.", vbExclamation, "Eigene Stunden"
         Exit Function
     End If
     
@@ -2236,9 +2301,10 @@ Private Function AskForOptionalMonatslohn(ByRef outLohn As Variant) As Boolean
     Dim lohnValue As Double
     
     inputText = InputBox( _
-        Prompt:="Optional: Monatslohn eingeben." & vbCrLf & vbCrLf & _
-                "Leer lassen, wenn der Lohn spaeter manuell erfasst wird.", _
-        Title:="Individuelle Monatsstunden", _
+        Prompt:="Schritt 4 von 4 - Monatslohn (optional)" & vbCrLf & vbCrLf & _
+                "Wenn unklar: einfach Abbrechen oder leer lassen." & vbCrLf & _
+                "Lohn kann spaeter auch in Spalte H eingetragen werden.", _
+        Title:="Eigene Stunden", _
         Default:="" _
     )
     
