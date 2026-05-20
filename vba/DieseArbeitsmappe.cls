@@ -84,12 +84,10 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         GoTo SafeExit
     End If
     
-    ' Bei Aktivierung eines Monatsblatts wird KEINE vollstaendige KV-Lohn-Aktualisierung ausgefuehrt.
-    ' Das war einer der Leistungsengpaesse.
-    '
-    ' Wenn die KV-Tabelle geaendert wurde, werden die Dropdowns nur per Dirty-Flag aktualisiert.
+    ' Bei Aktivierung eines Monatsblatts wird KEINE globale Dropdown-/Lohn-Aktualisierung ausgefuehrt.
+    ' So vermeiden wir die einmalige 15-20s Ladepause nach CopyData.
     If PID_IsWorkerMonthSheet(Sh) Then
-        RefreshKVDropdownsIfDirty
+        PID_ResetMonthView Sh
         GoTo SafeExit
     End If
 
@@ -97,6 +95,21 @@ SafeExit:
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
+End Sub
+
+
+Private Sub PID_ResetMonthView(ByVal ws As Worksheet)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    ws.Activate
+    ActiveWindow.ScrollRow = 1
+    ActiveWindow.ScrollColumn = 1
+    ws.Range("A1").Select
+    
+SafeExit:
 End Sub
 
 

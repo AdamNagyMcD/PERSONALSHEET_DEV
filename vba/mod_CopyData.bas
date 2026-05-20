@@ -151,8 +151,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                                       ByRef futureNewStarts As Collection)
     Dim baseValues As Collection
     Dim currentValues As Collection
-    Dim previousValues As Collection
-    Dim lastChangeMonths As Collection
     
     Dim ws As Worksheet
     Dim monthIndex As Long
@@ -162,8 +160,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
     
     Set baseValues = New Collection
     Set currentValues = New Collection
-    Set previousValues = New Collection
-    Set lastChangeMonths = New Collection
     
     For r = 1 To UBound(sourceData, 1)
         keyText = PID_BuildEmployeeKey(sourceData(r, 1), sourceData(r, 2))
@@ -190,11 +186,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
             PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "J"), CStr(sourceData(r, 9))
             PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "M"), CStr(sourceData(r, 12))
             PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "N"), CStr(sourceData(r, 13))
-            
-            PID_AddOrReplaceCollectionValue previousValues, PID_BaseKey(keyText, "E"), CStr(sourceData(r, 4))
-            PID_AddOrReplaceCollectionValue previousValues, PID_BaseKey(keyText, "F"), CStr(sourceData(r, 5))
-            PID_AddOrReplaceCollectionValue lastChangeMonths, PID_BaseKey(keyText, "E"), sourceMonthIndex
-            PID_AddOrReplaceCollectionValue lastChangeMonths, PID_BaseKey(keyText, "F"), sourceMonthIndex
         End If
     Next r
     
@@ -253,9 +244,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                         
                     Else
                         
-                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, previousValues, lastChangeMonths, futureOverrides, monthIndex, keyText, "E", targetData(r, 4)
-                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, previousValues, lastChangeMonths, futureOverrides, monthIndex, keyText, "F", targetData(r, 5)
-                        
                         If Trim$(CStr(targetData(r, 8))) <> "" Then
                             PID_AddOverrideValue futureOverrides, monthIndex, keyText, "I", targetData(r, 8)
                         End If
@@ -283,8 +271,6 @@ End Sub
 
 Private Sub PID_CheckAndStoreChangedFutureValue(ByRef baseValues As Collection, _
                                                ByRef currentValues As Collection, _
-                                               ByRef previousValues As Collection, _
-                                               ByRef lastChangeMonths As Collection, _
                                                ByRef futureOverrides As Collection, _
                                                ByVal monthIndex As Long, _
                                                ByVal keyText As String, _
@@ -292,27 +278,15 @@ Private Sub PID_CheckAndStoreChangedFutureValue(ByRef baseValues As Collection, 
                                                ByVal newValue As Variant)
     Dim baseKeyText As String
     Dim currentValue As Variant
-    Dim previousValue As Variant
-    Dim lastChangeMonth As Long
     
     If Trim$(CStr(newValue)) = "" Then Exit Sub
     
     baseKeyText = PID_BaseKey(keyText, fieldCode)
     currentValue = PID_GetCollectionValue(currentValues, baseKeyText, PID_GetCollectionValue(baseValues, baseKeyText, ""))
-    previousValue = PID_GetCollectionValue(previousValues, baseKeyText, currentValue)
-    lastChangeMonth = CLng(PID_GetCollectionValue(lastChangeMonths, baseKeyText, 0))
     
     ' Keep every real change point in timeline (also when value returns to an earlier/original value).
     If CStr(newValue) <> CStr(currentValue) Then
-        ' Ignore direct month+1 bounce-back to previous value.
-        ' This typically comes from stale values in later sheets, not from intentional planning.
-        If CStr(newValue) = CStr(previousValue) And lastChangeMonth > 0 Then
-            If monthIndex = lastChangeMonth + 1 Then Exit Sub
-        End If
-        
         PID_AddOverrideValue futureOverrides, monthIndex, keyText, fieldCode, newValue
-        PID_AddOrReplaceCollectionValue previousValues, baseKeyText, CStr(currentValue)
-        PID_AddOrReplaceCollectionValue lastChangeMonths, baseKeyText, monthIndex
         PID_AddOrReplaceCollectionValue currentValues, baseKeyText, CStr(newValue)
     End If
 End Sub
@@ -511,9 +485,6 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     
     PID_RestoreFormulas ws, formulaH, formulaK, formulaL, infoOQ
     
-    ' Rebuilding all row dropdown names during CopyData is expensive.
-    ' Mark as dirty and refresh lazily when needed.
-    MarkKVDropdownsDirty
     RefreshKVLohnForSheet ws
     
     If PID_CALCULATE_FLUCTUATION_DURING_COPY Then
