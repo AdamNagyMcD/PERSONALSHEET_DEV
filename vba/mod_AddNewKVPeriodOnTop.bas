@@ -1360,7 +1360,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Columns("D").ColumnWidth = 14
         .Columns("G").ColumnWidth = 13
         .Columns("H").ColumnWidth = 14
-        .Columns("I").ColumnWidth = 10
+        PID_ConfigureKVStatusColumnWidths wsKV, firstRow, lastRow
     End With
     
     ' Status- und Pruefungsformeln auf allen gueltigen Datenzeilen wiederherstellen.
@@ -1390,7 +1390,24 @@ Private Sub PID_EnsureKVStatusFormulas(ByVal wsKV As Worksheet)
     If lastRow < 4 Then Exit Sub
     
     PID_ApplyKVStatusFormulas wsKV, 4, lastRow
+    PID_ConfigureKVStatusColumnWidths wsKV, 4, lastRow
     PID_ConfigureKVInputCellLocks wsKV, 4, lastRow
+    
+SafeExit:
+End Sub
+
+
+Private Sub PID_ConfigureKVStatusColumnWidths(ByVal wsKV As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    
+    wsKV.Columns("I").ColumnWidth = 22
+    wsKV.Columns("J").ColumnWidth = 24
+    
+    If firstRow <= lastRow Then
+        wsKV.Range("I" & firstRow & ":J" & lastRow).WrapText = False
+    End If
     
 SafeExit:
 End Sub
