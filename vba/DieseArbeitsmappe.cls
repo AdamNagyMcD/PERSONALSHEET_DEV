@@ -151,6 +151,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' Wenn E oder F sich aendert:
     ' G = Monatslohn wird nur in der betreffenden Zeile aktualisiert.
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
+        PID_LogEFAenderungForSheet Sh, Target
         RefreshKVLohnForSheet Sh, Target
     End If
     

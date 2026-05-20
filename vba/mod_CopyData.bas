@@ -13,6 +13,7 @@ Private Const PID_APPLY_FORMATS_DURING_COPY As Boolean = False
 ' True  = Die monatliche Fluktuation in Q31 wird auch waehrend CopyData aktualisiert.
 ' False = Nur das Dirty-Flag bleibt gesetzt, Fluktuation wird spaeter aktualisiert.
 Private Const PID_CALCULATE_FLUCTUATION_DURING_COPY As Boolean = False
+Private Const PID_HOUR_OVERRIDE_LOG_SHEET As String = "PID_HOUR_OVERRIDES"
 
 
 Public Sub CopyData()
@@ -92,6 +93,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     Set futureNewStarts = New Collection
     
     PID_CollectFutureOverrides sourceData, sourceMonthIndex, monthNames, futureOverrides, futureNewStarts
+    PID_ApplyLoggedHourOverrides futureOverrides, sourceMonthIndex, workbookYear
     
     For i = sourceMonthIndex + 1 To 12
         targetSheetName = CStr(monthNames(i - 1))
@@ -151,7 +153,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                                       ByRef futureNewStarts As Collection)
     Dim baseValues As Collection
     Dim currentValues As Collection
-    Dim priorValues As Collection
     
     Dim ws As Worksheet
     Dim monthIndex As Long
@@ -161,7 +162,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
     
     Set baseValues = New Collection
     Set currentValues = New Collection
-    Set priorValues = New Collection
     
     For r = 1 To UBound(sourceData, 1)
         keyText = PID_BuildEmployeeKey(sourceData(r, 1), sourceData(r, 2))
@@ -188,9 +188,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
             PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "J"), CStr(sourceData(r, 9))
             PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "M"), CStr(sourceData(r, 12))
             PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "N"), CStr(sourceData(r, 13))
-            
-            PID_AddOrReplaceCollectionValue priorValues, PID_BaseKey(keyText, "E"), CStr(sourceData(r, 4))
-            PID_AddOrReplaceCollectionValue priorValues, PID_BaseKey(keyText, "F"), CStr(sourceData(r, 5))
         End If
     Next r
     
@@ -247,14 +244,7 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                         PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "M"), CStr(targetData(r, 12))
                         PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "N"), CStr(targetData(r, 13))
                         
-                        PID_AddOrReplaceCollectionValue priorValues, PID_BaseKey(keyText, "E"), CStr(targetData(r, 4))
-                        PID_AddOrReplaceCollectionValue priorValues, PID_BaseKey(keyText, "F"), CStr(targetData(r, 5))
-                        
                     Else
-                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, priorValues, futureOverrides, monthIndex, keyText, "E", targetData(r, 4)
-                        
-                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, priorValues, futureOverrides, monthIndex, keyText, "F", targetData(r, 5)
-                        
                         If Trim$(CStr(targetData(r, 8))) <> "" Then
                             PID_AddOverrideValue futureOverrides, monthIndex, keyText, "I", targetData(r, 8)
                         End If
@@ -280,44 +270,172 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
 End Sub
 
 
-Private Sub PID_CheckAndStoreChangedFutureValue(ByRef baseValues As Collection, _
-                                               ByRef currentValues As Collection, _
-                                               ByRef priorValues As Collection, _
-                                               ByRef futureOverrides As Collection, _
-                                               ByVal monthIndex As Long, _
-                                               ByVal keyText As String, _
-                                               ByVal fieldCode As String, _
-                                               ByVal newValue As Variant)
-    Dim baseKeyText As String
-    Dim currentValue As Variant
-    Dim priorValue As Variant
+Public Sub PID_LogEFAenderungForSheet(ByVal wsMonth As Worksheet, ByVal changedRange As Range)
+    Dim rowsToCheck As Range
+    Dim c As Range
+    Dim keyText As String
+    Dim fieldCode As String
+    Dim monthIndex As Long
+    Dim workbookYear As Long
     
-    If Trim$(CStr(newValue)) = "" Then Exit Sub
+    On Error GoTo SafeExit
     
-    baseKeyText = PID_BaseKey(keyText, fieldCode)
-    currentValue = PID_GetCollectionValue(currentValues, baseKeyText, PID_GetCollectionValue(baseValues, baseKeyText, ""))
-    priorValue = PID_GetCollectionValue(priorValues, baseKeyText, currentValue)
+    If wsMonth Is Nothing Then Exit Sub
+    If changedRange Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    If Not IsNumeric(wsMonth.Range("A1").Value) Then Exit Sub
     
-    ' Keep every real change point in timeline (also when value returns to an earlier/original value).
-    If Not PID_ValuesEqual(newValue, currentValue) Then
-        ' Ignore stale immediate fallback to the previous effective value.
-        If PID_ValuesEqual(newValue, priorValue) Then
-            Exit Sub
-        End If
+    monthIndex = CLng(wsMonth.Range("A1").Value)
+    If monthIndex < 1 Or monthIndex > 12 Then Exit Sub
+    
+    Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:F82"))
+    If rowsToCheck Is Nothing Then Exit Sub
+    
+    workbookYear = PID_GetWorkbookYear()
+    
+    For Each c In rowsToCheck.Cells
+        keyText = PID_BuildEmployeeKey(wsMonth.Cells(c.Row, "B").Value, wsMonth.Cells(c.Row, "C").Value)
         
-        PID_AddOverrideValue futureOverrides, monthIndex, keyText, fieldCode, newValue
-        PID_AddOrReplaceCollectionValue priorValues, baseKeyText, CStr(currentValue)
-        PID_AddOrReplaceCollectionValue currentValues, baseKeyText, CStr(newValue)
-    End If
+        If keyText <> "" Then
+            If c.Column = 5 Then
+                fieldCode = "E"
+            ElseIf c.Column = 6 Then
+                fieldCode = "F"
+            Else
+                fieldCode = ""
+            End If
+            
+            If fieldCode <> "" Then
+                PID_UpsertHourOverride workbookYear, monthIndex, keyText, fieldCode, c.Value
+            End If
+        End If
+    Next c
+    
+SafeExit:
 End Sub
 
 
-Private Function PID_ValuesEqual(ByVal valueA As Variant, ByVal valueB As Variant) As Boolean
-    If IsNumeric(valueA) And IsNumeric(valueB) Then
-        PID_ValuesEqual = (Abs(CDbl(valueA) - CDbl(valueB)) < 0.0001)
-    Else
-        PID_ValuesEqual = (Trim$(CStr(valueA)) = Trim$(CStr(valueB)))
+Private Sub PID_ApplyLoggedHourOverrides(ByRef futureOverrides As Collection, _
+                                         ByVal sourceMonthIndex As Long, _
+                                         ByVal workbookYear As Long)
+    Dim wsLog As Worksheet
+    Dim lastRow As Long
+    Dim data As Variant
+    Dim r As Long
+    Dim logYear As Long
+    Dim logMonth As Long
+    Dim employeeKey As String
+    Dim fieldCode As String
+    
+    On Error GoTo SafeExit
+    
+    Set wsLog = Nothing
+    On Error Resume Next
+    Set wsLog = ThisWorkbook.Worksheets(PID_HOUR_OVERRIDE_LOG_SHEET)
+    On Error GoTo SafeExit
+    
+    If wsLog Is Nothing Then Exit Sub
+    
+    lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row
+    If lastRow < 2 Then Exit Sub
+    
+    data = wsLog.Range("A2:E" & lastRow).Value
+    
+    For r = 1 To UBound(data, 1)
+        If IsNumeric(data(r, 1)) And IsNumeric(data(r, 2)) Then
+            logYear = CLng(data(r, 1))
+            logMonth = CLng(data(r, 2))
+            
+            If logYear = workbookYear Then
+                If logMonth > sourceMonthIndex And logMonth <= 12 Then
+                    employeeKey = Trim$(CStr(data(r, 3)))
+                    fieldCode = Trim$(CStr(data(r, 4)))
+                    
+                    If employeeKey <> "" Then
+                        If fieldCode = "E" Or fieldCode = "F" Then
+                            If Trim$(CStr(data(r, 5))) <> "" Then
+                                PID_AddOverrideValue futureOverrides, logMonth, employeeKey, fieldCode, data(r, 5)
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        End If
+    Next r
+    
+SafeExit:
+End Sub
+
+
+Private Sub PID_UpsertHourOverride(ByVal workbookYear As Long, _
+                                   ByVal monthIndex As Long, _
+                                   ByVal employeeKey As String, _
+                                   ByVal fieldCode As String, _
+                                   ByVal valueToStore As Variant)
+    Dim wsLog As Worksheet
+    Dim lastRow As Long
+    Dim r As Long
+    
+    On Error GoTo SafeExit
+    
+    If employeeKey = "" Then Exit Sub
+    If fieldCode <> "E" And fieldCode <> "F" Then Exit Sub
+    
+    Set wsLog = PID_GetOrCreateHourOverrideLogSheet()
+    If wsLog Is Nothing Then Exit Sub
+    
+    lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row
+    If lastRow < 2 Then lastRow = 1
+    
+    For r = 2 To lastRow
+        If CLng(Val(wsLog.Cells(r, "A").Value)) = workbookYear _
+           And CLng(Val(wsLog.Cells(r, "B").Value)) = monthIndex _
+           And UCase$(Trim$(CStr(wsLog.Cells(r, "C").Value))) = UCase$(employeeKey) _
+           And UCase$(Trim$(CStr(wsLog.Cells(r, "D").Value))) = fieldCode Then
+            
+            If Trim$(CStr(valueToStore)) = "" Then
+                wsLog.Rows(r).Delete
+            Else
+                wsLog.Cells(r, "E").Value = valueToStore
+            End If
+            GoTo SafeExit
+        End If
+    Next r
+    
+    If Trim$(CStr(valueToStore)) = "" Then Exit Sub
+    
+    lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row + 1
+    wsLog.Cells(lastRow, "A").Value = workbookYear
+    wsLog.Cells(lastRow, "B").Value = monthIndex
+    wsLog.Cells(lastRow, "C").Value = employeeKey
+    wsLog.Cells(lastRow, "D").Value = fieldCode
+    wsLog.Cells(lastRow, "E").Value = valueToStore
+    
+SafeExit:
+End Sub
+
+
+Private Function PID_GetOrCreateHourOverrideLogSheet() As Worksheet
+    Dim ws As Worksheet
+    
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets(PID_HOUR_OVERRIDE_LOG_SHEET)
+    On Error GoTo 0
+    
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
+        ws.Name = PID_HOUR_OVERRIDE_LOG_SHEET
+        
+        ws.Range("A1").Value = "Year"
+        ws.Range("B1").Value = "Month"
+        ws.Range("C1").Value = "EmployeeKey"
+        ws.Range("D1").Value = "Field"
+        ws.Range("E1").Value = "Value"
     End If
+    
+    ws.Visible = xlSheetVeryHidden
+    
+    Set PID_GetOrCreateHourOverrideLogSheet = ws
 End Function
 
 
@@ -878,6 +996,7 @@ Private Sub PID_HideUnwantedTechnicalSheets()
     
     ThisWorkbook.Worksheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden
     ThisWorkbook.Worksheets("KV_DROPDOWN_HELPER").Visible = xlSheetVeryHidden
+    ThisWorkbook.Worksheets(PID_HOUR_OVERRIDE_LOG_SHEET).Visible = xlSheetVeryHidden
     ThisWorkbook.Worksheets("Settings").Visible = xlSheetVeryHidden
     ThisWorkbook.Worksheets("Message").Visible = xlSheetVeryHidden
     
