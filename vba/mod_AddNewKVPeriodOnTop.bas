@@ -110,13 +110,9 @@ Public Sub AddNewKVPeriodOnTop()
     If newRowCount <= 0 Then GoTo CleanExit
     
     answer = MsgBox( _
-        "Neuer KV-Zeitraum wird oben eingefuegt:" & vbCrLf & vbCrLf & _
-        newPeriod & vbCrLf & vbCrLf & _
-        "Vorlage:" & vbCrLf & _
-        templatePeriod & vbCrLf & vbCrLf & _
-        "Vertraege pro KV-Code (alt -> neu): " & currentSchemaCount & " -> " & newSchemaCount & vbCrLf & _
-        "Anzahl Zeilen (neu): " & newRowCount & vbCrLf & vbCrLf & _
-        "Fortfahren?", _
+        "Neuen KV-Zeitraum erstellen?" & vbCrLf & vbCrLf & _
+        "Zeitraum: " & newPeriod & vbCrLf & _
+        "Vertraege pro KV-Code: " & newSchemaCount, _
         vbQuestion + vbYesNo, _
         "Neuer KV-Zeitraum" _
     )
@@ -479,6 +475,8 @@ Private Function BuildNewPeriodDataFromTemplate(ByVal wsKV As Worksheet, _
     Dim validFrom As Date
     Dim validTo As Date
     Dim resultData As Variant
+    Dim currentCode As String
+    Dim rowCode As String
     
     On Error GoTo BuildFail
     
@@ -490,16 +488,34 @@ Private Function BuildNewPeriodDataFromTemplate(ByVal wsKV As Worksheet, _
     
     Set blockStarts = New Collection
     Set blockEnds = New Collection
+    currentCode = ""
     
-    blockStarts.Add 1
-    
-    For r = 2 To UBound(templateData, 1)
-        If Trim$(CStr(templateData(r, 4))) <> Trim$(CStr(templateData(r - 1, 4))) Then
-            blockEnds.Add r - 1
-            blockStarts.Add r
+    ' Build blocks only from real KV codes (ignore empty separator/title rows).
+    For r = 1 To UBound(templateData, 1)
+        rowCode = Trim$(CStr(templateData(r, 4)))
+        
+        If rowCode <> "" Then
+            If currentCode = "" Then
+                blockStarts.Add r
+                currentCode = rowCode
+            ElseIf rowCode <> currentCode Then
+                blockEnds.Add r - 1
+                blockStarts.Add r
+                currentCode = rowCode
+            End If
+        Else
+            If currentCode <> "" Then
+                blockEnds.Add r - 1
+                currentCode = ""
+            End If
         End If
     Next r
-    blockEnds.Add UBound(templateData, 1)
+    
+    If currentCode <> "" Then
+        blockEnds.Add UBound(templateData, 1)
+    End If
+    
+    If blockStarts.Count = 0 Or blockEnds.Count = 0 Then GoTo BuildFail
     
     totalRows = blockStarts.Count * newSchemaCount
     ReDim resultData(1 To totalRows, 1 To 9)
@@ -947,6 +963,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
     With wsKV
         .Range("A4:I" & lastRow).VerticalAlignment = xlCenter
         .Range("A4:I" & lastRow).HorizontalAlignment = xlCenter
+        .Range("B4:C" & lastRow).NumberFormat = "dd.mm.yyyy"
         
         .Range("A4:A" & lastRow).NumberFormat = "@"
         .Range("G4:G" & lastRow).NumberFormatLocal = "0,00"
