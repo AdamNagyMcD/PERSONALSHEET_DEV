@@ -345,6 +345,9 @@ Public Sub RebuildLOHNTABELLE_TEST()
     On Error GoTo CleanFail
     
     periodData = wsKV.Range("A" & periodFirstRow & ":I" & periodLastRow).Value
+    periodData = PID_FilterValidKVRows(periodData, keepPeriod)
+    periodData = PID_EnsureBG1Basis173Row(periodData, keepPeriod)
+    periodRowCount = UBound(periodData, 1)
     
     PID_ClearKVDataArea wsKV, firstDataRow, cleanupLastRow
     wsKV.Range("A" & firstDataRow + 1 & ":I" & firstDataRow + periodRowCount).Value = periodData
@@ -353,6 +356,7 @@ Public Sub RebuildLOHNTABELLE_TEST()
     PID_NormalizeKVWarningText wsKV
     PID_NormalizeKVTableHeader wsKV
     FormatKVPeriodArea wsKV
+    PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount + 1, cleanupLastRow
     MarkKVDropdownsDirty
     
     On Error Resume Next
@@ -463,6 +467,7 @@ Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
     PID_NormalizeKVWarningText wsKV
     PID_NormalizeKVTableHeader wsKV
     FormatKVPeriodArea wsKV
+    PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount + 1, cleanupLastRow
     EnsureAddNewKVPeriodButton
     
     On Error Resume Next
@@ -545,7 +550,85 @@ Private Function PID_IsValidKVDataRow(ByVal sourceData As Variant, ByVal rowInde
     If Trim$(CStr(PID_GetNearestTextValue(sourceData, rowIndex, 5))) = "" Then Exit Function
     If Trim$(CStr(PID_GetNearestTextValue(sourceData, rowIndex, 6))) = "" Then Exit Function
     
+    ' Leere Restzeilen aus laengeren Testperioden ausschliessen.
+    If Not PID_ArrayRowHasHoursOrWage(sourceData, rowIndex) Then Exit Function
+    
     PID_IsValidKVDataRow = True
+End Function
+
+
+Private Function PID_ArrayRowHasHoursOrWage(ByVal sourceData As Variant, ByVal rowIndex As Long) As Boolean
+    Dim hoursValue As Double
+    Dim wageValue As Double
+    
+    If PID_TryReadDouble(sourceData(rowIndex, 7), hoursValue) Then
+        If hoursValue > 0# Then
+            PID_ArrayRowHasHoursOrWage = True
+            Exit Function
+        End If
+    End If
+    
+    If PID_TryReadDouble(sourceData(rowIndex, 8), wageValue) Then
+        If wageValue > 0# Then
+            PID_ArrayRowHasHoursOrWage = True
+        End If
+    End If
+End Function
+
+
+Private Function PID_RowHasKVTableContent(ByVal wsKV As Worksheet, ByVal rowNumber As Long) As Boolean
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Function
+    If rowNumber < 1 Then Exit Function
+    
+    If wsKV.Range("A" & rowNumber).MergeCells Then
+        PID_RowHasKVTableContent = True
+        Exit Function
+    End If
+    
+    If Trim$(CStr(wsKV.Cells(rowNumber, "D").Value)) <> "" Then
+        PID_RowHasKVTableContent = True
+        Exit Function
+    End If
+    
+    If Trim$(CStr(wsKV.Cells(rowNumber, "G").Value)) <> "" Then
+        PID_RowHasKVTableContent = True
+        Exit Function
+    End If
+    
+    If Trim$(CStr(wsKV.Cells(rowNumber, "H").Value)) <> "" Then
+        PID_RowHasKVTableContent = True
+    End If
+    
+SafeExit:
+End Function
+
+
+Private Function PID_GetKVTableLastRow(ByVal wsKV As Worksheet, ByVal firstDataRow As Long) As Long
+    Dim r As Long
+    Dim sheetLastRow As Long
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Function
+    
+    sheetLastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    If sheetLastRow < firstDataRow Then
+        PID_GetKVTableLastRow = firstDataRow
+        Exit Function
+    End If
+    
+    For r = sheetLastRow To firstDataRow Step -1
+        If PID_RowHasKVTableContent(wsKV, r) Then
+            PID_GetKVTableLastRow = r
+            Exit Function
+        End If
+    Next r
+    
+    PID_GetKVTableLastRow = firstDataRow
+    
+SafeExit:
 End Function
 
 
@@ -963,13 +1046,13 @@ Private Sub PID_ClearKVDataArea(ByVal wsKV As Worksheet, ByVal firstDataRow As L
     On Error GoTo TryUnmerge
     
     Set targetRange = wsKV.Range("A" & firstDataRow & ":J" & lastRow)
-    targetRange.ClearContents
+    targetRange.Clear
     Exit Sub
     
 TryUnmerge:
     On Error Resume Next
     targetRange.UnMerge
-    targetRange.ClearContents
+    targetRange.Clear
     On Error GoTo 0
 End Sub
 
@@ -1208,8 +1291,10 @@ Private Function PID_GetPeriodRowBounds(ByVal wsKV As Worksheet, _
         rowPeriod = PID_GetRowKVPeriod(wsKV, r)
         
         If rowPeriod = periodName Then
-            If outFirstRow = 0 Then outFirstRow = r
-            outLastRow = r
+            If PID_RowHasKVTableContent(wsKV, r) Then
+                If outFirstRow = 0 Then outFirstRow = r
+                outLastRow = r
+            End If
             inPeriod = True
         ElseIf inPeriod And rowPeriod <> "" Then
             Exit For
@@ -1274,6 +1359,9 @@ Private Function PID_GetRowKVPeriod(ByVal wsKV As Worksheet, ByVal rowNumber As 
         PID_GetRowKVPeriod = NormalizeKVPeriodText(cellText)
         Exit Function
     End If
+    
+    ' Leere Restzeilen nicht dem oberen Zeitraum zuordnen.
+    If Trim$(CStr(wsKV.Cells(rowNumber, "D").Value)) = "" Then Exit Function
     
     For r = rowNumber - 1 To 4 Step -1
         cellText = Trim$(CStr(wsKV.Cells(r, "A").Value))
@@ -1369,7 +1457,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
     wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo SafeExit
     
-    lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
+    lastRow = PID_GetKVTableLastRow(wsKV, 4)
     
     If lastRow < 4 Then GoTo SafeExit
     
