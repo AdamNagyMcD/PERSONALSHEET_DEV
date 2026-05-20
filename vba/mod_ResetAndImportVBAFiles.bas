@@ -18,11 +18,25 @@ Public Sub ResetAndImportVBAFiles()
     End If
 
     ' --- VBA-Ordner relativ zur Arbeitsmappe ---
+    If ThisWorkbook.Path = "" Then
+        MsgBox "Die Arbeitsmappe ist noch nicht gespeichert." & vbCrLf & vbCrLf & _
+               "Bitte zuerst speichern, damit der Ordner ""vba"" neben der .xlsm gefunden werden kann.", _
+               vbExclamation, "VBA Import"
+        Exit Sub
+    End If
+
     vbaFolder = ThisWorkbook.Path & pathSeparator & "vba" & pathSeparator
 
-    Set vbProj = ThisWorkbook.VBProject
+    If Dir(vbaFolder, vbDirectory) = "" Then
+        MsgBox "VBA-Ordner nicht gefunden:" & vbCrLf & vbaFolder, vbExclamation, "VBA Import"
+        Exit Sub
+    End If
 
-    ' --- Standard-, Klassen- und UserForm-Module lšschen ---
+    On Error GoTo VBProjectBlocked
+    Set vbProj = ThisWorkbook.VBProject
+    On Error GoTo 0
+
+    ' --- Standard-, Klassen- und UserForm-Module loeschen ---
     ' WICHTIG: Dieses Import-Modul bleibt erhalten
     For i = vbProj.VBComponents.Count To 1 Step -1
 
@@ -75,8 +89,17 @@ Public Sub ResetAndImportVBAFiles()
 
     Loop
 
-    MsgBox deleted & " Module gelšscht." & vbCrLf & _
+    MsgBox deleted & " Module geloescht." & vbCrLf & _
            imported & " VBA-Dateien importiert.", vbInformation
+    Exit Sub
+
+VBProjectBlocked:
+    MsgBox "Zugriff auf VBProject ist blockiert (Fehler " & Err.Number & ")." & vbCrLf & vbCrLf & _
+           "Unter Windows muss in Excel aktiviert werden:" & vbCrLf & _
+           "Datei > Optionen > Trust Center > Trust Center-Einstellungen > " & _
+           "Makroeinstellungen > ""Zugriff auf das VBA-Projektobjektmodell vertrauen""" & vbCrLf & vbCrLf & _
+           "Excel danach neu starten und dieses Makro erneut ausfuehren.", _
+           vbExclamation, "VBA Import"
 
 End Sub
 
