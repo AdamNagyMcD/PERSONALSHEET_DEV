@@ -335,3 +335,26 @@ TryEnglishFormat:
 SafeExit:
 End Sub
 
+
+Public Sub PID_ForceRefreshActiveRowLohn()
+    Dim ws As Worksheet
+    Dim rowNumber As Long
+    Dim monthNumber As Long
+    
+    On Error GoTo SafeExit
+    
+    If TypeName(ActiveSheet) <> "Worksheet" Then Exit Sub
+    Set ws = ActiveSheet
+    
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    If Not IsNumeric(ws.Range("A1").Value) Then Exit Sub
+    
+    rowNumber = ActiveCell.Row
+    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
+    
+    monthNumber = CLng(ws.Range("A1").Value)
+    RefreshKVLohnForRow ws, rowNumber, monthNumber
+    
+SafeExit:
+End Sub
+
