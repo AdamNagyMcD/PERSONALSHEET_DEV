@@ -1,5 +1,6 @@
 Attribute VB_Name = "mod_AddNewKVPeriodOnTop"
 Option Explicit
+Private Const PID_ADD_PERIOD_BUTTON_NAME As String = "btn_AddNewKVPeriodOnTop"
 
 Public Sub AddNewKVPeriodOnTop()
     Dim wsKV As Worksheet
@@ -151,6 +152,46 @@ CleanFail:
     MsgBox "Fehler bei AddNewKVPeriodOnTop:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
            vbExclamation, "Neuer KV-Zeitraum"
+End Sub
+
+
+Public Sub EnsureAddNewKVPeriodButton()
+    Dim wsKV As Worksheet
+    Dim btn As Shape
+    Dim wasProtected As Boolean
+    
+    On Error GoTo SafeExit
+    
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    If wsKV Is Nothing Then Exit Sub
+    
+    wasProtected = wsKV.ProtectContents
+    
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    wsKV.Shapes(PID_ADD_PERIOD_BUTTON_NAME).Delete
+    On Error GoTo SafeExit
+    
+    Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                   Left:=wsKV.Range("J1").Left, _
+                                   Top:=wsKV.Range("J1").Top + 2, _
+                                   Width:=220, _
+                                   Height:=22)
+    
+    btn.Name = PID_ADD_PERIOD_BUTTON_NAME
+    btn.TextFrame.Characters.Text = "Neuen KV-Zeitraum oben einfuegen"
+    btn.OnAction = "AddNewKVPeriodOnTop"
+    
+    btn.Fill.ForeColor.RGB = RGB(54, 96, 146)
+    btn.Line.ForeColor.RGB = RGB(33, 64, 99)
+    btn.TextFrame.Characters.Font.Color = RGB(255, 255, 255)
+    btn.TextFrame.Characters.Font.Bold = True
+    
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
 End Sub
 
 

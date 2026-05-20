@@ -21,6 +21,7 @@ Private Sub Workbook_Open()
     Application.EnableEvents = False
     
     PID_SetupSheetProtectionForMacros
+    EnsureAddNewKVPeriodButton
     
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
