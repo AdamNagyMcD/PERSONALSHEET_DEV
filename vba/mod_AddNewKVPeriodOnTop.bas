@@ -227,6 +227,7 @@ Public Sub RebuildLOHNTABELLE_TEST()
     Dim wsKV As Worksheet
     Dim firstDataRow As Long
     Dim lastRow As Long
+    Dim cleanupLastRow As Long
     Dim keepPeriod As String
     Dim periodFirstRow As Long
     Dim periodLastRow As Long
@@ -247,6 +248,7 @@ Public Sub RebuildLOHNTABELLE_TEST()
     
     firstDataRow = 4
     lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    cleanupLastRow = PID_GetSheetCleanupLastRow(wsKV, lastRow)
     
     If lastRow < firstDataRow Then
         MsgBox "Keine Daten in LOHNTABELLE_TEST gefunden.", vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
@@ -299,9 +301,9 @@ Public Sub RebuildLOHNTABELLE_TEST()
     
     periodData = wsKV.Range("A" & periodFirstRow & ":I" & periodLastRow).Value
     
-    PID_ClearKVDataArea wsKV, firstDataRow, lastRow
+    PID_ClearKVDataArea wsKV, firstDataRow, cleanupLastRow
     wsKV.Range("A" & firstDataRow & ":I" & firstDataRow + periodRowCount - 1).Value = periodData
-    PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount, lastRow
+    PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount, cleanupLastRow
     PID_NormalizeKVWarningText wsKV
     PID_NormalizeKVTableHeader wsKV
     
@@ -426,6 +428,63 @@ Private Sub PID_ClearTrailingKVArea(ByVal wsKV As Worksheet, ByVal startRow As L
     trailingRange.ClearFormats
     
 SafeExit:
+End Sub
+
+
+Private Function PID_GetSheetCleanupLastRow(ByVal ws As Worksheet, ByVal fallbackRow As Long) As Long
+    Dim usedLastRow As Long
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then
+        PID_GetSheetCleanupLastRow = fallbackRow
+        Exit Function
+    End If
+    
+    usedLastRow = ws.UsedRange.Row + ws.UsedRange.Rows.Count - 1
+    
+    If usedLastRow > fallbackRow Then
+        PID_GetSheetCleanupLastRow = usedLastRow
+    Else
+        PID_GetSheetCleanupLastRow = fallbackRow
+    End If
+    
+    Exit Function
+    
+SafeExit:
+    PID_GetSheetCleanupLastRow = fallbackRow
+End Function
+
+
+Public Sub CleanupLOHNTABELLE_TESTTrailingArea()
+    Dim wsKV As Worksheet
+    Dim firstDataRow As Long
+    Dim dataLastRow As Long
+    Dim cleanupLastRow As Long
+    Dim wasProtected As Boolean
+    
+    On Error GoTo SafeExit
+    
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    If wsKV Is Nothing Then Exit Sub
+    
+    firstDataRow = 4
+    dataLastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    cleanupLastRow = PID_GetSheetCleanupLastRow(wsKV, dataLastRow)
+    
+    wasProtected = wsKV.ProtectContents
+    
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo SafeExit
+    
+    PID_ClearTrailingKVArea wsKV, dataLastRow + 1, cleanupLastRow
+    
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
 End Sub
 
 
