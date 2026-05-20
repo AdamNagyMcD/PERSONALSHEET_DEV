@@ -161,6 +161,11 @@ Public Sub EnsureAddNewKVPeriodButton()
 End Sub
 
 
+Public Sub PID_RefreshKVButtons()
+    PID_EnsureLOHNTABELLE_TESTButtons
+End Sub
+
+
 Public Sub ShowLOHNTABELLE_TESTButtonHelp()
     MsgBox PID_GetLOHNTABELLE_TESTTeamHelpText(), vbInformation, "Hilfe - LOHNTABELLE_TEST"
 End Sub

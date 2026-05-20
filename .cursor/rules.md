@@ -134,3 +134,37 @@
 - Never perform destructive refactors automatically.
 - Never replace stable logic only for cleaner code.
 - Always prefer safe incremental fixes.
+
+## User Experience / Safety Rules
+
+- The workbook is used by restaurant managers with very limited Excel knowledge.
+- Assume users may accidentally click, overwrite, drag or delete cells unintentionally.
+- All workflows must be as safe and foolproof as possible.
+- Protect critical areas whenever possible.
+- Prevent accidental editing wherever possible.
+- Avoid requiring technical Excel knowledge from users.
+- Prefer locked cells over relying on user discipline.
+- Prefer guided workflows and buttons over manual steps.
+- Avoid hidden technical complexity for end users.
+- All user-facing texts must remain:
+  - in German,
+  - simple,
+  - clear,
+  - short,
+  - easy to understand for non-technical users.
+- Avoid technical terminology in user messages whenever possible.
+- Error messages must explain:
+  - what happened,
+  - why,
+  - what the user should do next.
+- Never expose internal helper logic or technical implementation details to end users.
+- Design all features defensively against accidental misuse.
+
+- Always assume users can accidentally:
+  - delete rows,
+  - overwrite formulas,
+  - drag cells,
+  - paste wrong values,
+  - break filters,
+  - change formatting,
+  - click wrong buttons.
