@@ -119,8 +119,10 @@ End Sub
 Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long, ByVal monthNumber As Long)
     Dim kvCode As String
     Dim monatsstunden As Variant
+    Dim monatsstundenValue As Double
     Dim lohnValue As Variant
     Dim usedFallback As Boolean
+    Dim wasProtected As Boolean
     
     On Error GoTo SafeExit
     
@@ -128,13 +130,20 @@ Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Lo
     If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
+    wasProtected = wsMonth.ProtectContents
+    If wasProtected Then
+        On Error Resume Next
+        wsMonth.Unprotect Password:=PID_WORKBOOK_PASSWORD
+        On Error GoTo SafeExit
+    End If
+    
     kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
     monatsstunden = wsMonth.Cells(rowNumber, "F").Value
     
-    If kvCode <> "" And IsNumeric(monatsstunden) Then
+    If kvCode <> "" And PID_TryGetDouble(monatsstunden, monatsstundenValue) Then
         
         usedFallback = False
-        lohnValue = GetKVLohnByPeriod(monthNumber, kvCode, CDbl(monatsstunden), usedFallback)
+        lohnValue = GetKVLohnByPeriod(monthNumber, kvCode, monatsstundenValue, usedFallback)
         
         If IsError(lohnValue) Then
             wsMonth.Cells(rowNumber, "G").Value = "Nicht gefunden"
@@ -152,7 +161,52 @@ Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Lo
     End If
 
 SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
 End Sub
+
+
+Private Function PID_TryGetDouble(ByVal valueToParse As Variant, ByRef resultValue As Double) As Boolean
+    Dim s As String
+    Dim decimalSeparator As String
+    Dim thousandSeparator As String
+    
+    On Error GoTo ParseFail
+    
+    If IsNumeric(valueToParse) Then
+        resultValue = CDbl(valueToParse)
+        PID_TryGetDouble = True
+        Exit Function
+    End If
+    
+    s = Trim$(CStr(valueToParse))
+    If s = "" Then Exit Function
+    
+    decimalSeparator = CStr(Application.International(xlDecimalSeparator))
+    thousandSeparator = CStr(Application.International(xlThousandsSeparator))
+    
+    If thousandSeparator <> "" Then
+        s = Replace(s, thousandSeparator, "")
+    End If
+    
+    If decimalSeparator = "," Then
+        s = Replace(s, ".", ",")
+    Else
+        s = Replace(s, ",", ".")
+    End If
+    
+    If IsNumeric(s) Then
+        resultValue = CDbl(s)
+        PID_TryGetDouble = True
+    End If
+    
+    Exit Function
+    
+ParseFail:
+    PID_TryGetDouble = False
+End Function
 
 
 Public Sub RefreshAllMonthKVLohn()
