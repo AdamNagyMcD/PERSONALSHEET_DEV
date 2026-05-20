@@ -283,7 +283,13 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     Dim wsKV As Worksheet
     Dim btn As Shape
     Dim wasProtected As Boolean
+    Dim buttonLeft As Double
+    Dim buttonWidth As Double
     Dim buttonTop As Double
+    Dim buttonHeight As Double
+    Dim buttonGap As Double
+    Dim rowHeight As Double
+    Dim totalButtonsHeight As Double
     
     On Error GoTo SafeExit
     
@@ -298,43 +304,98 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     wsKV.Shapes(PID_ADD_CUSTOM_HOURS_BUTTON_NAME).Delete
     On Error GoTo SafeExit
     
-    buttonTop = wsKV.Range("J1").Top + 2
+    PID_ConfigureLOHNTABELLE_TESTHeaderLayout wsKV
+    
+    buttonLeft = wsKV.Range("I2").Left + 1
+    buttonWidth = wsKV.Range("I2:J2").Width - 2
+    buttonHeight = 20
+    buttonGap = 4
+    totalButtonsHeight = (2 * buttonHeight) + buttonGap
+    rowHeight = wsKV.Rows(2).RowHeight
+    
+    If rowHeight < totalButtonsHeight + 4 Then
+        wsKV.Rows(2).RowHeight = totalButtonsHeight + 4
+        rowHeight = wsKV.Rows(2).RowHeight
+    End If
+    
+    buttonTop = wsKV.Range("I2").Top + ((rowHeight - totalButtonsHeight) / 2)
     
     Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
-                                   Left:=wsKV.Range("J1").Left, _
+                                   Left:=buttonLeft, _
                                    Top:=buttonTop, _
-                                   Width:=240, _
-                                   Height:=22)
+                                   Width:=buttonWidth, _
+                                   Height:=buttonHeight)
     
     btn.Name = PID_ADD_PERIOD_BUTTON_NAME
     btn.TextFrame.Characters.Text = "Neuen KV-Zeitraum oben einfuegen"
     btn.OnAction = "AddNewKVPeriodOnTop"
-    
-    btn.Fill.ForeColor.RGB = RGB(54, 96, 146)
-    btn.Line.ForeColor.RGB = RGB(33, 64, 99)
-    btn.TextFrame.Characters.Font.Color = RGB(255, 255, 255)
-    btn.TextFrame.Characters.Font.Bold = True
+    PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(54, 96, 146), RGB(33, 64, 99)
     
     Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
-                                   Left:=wsKV.Range("J1").Left, _
-                                   Top:=buttonTop + 26, _
-                                   Width:=240, _
-                                   Height:=22)
+                                   Left:=buttonLeft, _
+                                   Top:=buttonTop + buttonHeight + buttonGap, _
+                                   Width:=buttonWidth, _
+                                   Height:=buttonHeight)
     
     btn.Name = PID_ADD_CUSTOM_HOURS_BUTTON_NAME
     btn.TextFrame.Characters.Text = "Individuelle Monatsstunden einfuegen"
     btn.OnAction = "AddCustomKVMonatsstunden"
-    
-    btn.Fill.ForeColor.RGB = RGB(84, 130, 53)
-    btn.Line.ForeColor.RGB = RGB(56, 87, 35)
-    btn.TextFrame.Characters.Font.Color = RGB(255, 255, 255)
-    btn.TextFrame.Characters.Font.Bold = True
+    PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(84, 130, 53), RGB(56, 87, 35)
     
 SafeExit:
     On Error Resume Next
     If wasProtected Then
         wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
+End Sub
+
+
+Private Sub PID_ApplyLOHNTABELLE_TESTButtonStyle(ByVal btn As Shape, _
+                                                 ByVal fillColor As Long, _
+                                                 ByVal lineColor As Long)
+    On Error GoTo SafeExit
+    
+    If btn Is Nothing Then Exit Sub
+    
+    btn.Fill.ForeColor.RGB = fillColor
+    btn.Line.ForeColor.RGB = lineColor
+    btn.TextFrame.Characters.Font.Color = RGB(255, 255, 255)
+    btn.TextFrame.Characters.Font.Bold = True
+    btn.TextFrame.Characters.Font.Size = 8
+    btn.TextFrame.WordWrap = msoTrue
+    btn.TextFrame.VerticalAnchor = msoAnchorMiddle
+    btn.TextFrame.HorizontalAnchor = msoAnchorCenter
+    btn.Placement = xlFreeFloating
+    
+SafeExit:
+End Sub
+
+
+Private Sub PID_ConfigureLOHNTABELLE_TESTHeaderLayout(ByVal wsKV As Worksheet)
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    
+    On Error Resume Next
+    wsKV.Range("A1:J2").UnMerge
+    On Error GoTo SafeExit
+    
+    wsKV.Range("A1:J1").Merge
+    wsKV.Range("A1").HorizontalAlignment = xlCenter
+    wsKV.Range("A1").VerticalAlignment = xlCenter
+    
+    wsKV.Range("A2:H2").Merge
+    wsKV.Range("A2").WrapText = True
+    wsKV.Range("A2").VerticalAlignment = xlCenter
+    wsKV.Range("A2").HorizontalAlignment = xlLeft
+    
+    wsKV.Range("I2:J2").ClearContents
+    wsKV.Range("I2:J2").Interior.Pattern = xlNone
+    
+    wsKV.Rows(2).AutoFit
+    If wsKV.Rows(2).RowHeight < 52 Then wsKV.Rows(2).RowHeight = 52
+    
+SafeExit:
 End Sub
 
 
@@ -360,7 +421,6 @@ Public Sub FixLOHNTABELLE_TEST_HeaderTextIfNeeded(Optional ByVal forceFormulaRep
     
     PID_NormalizeKVWarningText wsKV
     PID_NormalizeKVTableHeader wsKV
-    wsKV.Range("A2").WrapText = True
     
     If forceFormulaRepair Or PID_KVStatusFormulasNeedRepair(wsKV) Then
         PID_EnsureKVStatusFormulas wsKV
@@ -1191,7 +1251,8 @@ Private Sub PID_NormalizeKVWarningText(ByVal wsKV As Worksheet)
         "Wenn ab Mai neue Werte gueltig sind, immer eine neue KV-Periode hinzufuegen. " & _
         "In den Monatsblaettern wird spaeter nur der KV-Code ausgewaehlt. " & _
         "Nur Zeilen mit Status OK verwenden."
-    wsKV.Range("A2").WrapText = True
+    
+    PID_ConfigureLOHNTABELLE_TESTHeaderLayout wsKV
 End Sub
 
 

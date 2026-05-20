@@ -316,7 +316,7 @@ Private Sub FormatLohntabelleTest(ByVal ws As Worksheet, ByVal lastRow As Long)
     ws.Range("A1").VerticalAlignment = xlCenter
     
     ws.Range("A2:J2").UnMerge
-    ws.Range("A2:J2").Merge
+    ws.Range("A2:H2").Merge
     ws.Range("A2").WrapText = True
     ws.Range("A2").VerticalAlignment = xlCenter
     ws.Range("A2").HorizontalAlignment = xlLeft
