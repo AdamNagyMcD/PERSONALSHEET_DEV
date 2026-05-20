@@ -1330,11 +1330,47 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Columns("I").ColumnWidth = 10
     End With
     
+    ' Status- und Pruefungsformeln auf allen gueltigen Datenzeilen wiederherstellen.
+    PID_ApplyKVStatusFormulas wsKV, 4, lastRow
+    
     ' Eingabefelder fuer Monatsstunden/Monatslohn muessen editierbar bleiben.
     PID_ConfigureKVInputCellLocks wsKV, 4, lastRow
     
     PID_ApplyKVVisualGrouping wsKV, 4, lastRow
 
+SafeExit:
+End Sub
+
+
+Private Sub PID_ApplyKVStatusFormulas(ByVal wsKV As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
+    Dim r As Long
+    Dim hasKeyData As Boolean
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    If firstRow > lastRow Then Exit Sub
+    
+    For r = firstRow To lastRow
+        If wsKV.Range("A" & r).MergeCells Then
+            wsKV.Cells(r, "I").ClearContents
+            wsKV.Cells(r, "J").ClearContents
+        Else
+            hasKeyData = (Trim$(CStr(wsKV.Cells(r, "D").Value)) <> "")
+            
+            If hasKeyData Then
+                wsKV.Cells(r, "I").FormulaR1C1 = _
+                    "=IF(RC1="""","""",IF(OR(RC2="""",RC3="""",RC4="""",RC5="""",RC6=""""),""Stammdaten fehlen"",IF(AND(RC7="""",RC8=""""),""Werte fehlen"",IF(RC7="""",""Monatsstunden fehlen"",IF(RC8="""",""Monatslohn fehlt"",""OK"")))))"
+                
+                wsKV.Cells(r, "J").FormulaR1C1 = _
+                    "=IF(RC7="""","""",IF(COUNTIFS(C1,RC1,C4,RC4,C7,RC7)>1,""Doppelte Monatsstunden"",""""))"
+            Else
+                wsKV.Cells(r, "I").ClearContents
+                wsKV.Cells(r, "J").ClearContents
+            End If
+        End If
+    Next r
+    
 SafeExit:
 End Sub
 
