@@ -22,6 +22,7 @@ Private Sub Workbook_Open()
     
     PID_SetupSheetProtectionForMacros
     EnsureAddNewKVPeriodButton
+    FixLOHNTABELLE_TEST_HeaderText
     
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.

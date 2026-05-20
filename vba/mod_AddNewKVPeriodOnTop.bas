@@ -118,6 +118,7 @@ Public Sub AddNewKVPeriodOnTop()
     InsertNewKVPeriodRows wsKV, firstDataRow, templateFirstRow, templateLastRow, newPeriod
     
     FormatKVPeriodArea wsKV
+    PID_NormalizeKVTableHeader wsKV
     
     MarkKVDropdownsDirty
     
@@ -211,6 +212,7 @@ Public Sub FixLOHNTABELLE_TEST_HeaderText()
     On Error GoTo SafeExit
     
     PID_NormalizeKVWarningText wsKV
+    PID_NormalizeKVTableHeader wsKV
     wsKV.Range("A2").WrapText = False
     
 SafeExit:
@@ -297,9 +299,10 @@ Public Sub RebuildLOHNTABELLE_TEST()
     
     periodData = wsKV.Range("A" & periodFirstRow & ":I" & periodLastRow).Value
     
-    wsKV.Range("A" & firstDataRow & ":I" & lastRow).ClearContents
+    PID_ClearKVDataArea wsKV, firstDataRow, lastRow
     wsKV.Range("A" & firstDataRow & ":I" & firstDataRow + periodRowCount - 1).Value = periodData
     PID_NormalizeKVWarningText wsKV
+    PID_NormalizeKVTableHeader wsKV
     
     If firstDataRow + periodRowCount <= wsKV.Rows.Count Then
         wsKV.Range("I" & firstDataRow & ":I" & firstDataRow + periodRowCount - 1).Replace What:="", Replacement:="OK", LookAt:=xlWhole
@@ -367,6 +370,39 @@ Private Sub PID_NormalizeKVWarningText(ByVal wsKV As Worksheet)
         "Wenn ab Mai neue Werte gueltig sind, immer eine neue KV-Periode hinzufuegen. " & _
         "In den Monatsblaettern wird spaeter nur der KV-Code ausgewaehlt. " & _
         "Nur Zeilen mit Status OK verwenden."
+End Sub
+
+
+Private Sub PID_NormalizeKVTableHeader(ByVal wsKV As Worksheet)
+    If wsKV Is Nothing Then Exit Sub
+    
+    wsKV.Range("A3").Value = "KV-Periode"
+    wsKV.Range("B3").Value = "Gueltig ab"
+    wsKV.Range("C3").Value = "Gueltig bis"
+    wsKV.Range("D3").Value = "KV-Code"
+    wsKV.Range("E3").Value = "KV-Gruppe"
+    wsKV.Range("F3").Value = "Beschaeftigungsdauer"
+    wsKV.Range("G3").Value = "Monatsstunden"
+    wsKV.Range("H3").Value = "Monatslohn"
+    wsKV.Range("I3").Value = "Status"
+    wsKV.Range("J3").Value = "Pruefung"
+End Sub
+
+
+Private Sub PID_ClearKVDataArea(ByVal wsKV As Worksheet, ByVal firstDataRow As Long, ByVal lastRow As Long)
+    Dim targetRange As Range
+    
+    On Error GoTo TryUnmerge
+    
+    Set targetRange = wsKV.Range("A" & firstDataRow & ":J" & lastRow)
+    targetRange.ClearContents
+    Exit Sub
+    
+TryUnmerge:
+    On Error Resume Next
+    targetRange.UnMerge
+    targetRange.ClearContents
+    On Error GoTo 0
 End Sub
 
 
