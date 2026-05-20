@@ -2,6 +2,7 @@ Attribute VB_Name = "mod_AddNewKVPeriodOnTop"
 Option Explicit
 Private Const PID_ADD_PERIOD_BUTTON_NAME As String = "btn_AddNewKVPeriodOnTop"
 Private Const PID_ADD_CUSTOM_HOURS_BUTTON_NAME As String = "btn_AddCustomKVMonatsstunden"
+Private Const PID_DELETE_PERIODS_BUTTON_NAME As String = "btn_DeleteKVPeriods"
 Private Const PID_KV_CODE_COUNT As Long = 12
 
 Public Sub AddNewKVPeriodOnTop()
@@ -159,6 +160,130 @@ Public Sub EnsureAddNewKVPeriodButton()
 End Sub
 
 
+Public Sub DeleteSelectedKVPeriods()
+    Dim wsKV As Worksheet
+    Dim firstDataRow As Long
+    Dim periodsToDelete As Collection
+    Dim sortedPeriods As Collection
+    Dim allPeriods As Collection
+    Dim confirmText As String
+    Dim answer As VbMsgBoxResult
+    Dim deletedCount As Long
+    Dim i As Long
+    Dim periodName As String
+    Dim periodFirstRow As Long
+    Dim periodLastRow As Long
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldDisplayAlerts As Boolean
+    Dim oldCalculation As XlCalculation
+    Dim stateCaptured As Boolean
+    
+    On Error GoTo CleanFail
+    
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    firstDataRow = PID_GetKVTableFirstDataRow(wsKV)
+    
+    Set allPeriods = PID_CollectKVPeriods(wsKV, firstDataRow)
+    If allPeriods Is Nothing Or allPeriods.Count = 0 Then
+        MsgBox "Keine KV-Zeitraeume in LOHNTABELLE_TEST gefunden.", _
+               vbExclamation, "KV-Zeitraeume loeschen"
+        Exit Sub
+    End If
+    
+    Set periodsToDelete = AskForKVPeriodsToDelete(wsKV, firstDataRow)
+    If periodsToDelete Is Nothing Then Exit Sub
+    If periodsToDelete.Count = 0 Then Exit Sub
+    
+    If allPeriods.Count - periodsToDelete.Count < 1 Then
+        MsgBox "Mindestens ein KV-Zeitraum muss in LOHNTABELLE_TEST erhalten bleiben.", _
+               vbExclamation, "KV-Zeitraeume loeschen"
+        Exit Sub
+    End If
+    
+    confirmText = "Folgende KV-Zeitraeume werden dauerhaft geloescht:" & vbCrLf & vbCrLf
+    confirmText = confirmText & PID_BuildPeriodDeleteSummary(periodsToDelete)
+    confirmText = confirmText & vbCrLf & vbCrLf & _
+                  "Monatsblaetter und Dropdowns nutzen danach die verbleibenden Perioden." & vbCrLf & _
+                  "Dieser Schritt kann nicht rueckgaengig gemacht werden." & vbCrLf & vbCrLf & _
+                  "Fortfahren?"
+    
+    answer = MsgBox(confirmText, vbQuestion + vbYesNo, "KV-Zeitraeume loeschen")
+    If answer <> vbYes Then Exit Sub
+    
+    Set sortedPeriods = PID_SortPeriodsByFirstRowDesc(wsKV, periodsToDelete, firstDataRow)
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    oldDisplayAlerts = Application.DisplayAlerts
+    oldCalculation = Application.Calculation
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.Calculation = xlCalculationManual
+    stateCaptured = True
+    
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
+    For i = 1 To sortedPeriods.Count
+        periodName = CStr(sortedPeriods(i))
+        periodFirstRow = FindFirstRowOfPeriod(wsKV, periodName, firstDataRow)
+        periodLastRow = FindLastRowOfPeriod(wsKV, periodName, firstDataRow)
+        
+        If periodFirstRow > 0 And periodLastRow >= periodFirstRow Then
+            wsKV.Rows(periodFirstRow & ":" & periodLastRow).Delete Shift:=xlShiftUp
+            deletedCount = deletedCount + 1
+        End If
+    Next i
+    
+    FormatKVPeriodArea wsKV
+    PID_EnsureLOHNTABELLE_TESTButtons
+    
+    MarkAllKVDropdownsDirty
+    MarkAllKVLohnDirty
+    
+    MsgBox deletedCount & " KV-Zeitraum/Zeitraeume geloescht." & vbCrLf & vbCrLf & _
+           "Verbleibende Perioden: " & CStr(allPeriods.Count - deletedCount), _
+           vbInformation, "KV-Zeitraeume loeschen"
+    GoTo CleanExit
+
+CleanExit:
+    On Error Resume Next
+    wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    
+    If stateCaptured Then
+        Application.Calculation = oldCalculation
+        Application.DisplayAlerts = oldDisplayAlerts
+        Application.ScreenUpdating = oldScreenUpdating
+        Application.EnableEvents = oldEnableEvents
+    End If
+    On Error GoTo 0
+    Exit Sub
+
+CleanFail:
+    On Error Resume Next
+    
+    If Not wsKV Is Nothing Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+    
+    If stateCaptured Then
+        Application.Calculation = oldCalculation
+        Application.DisplayAlerts = oldDisplayAlerts
+        Application.ScreenUpdating = oldScreenUpdating
+        Application.EnableEvents = oldEnableEvents
+    End If
+    
+    MsgBox "Fehler bei DeleteSelectedKVPeriods:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "KV-Zeitraeume loeschen"
+End Sub
+
+
 Public Sub AddCustomKVMonatsstunden()
     Dim wsKV As Worksheet
     Dim firstDataRow As Long
@@ -302,15 +427,16 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     wsKV.Shapes(PID_ADD_PERIOD_BUTTON_NAME).Delete
     wsKV.Shapes(PID_ADD_CUSTOM_HOURS_BUTTON_NAME).Delete
+    wsKV.Shapes(PID_DELETE_PERIODS_BUTTON_NAME).Delete
     On Error GoTo SafeExit
     
     PID_ConfigureLOHNTABELLE_TESTHeaderLayout wsKV
     
     buttonLeft = wsKV.Range("I2").Left + 1
     buttonWidth = wsKV.Range("I2:J2").Width - 2
-    buttonHeight = 20
-    buttonGap = 4
-    totalButtonsHeight = (2 * buttonHeight) + buttonGap
+    buttonHeight = 17
+    buttonGap = 3
+    totalButtonsHeight = (3 * buttonHeight) + (2 * buttonGap)
     rowHeight = wsKV.Rows(2).RowHeight
     
     If rowHeight < totalButtonsHeight + 4 Then
@@ -341,6 +467,17 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     btn.TextFrame.Characters.Text = "Individuelle Monatsstunden einfuegen"
     btn.OnAction = "AddCustomKVMonatsstunden"
     PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(84, 130, 53), RGB(56, 87, 35)
+    
+    Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                   Left:=buttonLeft, _
+                                   Top:=buttonTop + (2 * (buttonHeight + buttonGap)), _
+                                   Width:=buttonWidth, _
+                                   Height:=buttonHeight)
+    
+    btn.Name = PID_DELETE_PERIODS_BUTTON_NAME
+    btn.TextFrame.Characters.Text = "KV-Zeitraeume loeschen"
+    btn.OnAction = "DeleteSelectedKVPeriods"
+    PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(192, 80, 77), RGB(132, 46, 43)
     
 SafeExit:
     On Error Resume Next
@@ -393,7 +530,7 @@ Private Sub PID_ConfigureLOHNTABELLE_TESTHeaderLayout(ByVal wsKV As Worksheet)
     wsKV.Range("I2:J2").Interior.Pattern = xlNone
     
     wsKV.Rows(2).AutoFit
-    If wsKV.Rows(2).RowHeight < 52 Then wsKV.Rows(2).RowHeight = 52
+    If wsKV.Rows(2).RowHeight < 62 Then wsKV.Rows(2).RowHeight = 62
     
 SafeExit:
 End Sub
@@ -2461,5 +2598,143 @@ End Function
 
 Private Function PID_FormatHoursText(ByVal hoursValue As Double) As String
     PID_FormatHoursText = Format$(hoursValue, "0.00")
+End Function
+
+
+Private Function AskForKVPeriodsToDelete(ByVal wsKV As Worksheet, ByVal firstDataRow As Long) As Collection
+    Dim periods As Collection
+    Dim promptText As String
+    Dim inputText As String
+    
+    Set periods = PID_CollectKVPeriods(wsKV, firstDataRow)
+    
+    If periods Is Nothing Then Exit Function
+    If periods.Count = 0 Then
+        MsgBox "Kein gueltiger KV-Zeitraum gefunden.", vbExclamation, "KV-Zeitraeume loeschen"
+        Exit Function
+    End If
+    
+    promptText = "Welche KV-Zeitraeume sollen geloescht werden?" & vbCrLf & vbCrLf
+    promptText = promptText & PID_BuildNumberedListFromCollection(periods)
+    promptText = promptText & vbCrLf & "Mehrere Nummern mit Komma trennen (z.B. 2 oder 2,3)." & vbCrLf
+    promptText = promptText & "Nummer 1 = oberster Zeitraum in der Tabelle."
+    
+    inputText = InputBox(Prompt:=promptText, Title:="KV-Zeitraeume loeschen", Default:="")
+    inputText = Trim$(inputText)
+    If inputText = "" Then Exit Function
+    
+    Set AskForKVPeriodsToDelete = PID_ParsePeriodIndexSelection(inputText, periods)
+End Function
+
+
+Private Function PID_ParsePeriodIndexSelection(ByVal inputText As String, ByVal periods As Collection) As Collection
+    Dim result As Collection
+    Dim parts As Variant
+    Dim i As Long
+    Dim token As String
+    Dim selectedIndex As Long
+    Dim periodName As String
+    
+    Set result = New Collection
+    
+    On Error GoTo InvalidInput
+    
+    inputText = Replace(inputText, ";", ",")
+    parts = Split(inputText, ",")
+    
+    For i = LBound(parts) To UBound(parts)
+        token = Trim$(CStr(parts(i)))
+        If token = "" Then GoTo NextToken
+        
+        If Not IsNumeric(token) Then GoTo InvalidInput
+        
+        selectedIndex = CLng(token)
+        
+        If selectedIndex < 1 Or selectedIndex > periods.Count Then GoTo InvalidInput
+        
+        periodName = CStr(periods(selectedIndex))
+        
+        If Not PID_CollectionContainsText(result, periodName) Then
+            result.Add periodName, PID_MakeCollectionKey(periodName)
+        End If
+        
+NextToken:
+    Next i
+    
+    Set PID_ParsePeriodIndexSelection = result
+    Exit Function
+    
+InvalidInput:
+    MsgBox "Ungueltige Eingabe. Bitte Nummern aus der Liste verwenden (z.B. 2 oder 2,3).", _
+           vbExclamation, "KV-Zeitraeume loeschen"
+End Function
+
+
+Private Function PID_BuildPeriodDeleteSummary(ByVal periodsToDelete As Collection) As String
+    Dim summaryText As String
+    Dim i As Long
+    
+    If periodsToDelete Is Nothing Then Exit Function
+    
+    For i = 1 To periodsToDelete.Count
+        summaryText = summaryText & "- " & CStr(periodsToDelete(i)) & vbCrLf
+    Next i
+    
+    PID_BuildPeriodDeleteSummary = summaryText
+End Function
+
+
+Private Function PID_SortPeriodsByFirstRowDesc(ByVal wsKV As Worksheet, _
+                                             ByVal periodsToDelete As Collection, _
+                                             ByVal firstDataRow As Long) As Collection
+    Dim result As Collection
+    Dim countItems As Long
+    Dim names() As String
+    Dim rows() As Long
+    Dim i As Long
+    Dim j As Long
+    Dim tmpName As String
+    Dim tmpRow As Long
+    
+    Set result = New Collection
+    
+    If periodsToDelete Is Nothing Then
+        Set PID_SortPeriodsByFirstRowDesc = result
+        Exit Function
+    End If
+    
+    countItems = periodsToDelete.Count
+    If countItems = 0 Then
+        Set PID_SortPeriodsByFirstRowDesc = result
+        Exit Function
+    End If
+    
+    ReDim names(1 To countItems)
+    ReDim rows(1 To countItems)
+    
+    For i = 1 To countItems
+        names(i) = CStr(periodsToDelete(i))
+        rows(i) = FindFirstRowOfPeriod(wsKV, names(i), firstDataRow)
+    Next i
+    
+    For i = 1 To countItems - 1
+        For j = i + 1 To countItems
+            If rows(j) > rows(i) Then
+                tmpRow = rows(i)
+                rows(i) = rows(j)
+                rows(j) = tmpRow
+                
+                tmpName = names(i)
+                names(i) = names(j)
+                names(j) = tmpName
+            End If
+        Next j
+    Next i
+    
+    For i = 1 To countItems
+        result.Add names(i)
+    Next i
+    
+    Set PID_SortPeriodsByFirstRowDesc = result
 End Function
 

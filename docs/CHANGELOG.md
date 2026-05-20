@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- mod_AddNewKVPeriodOnTop.bas: `DeleteSelectedKVPeriods` with red sheet button to delete one or more selected KV periods while keeping at least one period in LOHNTABELLE_TEST.
 - mod_AddNewKVPeriodOnTop.bas: `AddCustomKVMonatsstunden` with dialog flow and green sheet button to insert custom Monatsstunden into a selected KV-Code block, sorted ascending by hours.
 - Initial project structure
 - SPEC.md
