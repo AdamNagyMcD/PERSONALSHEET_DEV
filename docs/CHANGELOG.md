@@ -32,6 +32,7 @@
 ### Fixed
 - LOHNTABELLE_TEST: `Status`/`Pruefung` no longer stay as static `OK` text; formulas are restored automatically and update when `G`/`H` values are cleared.
 - mod_AddNewKVPeriodOnTop.bas: widened `Status`/`Pruefung` columns (`I:J`) so long messages like `Monatsstunden fehlen` display fully.
+- mod_AddNewKVPeriodOnTop.bas: fixed VBA compile error in `FormatKVPeriodArea` (`firstRow` was undefined).
 - VBA encoding: all 16 .bas/.cls files confirmed BOM-free and pure ASCII-compatible for Windows-1252 import; fixed garbled bytes (0x8A, 0x9F) in mod_RefreshFluktuationAll.bas MsgBox strings ("vollstaendig", "zurueckgesetzt").
 
 ### Notes

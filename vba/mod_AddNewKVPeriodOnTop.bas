@@ -1360,7 +1360,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Columns("D").ColumnWidth = 14
         .Columns("G").ColumnWidth = 13
         .Columns("H").ColumnWidth = 14
-        PID_ConfigureKVStatusColumnWidths wsKV, firstRow, lastRow
+        PID_ConfigureKVStatusColumnWidths wsKV, 4, lastRow
     End With
     
     ' Status- und Pruefungsformeln auf allen gueltigen Datenzeilen wiederherstellen.
