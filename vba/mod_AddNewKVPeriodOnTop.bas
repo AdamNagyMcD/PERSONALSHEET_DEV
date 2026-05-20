@@ -6,6 +6,47 @@ Private Const PID_DELETE_PERIODS_BUTTON_NAME As String = "btn_DeleteKVPeriods"
 Private Const PID_HELP_BUTTON_NAME As String = "btn_LOHNTABELLE_TESTHelp"
 Private Const PID_KV_CODE_COUNT As Long = 12
 
+
+Private Function PID_GetLOHNTABELLE_TESTTeamHelpText() As String
+    Dim helpText As String
+    
+    helpText = "KURZANLEITUNG - LOHNTABELLE_TEST" & vbCrLf & vbCrLf
+    helpText = helpText & "1) Neue Periode" & vbCrLf
+    helpText = helpText & "   Wenn ab Mai neue KV-Werte gelten." & vbCrLf
+    helpText = helpText & "   Jahr eingeben (z.B. 2026) und OK." & vbCrLf & vbCrLf
+    helpText = helpText & "2) Eigene Stunden" & vbCrLf
+    helpText = helpText & "   Fuer Sondervertraege ausserhalb KV." & vbCrLf
+    helpText = helpText & "   Immer nur Nummern aus den Listen waehlen." & vbCrLf & vbCrLf
+    helpText = helpText & "3) Alte Periode loeschen" & vbCrLf
+    helpText = helpText & "   Nur sehr alte Perioden entfernen." & vbCrLf
+    helpText = helpText & "   Im Zweifel NICHT loeschen." & vbCrLf & vbCrLf
+    helpText = helpText & "WICHTIG:" & vbCrLf
+    helpText = helpText & "- Nie Zeilen von Hand loeschen." & vbCrLf
+    helpText = helpText & "- Abbrechen ist immer sicher." & vbCrLf
+    helpText = helpText & "- Nach Aenderungen einmal Monatsblaetter oeffnen" & vbCrLf
+    helpText = helpText & "  oder System-Refresh ausfuehren lassen."
+    
+    PID_GetLOHNTABELLE_TESTTeamHelpText = helpText
+End Function
+
+
+Private Function PID_GetKVTeamAfterChangeHint() As String
+    PID_GetKVTeamAfterChangeHint = "Naechster Schritt:" & vbCrLf & _
+        "Einmal ein Monatsblatt oeffnen (z.B. Januar)." & vbCrLf & _
+        "Oder Vorgesetzten/System-Refresh anstossen lassen."
+End Function
+
+
+Private Function PID_GetKVLoanAfterChangeHint() As String
+    PID_GetKVLoanAfterChangeHint = PID_GetKVTeamAfterChangeHint()
+End Function
+
+
+Private Function PID_GetKVYearAfterChangeHint() As String
+    PID_GetKVYearAfterChangeHint = PID_GetKVTeamAfterChangeHint()
+End Function
+
+
 Public Sub AddNewKVPeriodOnTop()
     Dim wsKV As Worksheet
     Dim newPeriod As String
@@ -416,6 +457,11 @@ CleanFail:
     MsgBox "Fehler bei AddCustomKVMonatsstunden:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
            vbExclamation, "Individuelle Monatsstunden"
+End Sub
+
+
+Private Sub PID_EnsureLOHNTABELLE_TESTButton()
+    PID_EnsureLOHNTABELLE_TESTButtons
 End Sub
 
 
@@ -2669,143 +2715,5 @@ End Function
 
 Private Function PID_FormatHoursText(ByVal hoursValue As Double) As String
     PID_FormatHoursText = Format$(hoursValue, "0.00")
-End Function
-
-
-Private Function AskForKVPeriodsToDelete(ByVal wsKV As Worksheet, ByVal firstDataRow As Long) As Collection
-    Dim periods As Collection
-    Dim promptText As String
-    Dim inputText As String
-    
-    Set periods = PID_CollectKVPeriods(wsKV, firstDataRow)
-    
-    If periods Is Nothing Then Exit Function
-    If periods.Count = 0 Then
-        MsgBox "Kein gueltiger KV-Zeitraum gefunden.", vbExclamation, "KV-Zeitraeume loeschen"
-        Exit Function
-    End If
-    
-    promptText = "Welche KV-Zeitraeume sollen geloescht werden?" & vbCrLf & vbCrLf
-    promptText = promptText & PID_BuildNumberedListFromCollection(periods)
-    promptText = promptText & vbCrLf & "Mehrere Nummern mit Komma trennen (z.B. 2 oder 2,3)." & vbCrLf
-    promptText = promptText & "Nummer 1 = oberster Zeitraum in der Tabelle."
-    
-    inputText = InputBox(Prompt:=promptText, Title:="KV-Zeitraeume loeschen", Default:="")
-    inputText = Trim$(inputText)
-    If inputText = "" Then Exit Function
-    
-    Set AskForKVPeriodsToDelete = PID_ParsePeriodIndexSelection(inputText, periods)
-End Function
-
-
-Private Function PID_ParsePeriodIndexSelection(ByVal inputText As String, ByVal periods As Collection) As Collection
-    Dim result As Collection
-    Dim parts As Variant
-    Dim i As Long
-    Dim token As String
-    Dim selectedIndex As Long
-    Dim periodName As String
-    
-    Set result = New Collection
-    
-    On Error GoTo InvalidInput
-    
-    inputText = Replace(inputText, ";", ",")
-    parts = Split(inputText, ",")
-    
-    For i = LBound(parts) To UBound(parts)
-        token = Trim$(CStr(parts(i)))
-        If token = "" Then GoTo NextToken
-        
-        If Not IsNumeric(token) Then GoTo InvalidInput
-        
-        selectedIndex = CLng(token)
-        
-        If selectedIndex < 1 Or selectedIndex > periods.Count Then GoTo InvalidInput
-        
-        periodName = CStr(periods(selectedIndex))
-        
-        If Not PID_CollectionContainsText(result, periodName) Then
-            result.Add periodName, PID_MakeCollectionKey(periodName)
-        End If
-        
-NextToken:
-    Next i
-    
-    Set PID_ParsePeriodIndexSelection = result
-    Exit Function
-    
-InvalidInput:
-    MsgBox "Ungueltige Eingabe. Bitte Nummern aus der Liste verwenden (z.B. 2 oder 2,3).", _
-           vbExclamation, "KV-Zeitraeume loeschen"
-End Function
-
-
-Private Function PID_BuildPeriodDeleteSummary(ByVal periodsToDelete As Collection) As String
-    Dim summaryText As String
-    Dim i As Long
-    
-    If periodsToDelete Is Nothing Then Exit Function
-    
-    For i = 1 To periodsToDelete.Count
-        summaryText = summaryText & "- " & CStr(periodsToDelete(i)) & vbCrLf
-    Next i
-    
-    PID_BuildPeriodDeleteSummary = summaryText
-End Function
-
-
-Private Function PID_SortPeriodsByFirstRowDesc(ByVal wsKV As Worksheet, _
-                                             ByVal periodsToDelete As Collection, _
-                                             ByVal firstDataRow As Long) As Collection
-    Dim result As Collection
-    Dim countItems As Long
-    Dim names() As String
-    Dim rows() As Long
-    Dim i As Long
-    Dim j As Long
-    Dim tmpName As String
-    Dim tmpRow As Long
-    
-    Set result = New Collection
-    
-    If periodsToDelete Is Nothing Then
-        Set PID_SortPeriodsByFirstRowDesc = result
-        Exit Function
-    End If
-    
-    countItems = periodsToDelete.Count
-    If countItems = 0 Then
-        Set PID_SortPeriodsByFirstRowDesc = result
-        Exit Function
-    End If
-    
-    ReDim names(1 To countItems)
-    ReDim rows(1 To countItems)
-    
-    For i = 1 To countItems
-        names(i) = CStr(periodsToDelete(i))
-        rows(i) = FindFirstRowOfPeriod(wsKV, names(i), firstDataRow)
-    Next i
-    
-    For i = 1 To countItems - 1
-        For j = i + 1 To countItems
-            If rows(j) > rows(i) Then
-                tmpRow = rows(i)
-                rows(i) = rows(j)
-                rows(j) = tmpRow
-                
-                tmpName = names(i)
-                names(i) = names(j)
-                names(j) = tmpName
-            End If
-        Next j
-    Next i
-    
-    For i = 1 To countItems
-        result.Add names(i)
-    Next i
-    
-    Set PID_SortPeriodsByFirstRowDesc = result
 End Function
 

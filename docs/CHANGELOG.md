@@ -34,6 +34,7 @@
 - mod_AddNewKVPeriodOnTop.bas: added `FixLOHNTABELLE_TEST_StatusFormulas`, auto-repair on open/sheet activate, removed static `OK` writes during rebuild/restore, and hardened formula application on protected sheets.
 
 ### Fixed
+- mod_AddNewKVPeriodOnTop.bas: restored missing `PID_GetKVTeamAfterChangeHint` and `PID_GetLOHNTABELLE_TESTTeamHelpText` helpers that caused compile errors.
 - mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE_TEST header layout reserves I2:J2 for action buttons; warning text stays in A2:H2 without overlap.
 - mod_AddNewKVPeriodOnTop.bas: custom Monatsstunden insert now follows block sort order (descending by default), fills A-F metadata, and formats rows from the detected first data row instead of hardcoded row 4.
 - mod_ResetAndImportVBAFiles.bas: clearer failure handling when VBProject access is blocked on Windows and when workbook path or vba folder is missing.
