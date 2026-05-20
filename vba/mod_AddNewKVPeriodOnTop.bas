@@ -1311,6 +1311,12 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Range("A4:I" & lastRow).VerticalAlignment = xlCenter
         .Range("A4:I" & lastRow).HorizontalAlignment = xlCenter
         .Range("B4:C" & lastRow).NumberFormat = "dd.mm.yyyy"
+        .Range("A4:J" & lastRow).Font.Bold = True
+        
+        ' Gesamte Datenflaeche einheitlich mit duennem Raster versehen.
+        .Range("A4:J" & lastRow).Borders.LineStyle = xlContinuous
+        .Range("A4:J" & lastRow).Borders.Weight = xlThin
+        .Range("A4:J" & lastRow).Borders.Color = RGB(150, 150, 150)
         
         .Range("A4:A" & lastRow).NumberFormat = "@"
         .Range("G4:G" & lastRow).NumberFormatLocal = "0,00"
