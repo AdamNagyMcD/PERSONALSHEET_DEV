@@ -416,6 +416,7 @@ Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
     
     periodData = wsKV.Range("A" & periodFirstRow & ":I" & periodLastRow).Value
     periodData = PID_FilterValidKVRows(periodData, targetPeriod)
+    periodData = PID_EnsureBG1Basis173Row(periodData, targetPeriod)
     periodRowCount = UBound(periodData, 1)
     
     PID_ClearKVDataArea wsKV, firstDataRow, cleanupLastRow
@@ -513,6 +514,105 @@ Private Function PID_IsValidKVDataRow(ByVal sourceData As Variant, ByVal rowInde
     If Trim$(CStr(PID_GetNearestTextValue(sourceData, rowIndex, 6))) = "" Then Exit Function
     
     PID_IsValidKVDataRow = True
+End Function
+
+
+Private Function PID_EnsureBG1Basis173Row(ByVal sourceData As Variant, ByVal periodName As String) As Variant
+    Dim r As Long
+    Dim outRow As Long
+    Dim has173 As Boolean
+    Dim first151Row As Long
+    Dim hoursValue As Double
+    Dim resultData As Variant
+    
+    On Error GoTo Fallback
+    
+    For r = 1 To UBound(sourceData, 1)
+        If UCase$(Trim$(CStr(sourceData(r, 4)))) = "BG1_BASIS" Then
+            If PID_TryReadDouble(sourceData(r, 7), hoursValue) Then
+                If Abs(hoursValue - 173#) < 0.01 Then
+                    has173 = True
+                End If
+                
+                If first151Row = 0 Then
+                    If Abs(hoursValue - 151.38) < 0.01 Then
+                        first151Row = r
+                    End If
+                End If
+            End If
+        End If
+    Next r
+    
+    If has173 Then
+        PID_EnsureBG1Basis173Row = sourceData
+        Exit Function
+    End If
+    
+    If first151Row = 0 Then
+        PID_EnsureBG1Basis173Row = sourceData
+        Exit Function
+    End If
+    
+    ReDim resultData(1 To UBound(sourceData, 1) + 1, 1 To 9)
+    
+    outRow = 0
+    For r = 1 To UBound(sourceData, 1)
+        outRow = outRow + 1
+        
+        If outRow = first151Row Then
+            resultData(outRow, 1) = periodName
+            resultData(outRow, 2) = sourceData(first151Row, 2)
+            resultData(outRow, 3) = sourceData(first151Row, 3)
+            resultData(outRow, 4) = "BG1_Basis"
+            resultData(outRow, 5) = PID_GetNearestTextValue(sourceData, first151Row, 5)
+            resultData(outRow, 6) = PID_GetNearestTextValue(sourceData, first151Row, 6)
+            resultData(outRow, 7) = 173#
+            resultData(outRow, 8) = 2021#
+            resultData(outRow, 9) = "OK"
+            outRow = outRow + 1
+        End If
+        
+        resultData(outRow, 1) = sourceData(r, 1)
+        resultData(outRow, 2) = sourceData(r, 2)
+        resultData(outRow, 3) = sourceData(r, 3)
+        resultData(outRow, 4) = sourceData(r, 4)
+        resultData(outRow, 5) = sourceData(r, 5)
+        resultData(outRow, 6) = sourceData(r, 6)
+        resultData(outRow, 7) = sourceData(r, 7)
+        resultData(outRow, 8) = sourceData(r, 8)
+        resultData(outRow, 9) = sourceData(r, 9)
+    Next r
+    
+    PID_EnsureBG1Basis173Row = resultData
+    Exit Function
+    
+Fallback:
+    PID_EnsureBG1Basis173Row = sourceData
+End Function
+
+
+Private Function PID_TryReadDouble(ByVal valueToRead As Variant, ByRef resultValue As Double) As Boolean
+    Dim s As String
+    
+    On Error GoTo SafeExit
+    
+    If IsNumeric(valueToRead) Then
+        resultValue = CDbl(valueToRead)
+        PID_TryReadDouble = True
+        Exit Function
+    End If
+    
+    s = Trim$(CStr(valueToRead))
+    If s = "" Then GoTo SafeExit
+    
+    s = Replace(s, ".", ",")
+    
+    If IsNumeric(s) Then
+        resultValue = CDbl(s)
+        PID_TryReadDouble = True
+    End If
+    
+SafeExit:
 End Function
 
 
@@ -1222,6 +1322,10 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Columns("G").ColumnWidth = 13
         .Columns("H").ColumnWidth = 14
         .Columns("I").ColumnWidth = 10
+        
+        ' Eingabefelder fuer Monatsstunden/Monatslohn muessen editierbar bleiben.
+        .Range("A4:J" & lastRow).Locked = True
+        .Range("G4:H" & lastRow).Locked = False
     End With
     
     PID_ApplyKVVisualGrouping wsKV, 4, lastRow
