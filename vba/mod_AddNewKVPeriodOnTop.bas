@@ -1322,14 +1322,36 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Columns("G").ColumnWidth = 13
         .Columns("H").ColumnWidth = 14
         .Columns("I").ColumnWidth = 10
-        
-        ' Eingabefelder fuer Monatsstunden/Monatslohn muessen editierbar bleiben.
-        .Range("A4:J" & lastRow).Locked = True
-        .Range("G4:H" & lastRow).Locked = False
     End With
+    
+    ' Eingabefelder fuer Monatsstunden/Monatslohn muessen editierbar bleiben.
+    PID_ConfigureKVInputCellLocks wsKV, 4, lastRow
     
     PID_ApplyKVVisualGrouping wsKV, 4, lastRow
 
+SafeExit:
+End Sub
+
+
+Private Sub PID_ConfigureKVInputCellLocks(ByVal wsKV As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
+    Dim r As Long
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    If firstRow > lastRow Then Exit Sub
+    
+    wsKV.Range("A" & firstRow & ":J" & lastRow).Locked = True
+    
+    For r = firstRow To lastRow
+        ' Nur echte Datenzeilen freigeben (keine zusammengefuehrten Titelzeilen).
+        If Not wsKV.Range("A" & r).MergeCells Then
+            If Trim$(CStr(wsKV.Cells(r, "D").Value)) <> "" Then
+                wsKV.Range("G" & r & ":H" & r).Locked = False
+            End If
+        End If
+    Next r
+    
 SafeExit:
 End Sub
 
@@ -1423,8 +1445,8 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
         .Borders(xlEdgeRight).Color = RGB(90, 90, 90)
         
         .Borders(xlEdgeBottom).LineStyle = xlContinuous
-        .Borders(xlEdgeBottom).Weight = xlThick
-        .Borders(xlEdgeBottom).Color = RGB(70, 70, 70)
+        .Borders(xlEdgeBottom).Weight = xlMedium
+        .Borders(xlEdgeBottom).Color = RGB(90, 90, 90)
     End With
     
 SafeExit:
