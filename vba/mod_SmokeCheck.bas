@@ -338,37 +338,82 @@ Private Function PID_HasWindowsOnlyApiDeclarations() As Boolean
     Dim fullPath As String
     Dim lineText As String
     Dim fileNumber As Integer
+    Dim filePatterns As Variant
+    Dim patternIndex As Long
     
     On Error GoTo SafeExit
     
     folderPath = ThisWorkbook.Path
     If folderPath = "" Then Exit Function
     
-    fileName = Dir(folderPath & "\vba\*.bas")
+    filePatterns = Array("*.bas", "*.cls")
     
-    Do While fileName <> ""
-        fullPath = folderPath & "\vba\" & fileName
+    For patternIndex = LBound(filePatterns) To UBound(filePatterns)
+        fileName = Dir(folderPath & "\vba\" & CStr(filePatterns(patternIndex)))
         
-        fileNumber = FreeFile
-        Open fullPath For Input As #fileNumber
-        
-        Do While Not EOF(fileNumber)
-            Line Input #fileNumber, lineText
-            
-            If InStr(1, lineText, "Declare ", vbTextCompare) > 0 Then
-                PID_HasWindowsOnlyApiDeclarations = True
+        Do While fileName <> ""
+            If Not PID_IsSmokeCheckExportFile(fileName) Then
+                fullPath = folderPath & "\vba\" & fileName
+                
+                fileNumber = FreeFile
+                Open fullPath For Input As #fileNumber
+                
+                Do While Not EOF(fileNumber)
+                    Line Input #fileNumber, lineText
+                    
+                    If PID_LineContainsApiDeclare(lineText) Then
+                        PID_HasWindowsOnlyApiDeclarations = True
+                        Close #fileNumber
+                        Exit Function
+                    End If
+                Loop
+                
                 Close #fileNumber
-                Exit Function
+                fileNumber = 0
             End If
+            
+            fileName = Dir()
         Loop
-        
-        Close #fileNumber
-        fileName = Dir()
-    Loop
+    Next patternIndex
     
 SafeExit:
     On Error Resume Next
     If fileNumber > 0 Then Close #fileNumber
+End Function
+
+
+Private Function PID_IsSmokeCheckExportFile(ByVal fileName As String) As Boolean
+    PID_IsSmokeCheckExportFile = (StrComp(fileName, "mod_SmokeCheck.bas", vbTextCompare) = 0)
+End Function
+
+
+Private Function PID_LineContainsApiDeclare(ByVal lineText As String) As Boolean
+    Dim codePart As String
+    Dim commentPos As Long
+    
+    codePart = Trim$(lineText)
+    If Len(codePart) = 0 Then Exit Function
+    If Left$(codePart, 1) = "'" Then Exit Function
+    
+    commentPos = InStr(1, codePart, "'")
+    If commentPos > 0 Then
+        codePart = Trim$(Left$(codePart, commentPos - 1))
+        If Len(codePart) = 0 Then Exit Function
+    End If
+    
+    If StrComp(Left$(codePart, 15), "Private Declare", vbTextCompare) = 0 Then
+        PID_LineContainsApiDeclare = True
+        Exit Function
+    End If
+    
+    If StrComp(Left$(codePart, 14), "Public Declare", vbTextCompare) = 0 Then
+        PID_LineContainsApiDeclare = True
+        Exit Function
+    End If
+    
+    If StrComp(Left$(codePart, 8), "Declare ", vbTextCompare) = 0 Then
+        PID_LineContainsApiDeclare = True
+    End If
 End Function
 
 
