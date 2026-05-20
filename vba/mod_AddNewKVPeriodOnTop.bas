@@ -119,10 +119,12 @@ Public Sub AddNewKVPeriodOnTop()
     
     If answer <> vbYes Then GoTo CleanExit
     
-    InsertNewKVPeriodRows wsKV, firstDataRow, templateFirstRow, templateLastRow, newPeriodData
+    InsertNewKVPeriodRows wsKV, firstDataRow, newPeriodData
     
-    FormatKVPeriodArea wsKV
     PID_NormalizeKVTableHeader wsKV
+    PID_NormalizeKVWarningText wsKV
+    FormatKVPeriodArea wsKV
+    EnsureAddNewKVPeriodButton
     
     MarkKVDropdownsDirty
     
@@ -761,6 +763,7 @@ Private Function GetSchemaCountFromPeriod(ByVal wsKV As Worksheet, _
                                           ByVal periodFirstRow As Long, _
                                           ByVal periodLastRow As Long) As Long
     Dim firstCode As String
+    Dim firstDataRowInPeriod As Long
     Dim r As Long
     
     On Error GoTo SafeExit
@@ -768,10 +771,23 @@ Private Function GetSchemaCountFromPeriod(ByVal wsKV As Worksheet, _
     If wsKV Is Nothing Then Exit Function
     If periodFirstRow <= 0 Or periodLastRow < periodFirstRow Then Exit Function
     
-    firstCode = Trim$(CStr(wsKV.Cells(periodFirstRow, "D").Value))
-    If firstCode = "" Then Exit Function
+    firstDataRowInPeriod = 0
     
     For r = periodFirstRow To periodLastRow
+        If Not wsKV.Range("A" & r).MergeCells Then
+            firstCode = Trim$(CStr(wsKV.Cells(r, "D").Value))
+            If firstCode <> "" Then
+                firstDataRowInPeriod = r
+                Exit For
+            End If
+        End If
+    Next r
+    
+    If firstDataRowInPeriod = 0 Then Exit Function
+    
+    firstCode = Trim$(CStr(wsKV.Cells(firstDataRowInPeriod, "D").Value))
+    
+    For r = firstDataRowInPeriod To periodLastRow
         If Trim$(CStr(wsKV.Cells(r, "D").Value)) = firstCode Then
             GetSchemaCountFromPeriod = GetSchemaCountFromPeriod + 1
         Else
@@ -900,7 +916,7 @@ Private Function GetBottomKVPeriod(ByVal wsKV As Worksheet, ByVal firstDataRow A
     lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
     
     For r = lastRow To firstDataRow Step -1
-        valueText = NormalizeKVPeriodText(CStr(wsKV.Cells(r, "A").Value))
+        valueText = PID_GetRowKVPeriod(wsKV, r)
         If valueText <> "" Then
             GetBottomKVPeriod = valueText
             Exit Function
@@ -1037,56 +1053,39 @@ End Sub
 
 Private Sub InsertNewKVPeriodRows(ByVal wsKV As Worksheet, _
                                   ByVal firstDataRow As Long, _
-                                  ByVal templateFirstRow As Long, _
-                                  ByVal templateLastRow As Long, _
                                   ByVal newPeriodData As Variant)
-    Dim templateRowCount As Long
     Dim newRowCount As Long
     Dim insertRowCount As Long
-    Dim copyRowCount As Long
-    Dim sourceRange As Range
-    Dim sourceLastRow As Long
-    Dim pasteStartRow As Long
-    Dim validFrom As Variant
-    Dim validTo As Variant
+    Dim dataStartRow As Long
+    Dim insertEndRow As Long
+    Dim newArea As Range
     
     On Error GoTo SafeExit
     
-    templateRowCount = templateLastRow - templateFirstRow + 1
+    If wsKV Is Nothing Then Exit Sub
+    If Not IsArray(newPeriodData) Then Exit Sub
+    
     newRowCount = UBound(newPeriodData, 1)
     insertRowCount = newRowCount + 1
     
-    If templateRowCount <= 0 Then Exit Sub
     If newRowCount <= 0 Then Exit Sub
     
-    Set sourceRange = wsKV.Rows(templateFirstRow & ":" & templateLastRow)
+    insertEndRow = firstDataRow + insertRowCount - 1
+    dataStartRow = firstDataRow + 1
     
-    wsKV.Rows(firstDataRow & ":" & firstDataRow + insertRowCount - 1).Insert Shift:=xlDown
+    wsKV.Rows(firstDataRow & ":" & insertEndRow).Insert Shift:=xlDown
     
-    copyRowCount = templateRowCount
-    If copyRowCount > newRowCount Then copyRowCount = newRowCount
+    Set newArea = wsKV.Range("A" & firstDataRow & ":J" & insertEndRow)
     
-    If copyRowCount > 0 Then
-        wsKV.Rows(templateFirstRow & ":" & templateFirstRow + copyRowCount - 1).Copy
-        wsKV.Rows(firstDataRow + 1 & ":" & firstDataRow + copyRowCount).PasteSpecial Paste:=xlPasteFormats
-        wsKV.Rows(firstDataRow + 1 & ":" & firstDataRow + copyRowCount).PasteSpecial Paste:=xlPasteValidation
-        wsKV.Rows(firstDataRow + 1 & ":" & firstDataRow + copyRowCount).PasteSpecial Paste:=xlPasteColumnWidths
-    End If
+    On Error Resume Next
+    newArea.UnMerge
+    On Error GoTo SafeExit
     
-    If newRowCount > copyRowCount Then
-        sourceLastRow = templateLastRow
-        pasteStartRow = firstDataRow + copyRowCount + 1
-        
-        wsKV.Rows(sourceLastRow & ":" & sourceLastRow).Copy
-        wsKV.Rows(pasteStartRow & ":" & firstDataRow + newRowCount).PasteSpecial Paste:=xlPasteFormats
-        wsKV.Rows(pasteStartRow & ":" & firstDataRow + newRowCount).PasteSpecial Paste:=xlPasteValidation
-    End If
+    newArea.Clear
     
-    wsKV.Range("A" & firstDataRow + 1 & ":I" & firstDataRow + newRowCount).Value = newPeriodData
+    wsKV.Range("A" & dataStartRow & ":I" & (dataStartRow + newRowCount - 1)).Value = newPeriodData
     
-    validFrom = newPeriodData(1, 2)
-    validTo = newPeriodData(1, 3)
-    PID_WriteKVPeriodTitleRow wsKV, firstDataRow, CStr(newPeriodData(1, 1)), validFrom, validTo
+    PID_WriteKVPeriodTitleRow wsKV, firstDataRow, CStr(newPeriodData(1, 1)), newPeriodData(1, 2), newPeriodData(1, 3)
     
     Application.CutCopyMode = False
     
@@ -1135,17 +1134,17 @@ End Sub
 Private Function GetTopKVPeriod(ByVal wsKV As Worksheet, ByVal firstDataRow As Long) As String
     Dim r As Long
     Dim lastRow As Long
-    Dim valueText As String
+    Dim rowPeriod As String
     
     On Error GoTo SafeExit
     
     lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
     
     For r = firstDataRow To lastRow
-        valueText = NormalizeKVPeriodText(CStr(wsKV.Cells(r, "A").Value))
+        rowPeriod = PID_GetRowKVPeriod(wsKV, r)
         
-        If valueText <> "" Then
-            GetTopKVPeriod = valueText
+        If rowPeriod <> "" Then
+            GetTopKVPeriod = rowPeriod
             Exit Function
         End If
     Next r
@@ -1157,52 +1156,66 @@ End Function
 Private Function FindFirstRowOfPeriod(ByVal wsKV As Worksheet, _
                                       ByVal periodName As String, _
                                       ByVal firstDataRow As Long) As Long
-    Dim r As Long
-    Dim lastRow As Long
-    Dim checkPeriod As String
+    Dim boundsFirst As Long
+    Dim boundsLast As Long
     
-    On Error GoTo SafeExit
-    
-    lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
     periodName = NormalizeKVPeriodText(periodName)
     
-    For r = firstDataRow To lastRow
-        checkPeriod = NormalizeKVPeriodText(CStr(wsKV.Cells(r, "A").Value))
-        
-        If checkPeriod = periodName Then
-            FindFirstRowOfPeriod = r
-            Exit Function
-        End If
-    Next r
-
-SafeExit:
+    If PID_GetPeriodRowBounds(wsKV, periodName, firstDataRow, boundsFirst, boundsLast) Then
+        FindFirstRowOfPeriod = boundsFirst
+    End If
 End Function
 
 
 Private Function FindLastRowOfPeriod(ByVal wsKV As Worksheet, _
                                      ByVal periodName As String, _
                                      ByVal firstDataRow As Long) As Long
+    Dim boundsFirst As Long
+    Dim boundsLast As Long
+    
+    periodName = NormalizeKVPeriodText(periodName)
+    
+    If PID_GetPeriodRowBounds(wsKV, periodName, firstDataRow, boundsFirst, boundsLast) Then
+        FindLastRowOfPeriod = boundsLast
+    End If
+End Function
+
+
+Private Function PID_GetPeriodRowBounds(ByVal wsKV As Worksheet, _
+                                        ByVal periodName As String, _
+                                        ByVal firstDataRow As Long, _
+                                        ByRef outFirstRow As Long, _
+                                        ByRef outLastRow As Long) As Boolean
     Dim r As Long
     Dim lastRow As Long
-    Dim checkPeriod As String
-    Dim firstFound As Boolean
+    Dim rowPeriod As String
+    Dim inPeriod As Boolean
     
     On Error GoTo SafeExit
     
-    lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
-    periodName = NormalizeKVPeriodText(periodName)
+    outFirstRow = 0
+    outLastRow = 0
+    inPeriod = False
+    
+    If wsKV Is Nothing Then Exit Function
+    If periodName = "" Then Exit Function
+    
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
     
     For r = firstDataRow To lastRow
-        checkPeriod = NormalizeKVPeriodText(CStr(wsKV.Cells(r, "A").Value))
+        rowPeriod = PID_GetRowKVPeriod(wsKV, r)
         
-        If checkPeriod = periodName Then
-            firstFound = True
-            FindLastRowOfPeriod = r
-        ElseIf firstFound Then
-            Exit Function
+        If rowPeriod = periodName Then
+            If outFirstRow = 0 Then outFirstRow = r
+            outLastRow = r
+            inPeriod = True
+        ElseIf inPeriod And rowPeriod <> "" Then
+            Exit For
         End If
     Next r
-
+    
+    PID_GetPeriodRowBounds = (outFirstRow > 0 And outLastRow >= outFirstRow)
+    
 SafeExit:
 End Function
 
@@ -1210,25 +1223,11 @@ End Function
 Private Function KVPeriodExists(ByVal wsKV As Worksheet, _
                                 ByVal periodName As String, _
                                 ByVal firstDataRow As Long) As Boolean
-    Dim r As Long
-    Dim lastRow As Long
-    Dim checkPeriod As String
+    Dim boundsFirst As Long
+    Dim boundsLast As Long
     
-    On Error GoTo SafeExit
-    
-    lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
     periodName = NormalizeKVPeriodText(periodName)
-    
-    For r = firstDataRow To lastRow
-        checkPeriod = NormalizeKVPeriodText(CStr(wsKV.Cells(r, "A").Value))
-        
-        If checkPeriod = periodName Then
-            KVPeriodExists = True
-            Exit Function
-        End If
-    Next r
-
-SafeExit:
+    KVPeriodExists = PID_GetPeriodRowBounds(wsKV, periodName, firstDataRow, boundsFirst, boundsLast)
 End Function
 
 
@@ -1242,6 +1241,10 @@ Private Function NormalizeKVPeriodText(ByVal periodText As String) As String
         Exit Function
     End If
     
+    If InStr(1, s, "|", vbTextCompare) > 0 Then
+        s = Trim$(Left$(s, InStr(1, s, "|", vbTextCompare) - 1))
+    End If
+    
     Do While InStr(s, "  ") > 0
         s = Replace(s, "  ", " ")
     Loop
@@ -1251,6 +1254,34 @@ Private Function NormalizeKVPeriodText(ByVal periodText As String) As String
     s = Replace(s, "kV ", "KV ")
     
     NormalizeKVPeriodText = s
+End Function
+
+
+Private Function PID_GetRowKVPeriod(ByVal wsKV As Worksheet, ByVal rowNumber As Long) As String
+    Dim r As Long
+    Dim cellText As String
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Function
+    If rowNumber < 1 Then Exit Function
+    
+    cellText = Trim$(CStr(wsKV.Cells(rowNumber, "A").Value))
+    
+    If cellText <> "" Then
+        PID_GetRowKVPeriod = NormalizeKVPeriodText(cellText)
+        Exit Function
+    End If
+    
+    For r = rowNumber - 1 To 4 Step -1
+        cellText = Trim$(CStr(wsKV.Cells(r, "A").Value))
+        If cellText <> "" Then
+            PID_GetRowKVPeriod = NormalizeKVPeriodText(cellText)
+            Exit Function
+        End If
+    Next r
+    
+SafeExit:
 End Function
 
 
@@ -1344,7 +1375,6 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         .Range("A4:I" & lastRow).VerticalAlignment = xlCenter
         .Range("A4:I" & lastRow).HorizontalAlignment = xlCenter
         .Range("B4:C" & lastRow).NumberFormat = "dd.mm.yyyy"
-        .Range("A4:J" & lastRow).Font.Bold = True
         
         ' Gesamte Datenflaeche einheitlich mit duennem Raster versehen.
         .Range("A4:J" & lastRow).Borders.LineStyle = xlContinuous
@@ -1370,6 +1400,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
     PID_ConfigureKVInputCellLocks wsKV, 4, lastRow
     
     PID_ApplyKVVisualGrouping wsKV, 4, lastRow
+    PID_FormatKVRowTypography wsKV, 4, lastRow
 
 SafeExit:
     On Error Resume Next
@@ -1392,6 +1423,35 @@ Private Sub PID_EnsureKVStatusFormulas(ByVal wsKV As Worksheet)
     PID_ApplyKVStatusFormulas wsKV, 4, lastRow
     PID_ConfigureKVStatusColumnWidths wsKV, 4, lastRow
     PID_ConfigureKVInputCellLocks wsKV, 4, lastRow
+    
+SafeExit:
+End Sub
+
+
+Private Sub PID_FormatKVRowTypography(ByVal wsKV As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
+    Dim r As Long
+    Dim rowRange As Range
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    If firstRow > lastRow Then Exit Sub
+    
+    wsKV.Range("A3:J3").Font.Bold = True
+    wsKV.Range("A3:J3").Font.Size = 10
+    
+    For r = firstRow To lastRow
+        Set rowRange = wsKV.Range("A" & r & ":J" & r)
+        
+        If wsKV.Range("A" & r).MergeCells Then
+            ' Titelzeile wird in PID_WriteKVPeriodTitleRow formatiert.
+        ElseIf Trim$(CStr(wsKV.Cells(r, "D").Value)) <> "" Then
+            rowRange.Font.Bold = False
+            rowRange.Font.Size = 10
+            rowRange.VerticalAlignment = xlCenter
+            rowRange.HorizontalAlignment = xlCenter
+        End If
+    Next r
     
 SafeExit:
 End Sub
@@ -1515,7 +1575,11 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
     
     For r = firstRow To lastRow
         Set rowRange = wsKV.Range("A" & r & ":J" & r)
-        currentPeriod = NormalizeKVPeriodText(CStr(wsKV.Cells(r, "A").Value))
+        
+        ' Titelzeilen nicht ueberschreiben (bleiben grau/formatiert).
+        If wsKV.Range("A" & r).MergeCells Then GoTo NextRow
+        
+        currentPeriod = PID_GetRowKVPeriod(wsKV, r)
         currentCode = UCase$(Trim$(CStr(wsKV.Cells(r, "D").Value)))
         groupText = UCase$(Trim$(CStr(wsKV.Cells(r, "E").Value)))
         
@@ -1562,6 +1626,8 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
             End If
             prevCode = currentCode
         End If
+        
+NextRow:
     Next r
     
     ' Aussenrahmen der Tabelle am Ende explizit verstaerken.
