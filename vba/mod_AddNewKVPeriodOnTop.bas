@@ -193,6 +193,11 @@ End Sub
 
 
 Public Sub FixLOHNTABELLE_TEST_HeaderText()
+    FixLOHNTABELLE_TEST_HeaderTextIfNeeded True
+End Sub
+
+
+Public Sub FixLOHNTABELLE_TEST_HeaderTextIfNeeded(Optional ByVal forceFormulaRepair As Boolean = False)
     Dim wsKV As Worksheet
     Dim wasProtected As Boolean
     
@@ -211,8 +216,9 @@ Public Sub FixLOHNTABELLE_TEST_HeaderText()
     PID_NormalizeKVTableHeader wsKV
     wsKV.Range("A2").WrapText = True
     
-    ' Status/Pruefung duerfen keine statischen OK-Werte sein.
-    PID_EnsureKVStatusFormulas wsKV
+    If forceFormulaRepair Or PID_KVStatusFormulasNeedRepair(wsKV) Then
+        PID_EnsureKVStatusFormulas wsKV
+    End If
     
 SafeExit:
     On Error Resume Next
@@ -220,6 +226,34 @@ SafeExit:
         wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
 End Sub
+
+
+Private Function PID_KVStatusFormulasNeedRepair(ByVal wsKV As Worksheet) As Boolean
+    Dim r As Long
+    Dim lastRow As Long
+    Dim checkedRows As Long
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Function
+    
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    If lastRow < 4 Then Exit Function
+    
+    For r = 4 To lastRow
+        If Trim$(CStr(wsKV.Cells(r, "D").Value)) <> "" Then
+            If Not wsKV.Cells(r, "I").HasFormula Then
+                PID_KVStatusFormulasNeedRepair = True
+                Exit Function
+            End If
+            
+            checkedRows = checkedRows + 1
+            If checkedRows >= 3 Then Exit Function
+        End If
+    Next r
+    
+SafeExit:
+End Function
 
 
 Public Sub FixLOHNTABELLE_TEST_StatusFormulas()

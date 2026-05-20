@@ -5,9 +5,13 @@ Option Explicit
 ' Populated once per RefreshKVLohnForSheet call, cleared afterwards.
 ' Columns in cache match Range("A4:I<lastRow>"):
 '   1=A(Period), 2=B, 3=C, 4=D(KVCode), 5=E, 6=F, 7=G(Stunden), 8=H(Lohn), 9=I(Status)
-Public gKVLohnDirty As Boolean
+Public gKVLohnAllMonthsDirty As Boolean
+Private mKVLohnRefreshedSheets As Collection
 Private mLohnTableCache As Variant
 Private mLohnTableCacheLoaded As Boolean
+Private mBatchKVLohnRefresh As Boolean
+Private mCachedWorkbookYear As Long
+Private mWorkbookYearCached As Boolean
 
 
 Private Sub PID_LoadLohnTableCache()
@@ -37,9 +41,31 @@ End Sub
 
 Private Sub PID_ClearLohnTableCache()
     mLohnTableCacheLoaded = False
+    mWorkbookYearCached = False
     On Error Resume Next
     Erase mLohnTableCache
     On Error GoTo 0
+End Sub
+
+
+Private Sub PID_EnsureWorkbookYearCached()
+    Dim wsLohn As Worksheet
+    
+    On Error GoTo SafeExit
+    
+    If mWorkbookYearCached Then Exit Sub
+    
+    On Error Resume Next
+    Set wsLohn = ThisWorkbook.Worksheets("LOHNTABELLE")
+    On Error GoTo SafeExit
+    
+    If wsLohn Is Nothing Then Exit Sub
+    If Not IsNumeric(wsLohn.Range("G3").Value) Then Exit Sub
+    
+    mCachedWorkbookYear = CLng(wsLohn.Range("G3").Value)
+    mWorkbookYearCached = True
+    
+SafeExit:
 End Sub
 
 Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal changedRange As Range)
@@ -51,6 +77,7 @@ Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal chan
     Dim c As Range
     Dim checkedRows As Collection
     Dim rowKey As String
+    Dim wasProtected As Boolean
     
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -75,13 +102,22 @@ Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal chan
     
     Set checkedRows = New Collection
     
+    wasProtected = wsMonth.ProtectContents
+    On Error Resume Next
+    wsMonth.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
     PID_LoadLohnTableCache
+    PID_EnsureWorkbookYearCached
+    mBatchKVLohnRefresh = True
     
     If changedRange Is Nothing Then
         
         For r = firstRow To lastRow
             RefreshKVLohnForRow wsMonth, r, monthNumber
         Next r
+        
+        PID_ApplyEuroNumberFormat wsMonth.Range("G" & firstRow & ":G" & lastRow)
         
     Else
         
@@ -98,16 +134,32 @@ Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal chan
             End If
         Next c
         
+        PID_ApplyEuroNumberFormat wsMonth.Range("G" & firstRow & ":G" & lastRow)
+        
     End If
 
 CleanExit:
+    mBatchKVLohnRefresh = False
     PID_ClearLohnTableCache
+    
+    On Error Resume Next
+    If wasProtected Then
+        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+    
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
     Exit Sub
 
 CleanFail:
+    mBatchKVLohnRefresh = False
     PID_ClearLohnTableCache
+    
+    On Error Resume Next
+    If wasProtected Then
+        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+    
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
     
@@ -131,11 +183,13 @@ Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Lo
     If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
-    wasProtected = wsMonth.ProtectContents
-    If wasProtected Then
-        On Error Resume Next
-        wsMonth.Unprotect Password:=PID_WORKBOOK_PASSWORD
-        On Error GoTo SafeExit
+    If Not mBatchKVLohnRefresh Then
+        wasProtected = wsMonth.ProtectContents
+        If wasProtected Then
+            On Error Resume Next
+            wsMonth.Unprotect Password:=PID_WORKBOOK_PASSWORD
+            On Error GoTo SafeExit
+        End If
     End If
     
     kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
@@ -151,20 +205,20 @@ Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Lo
             wsMonth.Cells(rowNumber, "G").NumberFormat = "General"
         Else
             wsMonth.Cells(rowNumber, "G").Value = CDbl(lohnValue)
-            PID_ApplyEuroNumberFormat wsMonth.Cells(rowNumber, "G")
         End If
         
     Else
         
         wsMonth.Cells(rowNumber, "G").ClearContents
-        PID_ApplyEuroNumberFormat wsMonth.Cells(rowNumber, "G")
         
     End If
 
 SafeExit:
-    On Error Resume Next
-    If wasProtected Then
-        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    If Not mBatchKVLohnRefresh Then
+        On Error Resume Next
+        If wasProtected Then
+            wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        End If
     End If
 End Sub
 
@@ -272,11 +326,10 @@ Public Function GetKVLohnByPeriod(ByVal monthNumber As Long, _
     
     On Error GoTo NotFound
     
-    Set wsLohn = ThisWorkbook.Worksheets("LOHNTABELLE")
+    PID_EnsureWorkbookYearCached
+    If Not mWorkbookYearCached Then GoTo NotFound
     
-    If Not IsNumeric(wsLohn.Range("G3").Value) Then GoTo NotFound
-    
-    currentYear = CLng(wsLohn.Range("G3").Value)
+    currentYear = mCachedWorkbookYear
     
     If monthNumber < 1 Or monthNumber > 12 Then GoTo NotFound
     
@@ -518,28 +571,52 @@ Public Function GetPreviousKVPeriodForWorkbookYear(ByVal workbookYear As Long, B
 End Function
 
 
+Public Sub MarkAllKVLohnDirty()
+    gKVLohnAllMonthsDirty = True
+    Set mKVLohnRefreshedSheets = New Collection
+End Sub
+
+
 Public Sub MarkKVLohnDirty()
-    gKVLohnDirty = True
+    MarkAllKVLohnDirty
+End Sub
+
+
+Public Sub ClearAllKVLohnDirty()
+    gKVLohnAllMonthsDirty = False
+    Set mKVLohnRefreshedSheets = New Collection
 End Sub
 
 
 Public Sub ClearKVLohnDirty()
-    gKVLohnDirty = False
+    ClearAllKVLohnDirty
 End Sub
 
 
 Public Function IsKVLohnDirty() As Boolean
-    IsKVLohnDirty = gKVLohnDirty
+    IsKVLohnDirty = gKVLohnAllMonthsDirty
 End Function
 
 
+Public Sub PID_MarkKVLohnSheetRefreshed(ByVal sheetName As String)
+    On Error Resume Next
+    If sheetName = "" Then Exit Sub
+    If mKVLohnRefreshedSheets Is Nothing Then Set mKVLohnRefreshedSheets = New Collection
+    mKVLohnRefreshedSheets.Add sheetName, sheetName
+End Sub
+
+
 Public Sub RefreshKVLohnIfDirty(ByVal wsMonth As Worksheet)
-    If Not gKVLohnDirty Then Exit Sub
     If wsMonth Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    If Not gKVLohnAllMonthsDirty Then Exit Sub
+    
+    If Not mKVLohnRefreshedSheets Is Nothing Then
+        If CollectionHasKey_KVLohn(mKVLohnRefreshedSheets, wsMonth.Name) Then Exit Sub
+    End If
     
     RefreshKVLohnForSheet wsMonth
-    ClearKVLohnDirty
+    PID_MarkKVLohnSheetRefreshed wsMonth.Name
 End Sub
 
 

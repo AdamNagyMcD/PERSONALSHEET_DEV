@@ -22,13 +22,12 @@ Private Sub Workbook_Open()
     
     PID_SetupSheetProtectionForMacros
     EnsureAddNewKVPeriodButton
-    FixLOHNTABELLE_TEST_HeaderText
+    FixLOHNTABELLE_TEST_HeaderTextIfNeeded
     
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
     ' Das ermoeglicht schnelleres Oeffnen - aktualisiert wird nur wenn wirklich noetig.
     gFluktuationDirty = True
-    MarkKVLohnDirty
     
     On Error Resume Next
     ThisWorkbook.Sheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden
@@ -89,14 +88,13 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     
     If Sh.Name = "LOHNTABELLE_TEST" Then
         PID_ConfigureLohntabelleTestView
-        FixLOHNTABELLE_TEST_HeaderText
         GoTo SafeExit
     End If
     
-    ' Nur das aktive Monatsblatt mit LOHNTABELLE_TEST-Cache (schnell, kein 12-Monats-Refresh).
+    ' Lohn nur bei Bedarf (nach KV-Tabelle-Aenderung), pro Monat einmal pro Aenderungszyklus.
     If PID_IsWorkerMonthSheet(Sh) Then
         PID_ResetMonthView Sh
-        RefreshKVLohnForSheet Sh
+        RefreshKVLohnIfDirty Sh
         GoTo SafeExit
     End If
 
@@ -144,7 +142,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     If Sh.Name = "LOHNTABELLE_TEST" Then
         If Not Intersect(Target, Sh.Range("G:H")) Is Nothing Then
             MarkKVDropdownsDirty
-            MarkKVLohnDirty
+            MarkAllKVLohnDirty
         End If
         Exit Sub
     End If

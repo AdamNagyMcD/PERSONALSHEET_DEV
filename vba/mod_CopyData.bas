@@ -107,7 +107,6 @@ Public Sub PID_CopyDataToFollowingMonths()
     Next i
     
     MarkFluktuationDirty
-    MarkKVLohnDirty
     PID_HideUnwantedTechnicalSheets
 
 CleanExit:
@@ -652,6 +651,7 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     PID_RestoreFormulas ws, formulaH, formulaK, formulaL, infoOQ
     
     RefreshKVLohnForSheet ws
+    PID_MarkKVLohnSheetRefreshed ws.Name
     
     If PID_CALCULATE_FLUCTUATION_DURING_COPY Then
         PID_CalculateFluctuation ws
