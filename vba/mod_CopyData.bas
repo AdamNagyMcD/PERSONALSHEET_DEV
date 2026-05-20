@@ -151,18 +151,17 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                                       ByRef futureNewStarts As Collection)
     Dim baseValues As Collection
     Dim currentValues As Collection
+    Dim priorValues As Collection
     
     Dim ws As Worksheet
     Dim monthIndex As Long
     Dim r As Long
     Dim keyText As String
     Dim targetData As Variant
-    Dim monthDataByIndex As Variant
-    Dim nextMonthValue As String
     
     Set baseValues = New Collection
     Set currentValues = New Collection
-    ReDim monthDataByIndex(1 To 12)
+    Set priorValues = New Collection
     
     For r = 1 To UBound(sourceData, 1)
         keyText = PID_BuildEmployeeKey(sourceData(r, 1), sourceData(r, 2))
@@ -189,6 +188,9 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
             PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "J"), CStr(sourceData(r, 9))
             PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "M"), CStr(sourceData(r, 12))
             PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "N"), CStr(sourceData(r, 13))
+            
+            PID_AddOrReplaceCollectionValue priorValues, PID_BaseKey(keyText, "E"), CStr(sourceData(r, 4))
+            PID_AddOrReplaceCollectionValue priorValues, PID_BaseKey(keyText, "F"), CStr(sourceData(r, 5))
         End If
     Next r
     
@@ -200,13 +202,7 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
         On Error GoTo 0
         
         If Not ws Is Nothing Then
-            monthDataByIndex(monthIndex) = PID_ReadMonthData(ws)
-        End If
-    Next monthIndex
-    
-    For monthIndex = sourceMonthIndex + 1 To 12
-        If IsArray(monthDataByIndex(monthIndex)) Then
-            targetData = monthDataByIndex(monthIndex)
+            targetData = PID_ReadMonthData(ws)
     
             For r = 1 To UBound(targetData, 1)
                 keyText = PID_BuildEmployeeKey(targetData(r, 1), targetData(r, 2))
@@ -251,12 +247,13 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                         PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "M"), CStr(targetData(r, 12))
                         PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "N"), CStr(targetData(r, 13))
                         
-                    Else
-                        nextMonthValue = PID_GetFieldValueFromMonthData(monthDataByIndex, monthIndex + 1, keyText, "E")
-                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, futureOverrides, monthIndex, keyText, "E", targetData(r, 4), nextMonthValue
+                        PID_AddOrReplaceCollectionValue priorValues, PID_BaseKey(keyText, "E"), CStr(targetData(r, 4))
+                        PID_AddOrReplaceCollectionValue priorValues, PID_BaseKey(keyText, "F"), CStr(targetData(r, 5))
                         
-                        nextMonthValue = PID_GetFieldValueFromMonthData(monthDataByIndex, monthIndex + 1, keyText, "F")
-                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, futureOverrides, monthIndex, keyText, "F", targetData(r, 5), nextMonthValue
+                    Else
+                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, priorValues, futureOverrides, monthIndex, keyText, "E", targetData(r, 4)
+                        
+                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, priorValues, futureOverrides, monthIndex, keyText, "F", targetData(r, 5)
                         
                         If Trim$(CStr(targetData(r, 8))) <> "" Then
                             PID_AddOverrideValue futureOverrides, monthIndex, keyText, "I", targetData(r, 8)
@@ -285,67 +282,34 @@ End Sub
 
 Private Sub PID_CheckAndStoreChangedFutureValue(ByRef baseValues As Collection, _
                                                ByRef currentValues As Collection, _
+                                               ByRef priorValues As Collection, _
                                                ByRef futureOverrides As Collection, _
                                                ByVal monthIndex As Long, _
                                                ByVal keyText As String, _
                                                ByVal fieldCode As String, _
-                                               ByVal newValue As Variant, _
-                                               ByVal nextMonthValue As Variant)
+                                               ByVal newValue As Variant)
     Dim baseKeyText As String
     Dim currentValue As Variant
-    Dim originalValue As Variant
+    Dim priorValue As Variant
     
     If Trim$(CStr(newValue)) = "" Then Exit Sub
     
     baseKeyText = PID_BaseKey(keyText, fieldCode)
     currentValue = PID_GetCollectionValue(currentValues, baseKeyText, PID_GetCollectionValue(baseValues, baseKeyText, ""))
-    originalValue = PID_GetCollectionValue(baseValues, baseKeyText, "")
+    priorValue = PID_GetCollectionValue(priorValues, baseKeyText, currentValue)
     
     ' Keep every real change point in timeline (also when value returns to an earlier/original value).
     If Not PID_ValuesEqual(newValue, currentValue) Then
-        ' Ignore stale fallback to original value when the next month is still original.
-        If PID_ValuesEqual(newValue, originalValue) And Not PID_ValuesEqual(currentValue, originalValue) Then
-            If PID_ValuesEqual(nextMonthValue, originalValue) Then Exit Sub
+        ' Ignore stale immediate fallback to the previous effective value.
+        If PID_ValuesEqual(newValue, priorValue) Then
+            Exit Sub
         End If
         
         PID_AddOverrideValue futureOverrides, monthIndex, keyText, fieldCode, newValue
+        PID_AddOrReplaceCollectionValue priorValues, baseKeyText, CStr(currentValue)
         PID_AddOrReplaceCollectionValue currentValues, baseKeyText, CStr(newValue)
     End If
 End Sub
-
-
-Private Function PID_GetFieldValueFromMonthData(ByRef monthDataByIndex As Variant, _
-                                                ByVal monthIndex As Long, _
-                                                ByVal employeeKey As String, _
-                                                ByVal fieldCode As String) As String
-    Dim monthData As Variant
-    Dim r As Long
-    Dim colIndex As Long
-    Dim keyText As String
-    
-    If monthIndex < 1 Or monthIndex > 12 Then Exit Function
-    If Not IsArray(monthDataByIndex(monthIndex)) Then Exit Function
-    
-    Select Case fieldCode
-        Case "E"
-            colIndex = 4
-        Case "F"
-            colIndex = 5
-        Case Else
-            Exit Function
-    End Select
-    
-    monthData = monthDataByIndex(monthIndex)
-    
-    For r = 1 To UBound(monthData, 1)
-        keyText = PID_BuildEmployeeKey(monthData(r, 1), monthData(r, 2))
-        
-        If keyText = employeeKey Then
-            PID_GetFieldValueFromMonthData = CStr(monthData(r, colIndex))
-            Exit Function
-        End If
-    Next r
-End Function
 
 
 Private Function PID_ValuesEqual(ByVal valueA As Variant, ByVal valueB As Variant) As Boolean
@@ -550,7 +514,6 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     
     PID_RestoreFormulas ws, formulaH, formulaK, formulaL, infoOQ
     
-    RefreshKVStundenDropdownForSheet ws, ws.Range("E3:E82")
     RefreshKVLohnForSheet ws
     
     If PID_CALCULATE_FLUCTUATION_DURING_COPY Then

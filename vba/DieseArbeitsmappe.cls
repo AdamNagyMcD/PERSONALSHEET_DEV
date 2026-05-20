@@ -171,6 +171,8 @@ End Sub
 
 
 Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Range)
+    Dim hasValidation As Boolean
+    
     On Error GoTo SafeExit
     
     If mInternalChange Then Exit Sub
@@ -181,6 +183,22 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     mInternalChange = True
     
     Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    ' If user selects F and dropdown is missing after CopyData, rebuild only that row.
+    If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
+        hasValidation = False
+        
+        On Error Resume Next
+        hasValidation = (Target.Validation.Type <> 0)
+        On Error GoTo SafeExit
+        
+        If Not hasValidation Then
+            If Trim$(CStr(Sh.Cells(Target.Row, "E").Value)) <> "" Then
+                RefreshKVStundenDropdownForSheet Sh, Sh.Cells(Target.Row, "E")
+            End If
+        End If
+    End If
     
     ' Nur Eintrittsdatum Spalte D.
     If Intersect(Target, Sh.Range("D3:D82")) Is Nothing Then
@@ -196,6 +214,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     PID_ShowEmploymentDuration Sh, Target
 
 SafeExit:
+    Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
 End Sub
