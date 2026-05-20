@@ -130,7 +130,8 @@ Public Sub AddNewKVPeriodOnTop()
     
     MsgBox "Der neue KV-Zeitraum wurde erfolgreich oben eingefuegt:" & vbCrLf & vbCrLf & _
            newPeriod & vbCrLf & vbCrLf & _
-           "Bitte jetzt die Lohnwerte kontrollieren und bei Bedarf anpassen.", _
+           "Monatsstunden wurden aus der Vorlage uebernommen." & vbCrLf & _
+           "Monatslohn (Spalte H) bitte jetzt neu erfassen.", _
            vbInformation, "Neuer KV-Zeitraum"
 
 CleanExit:
@@ -888,7 +889,8 @@ Private Function BuildNewPeriodDataFromTemplate(ByVal wsKV As Worksheet, _
             sourceOffset = schemaIndex - 1
             If sourceOffset < blockRows Then
                 resultData(outRow, 7) = templateData(blockStart + sourceOffset, 7)
-                resultData(outRow, 8) = templateData(blockStart + sourceOffset, 8)
+                ' Monatslohn wird pro neuer KV-Periode neu erfasst (nicht aus Vorlage uebernehmen).
+                resultData(outRow, 8) = ""
                 resultData(outRow, 9) = ""
             Else
                 resultData(outRow, 7) = ""
