@@ -118,9 +118,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     
     On Error GoTo SafeExit
     
-    ' Self-heal: if internal flag got stuck True after an interrupted run,
-    ' do not skip salary refresh forever.
-    If mInternalChange Then mInternalChange = False
+    If mInternalChange Then Exit Sub
     If Not TypeOf Sh Is Worksheet Then Exit Sub
     
     ' Wenn die KV-Basistabelle geaendert wird, wird die Dropdown-Liste spaeter neu aufgebaut.
@@ -153,14 +151,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' Wenn E oder F sich aendert:
     ' G = Monatslohn wird nur in der betreffenden Zeile aktualisiert.
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
-        ' Salary refresh must always run, even if optional logging routine is unavailable.
         RefreshKVLohnForSheet Sh, Target
-        PID_RefreshKVLohnRowsDirect Sh, Target
-        PID_ForceRefreshKVLohnRowsDirect Sh, Target
-        
-        On Error Resume Next
-        Application.Run "PID_LogEFAenderungForSheet", Sh, Target
-        On Error GoTo SafeExit
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:
@@ -176,163 +167,6 @@ SafeExit:
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
-End Sub
-
-
-Private Sub PID_RefreshKVLohnRowsDirect(ByVal ws As Worksheet, ByVal changedRange As Range)
-    Dim rowsToCheck As Range
-    Dim c As Range
-    Dim checkedRows As Collection
-    Dim rowKey As String
-    Dim monthNumber As Long
-    
-    On Error GoTo SafeExit
-    
-    If ws Is Nothing Then Exit Sub
-    If changedRange Is Nothing Then Exit Sub
-    If Not IsNumeric(ws.Range("A1").Value) Then Exit Sub
-    
-    monthNumber = CLng(ws.Range("A1").Value)
-    If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
-    
-    Set rowsToCheck = Intersect(changedRange, ws.Range("E3:F82"))
-    If rowsToCheck Is Nothing Then Exit Sub
-    
-    Set checkedRows = New Collection
-    
-    For Each c In rowsToCheck.Cells
-        rowKey = CStr(c.Row)
-        
-        If Not CollectionHasKeyLocal(checkedRows, rowKey) Then
-            checkedRows.Add rowKey, rowKey
-            RefreshKVLohnForRow ws, c.Row, monthNumber
-        End If
-    Next c
-    
-SafeExit:
-End Sub
-
-
-Private Sub PID_ForceRefreshKVLohnRowsDirect(ByVal ws As Worksheet, ByVal changedRange As Range)
-    Dim rowsToCheck As Range
-    Dim c As Range
-    Dim checkedRows As Collection
-    Dim rowKey As String
-    Dim monthNumber As Long
-    
-    On Error GoTo SafeExit
-    
-    If ws Is Nothing Then Exit Sub
-    If changedRange Is Nothing Then Exit Sub
-    If Not IsNumeric(ws.Range("A1").Value) Then Exit Sub
-    
-    monthNumber = CLng(ws.Range("A1").Value)
-    If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
-    
-    Set rowsToCheck = Intersect(changedRange, ws.Range("E3:F82"))
-    If rowsToCheck Is Nothing Then Exit Sub
-    
-    Set checkedRows = New Collection
-    
-    For Each c In rowsToCheck.Cells
-        rowKey = CStr(c.Row)
-        
-        If Not CollectionHasKeyLocal(checkedRows, rowKey) Then
-            checkedRows.Add rowKey, rowKey
-            PID_ForceRefreshKVLohnForRow ws, c.Row, monthNumber
-        End If
-    Next c
-    
-SafeExit:
-End Sub
-
-
-Private Sub PID_ForceRefreshKVLohnForRow(ByVal ws As Worksheet, ByVal rowNumber As Long, ByVal monthNumber As Long)
-    Dim kvCode As String
-    Dim stunden As Variant
-    Dim stundenVal As Double
-    Dim lohn As Variant
-    Dim wasProtected As Boolean
-    
-    On Error GoTo SafeExit
-    
-    If ws Is Nothing Then Exit Sub
-    If rowNumber < 3 Or rowNumber > 82 Then Exit Sub
-    
-    kvCode = NormalizeKVCodeForLookup(CStr(ws.Cells(rowNumber, "E").Value))
-    stunden = ws.Cells(rowNumber, "F").Value
-    
-    wasProtected = ws.ProtectContents
-    On Error Resume Next
-    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
-    On Error GoTo SafeExit
-    
-    If kvCode <> "" And PID_ParseDoubleLocal(stunden, stundenVal) Then
-        lohn = GetKVLohnByPeriod(monthNumber, kvCode, stundenVal)
-        
-        If IsError(lohn) Then
-            ws.Cells(rowNumber, "G").Value = "Nicht gefunden"
-            ws.Cells(rowNumber, "G").NumberFormat = "General"
-        Else
-            ws.Cells(rowNumber, "G").Value = CDbl(lohn)
-            PID_ApplyEuroNumberFormat ws.Cells(rowNumber, "G")
-        End If
-    Else
-        ws.Cells(rowNumber, "G").ClearContents
-        PID_ApplyEuroNumberFormat ws.Cells(rowNumber, "G")
-    End If
-    
-SafeExit:
-    On Error Resume Next
-    If wasProtected Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
-    End If
-End Sub
-
-
-Private Function PID_ParseDoubleLocal(ByVal valueToParse As Variant, ByRef resultValue As Double) As Boolean
-    Dim s As String
-    
-    If IsNumeric(valueToParse) Then
-        resultValue = CDbl(valueToParse)
-        PID_ParseDoubleLocal = True
-        Exit Function
-    End If
-    
-    s = Trim$(CStr(valueToParse))
-    s = Replace(s, " ", "")
-    s = Replace(s, ChrW(160), "")
-    If s = "" Then Exit Function
-    
-    s = Replace(s, ".", ",")
-    
-    If IsNumeric(s) Then
-        resultValue = CDbl(s)
-        PID_ParseDoubleLocal = True
-    End If
-End Function
-
-
-Public Sub PID_ForceRefreshActiveRowLohn()
-    Dim ws As Worksheet
-    Dim rowNumber As Long
-    Dim monthNumber As Long
-    
-    On Error GoTo SafeExit
-    
-    If TypeName(ActiveSheet) <> "Worksheet" Then Exit Sub
-    Set ws = ActiveSheet
-    
-    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
-    If Not IsNumeric(ws.Range("A1").Value) Then Exit Sub
-    
-    rowNumber = ActiveCell.Row
-    If rowNumber < 3 Or rowNumber > 82 Then Exit Sub
-    
-    monthNumber = CLng(ws.Range("A1").Value)
-    PID_ForceRefreshKVLohnForRow ws, rowNumber, monthNumber
-    
-SafeExit:
 End Sub
 
 
