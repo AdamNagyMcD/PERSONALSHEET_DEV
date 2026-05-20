@@ -415,6 +415,8 @@ Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
     On Error GoTo CleanFail
     
     periodData = wsKV.Range("A" & periodFirstRow & ":I" & periodLastRow).Value
+    periodData = PID_FilterValidKVRows(periodData, targetPeriod)
+    periodRowCount = UBound(periodData, 1)
     
     PID_ClearKVDataArea wsKV, firstDataRow, cleanupLastRow
     wsKV.Range("A" & firstDataRow + 1 & ":I" & firstDataRow + periodRowCount).Value = periodData
@@ -452,6 +454,66 @@ CleanFail:
            vbExclamation, "Basis wiederherstellen"
     Resume CleanExit
 End Sub
+
+
+Private Function PID_FilterValidKVRows(ByVal sourceData As Variant, ByVal periodName As String) As Variant
+    Dim r As Long
+    Dim outRow As Long
+    Dim validCount As Long
+    Dim resultData As Variant
+    
+    On Error GoTo Fallback
+    
+    validCount = 0
+    
+    For r = 1 To UBound(sourceData, 1)
+        If PID_IsValidKVDataRow(sourceData, r) Then
+            validCount = validCount + 1
+        End If
+    Next r
+    
+    If validCount = 0 Then GoTo Fallback
+    
+    ReDim resultData(1 To validCount, 1 To 9)
+    outRow = 0
+    
+    For r = 1 To UBound(sourceData, 1)
+        If PID_IsValidKVDataRow(sourceData, r) Then
+            outRow = outRow + 1
+            
+            resultData(outRow, 1) = periodName
+            resultData(outRow, 2) = sourceData(r, 2)
+            resultData(outRow, 3) = sourceData(r, 3)
+            resultData(outRow, 4) = sourceData(r, 4)
+            resultData(outRow, 5) = sourceData(r, 5)
+            resultData(outRow, 6) = sourceData(r, 6)
+            resultData(outRow, 7) = sourceData(r, 7)
+            resultData(outRow, 8) = sourceData(r, 8)
+            resultData(outRow, 9) = sourceData(r, 9)
+            
+            If Trim$(CStr(resultData(outRow, 9))) = "" Then
+                resultData(outRow, 9) = "OK"
+            End If
+        End If
+    Next r
+    
+    PID_FilterValidKVRows = resultData
+    Exit Function
+    
+Fallback:
+    PID_FilterValidKVRows = sourceData
+End Function
+
+
+Private Function PID_IsValidKVDataRow(ByVal sourceData As Variant, ByVal rowIndex As Long) As Boolean
+    If rowIndex < 1 Or rowIndex > UBound(sourceData, 1) Then Exit Function
+    
+    If Trim$(CStr(sourceData(rowIndex, 4))) = "" Then Exit Function
+    If Trim$(CStr(sourceData(rowIndex, 5))) = "" Then Exit Function
+    If Trim$(CStr(sourceData(rowIndex, 6))) = "" Then Exit Function
+    
+    PID_IsValidKVDataRow = True
+End Function
 
 
 Private Function AskForKVStartYear(ByVal defaultYear As Long) As Long
