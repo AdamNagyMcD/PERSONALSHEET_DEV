@@ -152,6 +152,11 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' G = Monatslohn wird nur in der betreffenden Zeile aktualisiert.
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
         RefreshKVLohnForSheet Sh, Target
+        
+        ' Log E/F hour changes for deterministic future-month propagation in CopyData.
+        On Error Resume Next
+        Application.Run "'" & ThisWorkbook.Name & "'!PID_LogEFAenderungForSheet", Sh, Target
+        On Error GoTo SafeExit
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:

@@ -442,6 +442,21 @@ Private Function PID_GetOrCreateHourOverrideLogSheet() As Worksheet
 End Function
 
 
+Public Sub PID_ResetHourOverrideLog()
+    Dim ws As Worksheet
+    
+    On Error GoTo SafeExit
+    
+    Set ws = PID_GetOrCreateHourOverrideLogSheet()
+    If ws Is Nothing Then Exit Sub
+    
+    ws.Range("A2:E" & ws.Rows.Count).ClearContents
+    ws.Visible = xlSheetVeryHidden
+    
+SafeExit:
+End Sub
+
+
 Private Function PID_BuildTargetMonthData(ByVal currentData As Variant, _
                                           ByVal futureOverrides As Collection, _
                                           ByVal futureNewStarts As Collection, _
