@@ -1395,6 +1395,8 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
     Dim r As Long
     Dim currentPeriod As String
     Dim prevPeriod As String
+    Dim currentCode As String
+    Dim prevCode As String
     Dim groupText As String
     Dim rowRange As Range
     
@@ -1406,6 +1408,7 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
     For r = firstRow To lastRow
         Set rowRange = wsKV.Range("A" & r & ":J" & r)
         currentPeriod = NormalizeKVPeriodText(CStr(wsKV.Cells(r, "A").Value))
+        currentCode = UCase$(Trim$(CStr(wsKV.Cells(r, "D").Value)))
         groupText = UCase$(Trim$(CStr(wsKV.Cells(r, "E").Value)))
         
         ' Reset per-row visual baseline first.
@@ -1435,8 +1438,21 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
                 rowRange.Borders(xlEdgeTop).LineStyle = xlContinuous
                 rowRange.Borders(xlEdgeTop).Weight = xlMedium
                 rowRange.Borders(xlEdgeTop).Color = RGB(90, 90, 90)
+                
+                ' Bei neuem Zeitraum die KV-Code-Referenz zuruecksetzen.
+                prevCode = ""
             End If
             prevPeriod = currentPeriod
+        End If
+        
+        ' Zusaetzliche Trennlinie zwischen KV-Untergruppen (Basis / 5 / 10 / 15).
+        If currentCode <> "" Then
+            If prevCode <> "" And currentCode <> prevCode Then
+                rowRange.Borders(xlEdgeTop).LineStyle = xlContinuous
+                rowRange.Borders(xlEdgeTop).Weight = xlMedium
+                rowRange.Borders(xlEdgeTop).Color = RGB(120, 120, 120)
+            End If
+            prevCode = currentCode
         End If
     Next r
     
