@@ -4,7 +4,7 @@ Option Explicit
 ' Geschwindigkeit / Verhalten:
 ' True  = Jedes Monatsblatt springt am Ende des Makros auf A1 zurueck, langsamer, aber saubere Ansicht.
 ' False = Nur das urspruengliche Blatt kehrt zu A1 zurueck, schneller.
-Private Const PID_RESET_ALL_MONTH_SELECTIONS As Boolean = True
+Private Const PID_RESET_ALL_MONTH_SELECTIONS As Boolean = False
 
 ' True  = CopyData setzt waehrend der Ausfuehrung die Geld-/Zahlenformate aller betroffenen Monatsblaetter neu, langsamer.
 ' False = Formatiert nicht alle Monate neu, schneller. Vorhandene Formate bleiben erhalten.
@@ -12,7 +12,7 @@ Private Const PID_APPLY_FORMATS_DURING_COPY As Boolean = False
 
 ' True  = Die monatliche Fluktuation in Q31 wird auch waehrend CopyData aktualisiert.
 ' False = Nur das Dirty-Flag bleibt gesetzt, Fluktuation wird spaeter aktualisiert.
-Private Const PID_CALCULATE_FLUCTUATION_DURING_COPY As Boolean = True
+Private Const PID_CALCULATE_FLUCTUATION_DURING_COPY As Boolean = False
 
 
 Public Sub CopyData()
@@ -151,7 +151,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                                       ByRef futureNewStarts As Collection)
     Dim baseValues As Collection
     Dim currentValues As Collection
-    Dim overrideStarted As Collection
     
     Dim ws As Worksheet
     Dim monthIndex As Long
@@ -161,7 +160,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
     
     Set baseValues = New Collection
     Set currentValues = New Collection
-    Set overrideStarted = New Collection
     
     For r = 1 To UBound(sourceData, 1)
         keyText = PID_BuildEmployeeKey(sourceData(r, 1), sourceData(r, 2))
@@ -246,8 +244,8 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                         
                     Else
                         
-                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, overrideStarted, futureOverrides, monthIndex, keyText, "E", targetData(r, 4)
-                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, overrideStarted, futureOverrides, monthIndex, keyText, "F", targetData(r, 5)
+                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, futureOverrides, monthIndex, keyText, "E", targetData(r, 4)
+                        PID_CheckAndStoreChangedFutureValue baseValues, currentValues, futureOverrides, monthIndex, keyText, "F", targetData(r, 5)
                         
                         If Trim$(CStr(targetData(r, 8))) <> "" Then
                             PID_AddOverrideValue futureOverrides, monthIndex, keyText, "I", targetData(r, 8)
@@ -276,43 +274,23 @@ End Sub
 
 Private Sub PID_CheckAndStoreChangedFutureValue(ByRef baseValues As Collection, _
                                                ByRef currentValues As Collection, _
-                                               ByRef overrideStarted As Collection, _
                                                ByRef futureOverrides As Collection, _
                                                ByVal monthIndex As Long, _
                                                ByVal keyText As String, _
                                                ByVal fieldCode As String, _
                                                ByVal newValue As Variant)
     Dim baseKeyText As String
-    Dim startedKeyText As String
-    Dim originalValue As Variant
     Dim currentValue As Variant
     
     If Trim$(CStr(newValue)) = "" Then Exit Sub
     
     baseKeyText = PID_BaseKey(keyText, fieldCode)
-    startedKeyText = PID_BaseKey(keyText, "STARTED_" & fieldCode)
+    currentValue = PID_GetCollectionValue(currentValues, baseKeyText, PID_GetCollectionValue(baseValues, baseKeyText, ""))
     
-    originalValue = PID_GetCollectionValue(baseValues, baseKeyText, "")
-    currentValue = PID_GetCollectionValue(currentValues, baseKeyText, originalValue)
-    
-    If Not PID_CollectionHasKey(overrideStarted, startedKeyText) Then
-        
-        If CStr(newValue) <> CStr(originalValue) Then
-            PID_AddOverrideValue futureOverrides, monthIndex, keyText, fieldCode, newValue
-            PID_AddOrReplaceCollectionValue currentValues, baseKeyText, CStr(newValue)
-            PID_AddOrReplaceCollectionValue overrideStarted, startedKeyText, True
-        End If
-        
-    Else
-        
-        ' If an override already started, old original values in later months are ignored.
-        If CStr(newValue) = CStr(originalValue) Then Exit Sub
-        
-        If CStr(newValue) <> CStr(currentValue) Then
-            PID_AddOverrideValue futureOverrides, monthIndex, keyText, fieldCode, newValue
-            PID_AddOrReplaceCollectionValue currentValues, baseKeyText, CStr(newValue)
-        End If
-        
+    ' Keep every real change point in timeline (also when value returns to an earlier/original value).
+    If CStr(newValue) <> CStr(currentValue) Then
+        PID_AddOverrideValue futureOverrides, monthIndex, keyText, fieldCode, newValue
+        PID_AddOrReplaceCollectionValue currentValues, baseKeyText, CStr(newValue)
     End If
 End Sub
 
@@ -505,8 +483,6 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     ws.Range("B3:G82").Value = arrBG
     ws.Range("I3:J82").Value = arrIJ
     ws.Range("M3:N82").Value = arrMN
-    
-    PID_RestoreFormulas ws, formulaH, formulaK, formulaL, infoOQ
     
     PID_SortMonthSheet ws
     
