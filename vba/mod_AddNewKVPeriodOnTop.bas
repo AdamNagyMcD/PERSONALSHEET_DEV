@@ -24,8 +24,6 @@ Public Sub AddNewKVPeriodOnTop()
     Dim oldDisplayAlerts As Boolean
     Dim oldCalculation As XlCalculation
     
-    Dim answer As VbMsgBoxResult
-    
     On Error GoTo CleanFail
     
     Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
@@ -108,16 +106,6 @@ Public Sub AddNewKVPeriodOnTop()
     
     newRowCount = UBound(newPeriodData, 1)
     If newRowCount <= 0 Then GoTo CleanExit
-    
-    answer = MsgBox( _
-        "Neuen KV-Zeitraum erstellen?" & vbCrLf & vbCrLf & _
-        "Zeitraum: " & newPeriod & vbCrLf & _
-        "Vertraege pro KV-Code: " & newSchemaCount, _
-        vbQuestion + vbYesNo, _
-        "Neuer KV-Zeitraum" _
-    )
-    
-    If answer <> vbYes Then GoTo CleanExit
     
     InsertNewKVPeriodRows wsKV, firstDataRow, newPeriodData
     
@@ -1058,22 +1046,42 @@ End Sub
 
 
 Private Sub PID_ClearTrailingKVArea(ByVal wsKV As Worksheet, ByVal startRow As Long, ByVal endRow As Long)
-    Dim trailingRange As Range
-    
     On Error GoTo SafeExit
     
     If wsKV Is Nothing Then Exit Sub
     If startRow > endRow Then Exit Sub
     
-    Set trailingRange = wsKV.Range("A" & startRow & ":J" & endRow)
-    
     On Error Resume Next
-    trailingRange.UnMerge
+    wsKV.Range("A" & startRow & ":XFD" & endRow).UnMerge
+    wsKV.Range("A" & startRow & ":XFD" & endRow).Clear
+    wsKV.Rows(startRow & ":" & endRow).Delete Shift:=xlShiftUp
+    On Error GoTo 0
+    
+SafeExit:
+End Sub
+
+
+Private Sub PID_TrimKVSheetBelowTable(ByVal wsKV As Worksheet, ByVal firstDataRow As Long)
+    Dim lastDataRow As Long
+    Dim trimStart As Long
+    Dim usedLastRow As Long
+    
     On Error GoTo SafeExit
     
-    trailingRange.ClearContents
-    trailingRange.Validation.Delete
-    trailingRange.ClearFormats
+    If wsKV Is Nothing Then Exit Sub
+    
+    lastDataRow = PID_GetKVTableLastRow(wsKV, firstDataRow)
+    trimStart = lastDataRow + 1
+    usedLastRow = PID_GetSheetCleanupLastRow(wsKV, lastDataRow)
+    
+    If trimStart <= usedLastRow Then
+        PID_ClearTrailingKVArea wsKV, trimStart, usedLastRow
+    End If
+    
+    On Error Resume Next
+    If lastDataRow >= firstDataRow Then
+        wsKV.Range("K" & firstDataRow & ":XFD" & lastDataRow).Clear
+    End If
     
 SafeExit:
 End Sub
@@ -1107,8 +1115,6 @@ End Function
 Public Sub CleanupLOHNTABELLE_TESTTrailingArea()
     Dim wsKV As Worksheet
     Dim firstDataRow As Long
-    Dim dataLastRow As Long
-    Dim cleanupLastRow As Long
     Dim wasProtected As Boolean
     
     On Error GoTo SafeExit
@@ -1117,8 +1123,6 @@ Public Sub CleanupLOHNTABELLE_TESTTrailingArea()
     If wsKV Is Nothing Then Exit Sub
     
     firstDataRow = 4
-    dataLastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
-    cleanupLastRow = PID_GetSheetCleanupLastRow(wsKV, dataLastRow)
     
     wasProtected = wsKV.ProtectContents
     
@@ -1126,7 +1130,7 @@ Public Sub CleanupLOHNTABELLE_TESTTrailingArea()
     wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo SafeExit
     
-    PID_ClearTrailingKVArea wsKV, dataLastRow + 1, cleanupLastRow
+    PID_TrimKVSheetBelowTable wsKV, firstDataRow
     
 SafeExit:
     On Error Resume Next
@@ -1491,6 +1495,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
     
     PID_ApplyKVVisualGrouping wsKV, 4, lastRow
     PID_FormatKVRowTypography wsKV, 4, lastRow
+    PID_TrimKVSheetBelowTable wsKV, 4
 
 SafeExit:
     On Error Resume Next
