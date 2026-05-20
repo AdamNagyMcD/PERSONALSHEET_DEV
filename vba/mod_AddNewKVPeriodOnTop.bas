@@ -1,6 +1,8 @@
 Attribute VB_Name = "mod_AddNewKVPeriodOnTop"
 Option Explicit
 Private Const PID_ADD_PERIOD_BUTTON_NAME As String = "btn_AddNewKVPeriodOnTop"
+Private Const PID_ADD_CUSTOM_HOURS_BUTTON_NAME As String = "btn_AddCustomKVMonatsstunden"
+Private Const PID_KV_CODE_COUNT As Long = 12
 
 Public Sub AddNewKVPeriodOnTop()
     Dim wsKV As Worksheet
@@ -153,9 +155,137 @@ End Sub
 
 
 Public Sub EnsureAddNewKVPeriodButton()
+    PID_EnsureLOHNTABELLE_TESTButtons
+End Sub
+
+
+Public Sub AddCustomKVMonatsstunden()
+    Dim wsKV As Worksheet
+    Dim firstDataRow As Long
+    Dim selectedPeriod As String
+    Dim selectedKVCode As String
+    Dim newHours As Double
+    Dim newLohn As Variant
+    Dim hasLohn As Boolean
+    Dim blockFirst As Long
+    Dim blockLast As Long
+    Dim insertRow As Long
+    Dim templateRow As Long
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldDisplayAlerts As Boolean
+    Dim oldCalculation As XlCalculation
+    Dim stateCaptured As Boolean
+    
+    On Error GoTo CleanFail
+    
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    firstDataRow = 4
+    
+    If PID_GetKVTableLastRow(wsKV, firstDataRow) < firstDataRow Then
+        MsgBox "Keine KV-Daten in LOHNTABELLE_TEST gefunden.", _
+               vbExclamation, "Individuelle Monatsstunden"
+        Exit Sub
+    End If
+    
+    selectedPeriod = AskForKVPeriodSelection(wsKV, firstDataRow)
+    If selectedPeriod = "" Then Exit Sub
+    
+    selectedKVCode = AskForKVCodeSelection()
+    If selectedKVCode = "" Then Exit Sub
+    
+    If Not AskForCustomMonatsstunden(newHours) Then Exit Sub
+    
+    hasLohn = AskForOptionalMonatslohn(newLohn)
+    If Not hasLohn Then newLohn = Empty
+    
+    If Not PID_GetKVCodeBlockBounds(wsKV, selectedPeriod, selectedKVCode, firstDataRow, blockFirst, blockLast) Then
+        MsgBox "Der KV-Code """ & selectedKVCode & """ wurde im Zeitraum """ & selectedPeriod & """ nicht gefunden.", _
+               vbExclamation, "Individuelle Monatsstunden"
+        Exit Sub
+    End If
+    
+    If PID_KVCodeBlockHasHours(wsKV, blockFirst, blockLast, newHours) Then
+        MsgBox "Die Monatsstunden " & PID_FormatHoursText(newHours) & " existieren bereits in " & selectedKVCode & ".", _
+               vbExclamation, "Individuelle Monatsstunden"
+        Exit Sub
+    End If
+    
+    insertRow = PID_FindSortedInsertRowInBlock(wsKV, blockFirst, blockLast, newHours)
+    templateRow = blockFirst
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    oldDisplayAlerts = Application.DisplayAlerts
+    oldCalculation = Application.Calculation
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.Calculation = xlCalculationManual
+    stateCaptured = True
+    
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
+    wsKV.Rows(insertRow).Insert Shift:=xlDown
+    
+    PID_WriteCustomKVRow wsKV, insertRow, templateRow, selectedKVCode, newHours, newLohn, hasLohn
+    
+    FormatKVPeriodArea wsKV
+    PID_EnsureLOHNTABELLE_TESTButtons
+    
+    MarkAllKVDropdownsDirty
+    MarkAllKVLohnDirty
+    
+    MsgBox "Individuelle Monatsstunden eingefuegt:" & vbCrLf & vbCrLf & _
+           "Zeitraum: " & selectedPeriod & vbCrLf & _
+           "KV-Code: " & selectedKVCode & vbCrLf & _
+           "Monatsstunden: " & PID_FormatHoursText(newHours) & vbCrLf & _
+           "Position: Zeile " & insertRow & " (sortiert nach Stunden)", _
+           vbInformation, "Individuelle Monatsstunden"
+    GoTo CleanExit
+
+CleanExit:
+    On Error Resume Next
+    wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    
+    If stateCaptured Then
+        Application.Calculation = oldCalculation
+        Application.DisplayAlerts = oldDisplayAlerts
+        Application.ScreenUpdating = oldScreenUpdating
+        Application.EnableEvents = oldEnableEvents
+    End If
+    On Error GoTo 0
+    Exit Sub
+
+CleanFail:
+    On Error Resume Next
+    
+    If Not wsKV Is Nothing Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+    
+    If stateCaptured Then
+        Application.Calculation = oldCalculation
+        Application.DisplayAlerts = oldDisplayAlerts
+        Application.ScreenUpdating = oldScreenUpdating
+        Application.EnableEvents = oldEnableEvents
+    End If
+    
+    MsgBox "Fehler bei AddCustomKVMonatsstunden:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "Individuelle Monatsstunden"
+End Sub
+
+
+Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     Dim wsKV As Worksheet
     Dim btn As Shape
     Dim wasProtected As Boolean
+    Dim buttonTop As Double
     
     On Error GoTo SafeExit
     
@@ -167,12 +297,15 @@ Public Sub EnsureAddNewKVPeriodButton()
     On Error Resume Next
     wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     wsKV.Shapes(PID_ADD_PERIOD_BUTTON_NAME).Delete
+    wsKV.Shapes(PID_ADD_CUSTOM_HOURS_BUTTON_NAME).Delete
     On Error GoTo SafeExit
+    
+    buttonTop = wsKV.Range("J1").Top + 2
     
     Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
                                    Left:=wsKV.Range("J1").Left, _
-                                   Top:=wsKV.Range("J1").Top + 2, _
-                                   Width:=220, _
+                                   Top:=buttonTop, _
+                                   Width:=240, _
                                    Height:=22)
     
     btn.Name = PID_ADD_PERIOD_BUTTON_NAME
@@ -181,6 +314,21 @@ Public Sub EnsureAddNewKVPeriodButton()
     
     btn.Fill.ForeColor.RGB = RGB(54, 96, 146)
     btn.Line.ForeColor.RGB = RGB(33, 64, 99)
+    btn.TextFrame.Characters.Font.Color = RGB(255, 255, 255)
+    btn.TextFrame.Characters.Font.Bold = True
+    
+    Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                   Left:=wsKV.Range("J1").Left, _
+                                   Top:=buttonTop + 26, _
+                                   Width:=240, _
+                                   Height:=22)
+    
+    btn.Name = PID_ADD_CUSTOM_HOURS_BUTTON_NAME
+    btn.TextFrame.Characters.Text = "Individuelle Monatsstunden einfuegen"
+    btn.OnAction = "AddCustomKVMonatsstunden"
+    
+    btn.Fill.ForeColor.RGB = RGB(84, 130, 53)
+    btn.Line.ForeColor.RGB = RGB(56, 87, 35)
     btn.TextFrame.Characters.Font.Color = RGB(255, 255, 255)
     btn.TextFrame.Characters.Font.Bold = True
     
@@ -1779,4 +1927,343 @@ NextRow:
     
 SafeExit:
 End Sub
+
+
+Private Function AskForKVPeriodSelection(ByVal wsKV As Worksheet, ByVal firstDataRow As Long) As String
+    Dim periods As Collection
+    Dim promptText As String
+    Dim inputText As String
+    Dim selectedIndex As Long
+    Dim defaultIndex As Long
+    
+    Set periods = PID_CollectKVPeriods(wsKV, firstDataRow)
+    
+    If periods Is Nothing Then Exit Function
+    If periods.Count = 0 Then
+        MsgBox "Kein gueltiger KV-Zeitraum gefunden.", vbExclamation, "Individuelle Monatsstunden"
+        Exit Function
+    End If
+    
+    defaultIndex = 1
+    promptText = "Bitte Nummer des KV-Zeitraums waehlen:" & vbCrLf & vbCrLf
+    promptText = promptText & PID_BuildNumberedListFromCollection(periods)
+    promptText = promptText & vbCrLf & "Standard: 1 = aktuellster Zeitraum oben"
+    
+    inputText = InputBox(Prompt:=promptText, Title:="Individuelle Monatsstunden", Default:=CStr(defaultIndex))
+    inputText = Trim$(inputText)
+    If inputText = "" Then Exit Function
+    
+    If Not IsNumeric(inputText) Then
+        MsgBox "Ungueltige Eingabe. Bitte die Nummer des KV-Zeitraums eingeben.", _
+               vbExclamation, "Individuelle Monatsstunden"
+        Exit Function
+    End If
+    
+    selectedIndex = CLng(inputText)
+    
+    If selectedIndex < 1 Or selectedIndex > periods.Count Then
+        MsgBox "Die gewaehlte Nummer liegt ausserhalb der verfuegbaren Zeitraeume.", _
+               vbExclamation, "Individuelle Monatsstunden"
+        Exit Function
+    End If
+    
+    AskForKVPeriodSelection = CStr(periods(selectedIndex))
+End Function
+
+
+Private Function AskForKVCodeSelection() As String
+    Dim promptText As String
+    Dim inputText As String
+    Dim selectedIndex As Long
+    Dim i As Long
+    
+    promptText = "Bitte Nummer des KV-Codes waehlen:" & vbCrLf & vbCrLf
+    
+    For i = 1 To PID_KV_CODE_COUNT
+        promptText = promptText & CStr(i) & " = " & PID_GetStandardKVCodeByIndex(i) & vbCrLf
+    Next i
+    
+    inputText = InputBox(Prompt:=promptText, Title:="Individuelle Monatsstunden", Default:="1")
+    inputText = Trim$(inputText)
+    If inputText = "" Then Exit Function
+    
+    If Not IsNumeric(inputText) Then
+        MsgBox "Ungueltige Eingabe. Bitte die Nummer des KV-Codes eingeben.", _
+               vbExclamation, "Individuelle Monatsstunden"
+        Exit Function
+    End If
+    
+    selectedIndex = CLng(inputText)
+    
+    If selectedIndex < 1 Or selectedIndex > PID_KV_CODE_COUNT Then
+        MsgBox "Die gewaehlte Nummer liegt ausserhalb der verfuegbaren KV-Codes.", _
+               vbExclamation, "Individuelle Monatsstunden"
+        Exit Function
+    End If
+    
+    AskForKVCodeSelection = PID_GetStandardKVCodeByIndex(selectedIndex)
+End Function
+
+
+Private Function AskForCustomMonatsstunden(ByRef outHours As Double) As Boolean
+    Dim inputText As String
+    
+    inputText = InputBox( _
+        Prompt:="Bitte individuelle Monatsstunden eingeben." & vbCrLf & vbCrLf & _
+                "Beispiel: 160 oder 160,00", _
+        Title:="Individuelle Monatsstunden", _
+        Default:="" _
+    )
+    
+    inputText = Trim$(inputText)
+    If inputText = "" Then Exit Function
+    
+    If Not PID_TryReadDouble(inputText, outHours) Then
+        MsgBox "Ungueltige Monatsstunden. Bitte eine positive Zahl eingeben.", _
+               vbExclamation, "Individuelle Monatsstunden"
+        Exit Function
+    End If
+    
+    If outHours <= 0# Then
+        MsgBox "Monatsstunden muessen groesser als 0 sein.", vbExclamation, "Individuelle Monatsstunden"
+        Exit Function
+    End If
+    
+    AskForCustomMonatsstunden = True
+End Function
+
+
+Private Function AskForOptionalMonatslohn(ByRef outLohn As Variant) As Boolean
+    Dim inputText As String
+    Dim lohnValue As Double
+    
+    inputText = InputBox( _
+        Prompt:="Optional: Monatslohn eingeben." & vbCrLf & vbCrLf & _
+                "Leer lassen, wenn der Lohn spaeter manuell erfasst wird.", _
+        Title:="Individuelle Monatsstunden", _
+        Default:="" _
+    )
+    
+    inputText = Trim$(inputText)
+    If inputText = "" Then Exit Function
+    
+    If Not PID_TryReadDouble(inputText, lohnValue) Then
+        MsgBox "Ungueltiger Monatslohn. Bitte eine Zahl eingeben oder leer lassen.", _
+               vbExclamation, "Individuelle Monatsstunden"
+        Exit Function
+    End If
+    
+    If lohnValue < 0# Then
+        MsgBox "Monatslohn darf nicht negativ sein.", vbExclamation, "Individuelle Monatsstunden"
+        Exit Function
+    End If
+    
+    outLohn = lohnValue
+    AskForOptionalMonatslohn = True
+End Function
+
+
+Private Function PID_CollectKVPeriods(ByVal wsKV As Worksheet, ByVal firstDataRow As Long) As Collection
+    Dim periods As Collection
+    Dim lastRow As Long
+    Dim r As Long
+    Dim rowPeriod As String
+    
+    Set periods = New Collection
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then
+        Set PID_CollectKVPeriods = periods
+        Exit Function
+    End If
+    
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    
+    For r = firstDataRow To lastRow
+        rowPeriod = PID_GetRowKVPeriod(wsKV, r)
+        
+        If rowPeriod <> "" Then
+            If Not PID_CollectionContainsText(periods, rowPeriod) Then
+                periods.Add rowPeriod, PID_MakeCollectionKey(rowPeriod)
+            End If
+        End If
+    Next r
+    
+SafeExit:
+    Set PID_CollectKVPeriods = periods
+End Function
+
+
+Private Function PID_BuildNumberedListFromCollection(ByVal items As Collection) As String
+    Dim resultText As String
+    Dim i As Long
+    
+    If items Is Nothing Then Exit Function
+    
+    For i = 1 To items.Count
+        resultText = resultText & CStr(i) & " = " & CStr(items(i)) & vbCrLf
+    Next i
+    
+    PID_BuildNumberedListFromCollection = resultText
+End Function
+
+
+Private Function PID_CollectionContainsText(ByVal items As Collection, ByVal valueText As String) As Boolean
+    Dim i As Long
+    
+    On Error GoTo SafeExit
+    
+    If items Is Nothing Then Exit Function
+    
+    For i = 1 To items.Count
+        If StrComp(CStr(items(i)), valueText, vbTextCompare) = 0 Then
+            PID_CollectionContainsText = True
+            Exit Function
+        End If
+    Next i
+    
+SafeExit:
+End Function
+
+
+Private Function PID_MakeCollectionKey(ByVal valueText As String) As String
+    PID_MakeCollectionKey = Replace(Replace(Trim$(valueText), " ", "_"), "/", "_")
+End Function
+
+
+Private Function PID_GetStandardKVCodeByIndex(ByVal indexNumber As Long) As String
+    Select Case indexNumber
+        Case 1: PID_GetStandardKVCodeByIndex = "BG1_Basis"
+        Case 2: PID_GetStandardKVCodeByIndex = "BG1_5"
+        Case 3: PID_GetStandardKVCodeByIndex = "BG1_10"
+        Case 4: PID_GetStandardKVCodeByIndex = "BG1_15"
+        Case 5: PID_GetStandardKVCodeByIndex = "BG2_Basis"
+        Case 6: PID_GetStandardKVCodeByIndex = "BG2_5"
+        Case 7: PID_GetStandardKVCodeByIndex = "BG2_10"
+        Case 8: PID_GetStandardKVCodeByIndex = "BG2_15"
+        Case 9: PID_GetStandardKVCodeByIndex = "BG3_Basis"
+        Case 10: PID_GetStandardKVCodeByIndex = "BG3_5"
+        Case 11: PID_GetStandardKVCodeByIndex = "BG3_10"
+        Case 12: PID_GetStandardKVCodeByIndex = "BG3_15"
+        Case Else: PID_GetStandardKVCodeByIndex = ""
+    End Select
+End Function
+
+
+Private Function PID_GetKVCodeBlockBounds(ByVal wsKV As Worksheet, _
+                                            ByVal periodName As String, _
+                                            ByVal kvCode As String, _
+                                            ByVal firstDataRow As Long, _
+                                            ByRef outBlockFirst As Long, _
+                                            ByRef outBlockLast As Long) As Boolean
+    Dim periodFirst As Long
+    Dim periodLast As Long
+    Dim r As Long
+    Dim rowCode As String
+    Dim normalizedTargetCode As String
+    
+    outBlockFirst = 0
+    outBlockLast = 0
+    
+    periodName = NormalizeKVPeriodText(periodName)
+    normalizedTargetCode = NormalizeKVCodeForLookup(kvCode)
+    
+    If normalizedTargetCode = "" Then Exit Function
+    If Not PID_GetPeriodRowBounds(wsKV, periodName, firstDataRow, periodFirst, periodLast) Then Exit Function
+    
+    For r = periodFirst To periodLast
+        If wsKV.Range("A" & r).MergeCells Then GoTo NextRow
+        If Not PID_RowHasKVTableContent(wsKV, r) Then GoTo NextRow
+        
+        rowCode = NormalizeKVCodeForLookup(CStr(wsKV.Cells(r, "D").Value))
+        
+        If rowCode = normalizedTargetCode Then
+            If outBlockFirst = 0 Then outBlockFirst = r
+            outBlockLast = r
+        ElseIf outBlockFirst > 0 Then
+            Exit For
+        End If
+        
+NextRow:
+    Next r
+    
+    PID_GetKVCodeBlockBounds = (outBlockFirst > 0 And outBlockLast >= outBlockFirst)
+End Function
+
+
+Private Function PID_KVCodeBlockHasHours(ByVal wsKV As Worksheet, _
+                                         ByVal blockFirst As Long, _
+                                         ByVal blockLast As Long, _
+                                         ByVal targetHours As Double) As Boolean
+    Dim r As Long
+    Dim rowHours As Double
+    
+    For r = blockFirst To blockLast
+        If PID_TryReadDouble(wsKV.Cells(r, "G").Value, rowHours) Then
+            If Abs(rowHours - targetHours) < 0.001 Then
+                PID_KVCodeBlockHasHours = True
+                Exit Function
+            End If
+        End If
+    Next r
+End Function
+
+
+Private Function PID_FindSortedInsertRowInBlock(ByVal wsKV As Worksheet, _
+                                               ByVal blockFirst As Long, _
+                                               ByVal blockLast As Long, _
+                                               ByVal newHours As Double) As Long
+    Dim r As Long
+    Dim rowHours As Double
+    
+    For r = blockFirst To blockLast
+        If PID_TryReadDouble(wsKV.Cells(r, "G").Value, rowHours) Then
+            If newHours + 0.001 < rowHours Then
+                PID_FindSortedInsertRowInBlock = r
+                Exit Function
+            End If
+        Else
+            PID_FindSortedInsertRowInBlock = r
+            Exit Function
+        End If
+    Next r
+    
+    PID_FindSortedInsertRowInBlock = blockLast + 1
+End Function
+
+
+Private Sub PID_WriteCustomKVRow(ByVal wsKV As Worksheet, _
+                               ByVal targetRow As Long, _
+                               ByVal templateRow As Long, _
+                               ByVal kvCode As String, _
+                               ByVal newHours As Double, _
+                               ByVal newLohn As Variant, _
+                               ByVal hasLohn As Boolean)
+    Dim c As Long
+    
+    If wsKV Is Nothing Then Exit Sub
+    If targetRow < 1 Or templateRow < 1 Then Exit Sub
+    
+    wsKV.Range("A" & targetRow & ":J" & targetRow).UnMerge
+    wsKV.Range("A" & targetRow & ":J" & targetRow).ClearContents
+    
+    For c = 1 To 6
+        wsKV.Cells(targetRow, c).Value = wsKV.Cells(templateRow, c).Value
+    Next c
+    
+    wsKV.Cells(targetRow, "D").Value = kvCode
+    wsKV.Cells(targetRow, "G").Value = newHours
+    
+    If hasLohn Then
+        wsKV.Cells(targetRow, "H").Value = newLohn
+    Else
+        wsKV.Cells(targetRow, "H").ClearContents
+    End If
+End Sub
+
+
+Private Function PID_FormatHoursText(ByVal hoursValue As Double) As String
+    PID_FormatHoursText = Format$(hoursValue, "0.00")
+End Function
 
