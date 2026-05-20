@@ -151,10 +151,13 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' Wenn E oder F sich aendert:
     ' G = Monatslohn wird nur in der betreffenden Zeile aktualisiert.
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
+        ' Salary refresh must always run, even if optional logging routine is unavailable.
+        RefreshKVLohnForSheet Sh, Target
+        PID_RefreshKVLohnRowsDirect Sh, Target
+        
         On Error Resume Next
         Application.Run "PID_LogEFAenderungForSheet", Sh, Target
         On Error GoTo SafeExit
-        RefreshKVLohnForSheet Sh, Target
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:
@@ -170,6 +173,40 @@ SafeExit:
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
+End Sub
+
+
+Private Sub PID_RefreshKVLohnRowsDirect(ByVal ws As Worksheet, ByVal changedRange As Range)
+    Dim rowsToCheck As Range
+    Dim c As Range
+    Dim checkedRows As Collection
+    Dim rowKey As String
+    Dim monthNumber As Long
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If changedRange Is Nothing Then Exit Sub
+    If Not IsNumeric(ws.Range("A1").Value) Then Exit Sub
+    
+    monthNumber = CLng(ws.Range("A1").Value)
+    If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
+    
+    Set rowsToCheck = Intersect(changedRange, ws.Range("E3:F82"))
+    If rowsToCheck Is Nothing Then Exit Sub
+    
+    Set checkedRows = New Collection
+    
+    For Each c In rowsToCheck.Cells
+        rowKey = CStr(c.Row)
+        
+        If Not CollectionHasKeyLocal(checkedRows, rowKey) Then
+            checkedRows.Add rowKey, rowKey
+            RefreshKVLohnForRow ws, c.Row, monthNumber
+        End If
+    Next c
+    
+SafeExit:
 End Sub
 
 
