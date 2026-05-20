@@ -301,6 +301,7 @@ Public Sub RebuildLOHNTABELLE_TEST()
     
     PID_ClearKVDataArea wsKV, firstDataRow, lastRow
     wsKV.Range("A" & firstDataRow & ":I" & firstDataRow + periodRowCount - 1).Value = periodData
+    PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount, lastRow
     PID_NormalizeKVWarningText wsKV
     PID_NormalizeKVTableHeader wsKV
     
@@ -403,6 +404,28 @@ TryUnmerge:
     targetRange.UnMerge
     targetRange.ClearContents
     On Error GoTo 0
+End Sub
+
+
+Private Sub PID_ClearTrailingKVArea(ByVal wsKV As Worksheet, ByVal startRow As Long, ByVal endRow As Long)
+    Dim trailingRange As Range
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    If startRow > endRow Then Exit Sub
+    
+    Set trailingRange = wsKV.Range("A" & startRow & ":J" & endRow)
+    
+    On Error Resume Next
+    trailingRange.UnMerge
+    On Error GoTo SafeExit
+    
+    trailingRange.ClearContents
+    trailingRange.Validation.Delete
+    trailingRange.ClearFormats
+    
+SafeExit:
 End Sub
 
 
