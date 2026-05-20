@@ -1412,6 +1412,13 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
         End If
     Next r
     
+    ' Unteren Abschluss der Tabelle deutlich markieren.
+    With wsKV.Range("A" & lastRow & ":J" & lastRow).Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(90, 90, 90)
+    End With
+    
 SafeExit:
 End Sub
 
