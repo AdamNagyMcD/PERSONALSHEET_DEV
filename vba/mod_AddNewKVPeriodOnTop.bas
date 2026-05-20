@@ -195,6 +195,181 @@ SafeExit:
 End Sub
 
 
+Public Sub FixLOHNTABELLE_TEST_HeaderText()
+    Dim wsKV As Worksheet
+    Dim wasProtected As Boolean
+    
+    On Error GoTo SafeExit
+    
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    If wsKV Is Nothing Then Exit Sub
+    
+    wasProtected = wsKV.ProtectContents
+    
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo SafeExit
+    
+    PID_NormalizeKVWarningText wsKV
+    wsKV.Range("A2").WrapText = False
+    
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+End Sub
+
+
+Public Sub RebuildLOHNTABELLE_TEST()
+    Dim wsKV As Worksheet
+    Dim firstDataRow As Long
+    Dim lastRow As Long
+    Dim keepPeriod As String
+    Dim periodFirstRow As Long
+    Dim periodLastRow As Long
+    Dim periodRowCount As Long
+    Dim periodData As Variant
+    Dim answer As VbMsgBoxResult
+    Dim wasProtected As Boolean
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldDisplayAlerts As Boolean
+    Dim oldCalculation As XlCalculation
+    
+    On Error GoTo CleanFail
+    
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    If wsKV Is Nothing Then Exit Sub
+    
+    firstDataRow = 4
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    
+    If lastRow < firstDataRow Then
+        MsgBox "Keine Daten in LOHNTABELLE_TEST gefunden.", vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
+        Exit Sub
+    End If
+    
+    keepPeriod = GetBottomKVPeriod(wsKV, firstDataRow)
+    If keepPeriod = "" Then
+        MsgBox "Kein gueltiger KV-Zeitraum in Spalte A gefunden.", vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
+        Exit Sub
+    End If
+    
+    periodFirstRow = FindFirstRowOfPeriod(wsKV, keepPeriod, firstDataRow)
+    periodLastRow = FindLastRowOfPeriod(wsKV, keepPeriod, firstDataRow)
+    
+    If periodFirstRow = 0 Or periodLastRow = 0 Then
+        MsgBox "Der unterste KV-Zeitraum konnte nicht gelesen werden.", vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
+        Exit Sub
+    End If
+    
+    periodRowCount = periodLastRow - periodFirstRow + 1
+    If periodRowCount <= 0 Then Exit Sub
+    
+    answer = MsgBox( _
+        "LOHNTABELLE_TEST wird neu aufgebaut." & vbCrLf & vbCrLf & _
+        "Behalten wird nur der unterste Zeitraum:" & vbCrLf & _
+        keepPeriod & vbCrLf & vbCrLf & _
+        "Alle weiteren Test-Zeitraeume werden geloescht." & vbCrLf & vbCrLf & _
+        "Fortfahren?", _
+        vbQuestion + vbYesNo, _
+        "LOHNTABELLE_TEST neu aufbauen" _
+    )
+    
+    If answer <> vbYes Then Exit Sub
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    oldDisplayAlerts = Application.DisplayAlerts
+    oldCalculation = Application.Calculation
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.Calculation = xlCalculationManual
+    
+    wasProtected = wsKV.ProtectContents
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
+    periodData = wsKV.Range("A" & periodFirstRow & ":I" & periodLastRow).Value
+    
+    wsKV.Range("A" & firstDataRow & ":I" & lastRow).ClearContents
+    wsKV.Range("A" & firstDataRow & ":I" & firstDataRow + periodRowCount - 1).Value = periodData
+    PID_NormalizeKVWarningText wsKV
+    
+    If firstDataRow + periodRowCount <= wsKV.Rows.Count Then
+        wsKV.Range("I" & firstDataRow & ":I" & firstDataRow + periodRowCount - 1).Replace What:="", Replacement:="OK", LookAt:=xlWhole
+    End If
+    
+    FormatKVPeriodArea wsKV
+    MarkKVDropdownsDirty
+    
+    On Error Resume Next
+    PID_ResetHourOverrideLog
+    On Error GoTo CleanFail
+    
+    EnsureAddNewKVPeriodButton
+    
+    MsgBox "LOHNTABELLE_TEST wurde neu aufgebaut. Zeitraum aktiv: " & keepPeriod, _
+           vbInformation, "LOHNTABELLE_TEST neu aufgebaut"
+    
+CleanExit:
+    On Error Resume Next
+    If wasProtected Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+    
+    Application.Calculation = oldCalculation
+    Application.DisplayAlerts = oldDisplayAlerts
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    On Error GoTo 0
+    Exit Sub
+    
+CleanFail:
+    MsgBox "Fehler bei RebuildLOHNTABELLE_TEST:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
+    Resume CleanExit
+End Sub
+
+
+Private Function GetBottomKVPeriod(ByVal wsKV As Worksheet, ByVal firstDataRow As Long) As String
+    Dim r As Long
+    Dim lastRow As Long
+    Dim valueText As String
+    
+    On Error GoTo SafeExit
+    
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    
+    For r = lastRow To firstDataRow Step -1
+        valueText = NormalizeKVPeriodText(CStr(wsKV.Cells(r, "A").Value))
+        If valueText <> "" Then
+            GetBottomKVPeriod = valueText
+            Exit Function
+        End If
+    Next r
+    
+SafeExit:
+End Function
+
+
+Private Sub PID_NormalizeKVWarningText(ByVal wsKV As Worksheet)
+    If wsKV Is Nothing Then Exit Sub
+    
+    wsKV.Range("A2").Value = _
+        "Wichtig: Alte KV-Perioden niemals loeschen oder ueberschreiben. " & _
+        "Wenn ab Mai neue Werte gueltig sind, immer eine neue KV-Periode hinzufuegen. " & _
+        "In den Monatsblaettern wird spaeter nur der KV-Code ausgewaehlt. " & _
+        "Nur Zeilen mit Status OK verwenden."
+End Sub
+
+
 Private Sub InsertNewKVPeriodRows(ByVal wsKV As Worksheet, _
                                   ByVal firstDataRow As Long, _
                                   ByVal templateFirstRow As Long, _
