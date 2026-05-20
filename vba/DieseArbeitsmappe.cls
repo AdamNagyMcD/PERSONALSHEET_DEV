@@ -118,7 +118,9 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     
     On Error GoTo SafeExit
     
-    If mInternalChange Then Exit Sub
+    ' Self-heal: if internal flag got stuck True after an interrupted run,
+    ' do not skip salary refresh forever.
+    If mInternalChange Then mInternalChange = False
     If Not TypeOf Sh Is Worksheet Then Exit Sub
     
     ' Wenn die KV-Basistabelle geaendert wird, wird die Dropdown-Liste spaeter neu aufgebaut.
