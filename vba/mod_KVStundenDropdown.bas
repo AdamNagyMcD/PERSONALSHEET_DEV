@@ -2,10 +2,17 @@ Attribute VB_Name = "mod_KVStundenDropdown"
 Option Explicit
 
 Public gKVDropdownsDirty As Boolean
+Private mKVDropdownRefreshedSheets As Collection
 
 
 Public Sub MarkKVDropdownsDirty()
+    MarkAllKVDropdownsDirty
+End Sub
+
+
+Public Sub MarkAllKVDropdownsDirty()
     gKVDropdownsDirty = True
+    Set mKVDropdownRefreshedSheets = New Collection
 End Sub
 
 
@@ -24,6 +31,23 @@ Public Sub RefreshKVDropdownsIfDirty()
         RefreshAllMonthKVStundenDropdowns
         gKVDropdownsDirty = False
     End If
+End Sub
+
+
+Public Sub RefreshKVDropdownsIfDirtyForSheet(ByVal wsMonth As Worksheet)
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    If Not gKVDropdownsDirty Then Exit Sub
+    
+    If Not mKVDropdownRefreshedSheets Is Nothing Then
+        If CollectionHasKey_KVDropdown(mKVDropdownRefreshedSheets, wsMonth.Name) Then Exit Sub
+    End If
+    
+    RefreshKVStundenDropdownForSheet wsMonth
+    
+    On Error Resume Next
+    If mKVDropdownRefreshedSheets Is Nothing Then Set mKVDropdownRefreshedSheets = New Collection
+    mKVDropdownRefreshedSheets.Add wsMonth.Name, wsMonth.Name
 End Sub
 
 
@@ -269,12 +293,12 @@ Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode
     
     currentYear = CLng(wsLohn.Range("G3").Value)
     
-    targetPeriod = GetKVPeriodForWorkbookYear(currentYear, monthNumber)
-    previousPeriod = GetPreviousKVPeriodForWorkbookYear(currentYear, monthNumber)
+    targetPeriod = NormalizeKVPeriodForLookup(GetKVPeriodForWorkbookYear(currentYear, monthNumber))
+    previousPeriod = NormalizeKVPeriodForLookup(GetPreviousKVPeriodForWorkbookYear(currentYear, monthNumber))
     
     AddMonatsstundenValuesFromPeriod wsKV, targetPeriod, kvCode, values
     
-    If values.count = 0 Then
+    If values.Count = 0 Then
         AddMonatsstundenValuesFromPeriod wsKV, previousPeriod, kvCode, values
     End If
 
@@ -300,26 +324,32 @@ Public Sub AddMonatsstundenValuesFromPeriod(ByVal wsKV As Worksheet, _
     If Trim$(periodName) = "" Then Exit Sub
     If Trim$(kvCode) = "" Then Exit Sub
     
-    lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    periodName = NormalizeKVPeriodForLookup(periodName)
+    If periodName = "" Then Exit Sub
     
     For r = 4 To lastRow
-        rowPeriod = Trim$(CStr(wsKV.Cells(r, "A").Value))
+        If wsKV.Range("A" & r).MergeCells Then GoTo NextRow
         
-        If rowPeriod = periodName Then
-            rowKVCode = NormalizeKVCodeForLookup(CStr(wsKV.Cells(r, "D").Value))
-            
-            If rowKVCode = kvCode Then
-                rowMonatsstunden = wsKV.Cells(r, "G").Value
+        rowPeriod = GetRowKVPeriodForDropdown(wsKV, r)
+        If rowPeriod <> periodName Then GoTo NextRow
+        
+        rowKVCode = NormalizeKVCodeForLookup(CStr(wsKV.Cells(r, "D").Value))
+        If rowKVCode <> kvCode Then GoTo NextRow
+        
+        rowMonatsstunden = wsKV.Cells(r, "G").Value
+        
+        If IsNumeric(rowMonatsstunden) Then
+            If CDbl(rowMonatsstunden) > 0# Then
+                keyText = CStr(CDbl(rowMonatsstunden))
                 
-                If IsNumeric(rowMonatsstunden) Then
-                    keyText = CStr(CDbl(rowMonatsstunden))
-                    
-                    If Not CollectionHasKey_KVDropdown(values, keyText) Then
-                        values.Add CDbl(rowMonatsstunden), keyText
-                    End If
+                If Not CollectionHasKey_KVDropdown(values, keyText) Then
+                    values.Add CDbl(rowMonatsstunden), keyText
                 End If
             End If
         End If
+        
+NextRow:
     Next r
 
 SafeExit:
@@ -457,6 +487,34 @@ Public Sub ClearHelperColumnsForSheet(ByVal wsHelper As Worksheet, ByVal sheetNa
 
 SafeExit:
 End Sub
+
+
+Private Function GetRowKVPeriodForDropdown(ByVal wsKV As Worksheet, ByVal rowNumber As Long) As String
+    Dim r As Long
+    Dim cellText As String
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Function
+    If rowNumber < 1 Then Exit Function
+    
+    cellText = Trim$(CStr(wsKV.Cells(rowNumber, "A").Value))
+    
+    If cellText <> "" Then
+        GetRowKVPeriodForDropdown = NormalizeKVPeriodForLookup(cellText)
+        Exit Function
+    End If
+    
+    For r = rowNumber - 1 To 4 Step -1
+        cellText = Trim$(CStr(wsKV.Cells(r, "A").Value))
+        If cellText <> "" Then
+            GetRowKVPeriodForDropdown = NormalizeKVPeriodForLookup(cellText)
+            Exit Function
+        End If
+    Next r
+    
+SafeExit:
+End Function
 
 
 Public Function CollectionHasKey_KVDropdown(ByVal col As Collection, ByVal key As String) As Boolean

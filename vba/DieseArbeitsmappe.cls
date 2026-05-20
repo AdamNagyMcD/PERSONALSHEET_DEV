@@ -91,9 +91,10 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         GoTo SafeExit
     End If
     
-    ' Lohn nur bei Bedarf (nach KV-Tabelle-Aenderung), pro Monat einmal pro Aenderungszyklus.
+    ' Dropdown/Lohn nur bei Bedarf (nach KV-Tabelle-Aenderung), pro Monat einmal.
     If PID_IsWorkerMonthSheet(Sh) Then
         PID_ResetMonthView Sh
+        RefreshKVDropdownsIfDirtyForSheet Sh
         RefreshKVLohnIfDirty Sh
         GoTo SafeExit
     End If
@@ -140,8 +141,8 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     
     ' Wenn die KV-Basistabelle geaendert wird, wird die Dropdown-Liste spaeter neu aufgebaut.
     If Sh.Name = "LOHNTABELLE_TEST" Then
-        If Not Intersect(Target, Sh.Range("G:H")) Is Nothing Then
-            MarkKVDropdownsDirty
+        If Not Intersect(Target, Sh.Range("D4:J500")) Is Nothing Then
+            MarkAllKVDropdownsDirty
             MarkAllKVLohnDirty
         End If
         Exit Sub

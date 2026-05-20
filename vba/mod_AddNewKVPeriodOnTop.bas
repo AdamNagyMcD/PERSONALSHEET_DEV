@@ -114,8 +114,8 @@ Public Sub AddNewKVPeriodOnTop()
     FormatKVPeriodArea wsKV
     EnsureAddNewKVPeriodButton
     
-    MarkKVDropdownsDirty
-    MarkKVLohnDirty
+    MarkAllKVDropdownsDirty
+    MarkAllKVLohnDirty
     
     MsgBox "Der neue KV-Zeitraum wurde erfolgreich oben eingefuegt:" & vbCrLf & vbCrLf & _
            newPeriod & vbCrLf & vbCrLf & _

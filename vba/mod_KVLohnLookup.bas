@@ -448,7 +448,7 @@ NotFound:
 End Function
 
 
-Private Function NormalizeKVPeriodForLookup(ByVal periodText As String) As String
+Public Function NormalizeKVPeriodForLookup(ByVal periodText As String) As String
     Dim s As String
     
     s = Trim$(CStr(periodText))
