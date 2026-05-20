@@ -306,13 +306,14 @@ Public Sub RebuildLOHNTABELLE_TEST()
     periodData = wsKV.Range("A" & periodFirstRow & ":I" & periodLastRow).Value
     
     PID_ClearKVDataArea wsKV, firstDataRow, cleanupLastRow
-    wsKV.Range("A" & firstDataRow & ":I" & firstDataRow + periodRowCount - 1).Value = periodData
-    PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount, cleanupLastRow
+    wsKV.Range("A" & firstDataRow + 1 & ":I" & firstDataRow + periodRowCount).Value = periodData
+    PID_WriteKVPeriodTitleRow wsKV, firstDataRow, keepPeriod, periodData(1, 2), periodData(1, 3)
+    PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount + 1, cleanupLastRow
     PID_NormalizeKVWarningText wsKV
     PID_NormalizeKVTableHeader wsKV
     
     If firstDataRow + periodRowCount <= wsKV.Rows.Count Then
-        wsKV.Range("I" & firstDataRow & ":I" & firstDataRow + periodRowCount - 1).Replace What:="", Replacement:="OK", LookAt:=xlWhole
+        wsKV.Range("I" & firstDataRow + 1 & ":I" & firstDataRow + periodRowCount).Replace What:="", Replacement:="OK", LookAt:=xlWhole
     End If
     
     FormatKVPeriodArea wsKV
@@ -344,6 +345,111 @@ CleanFail:
     MsgBox "Fehler bei RebuildLOHNTABELLE_TEST:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
            vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
+    Resume CleanExit
+End Sub
+
+
+Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
+    Dim wsKV As Worksheet
+    Dim targetPeriod As String
+    Dim firstDataRow As Long
+    Dim lastRow As Long
+    Dim cleanupLastRow As Long
+    Dim periodFirstRow As Long
+    Dim periodLastRow As Long
+    Dim periodRowCount As Long
+    Dim periodData As Variant
+    Dim answer As VbMsgBoxResult
+    Dim wasProtected As Boolean
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldDisplayAlerts As Boolean
+    Dim oldCalculation As XlCalculation
+    
+    On Error GoTo CleanFail
+    
+    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    If wsKV Is Nothing Then Exit Sub
+    
+    targetPeriod = "KV 2025/2026"
+    firstDataRow = 4
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    cleanupLastRow = PID_GetSheetCleanupLastRow(wsKV, lastRow)
+    
+    periodFirstRow = FindFirstRowOfPeriod(wsKV, targetPeriod, firstDataRow)
+    periodLastRow = FindLastRowOfPeriod(wsKV, targetPeriod, firstDataRow)
+    
+    If periodFirstRow = 0 Or periodLastRow = 0 Then
+        MsgBox "Der Basiszeitraum '" & targetPeriod & "' wurde nicht gefunden.", _
+               vbExclamation, "Basis wiederherstellen"
+        Exit Sub
+    End If
+    
+    periodRowCount = periodLastRow - periodFirstRow + 1
+    If periodRowCount <= 0 Then Exit Sub
+    
+    answer = MsgBox( _
+        "LOHNTABELLE_TEST wird auf den Basiszeitraum zurueckgesetzt:" & vbCrLf & vbCrLf & _
+        targetPeriod & vbCrLf & vbCrLf & _
+        "Fortfahren?", _
+        vbQuestion + vbYesNo, _
+        "Basis wiederherstellen" _
+    )
+    
+    If answer <> vbYes Then Exit Sub
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    oldDisplayAlerts = Application.DisplayAlerts
+    oldCalculation = Application.Calculation
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.Calculation = xlCalculationManual
+    
+    wasProtected = wsKV.ProtectContents
+    On Error Resume Next
+    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
+    periodData = wsKV.Range("A" & periodFirstRow & ":I" & periodLastRow).Value
+    
+    PID_ClearKVDataArea wsKV, firstDataRow, cleanupLastRow
+    wsKV.Range("A" & firstDataRow + 1 & ":I" & firstDataRow + periodRowCount).Value = periodData
+    PID_WriteKVPeriodTitleRow wsKV, firstDataRow, targetPeriod, periodData(1, 2), periodData(1, 3)
+    PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount + 1, cleanupLastRow
+    
+    PID_NormalizeKVWarningText wsKV
+    PID_NormalizeKVTableHeader wsKV
+    FormatKVPeriodArea wsKV
+    EnsureAddNewKVPeriodButton
+    
+    On Error Resume Next
+    PID_ResetHourOverrideLog
+    On Error GoTo CleanFail
+    
+    MsgBox "Basiszeitraum wurde wiederhergestellt: " & targetPeriod, _
+           vbInformation, "Basis wiederherstellen"
+    
+CleanExit:
+    On Error Resume Next
+    If wasProtected Then
+        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+    
+    Application.Calculation = oldCalculation
+    Application.DisplayAlerts = oldDisplayAlerts
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    On Error GoTo 0
+    Exit Sub
+    
+CleanFail:
+    MsgBox "Fehler bei RestoreLOHNTABELLE_TESTBase2025_2026:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "Basis wiederherstellen"
     Resume CleanExit
 End Sub
 
