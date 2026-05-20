@@ -217,7 +217,7 @@ Public Sub FixLOHNTABELLE_TEST_HeaderText()
     
     PID_NormalizeKVWarningText wsKV
     PID_NormalizeKVTableHeader wsKV
-    wsKV.Range("A2").WrapText = False
+    wsKV.Range("A2").WrapText = True
     
 SafeExit:
     On Error Resume Next
@@ -484,9 +484,9 @@ Private Function PID_FilterValidKVRows(ByVal sourceData As Variant, ByVal period
             resultData(outRow, 1) = periodName
             resultData(outRow, 2) = sourceData(r, 2)
             resultData(outRow, 3) = sourceData(r, 3)
-            resultData(outRow, 4) = sourceData(r, 4)
-            resultData(outRow, 5) = sourceData(r, 5)
-            resultData(outRow, 6) = sourceData(r, 6)
+            resultData(outRow, 4) = PID_GetNearestTextValue(sourceData, r, 4)
+            resultData(outRow, 5) = PID_GetNearestTextValue(sourceData, r, 5)
+            resultData(outRow, 6) = PID_GetNearestTextValue(sourceData, r, 6)
             resultData(outRow, 7) = sourceData(r, 7)
             resultData(outRow, 8) = sourceData(r, 8)
             resultData(outRow, 9) = sourceData(r, 9)
@@ -508,11 +508,43 @@ End Function
 Private Function PID_IsValidKVDataRow(ByVal sourceData As Variant, ByVal rowIndex As Long) As Boolean
     If rowIndex < 1 Or rowIndex > UBound(sourceData, 1) Then Exit Function
     
-    If Trim$(CStr(sourceData(rowIndex, 4))) = "" Then Exit Function
-    If Trim$(CStr(sourceData(rowIndex, 5))) = "" Then Exit Function
-    If Trim$(CStr(sourceData(rowIndex, 6))) = "" Then Exit Function
+    If Trim$(CStr(PID_GetNearestTextValue(sourceData, rowIndex, 4))) = "" Then Exit Function
+    If Trim$(CStr(PID_GetNearestTextValue(sourceData, rowIndex, 5))) = "" Then Exit Function
+    If Trim$(CStr(PID_GetNearestTextValue(sourceData, rowIndex, 6))) = "" Then Exit Function
     
     PID_IsValidKVDataRow = True
+End Function
+
+
+Private Function PID_GetNearestTextValue(ByVal sourceData As Variant, _
+                                         ByVal rowIndex As Long, _
+                                         ByVal colIndex As Long) As String
+    Dim r As Long
+    Dim valueText As String
+    
+    If rowIndex < 1 Or rowIndex > UBound(sourceData, 1) Then Exit Function
+    
+    valueText = Trim$(CStr(sourceData(rowIndex, colIndex)))
+    If valueText <> "" Then
+        PID_GetNearestTextValue = valueText
+        Exit Function
+    End If
+    
+    For r = rowIndex - 1 To 1 Step -1
+        valueText = Trim$(CStr(sourceData(r, colIndex)))
+        If valueText <> "" Then
+            PID_GetNearestTextValue = valueText
+            Exit Function
+        End If
+    Next r
+    
+    For r = rowIndex + 1 To UBound(sourceData, 1)
+        valueText = Trim$(CStr(sourceData(r, colIndex)))
+        If valueText <> "" Then
+            PID_GetNearestTextValue = valueText
+            Exit Function
+        End If
+    Next r
 End Function
 
 
@@ -762,6 +794,7 @@ Private Sub PID_NormalizeKVWarningText(ByVal wsKV As Worksheet)
         "Wenn ab Mai neue Werte gueltig sind, immer eine neue KV-Periode hinzufuegen. " & _
         "In den Monatsblaettern wird spaeter nur der KV-Code ausgewaehlt. " & _
         "Nur Zeilen mit Status OK verwenden."
+    wsKV.Range("A2").WrapText = True
 End Sub
 
 
@@ -956,6 +989,7 @@ Private Sub PID_WriteKVPeriodTitleRow(ByVal wsKV As Worksheet, _
     
     wsKV.Range("A" & rowNumber & ":J" & rowNumber).UnMerge
     wsKV.Range("A" & rowNumber & ":J" & rowNumber).ClearContents
+    wsKV.Range("A" & rowNumber & ":J" & rowNumber).Merge
     
     wsKV.Cells(rowNumber, "A").Value = titleText
     
@@ -1269,13 +1303,6 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
                 rowRange.Borders(xlEdgeTop).LineStyle = xlContinuous
                 rowRange.Borders(xlEdgeTop).Weight = xlMedium
                 rowRange.Borders(xlEdgeTop).Color = RGB(90, 90, 90)
-                
-                ' Slightly emphasize first row of each period.
-                If rowRange.Interior.ColorIndex = xlNone Then
-                    rowRange.Interior.Color = RGB(245, 245, 245)
-                Else
-                    rowRange.Interior.TintAndShade = -0.04
-                End If
             End If
             prevPeriod = currentPeriod
         End If
