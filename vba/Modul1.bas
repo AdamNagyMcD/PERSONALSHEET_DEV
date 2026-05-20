@@ -237,6 +237,19 @@ Public Sub PID_ResetExcelState()
 End Sub
 
 
+Public Sub PID_EventReset()
+    On Error Resume Next
+    
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+    Application.StatusBar = False
+    Application.CutCopyMode = False
+    
+    On Error GoTo 0
+End Sub
+
+
 Public Sub PID_HideTechnicalSheets()
     On Error Resume Next
     

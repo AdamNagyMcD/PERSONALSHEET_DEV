@@ -69,6 +69,9 @@ Public Sub PID_CopyDataToFollowingMonths()
     workbookYear = PID_GetWorkbookYear()
     monthNames = PID_MonthNames()
     
+    ' Self-heal: make sure workbook events are active before top-level copy run.
+    Application.EnableEvents = True
+    
     oldEnableEvents = Application.EnableEvents
     oldScreenUpdating = Application.ScreenUpdating
     oldDisplayAlerts = Application.DisplayAlerts
