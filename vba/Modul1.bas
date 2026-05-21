@@ -5,6 +5,7 @@ Public Const PID_FIRST_ROW As Long = 3
 Public Const PID_LAST_ROW As Long = 82
 Public Const PID_WORKBOOK_PASSWORD As String = "company"
 Public Const PID_EINSTELLUNG_SHEET As String = "EINSTELLUNG"
+Public Const PID_LOHNTABELLE_SHEET As String = "LOHNTABELLE"
 Public Const PID_WORKBOOK_YEAR_CELL As String = "C35"
 Public Const PID_FLUKTUATION_REASON_FIRST_ROW As Long = 38
 Public Const PID_FLUKTUATION_REASON_LAST_ROW As Long = 49
@@ -83,8 +84,7 @@ Public Sub PID_QuickSystemCheck()
     
     msg = msg & "Pflichtblaetter:" & vbCrLf
     msg = msg & "- EINSTELLUNG: " & PID_YesNoText(PID_WorksheetExists(PID_EINSTELLUNG_SHEET)) & vbCrLf
-    msg = msg & "- LOHNTABELLE: " & PID_YesNoText(PID_WorksheetExists("LOHNTABELLE")) & vbCrLf
-    msg = msg & "- LOHNTABELLE_TEST: " & PID_YesNoText(PID_WorksheetExists("LOHNTABELLE_TEST")) & vbCrLf
+    msg = msg & "- LOHNTABELLE: " & PID_YesNoText(PID_WorksheetExists(PID_LOHNTABELLE_SHEET)) & vbCrLf
     msg = msg & "- Fluktuation: " & PID_YesNoText(PID_WorksheetExists("Fluktuation")) & vbCrLf
     msg = msg & "- FLUKTUATION_DATEN: " & PID_YesNoText(PID_WorksheetExists("FLUKTUATION_DATEN")) & vbCrLf
     msg = msg & "- KV_DROPDOWN_HELPER: " & PID_YesNoText(PID_WorksheetExists("KV_DROPDOWN_HELPER")) & vbCrLf & vbCrLf
@@ -172,23 +172,7 @@ Public Sub PID_FormatAllMoneyColumns()
     
     Set ws = Nothing
     On Error Resume Next
-    Set ws = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
-    On Error GoTo CleanFail
-    
-    If Not ws Is Nothing Then
-        On Error Resume Next
-        ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
-        On Error GoTo CleanFail
-        
-        PID_ApplyEuroNumberFormat ws.Range("H:H")
-        ws.Columns("H").ColumnWidth = 14
-        
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
-    End If
-    
-    Set ws = Nothing
-    On Error Resume Next
-    Set ws = ThisWorkbook.Worksheets("LOHNTABELLE")
+    Set ws = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     On Error GoTo CleanFail
     
     If Not ws Is Nothing Then

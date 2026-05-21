@@ -22,14 +22,7 @@ Public Sub PID_SetupSheetProtectionForMacros()
                        AllowFiltering:=True, _
                        AllowSorting:=True
             
-        ElseIf ws.Name = "LOHNTABELLE_TEST" Then
-            
-            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                       UserInterfaceOnly:=True, _
-                       AllowFiltering:=True, _
-                       AllowSorting:=True
-            
-        ElseIf ws.Name = "LOHNTABELLE" Then
+        ElseIf ws.Name = PID_LOHNTABELLE_SHEET Then
             
             ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                        UserInterfaceOnly:=True, _

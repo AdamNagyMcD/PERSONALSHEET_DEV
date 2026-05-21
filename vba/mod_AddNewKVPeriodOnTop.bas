@@ -3,14 +3,14 @@ Option Explicit
 Private Const PID_ADD_PERIOD_BUTTON_NAME As String = "btn_AddNewKVPeriodOnTop"
 Private Const PID_ADD_CUSTOM_HOURS_BUTTON_NAME As String = "btn_AddCustomKVMonatsstunden"
 Private Const PID_DELETE_PERIODS_BUTTON_NAME As String = "btn_DeleteKVPeriods"
-Private Const PID_HELP_BUTTON_NAME As String = "btn_LOHNTABELLE_TESTHelp"
+Private Const PID_HELP_BUTTON_NAME As String = "btn_LOHNTABELLEHelp"
 Private Const PID_KV_CODE_COUNT As Long = 12
 
 
-Private Function PID_GetLOHNTABELLE_TESTTeamHelpText() As String
+Private Function PID_GetLOHNTABELLETeamHelpText() As String
     Dim helpText As String
     
-    helpText = "KURZANLEITUNG - LOHNTABELLE_TEST" & vbCrLf & vbCrLf
+    helpText = "KURZANLEITUNG - LOHNTABELLE" & vbCrLf & vbCrLf
     helpText = helpText & "1) Neue Periode" & vbCrLf
     helpText = helpText & "   Wenn ab Mai neue KV-Werte gelten." & vbCrLf
     helpText = helpText & "   Jahr eingeben (z.B. 2026) und OK." & vbCrLf & vbCrLf
@@ -26,7 +26,7 @@ Private Function PID_GetLOHNTABELLE_TESTTeamHelpText() As String
     helpText = helpText & "- Nach Aenderungen einmal Monatsblaetter oeffnen" & vbCrLf
     helpText = helpText & "  oder System-Refresh ausfuehren lassen."
     
-    PID_GetLOHNTABELLE_TESTTeamHelpText = helpText
+    PID_GetLOHNTABELLETeamHelpText = helpText
 End Function
 
 
@@ -71,7 +71,7 @@ Public Sub AddNewKVPeriodOnTop()
     
     On Error GoTo CleanFail
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     
     firstDataRow = 4
     
@@ -92,7 +92,7 @@ Public Sub AddNewKVPeriodOnTop()
     lastRow = wsKV.Cells(wsKV.Rows.count, "A").End(xlUp).Row
     
     If lastRow < firstDataRow Then
-        MsgBox "Keine KV-Daten in LOHNTABELLE_TEST gefunden.", _
+        MsgBox "Keine KV-Daten in LOHNTABELLE gefunden.", _
                vbExclamation, "Neuer KV-Zeitraum"
         GoTo CleanExit
     End If
@@ -198,17 +198,17 @@ End Sub
 
 
 Public Sub EnsureAddNewKVPeriodButton()
-    PID_EnsureLOHNTABELLE_TESTButtons
+    PID_EnsureLOHNTABELLEButtons
 End Sub
 
 
 Public Sub PID_RefreshKVButtons()
-    PID_EnsureLOHNTABELLE_TESTButtons
+    PID_EnsureLOHNTABELLEButtons
 End Sub
 
 
-Public Sub ShowLOHNTABELLE_TESTButtonHelp()
-    MsgBox PID_GetLOHNTABELLE_TESTTeamHelpText(), vbInformation, "Hilfe - LOHNTABELLE_TEST"
+Public Sub ShowLOHNTABELLEButtonHelp()
+    MsgBox PID_GetLOHNTABELLETeamHelpText(), vbInformation, "Hilfe - LOHNTABELLE"
 End Sub
 
 
@@ -230,7 +230,7 @@ Public Sub DeleteSelectedKVPeriods()
     
     On Error GoTo CleanFail
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     firstDataRow = PID_GetKVTableFirstDataRow(wsKV)
     
     Set allPeriods = PID_CollectKVPeriods(wsKV, firstDataRow)
@@ -293,7 +293,7 @@ Public Sub DeleteSelectedKVPeriods()
     wsKV.Rows(periodFirstRow & ":" & periodLastRow).Delete Shift:=xlShiftUp
     
     FormatKVPeriodArea wsKV
-    PID_EnsureLOHNTABELLE_TESTButtons
+    PID_EnsureLOHNTABELLEButtons
     
     MarkAllKVDropdownsDirty
     MarkAllKVLohnDirty
@@ -355,11 +355,11 @@ Public Sub AddCustomKVMonatsstunden()
     
     On Error GoTo CleanFail
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     firstDataRow = PID_GetKVTableFirstDataRow(wsKV)
     
     If PID_GetKVTableLastRow(wsKV, firstDataRow) < firstDataRow Then
-        MsgBox "Keine KV-Daten in LOHNTABELLE_TEST gefunden.", _
+        MsgBox "Keine KV-Daten in LOHNTABELLE gefunden.", _
                vbExclamation, "Individuelle Monatsstunden"
         Exit Sub
     End If
@@ -414,7 +414,7 @@ Public Sub AddCustomKVMonatsstunden()
     PID_WriteCustomKVRow wsKV, insertRow, selectedPeriod, selectedKVCode, firstDataRow, newHours, newLohn, hasLohn
     
     FormatKVPeriodArea wsKV
-    PID_EnsureLOHNTABELLE_TESTButtons
+    PID_EnsureLOHNTABELLEButtons
     
     MarkAllKVDropdownsDirty
     MarkAllKVLohnDirty
@@ -460,12 +460,12 @@ CleanFail:
 End Sub
 
 
-Private Sub PID_EnsureLOHNTABELLE_TESTButton()
-    PID_EnsureLOHNTABELLE_TESTButtons
+Private Sub PID_EnsureLOHNTABELLEButton()
+    PID_EnsureLOHNTABELLEButtons
 End Sub
 
 
-Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
+Private Sub PID_EnsureLOHNTABELLEButtons()
     Dim wsKV As Worksheet
     Dim btn As Shape
     Dim wasProtected As Boolean
@@ -479,7 +479,7 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     
     On Error GoTo SafeExit
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     If wsKV Is Nothing Then Exit Sub
     
     wasProtected = wsKV.ProtectContents
@@ -492,7 +492,7 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     wsKV.Shapes(PID_HELP_BUTTON_NAME).Delete
     On Error GoTo SafeExit
     
-    PID_ConfigureLOHNTABELLE_TESTHeaderLayout wsKV
+    PID_ConfigureLOHNTABELLEHeaderLayout wsKV
     
     buttonLeft = wsKV.Range("I2").Left + 1
     buttonWidth = wsKV.Range("I2:J2").Width - 2
@@ -517,7 +517,7 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     btn.Name = PID_ADD_PERIOD_BUTTON_NAME
     btn.TextFrame.Characters.Text = "1) Neue Periode"
     btn.OnAction = "AddNewKVPeriodOnTop"
-    PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(54, 96, 146), RGB(33, 64, 99)
+    PID_ApplyLOHNTABELLEButtonStyle btn, RGB(54, 96, 146), RGB(33, 64, 99)
     
     Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
                                    Left:=buttonLeft, _
@@ -528,7 +528,7 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     btn.Name = PID_ADD_CUSTOM_HOURS_BUTTON_NAME
     btn.TextFrame.Characters.Text = "2) Eigene Stunden"
     btn.OnAction = "AddCustomKVMonatsstunden"
-    PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(84, 130, 53), RGB(56, 87, 35)
+    PID_ApplyLOHNTABELLEButtonStyle btn, RGB(84, 130, 53), RGB(56, 87, 35)
     
     Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
                                    Left:=buttonLeft, _
@@ -539,7 +539,7 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     btn.Name = PID_DELETE_PERIODS_BUTTON_NAME
     btn.TextFrame.Characters.Text = "3) Alte Periode loeschen"
     btn.OnAction = "DeleteSelectedKVPeriods"
-    PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(192, 80, 77), RGB(132, 46, 43)
+    PID_ApplyLOHNTABELLEButtonStyle btn, RGB(192, 80, 77), RGB(132, 46, 43)
     
     Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
                                    Left:=buttonLeft, _
@@ -549,8 +549,8 @@ Private Sub PID_EnsureLOHNTABELLE_TESTButtons()
     
     btn.Name = PID_HELP_BUTTON_NAME
     btn.TextFrame.Characters.Text = "Hilfe"
-    btn.OnAction = "ShowLOHNTABELLE_TESTButtonHelp"
-    PID_ApplyLOHNTABELLE_TESTButtonStyle btn, RGB(120, 120, 120), RGB(80, 80, 80)
+    btn.OnAction = "ShowLOHNTABELLEButtonHelp"
+    PID_ApplyLOHNTABELLEButtonStyle btn, RGB(120, 120, 120), RGB(80, 80, 80)
     
 SafeExit:
     On Error Resume Next
@@ -560,7 +560,7 @@ SafeExit:
 End Sub
 
 
-Private Sub PID_ApplyLOHNTABELLE_TESTButtonStyle(ByVal btn As Shape, _
+Private Sub PID_ApplyLOHNTABELLEButtonStyle(ByVal btn As Shape, _
                                                  ByVal fillColor As Long, _
                                                  ByVal lineColor As Long)
     On Error GoTo SafeExit
@@ -598,7 +598,7 @@ Private Sub PID_ApplyShapeMacSafeOptions(ByVal btn As Shape)
 End Sub
 
 
-Private Sub PID_ConfigureLOHNTABELLE_TESTHeaderLayout(ByVal wsKV As Worksheet)
+Private Sub PID_ConfigureLOHNTABELLEHeaderLayout(ByVal wsKV As Worksheet)
     On Error GoTo SafeExit
     
     If wsKV Is Nothing Then Exit Sub
@@ -626,18 +626,18 @@ SafeExit:
 End Sub
 
 
-Public Sub FixLOHNTABELLE_TEST_HeaderText()
-    FixLOHNTABELLE_TEST_HeaderTextIfNeeded True
+Public Sub FixLOHNTABELLE_HeaderText()
+    FixLOHNTABELLE_HeaderTextIfNeeded True
 End Sub
 
 
-Public Sub FixLOHNTABELLE_TEST_HeaderTextIfNeeded(Optional ByVal forceFormulaRepair As Boolean = False)
+Public Sub FixLOHNTABELLE_HeaderTextIfNeeded(Optional ByVal forceFormulaRepair As Boolean = False)
     Dim wsKV As Worksheet
     Dim wasProtected As Boolean
     
     On Error GoTo SafeExit
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     If wsKV Is Nothing Then Exit Sub
     
     wasProtected = wsKV.ProtectContents
@@ -689,13 +689,13 @@ SafeExit:
 End Function
 
 
-Public Sub FixLOHNTABELLE_TEST_StatusFormulas()
+Public Sub FixLOHNTABELLE_StatusFormulas()
     Dim wsKV As Worksheet
     Dim wasProtected As Boolean
     
     On Error GoTo CleanFail
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     If wsKV Is Nothing Then Exit Sub
     
     wasProtected = wsKV.ProtectContents
@@ -706,8 +706,8 @@ Public Sub FixLOHNTABELLE_TEST_StatusFormulas()
     
     FormatKVPeriodArea wsKV
     
-    MsgBox "Status- und Pruefungsformeln in LOHNTABELLE_TEST wurden wiederhergestellt.", _
-           vbInformation, "LOHNTABELLE_TEST"
+    MsgBox "Status- und Pruefungsformeln in LOHNTABELLE wurden wiederhergestellt.", _
+           vbInformation, "LOHNTABELLE"
     
 CleanExit:
     On Error Resume Next
@@ -717,14 +717,14 @@ CleanExit:
     Exit Sub
     
 CleanFail:
-    MsgBox "Fehler bei FixLOHNTABELLE_TEST_StatusFormulas:" & vbCrLf & _
+    MsgBox "Fehler bei FixLOHNTABELLE_StatusFormulas:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
-           vbExclamation, "LOHNTABELLE_TEST"
+           vbExclamation, "LOHNTABELLE"
     Resume CleanExit
 End Sub
 
 
-Public Sub RebuildLOHNTABELLE_TEST()
+Public Sub RebuildLOHNTABELLE()
     Dim wsKV As Worksheet
     Dim firstDataRow As Long
     Dim lastRow As Long
@@ -744,7 +744,7 @@ Public Sub RebuildLOHNTABELLE_TEST()
     
     On Error GoTo CleanFail
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     If wsKV Is Nothing Then Exit Sub
     
     firstDataRow = 4
@@ -752,13 +752,13 @@ Public Sub RebuildLOHNTABELLE_TEST()
     cleanupLastRow = PID_GetSheetCleanupLastRow(wsKV, lastRow)
     
     If lastRow < firstDataRow Then
-        MsgBox "Keine Daten in LOHNTABELLE_TEST gefunden.", vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
+        MsgBox "Keine Daten in LOHNTABELLE gefunden.", vbExclamation, "LOHNTABELLE neu aufbauen"
         Exit Sub
     End If
     
     keepPeriod = GetBottomKVPeriod(wsKV, firstDataRow)
     If keepPeriod = "" Then
-        MsgBox "Kein gueltiger KV-Zeitraum in Spalte A gefunden.", vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
+        MsgBox "Kein gueltiger KV-Zeitraum in Spalte A gefunden.", vbExclamation, "LOHNTABELLE neu aufbauen"
         Exit Sub
     End If
     
@@ -766,7 +766,7 @@ Public Sub RebuildLOHNTABELLE_TEST()
     periodLastRow = FindLastRowOfPeriod(wsKV, keepPeriod, firstDataRow)
     
     If periodFirstRow = 0 Or periodLastRow = 0 Then
-        MsgBox "Der unterste KV-Zeitraum konnte nicht gelesen werden.", vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
+        MsgBox "Der unterste KV-Zeitraum konnte nicht gelesen werden.", vbExclamation, "LOHNTABELLE neu aufbauen"
         Exit Sub
     End If
     
@@ -774,13 +774,13 @@ Public Sub RebuildLOHNTABELLE_TEST()
     If periodRowCount <= 0 Then Exit Sub
     
     answer = MsgBox( _
-        "LOHNTABELLE_TEST wird neu aufgebaut." & vbCrLf & vbCrLf & _
+        "LOHNTABELLE wird neu aufgebaut." & vbCrLf & vbCrLf & _
         "Behalten wird nur der unterste Zeitraum:" & vbCrLf & _
         keepPeriod & vbCrLf & vbCrLf & _
         "Alle weiteren Test-Zeitraeume werden geloescht." & vbCrLf & vbCrLf & _
         "Fortfahren?", _
         vbQuestion + vbYesNo, _
-        "LOHNTABELLE_TEST neu aufbauen" _
+        "LOHNTABELLE neu aufbauen" _
     )
     
     If answer <> vbYes Then Exit Sub
@@ -822,8 +822,8 @@ Public Sub RebuildLOHNTABELLE_TEST()
     
     EnsureAddNewKVPeriodButton
     
-    MsgBox "LOHNTABELLE_TEST wurde neu aufgebaut. Zeitraum aktiv: " & keepPeriod, _
-           vbInformation, "LOHNTABELLE_TEST neu aufgebaut"
+    MsgBox "LOHNTABELLE wurde neu aufgebaut. Zeitraum aktiv: " & keepPeriod, _
+           vbInformation, "LOHNTABELLE neu aufgebaut"
     
 CleanExit:
     On Error Resume Next
@@ -839,14 +839,14 @@ CleanExit:
     Exit Sub
     
 CleanFail:
-    MsgBox "Fehler bei RebuildLOHNTABELLE_TEST:" & vbCrLf & _
+    MsgBox "Fehler bei RebuildLOHNTABELLE:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
-           vbExclamation, "LOHNTABELLE_TEST neu aufbauen"
+           vbExclamation, "LOHNTABELLE neu aufbauen"
     Resume CleanExit
 End Sub
 
 
-Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
+Public Sub RestoreLOHNTABELLEBase2025_2026()
     Dim wsKV As Worksheet
     Dim targetPeriod As String
     Dim firstDataRow As Long
@@ -866,7 +866,7 @@ Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
     
     On Error GoTo CleanFail
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     If wsKV Is Nothing Then Exit Sub
     
     targetPeriod = "KV 2025/2026"
@@ -887,7 +887,7 @@ Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
     If periodRowCount <= 0 Then Exit Sub
     
     answer = MsgBox( _
-        "LOHNTABELLE_TEST wird auf den Basiszeitraum zurueckgesetzt:" & vbCrLf & vbCrLf & _
+        "LOHNTABELLE wird auf den Basiszeitraum zurueckgesetzt:" & vbCrLf & vbCrLf & _
         targetPeriod & vbCrLf & vbCrLf & _
         "Fortfahren?", _
         vbQuestion + vbYesNo, _
@@ -949,7 +949,7 @@ CleanExit:
     Exit Sub
     
 CleanFail:
-    MsgBox "Fehler bei RestoreLOHNTABELLE_TESTBase2025_2026:" & vbCrLf & _
+    MsgBox "Fehler bei RestoreLOHNTABELLEBase2025_2026:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
            vbExclamation, "Basis wiederherstellen"
     Resume CleanExit
@@ -1480,7 +1480,7 @@ Private Sub PID_NormalizeKVWarningText(ByVal wsKV As Worksheet)
         "Sondervertrag-Stunden = Button ""2) Eigene Stunden"". " & _
         "Bei Unsicherheit: Button ""Hilfe"". Nur Zeilen mit Status OK verwenden."
     
-    PID_ConfigureLOHNTABELLE_TESTHeaderLayout wsKV
+    PID_ConfigureLOHNTABELLEHeaderLayout wsKV
 End Sub
 
 
@@ -1584,14 +1584,14 @@ SafeExit:
 End Function
 
 
-Public Sub CleanupLOHNTABELLE_TESTTrailingArea()
+Public Sub CleanupLOHNTABELLETrailingArea()
     Dim wsKV As Worksheet
     Dim firstDataRow As Long
     Dim wasProtected As Boolean
     
     On Error GoTo SafeExit
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     If wsKV Is Nothing Then Exit Sub
     
     firstDataRow = 4
@@ -2106,7 +2106,7 @@ Public Sub ApplyKVVisualGrouping()
     
     On Error GoTo SafeExit
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     If wsKV Is Nothing Then Exit Sub
     
     lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
@@ -2734,3 +2734,32 @@ Private Function PID_FormatHoursText(ByVal hoursValue As Double) As String
     PID_FormatHoursText = Format$(hoursValue, "0.00")
 End Function
 
+
+' Backward-compatible aliases for legacy macro and button names.
+Public Sub ShowLOHNTABELLE_TESTButtonHelp()
+    ShowLOHNTABELLEButtonHelp
+End Sub
+
+Public Sub FixLOHNTABELLE_TEST_HeaderText()
+    FixLOHNTABELLE_HeaderText
+End Sub
+
+Public Sub FixLOHNTABELLE_TEST_HeaderTextIfNeeded(Optional ByVal forceFormulaRepair As Boolean = False)
+    FixLOHNTABELLE_HeaderTextIfNeeded forceFormulaRepair
+End Sub
+
+Public Sub FixLOHNTABELLE_TEST_StatusFormulas()
+    FixLOHNTABELLE_StatusFormulas
+End Sub
+
+Public Sub RebuildLOHNTABELLE_TEST()
+    RebuildLOHNTABELLE
+End Sub
+
+Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
+    RestoreLOHNTABELLEBase2025_2026
+End Sub
+
+Public Sub CleanupLOHNTABELLE_TESTTrailingArea()
+    CleanupLOHNTABELLETrailingArea
+End Sub

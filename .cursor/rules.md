@@ -120,7 +120,7 @@
 - Never delete employees automatically only because rows appear empty.
 - Preserve future D/E hour overrides.
 - Preserve employee exit dates correctly.
-- Preserve LOHNTABELLE structures and formatting.
+- Preserve LOHNTABELLE (KV schema table) structures and formatting.
 - Preserve management hour logic.
 - Preserve productivity calculation logic.
 - Preserve existing month sheet structures.

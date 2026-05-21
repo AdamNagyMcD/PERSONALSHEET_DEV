@@ -22,7 +22,7 @@ Private Sub Workbook_Open()
     
     PID_SetupSheetProtectionForMacros
     EnsureAddNewKVPeriodButton
-    FixLOHNTABELLE_TEST_HeaderTextIfNeeded
+    FixLOHNTABELLE_HeaderTextIfNeeded
     
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
@@ -86,8 +86,8 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         GoTo SafeExit
     End If
     
-    If Sh.Name = "LOHNTABELLE_TEST" Then
-        PID_ConfigureLohntabelleTestView
+    If Sh.Name = PID_LOHNTABELLE_SHEET Then
+        PID_ConfigureLohntabelleView
         GoTo SafeExit
     End If
     
@@ -106,7 +106,7 @@ SafeExit:
 End Sub
 
 
-Private Sub PID_ConfigureLohntabelleTestView()
+Private Sub PID_ConfigureLohntabelleView()
     On Error GoTo SafeExit
     
     If ActiveWindow Is Nothing Then Exit Sub
@@ -140,7 +140,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     If Not TypeOf Sh Is Worksheet Then Exit Sub
     
     ' Wenn die KV-Basistabelle geaendert wird, wird die Dropdown-Liste spaeter neu aufgebaut.
-    If Sh.Name = "LOHNTABELLE_TEST" Then
+    If Sh.Name = PID_LOHNTABELLE_SHEET Then
         If Not Intersect(Target, Sh.Range("D4:J500")) Is Nothing Then
             MarkAllKVDropdownsDirty
             MarkAllKVLohnDirty

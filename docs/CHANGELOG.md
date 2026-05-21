@@ -14,6 +14,7 @@
 - Added `.gitignore` entry for `.DS_Store` to prevent accidental macOS metadata commits.
 
 ### Changed
+- LOHNTABELLE migration: legacy salary sheet removed in workbook; `LOHNTABELLE_TEST` renamed to `LOHNTABELLE` in VBA (KV table, buttons, events, protection). Legacy `_TEST` public macro names kept as thin aliases.
 - Modul1.bas: centralized workbook year and EINSTELLUNG config constants; `PID_GetWorkbookYear` now reads `EINSTELLUNG!C35` instead of legacy `LOHNTABELLE!G3`.
 - mod_BuildFluktuationDaten.bas: Fluktuation reason weights (`EINSTELLUNG!B38:C49`) and time factors (`EINSTELLUNG!C53:C59`) are read from EINSTELLUNG instead of hardcoded values or legacy LOHNTABELLE cells.
 - mod_BuildFluktuationAnalyse.bas: fixed compile error on Fluktuation sheet open (`yearValue` replaced with `currentYear` after EINSTELLUNG year migration).

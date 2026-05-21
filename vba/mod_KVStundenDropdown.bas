@@ -285,7 +285,7 @@ Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode
     
     On Error GoTo SafeExit
     
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     
     currentYear = PID_GetWorkbookYear()
     If currentYear <= 0 Then GoTo SafeExit

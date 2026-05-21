@@ -1,7 +1,7 @@
 Attribute VB_Name = "mod_KVLohnLookup"
 Option Explicit
 
-' Module-level cache for LOHNTABELLE_TEST data.
+' Module-level cache for LOHNTABELLE data.
 ' Populated once per RefreshKVLohnForSheet call, cleared afterwards.
 ' Columns in cache match Range("A4:I<lastRow>"):
 '   1=A(Period), 2=B, 3=C, 4=D(KVCode), 5=E, 6=F, 7=G(Stunden), 8=H(Lohn), 9=I(Status)
@@ -21,7 +21,7 @@ Private Sub PID_LoadLohnTableCache()
     mLohnTableCacheLoaded = False
     
     On Error Resume Next
-    Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     On Error GoTo 0
     
     If wsKV Is Nothing Then
@@ -400,7 +400,7 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
         
     Else
         
-        Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
+        Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
         
         lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
         

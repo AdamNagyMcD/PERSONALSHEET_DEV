@@ -23,7 +23,7 @@ Public Sub BuildLohntabelleTest()
     firstStartYearInput = Application.InputBox( _
         Prompt:="Startjahr der ersten KV-Periode eingeben." & vbCrLf & _
                 "Beispiel: 2024 ergibt KV 2024/2025.", _
-        Title:="LOHNTABELLE_TEST erstellen", _
+        Title:="LOHNTABELLE erstellen", _
         Default:=Year(Date) - 1, _
         Type:=1)
     
@@ -53,27 +53,27 @@ Public Sub BuildLohntabelleTest()
     
     If firstStartYear < 2000 Or firstStartYear > 2100 Then
         MsgBox "Bitte ein gueltiges Startjahr zwischen 2000 und 2100 eingeben.", _
-               vbExclamation, "LOHNTABELLE_TEST"
+               vbExclamation, "LOHNTABELLE"
         Exit Sub
     End If
     
     If firstSchemaCount < 1 Or firstSchemaCount > 50 Then
         MsgBox "Bitte fuer die erste Periode eine Anzahl zwischen 1 und 50 eingeben.", _
-               vbExclamation, "LOHNTABELLE_TEST"
+               vbExclamation, "LOHNTABELLE"
         Exit Sub
     End If
     
     If secondSchemaCount < 1 Or secondSchemaCount > 50 Then
         MsgBox "Bitte fuer die zweite Periode eine Anzahl zwischen 1 und 50 eingeben.", _
-               vbExclamation, "LOHNTABELLE_TEST"
+               vbExclamation, "LOHNTABELLE"
         Exit Sub
     End If
     
     If MsgBox("ACHTUNG:" & vbCrLf & vbCrLf & _
-              "LOHNTABELLE_TEST wird komplett neu aufgebaut." & vbCrLf & _
+              "LOHNTABELLE wird komplett neu aufgebaut." & vbCrLf & _
               "Bestehende KV-Daten auf diesem Blatt werden geloescht." & vbCrLf & vbCrLf & _
               "Fortfahren?", _
-              vbQuestion + vbYesNo, "LOHNTABELLE_TEST neu erstellen") <> vbYes Then
+              vbQuestion + vbYesNo, "LOHNTABELLE neu erstellen") <> vbYes Then
         Exit Sub
     End If
     
@@ -87,7 +87,7 @@ Public Sub BuildLohntabelleTest()
     Application.DisplayAlerts = False
     Application.Calculation = xlCalculationManual
     
-    Set ws = GetOrCreateKVTestSheet("LOHNTABELLE_TEST")
+    Set ws = GetOrCreateKVTestSheet(PID_LOHNTABELLE_SHEET)
     
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
@@ -110,9 +110,9 @@ Public Sub BuildLohntabelleTest()
     
     MarkKVDropdownsDirty
     
-    MsgBox "LOHNTABELLE_TEST wurde neu erstellt." & vbCrLf & vbCrLf & _
+    MsgBox "LOHNTABELLE wurde neu erstellt." & vbCrLf & vbCrLf & _
            "Bitte danach Monatsstunden und Monatslohn kontrollieren.", _
-           vbInformation, "LOHNTABELLE_TEST"
+           vbInformation, "LOHNTABELLE"
 
 CleanExit:
     Application.Calculation = oldCalculation
@@ -133,9 +133,9 @@ CleanFail:
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
     
-    MsgBox "Fehler beim Erstellen von LOHNTABELLE_TEST:" & vbCrLf & _
+    MsgBox "Fehler beim Erstellen von LOHNTABELLE:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
-           vbCritical, "LOHNTABELLE_TEST"
+           vbCritical, "LOHNTABELLE"
 End Sub
 
 
