@@ -37,6 +37,7 @@ Public Sub PID_FullSystemRefresh()
     
     RefreshAllMonthKVStundenDropdowns
     RefreshAllMonthKVLohn
+    ClearAllKVLohnDirty
     PID_RecalculateAllMonthFluctuation
     
     MarkFluktuationDirty
@@ -44,6 +45,7 @@ Public Sub PID_FullSystemRefresh()
     
     PID_FormatAllMoneyColumns
     
+    PID_BuildMakrosReferenceSheet
     PID_SetupSheetProtectionForMacros
     
     MsgBox "Personalsheet wurde vollstaendig aktualisiert.", _

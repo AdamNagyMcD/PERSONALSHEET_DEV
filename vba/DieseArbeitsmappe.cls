@@ -23,6 +23,7 @@ Private Sub Workbook_Open()
     PID_SetupSheetProtectionForMacros
     EnsureAddNewKVPeriodButton
     FixLOHNTABELLE_HeaderTextIfNeeded
+    PID_BuildMakrosReferenceSheet
     
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
@@ -53,9 +54,7 @@ Private Sub Workbook_BeforeSave(ByVal SaveAsUI As Boolean, Cancel As Boolean)
     
     ' Vor dem Speichern wird die Fluktuation-Analyse nur dann aktualisiert,
     ' wenn sich in der Zwischenzeit relevante Daten geaendert haben.
-    If gFluktuationDirty Then
-        RefreshFluktuationAll
-    End If
+    RefreshFluktuationIfDirty
     
     On Error Resume Next
     ThisWorkbook.Sheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden

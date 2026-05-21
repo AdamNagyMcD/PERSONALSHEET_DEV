@@ -56,7 +56,7 @@ Public Sub RefreshFluktuationAll()
     ThisWorkbook.Worksheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden
     On Error GoTo CleanFail
     
-    gFluktuationDirty = False
+    MarkFluktuationClean
 
 CleanExit:
     Application.StatusBar = oldStatusBar

@@ -29,7 +29,7 @@ End Function
 Public Sub RefreshKVDropdownsIfDirty()
     If gKVDropdownsDirty Then
         RefreshAllMonthKVStundenDropdowns
-        gKVDropdownsDirty = False
+        MarkKVDropdownsClean
     End If
 End Sub
 
@@ -84,7 +84,7 @@ Public Sub RefreshAllMonthKVStundenDropdowns()
         End If
     Next i
     
-    gKVDropdownsDirty = False
+    MarkKVDropdownsClean
 
 CleanExit:
     Application.DisplayAlerts = oldDisplayAlerts

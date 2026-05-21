@@ -919,33 +919,6 @@ Public Function GetFluktuationRiskLevel(ByVal totalLoss As Double, _
 End Function
 
 
-Public Function GetFluktuationFocusText(ByVal totalExits As Long, _
-                                        ByVal neutralExits As Long, _
-                                        ByVal earlyExits As Long, _
-                                        ByVal experiencedLoss As Long, _
-                                        ByVal importantExits As Long, _
-                                        ByVal incompleteExits As Long, _
-                                        ByVal totalLoss As Double) As String
-    If incompleteExits > 0 Then
-        GetFluktuationFocusText = "Es gibt Austritte mit fehlendem oder unbekanntem Austrittsgrund. Bitte zuerst die Daten ergaenzen, damit die Analyse korrekt bewertet werden kann."
-    ElseIf totalExits = 0 Then
-        GetFluktuationFocusText = "Keine relevanten Austritte erfasst. Die Fluktuation ist aktuell unauffaellig."
-    ElseIf neutralExits = totalExits Then
-        GetFluktuationFocusText = "Die erfassten Bewegungen sind neutral oder positiv. Kein unmittelbarer Handlungsbedarf aus Fluktuationssicht."
-    ElseIf experiencedLoss >= 2 Then
-        GetFluktuationFocusText = "Mehrere erfahrene Mitarbeiter sind ausgeschieden. Fokus: Mitarbeiterbindung, Fuehrung, Entwicklungsgespraeche und Teamstabilitaet."
-    ElseIf earlyExits >= 2 Then
-        GetFluktuationFocusText = "Mehrere Austritte passieren in den ersten 90 Tagen. Fokus: Recruiting, Onboarding, Training und Qualitaet der ersten Dienstplaene."
-    ElseIf importantExits >= 2 Then
-        GetFluktuationFocusText = "Es gibt mehrere wichtige Austritte. Fokus: Arbeitsklima, Fuehrung, Kommunikation und Mitarbeitergespraeche."
-    ElseIf totalLoss >= 3 Then
-        GetFluktuationFocusText = "Der Verlust-Score ist erhoeht. Austrittsgruende pruefen und gezielte Massnahmen zur Mitarbeiterbindung ableiten."
-    Else
-        GetFluktuationFocusText = "Die Fluktuation ist vorhanden, aber aktuell nicht kritisch. Entwicklung weiter beobachten."
-    End If
-End Function
-
-
 Public Sub ApplyRiskFormatting(ByVal targetCell As Range, ByVal riskLevel As String)
     With targetCell
         .Font.Bold = True
@@ -1249,57 +1222,6 @@ Public Function WriteFluktuationRecommendationsSection(ByVal ws As Worksheet, _
     End If
     
     WriteFluktuationRecommendationsSection = outRow - 1
-End Function
-
-
-Public Function FindEmployeeRowOnMonthSheet(ByVal monthSheetName As String, _
-                                            ByVal personalID As Variant, _
-                                            ByVal employeeName As String, _
-                                            ByVal exitDate As Variant) As Long
-    Dim ws As Worksheet
-    Dim r As Long
-    Dim rowID As String
-    Dim rowName As String
-    
-    On Error GoTo SafeExit
-    
-    Set ws = ThisWorkbook.Worksheets(monthSheetName)
-    
-    For r = 3 To 82
-        rowID = Trim$(CStr(ws.Cells(r, "B").Value))
-        rowName = Trim$(CStr(ws.Cells(r, "C").Value))
-        
-        If Trim$(CStr(personalID)) <> "" Then
-            If rowID = Trim$(CStr(personalID)) Then
-                If IsDate(exitDate) And IsDate(ws.Cells(r, "I").Value) Then
-                    If CDate(ws.Cells(r, "I").Value) = CDate(exitDate) Then
-                        FindEmployeeRowOnMonthSheet = r
-                        Exit Function
-                    End If
-                Else
-                    FindEmployeeRowOnMonthSheet = r
-                    Exit Function
-                End If
-            End If
-        End If
-        
-        If employeeName <> "" Then
-            If UCase$(rowName) = UCase$(employeeName) Then
-                If IsDate(exitDate) And IsDate(ws.Cells(r, "I").Value) Then
-                    If CDate(ws.Cells(r, "I").Value) = CDate(exitDate) Then
-                        FindEmployeeRowOnMonthSheet = r
-                        Exit Function
-                    End If
-                ElseIf Not IsDate(exitDate) Then
-                    FindEmployeeRowOnMonthSheet = r
-                    Exit Function
-                End If
-            End If
-        End If
-    Next r
-
-SafeExit:
-    FindEmployeeRowOnMonthSheet = 0
 End Function
 
 
