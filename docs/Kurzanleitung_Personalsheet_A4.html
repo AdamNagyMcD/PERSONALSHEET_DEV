@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Personalsheet – Kurzanleitung</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 16mm;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.35;
+      color: #1a1a1a;
+      max-width: 180mm;
+      margin: 0 auto;
+      padding: 8mm 0;
+    }
+
+    h1 {
+      font-size: 17pt;
+      margin: 0 0 4mm;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 10pt;
+      color: #444;
+      margin-bottom: 6mm;
+    }
+
+    h2 {
+      font-size: 11pt;
+      margin: 5mm 0 2mm;
+      padding-bottom: 1mm;
+      border-bottom: 1px solid #ccc;
+      page-break-after: avoid;
+    }
+
+    p {
+      margin: 0 0 2.5mm;
+    }
+
+    ul, ol {
+      margin: 1mm 0 3mm;
+      padding-left: 5mm;
+    }
+
+    li {
+      margin-bottom: 1.5mm;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2mm 0 4mm;
+      font-size: 9.5pt;
+    }
+
+    th, td {
+      border: 1px solid #bbb;
+      padding: 2mm 2.5mm;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f0f0;
+      font-weight: bold;
+    }
+
+    .box {
+      border: 1px solid #888;
+      background: #fafafa;
+      padding: 3mm 4mm;
+      margin: 3mm 0;
+    }
+
+    .box strong {
+      display: block;
+      margin-bottom: 1mm;
+    }
+
+    .warn {
+      border-color: #c05000;
+      background: #fff8f0;
+    }
+
+    .ok {
+      border-color: #2d6a2d;
+      background: #f4faf4;
+    }
+
+    .small {
+      font-size: 9pt;
+      color: #555;
+    }
+
+    .footer {
+      margin-top: 5mm;
+      padding-top: 2mm;
+      border-top: 1px solid #ddd;
+      font-size: 8.5pt;
+      color: #666;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+      }
+
+      h2 {
+        break-after: avoid;
+      }
+
+      .box, table {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Personalsheet – Kurzanleitung</h1>
+  <p class="subtitle">Fuer Restaurantleitung · Stand: Mai 2026 · Blatt „EINSTELLUNG“ = Jahr und zentrale Einstellungen</p>
+
+  <h2>1. Wofuer ist die Datei?</h2>
+  <p>Das Personalsheet verwaltet <strong>Mitarbeiter pro Monat</strong>, Lohn-Stunden (KV), Austritte und eine <strong>Fluktuations-Auswertung</strong> fuer das Restaurant. Die wichtigsten Blaetter:</p>
+  <ul>
+    <li><strong>Januar … Dezember</strong> – Monatsdaten der Mitarbeiter</li>
+    <li><strong>FLUKTUATION</strong> – Uebersicht: Status, Risiko, Empfehlungen, Diagramme</li>
+    <li><strong>LOHNTABELLE</strong> – KV-Tabelle (nur Admin / bei KV-Aenderungen)</li>
+    <li><strong>EINSTELLUNG</strong> – Arbeitsjahr (Zelle <strong>C35</strong>) – nur Admin aendern</li>
+  </ul>
+
+  <h2>2. Monatsblatt – das Wichtigste</h2>
+  <table>
+    <tr>
+      <th>Spalte</th>
+      <th>Inhalt</th>
+    </tr>
+    <tr>
+      <td><strong>B / C</strong></td>
+      <td>Personal-ID und Name</td>
+    </tr>
+    <tr>
+      <td><strong>D</strong></td>
+      <td>Eintrittsdatum</td>
+    </tr>
+    <tr>
+      <td><strong>E / F</strong></td>
+      <td>KV-Code und Monatsstunden (Dropdown in F nach Auswahl in E)</td>
+    </tr>
+    <tr>
+      <td><strong>G</strong></td>
+      <td>Monatslohn (wird automatisch berechnet)</td>
+    </tr>
+    <tr>
+      <td><strong>H</strong></td>
+      <td>Aktuelle Stunden (Formel – nicht manuell ueberschreiben)</td>
+    </tr>
+    <tr>
+      <td><strong>I</strong></td>
+      <td><strong>Austrittsdatum</strong> – nur wenn Mitarbeiter ausscheidet</td>
+    </tr>
+    <tr>
+      <td><strong>N</strong></td>
+      <td><strong>Austrittsgrund</strong> – Pflicht bei Austritt (Liste / Dropdown)</td>
+    </tr>
+  </table>
+
+  <div class="box warn">
+    <strong>Wichtig bei Austritt</strong>
+    Immer <strong>beides</strong> ausfuellen: Spalte <strong>I</strong> (Datum) und Spalte <strong>N</strong> (Grund). Ohne N bleibt die FLUKTUATION-Auswertung unvollstaendig (Status „Daten pruefen“).
+  </div>
+
+  <h2>3. Monatliche Routine (empfohlen)</h2>
+  <ol>
+    <li>Im aktuellen Monatsblatt alle Aenderungen eintragen (Eintritte, Stunden, Austritte).</li>
+    <li>Bei Austritt sofort <strong>I + N</strong> ergaenzen.</li>
+    <li>Am Monatsende (oder zu Beginn des neuen Monats): Daten in die folgenden Monate kopieren (siehe Punkt 4).</li>
+    <li>Blatt <strong>FLUKTUATION</strong> oeffnen und Kurzfassung + „Sofort pruefen“ lesen.</li>
+  </ol>
+
+  <h2>4. Daten in folgende Monate kopieren</h2>
+  <p>So werden die Mitarbeiterdaten ab dem <strong>aktiven Monatsblatt</strong> in die spaeteren Monate uebernommen (ohne alte Planungsdaten zu zerstoeren).</p>
+  <ol>
+    <li>Monatsblatt oeffnen, ab dem kopiert werden soll (z.&nbsp;B. <strong>Mai</strong>).</li>
+    <li><strong>Alt + F8</strong> (Mac: <strong>Fn + Alt + F8</strong>) oder Menue <strong>Entwicklertools → Makros</strong>.</li>
+    <li>Makro <strong>CopyData</strong> auswaehlen und <strong>Ausfuehren</strong>.</li>
+    <li>Dialog bestaetigen und warten, bis die Meldung erscheint.</li>
+  </ol>
+  <p class="small">Gleiche Funktion: <em>DatenInFolgendeMonateKopieren</em> – nur ein Name, gleicher Ablauf.</p>
+
+  <h2>5. FLUKTUATION verstehen (30 Sekunden)</h2>
+  <p>Blatt <strong>FLUKTUATION</strong> oeffnen – die Auswertung wird automatisch neu erstellt.</p>
+  <table>
+    <tr>
+      <th>Bereich</th>
+      <th>Was Sie sehen</th>
+    </tr>
+    <tr>
+      <td><strong>Status</strong></td>
+      <td>Niedrig / Mittel / Hoch / Kritisch / Daten pruefen</td>
+    </tr>
+    <tr>
+      <td><strong>Sofort pruefen</strong></td>
+      <td>Konkrete Faelle: Monat, Name, naechster Schritt</td>
+    </tr>
+    <tr>
+      <td><strong>Empfehlungen</strong></td>
+      <td>Was das Team tun sollte (Onboarding, Bindung, …)</td>
+    </tr>
+    <tr>
+      <td><strong>Diagramme</strong></td>
+      <td>Austritte pro Monat, nach Kategorie und Austrittsgrund</td>
+    </tr>
+  </table>
+  <div class="box ok">
+    <strong>Kein Handlungsbedarf?</strong>
+    Status gruen oder „Niedrig“, „Sofort pruefen“ leer oder nur Hinweise – weiter beobachten und Daten aktuell halten.
+  </div>
+
+  <h2>6. Monat leeren (Vorsicht)</h2>
+  <p>Nur wenn der <strong>aktuelle Monat komplett neu</strong> beginnen soll:</p>
+  <ol>
+    <li>Monatsblatt aktivieren.</li>
+    <li>Makro <strong>DataClear</strong> (Alt+F8) – Sicherheitsabfrage genau lesen und bestaetigen.</li>
+  </ol>
+  <p class="small">Loeschen betrifft u.&nbsp;a. Mitarbeiterzeilen und Fluktuation (Q31) in diesem Monat.</p>
+
+  <h2>7. Wenn etwas „haengt“ oder falsch wirkt</h2>
+  <table>
+    <tr>
+      <th>Problem</th>
+      <th>Erste Hilfe</th>
+    </tr>
+    <tr>
+      <td>Dropdown Stunden (F) fehlt</td>
+      <td>Spalte E pruefen, Blatt verlassen und wieder oeffnen</td>
+    </tr>
+    <tr>
+      <td>Lohn (G) falsch</td>
+      <td>E und F pruefen; LOHNTABELLE durch Admin pruefen lassen</td>
+    </tr>
+    <tr>
+      <td>FLUKTUATION veraltet / „Daten pruefen“</td>
+      <td>Fehlende Austrittsgruende (Spalte N) ergaenzen, FLUKTUATION erneut oeffnen</td>
+    </tr>
+    <tr>
+      <td>Excel reagiert nicht / alles langsam</td>
+      <td>Datei speichern, Excel neu starten</td>
+    </tr>
+    <tr>
+      <td>Gar nichts stimmt mehr</td>
+      <td><strong>Admin</strong> ruft <strong>PID_FullSystemRefresh</strong> auf (Vollrefresh)</td>
+    </tr>
+  </table>
+
+  <h2>8. Bitte nicht tun</h2>
+  <ul>
+    <li>Versteckte Blaetter loeschen oder umbenennen (Januar–Dezember, FLUKTUATION, EINSTELLUNG, LOHNTABELLE).</li>
+    <li>Arbeitsjahr in <strong>EINSTELLUNG!C35</strong> ohne Absprache aendern.</li>
+    <li>Spalte <strong>H</strong> oder Formeln in <strong>G</strong> manuell ueberschreiben.</li>
+    <li>Austritt nur in <strong>I</strong> eintragen und <strong>N</strong> leer lassen.</li>
+    <li>LOHNTABELLE aendern – nur durch befugte Personen (KV-Periode, Buttons auf dem Blatt).</li>
+  </ul>
+
+  <div class="footer">
+    Personalsheet · Kurzanleitung fuer Restaurantleitung · Bei Fragen: Admin / IT · Makros finden: Alt+F8 → CopyData, DataClear, RefreshFluktuationNow
+  </div>
+
+</body>
+</html>
