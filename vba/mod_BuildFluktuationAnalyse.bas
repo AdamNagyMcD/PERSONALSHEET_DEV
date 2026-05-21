@@ -18,8 +18,18 @@ Public Sub BuildFluktuationAnalyse()
     Dim totalLoss As Double
     Dim avgLoss As Double
     Dim riskLevel As String
-    Dim focusText As String
-    Dim explanationText As String
+    Dim managerSummary As String
+    Dim recommendationItems As Variant
+    Dim criticalExits As Long
+    Dim normalExits As Long
+    Dim statusRow As Long
+    Dim kpiLabelRow As Long
+    Dim kpiValueRow As Long
+    Dim alertsHeaderRow As Long
+    Dim alertsEndRow As Long
+    Dim recHeaderRow As Long
+    Dim recEndRow As Long
+    Dim chartRow As Long
     Dim currentYear As Long
     
     Dim monthNames As Variant
@@ -146,6 +156,9 @@ Public Sub BuildFluktuationAnalyse()
                 Case "Austrittsgrund unbekannt"
                     incompleteExits = incompleteExits + 1
                     If monthIndex >= 1 And monthIndex <= 12 Then monthIncomplete(monthIndex) = monthIncomplete(monthIndex) + 1
+                
+                Case "Normaler Austritt"
+                    normalExits = normalExits + 1
             End Select
         Next r
     End If
@@ -208,82 +221,61 @@ Public Sub BuildFluktuationAnalyse()
         ytdFluctuation = 0
     End If
     
-    ' --- Abschnitt 3: Risikobewertung und Empfehlungstext ---
+    ' --- Abschnitt 3: Risikobewertung und Manager-Texte ---
+    criticalExits = earlyExits + experiencedLoss + importantExits
     riskLevel = GetFluktuationRiskLevel(totalLoss, totalExits, earlyExits, experiencedLoss, importantExits, incompleteExits)
-    focusText = GetFluktuationFocusText(totalExits, neutralExits, earlyExits, experiencedLoss, importantExits, incompleteExits, totalLoss)
-    
-    explanationText = "Diese Auswertung bewertet Austritte nicht nur nach Anzahl, sondern auch nach Art des Austritts und Dauer der Betriebszugehoerigkeit."
-    explanationText = explanationText & " Ein Austritt eines langjaehrigen Mitarbeiters zaehlt staerker als ein Austritt in den ersten Wochen."
-    explanationText = explanationText & " Neutrale Bewegungen wie Storetransfer, Befoerderung, Karenz oder Nicht eingetreten werden nicht negativ bewertet."
+    managerSummary = GetFluktuationManagerSummary(riskLevel, currentYear, totalExits, incompleteExits, criticalExits, ytdFluctuation, totalLoss)
+    recommendationItems = GetFluktuationRecommendationItems(totalExits, neutralExits, earlyExits, experiencedLoss, importantExits, incompleteExits, totalLoss, ytdFluctuation)
     
     ' --- Abschnitt 4: Ausgabe in Fluktuation-Blatt schreiben ---
     With analyseWs
-        .Range("A1").Value = "Fluktuation"
-        .Range("A2").Value = "Jahresanalyse"
+        PID_ClearFluktuationCharts analyseWs
+        
+        .Range("A1").Value = "Fluktuation - Uebersicht fuer die Restaurantleitung"
+        .Range("A2").Value = "Jahr"
         .Range("B2").Value = currentYear
+        .Range("C2").Value = "Stand"
+        .Range("D2").Value = Format(Date, "dd.mm.yyyy")
         
-        .Range("A4").Value = "Was bedeutet diese Auswertung?"
-        .Range("A5").Value = explanationText
+        statusRow = 5
+        kpiLabelRow = 8
+        kpiValueRow = 9
         
-        .Range("A8").Value = "Kennzahl"
-        .Range("B8").Value = "Wert"
-        .Range("C8").Value = "Einfache Erklaerung"
+        .Range("A4").Value = "Auf einen Blick"
+        .Range("A" & statusRow).Value = "Status"
+        .Range("B" & statusRow).Value = riskLevel
+        .Range("C" & statusRow).Value = managerSummary
+        .Range("C" & statusRow & ":E" & statusRow + 1).Merge
+        .Range("A" & statusRow & ":A" & statusRow + 1).Merge
+        .Range("B" & statusRow & ":B" & statusRow + 1).Merge
         
-        .Range("A9").Value = "Austritte gesamt"
-        .Range("B9").Value = totalExits
-        .Range("C9").Value = "Alle erfassten Austritte im Jahr."
+        .Cells(kpiLabelRow, 1).Value = "Austritte gesamt"
+        .Cells(kpiLabelRow, 2).Value = "Jahresfluktuation"
+        .Cells(kpiLabelRow, 3).Value = "Verlust-Score"
+        .Cells(kpiLabelRow, 4).Value = "Kritische Austritte"
+        .Cells(kpiLabelRow, 5).Value = "Daten offen"
         
-        .Range("A10").Value = "Aktuelle Jahresfluktuation"
-        .Range("B10").Value = ytdFluctuation
-        .Range("C10").Value = "Zeigt die bisherige Fluktuation im Jahr. Nicht auf das ganze Jahr hochgerechnet."
+        .Cells(kpiValueRow, 1).Value = totalExits
+        .Cells(kpiValueRow, 2).Value = ytdFluctuation
+        .Cells(kpiValueRow, 3).Value = totalLoss
+        .Cells(kpiValueRow, 4).Value = criticalExits
+        .Cells(kpiValueRow, 5).Value = incompleteExits
         
-        .Range("A11").Value = "Verlust-Score"
-        .Range("B11").Value = totalLoss
-        .Range("C11").Value = "Bewertet, wie schwer die Austritte fuer das Restaurant sind."
+        alertsHeaderRow = kpiValueRow + 2
+        alertsEndRow = WriteFluktuationAlertsSection(analyseWs, dataWs, alertsHeaderRow)
         
-        .Range("A12").Value = "Durchschnittlicher Verlust-Score"
-        .Range("B12").Value = avgLoss
-        .Range("C12").Value = "Durchschnittliche Schwere pro Austritt."
+        recHeaderRow = alertsEndRow + 2
+        recEndRow = WriteFluktuationRecommendationsSection(analyseWs, recommendationItems, recHeaderRow)
         
-        .Range("A13").Value = "Austritte in den ersten 90 Tagen"
-        .Range("B13").Value = earlyExits
-        .Range("C13").Value = "Hinweis auf Recruiting, Onboarding oder Training."
-        
-        .Range("A14").Value = "Verlust erfahrener Mitarbeiter"
-        .Range("B14").Value = experiencedLoss
-        .Range("C14").Value = "Erfahrene Mitarbeiter verlassen das Restaurant."
-        
-        .Range("A15").Value = "Wichtige Austritte"
-        .Range("B15").Value = importantExits
-        .Range("C15").Value = "Austritte mit erhoehtem Risiko fuer den Betrieb."
-        
-        .Range("A16").Value = "Neutrale Bewegungen"
-        .Range("B16").Value = neutralExits
-        .Range("C16").Value = "Storetransfer, Befoerderung, Karenz oder Nicht eingetreten."
-        
-        .Range("A17").Value = "Unvollstaendige Austritte"
-        .Range("B17").Value = incompleteExits
-        .Range("C17").Value = "Austritte mit fehlendem oder unbekanntem Austrittsgrund."
-        
-        .Range("A19").Value = "Risiko-Einschaetzung"
-        .Range("B19").Value = riskLevel
-        
-        .Range("A21").Value = "Empfehlung"
-        .Range("B21").Value = focusText
-        
-        For i = 9 To 17
-            .Range("C" & i & ":E" & i).Merge
-        Next i
-        
-        .Range("A21:A22").Merge
-        .Range("B21:E22").Merge
+        chartRow = recEndRow + 2
+        BuildFluktuationCharts analyseWs, chartRow, monthNames, monthExit, earlyExits, experiencedLoss, importantExits, neutralExits, normalExits, incompleteExits
         
         ' --- Abschnitt 4b: Monatstabelle ---
-        monthlyTitleRow = 25
-        headerRow = 27
-        firstDataRow = 28
+        monthlyTitleRow = chartRow + 14
+        headerRow = monthlyTitleRow + 2
+        firstDataRow = headerRow + 1
         
-        .Range("A" & monthlyTitleRow).Value = "Monatsuebersicht"
+        .Range("A" & monthlyTitleRow).Value = "Monatsuebersicht im Detail"
         
         currentCol = 1
         
@@ -404,7 +396,7 @@ Public Sub BuildFluktuationAnalyse()
         
         PID_WriteFluktuationExplanationRows analyseWs, explanationStartRow
         
-        FormatFluktuationSheet analyseWs, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
+        FormatFluktuationSheet analyseWs, statusRow, kpiLabelRow, kpiValueRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, chartRow, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
         
         .Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     End With
@@ -433,6 +425,14 @@ End Sub
 
 
 Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
+                                  ByVal statusRow As Long, _
+                                  ByVal kpiLabelRow As Long, _
+                                  ByVal kpiValueRow As Long, _
+                                  ByVal alertsHeaderRow As Long, _
+                                  ByVal alertsEndRow As Long, _
+                                  ByVal recHeaderRow As Long, _
+                                  ByVal recEndRow As Long, _
+                                  ByVal chartRow As Long, _
                                   ByVal monthlyTitleRow As Long, _
                                   ByVal headerRow As Long, _
                                   ByVal firstDataRow As Long, _
@@ -442,43 +442,65 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
                                   ByVal riskLevel As String)
     With ws
         .Range("A1:E1").Merge
-        .Range("A1").Font.Size = 22
+        .Range("A1").Font.Size = 20
         .Range("A1").Font.Bold = True
         .Range("A1").HorizontalAlignment = xlCenter
         
-        .Range("A2:B2").Font.Bold = True
+        .Range("A2:D2").Font.Bold = True
+        .Range("D2").HorizontalAlignment = xlLeft
         
         .Range("A4:E4").Merge
         .Range("A4").Font.Bold = True
-        .Range("A4").Font.Size = 13
+        .Range("A4").Font.Size = 14
         
-        .Range("A5:E6").Merge
-        .Range("A5").WrapText = True
-        .Range("A5").VerticalAlignment = xlTop
+        .Range("A" & statusRow & ":E" & statusRow + 1).Borders.LineStyle = xlContinuous
+        .Range("A" & statusRow & ":E" & statusRow + 1).Borders.Weight = xlMedium
+        .Range("A" & statusRow).Font.Bold = True
+        .Range("A" & statusRow).HorizontalAlignment = xlCenter
+        .Range("B" & statusRow).Font.Size = 14
+        ApplyRiskFormatting .Range("B" & statusRow), riskLevel
+        .Range("C" & statusRow).WrapText = True
+        .Range("C" & statusRow).VerticalAlignment = xlTop
+        .Range("C" & statusRow).HorizontalAlignment = xlLeft
         
-        .Range("A8:E8").Font.Bold = True
-        .Range("A8:E17").Borders.LineStyle = xlContinuous
-        .Range("A8:E17").Borders.Weight = xlThin
+        .Range("A" & kpiLabelRow & ":E" & kpiValueRow).Font.Bold = True
+        .Range("A" & kpiLabelRow & ":E" & kpiValueRow).Borders.LineStyle = xlContinuous
+        .Range("A" & kpiLabelRow & ":E" & kpiValueRow).Borders.Weight = xlThin
+        .Range("A" & kpiLabelRow & ":E" & kpiValueRow).HorizontalAlignment = xlCenter
+        .Range("B" & kpiValueRow).NumberFormat = "0.00%"
+        .Range("C" & kpiValueRow).NumberFormat = "0.00"
         
-        .Range("B9:B17").HorizontalAlignment = xlCenter
-        .Range("B9:B17").VerticalAlignment = xlCenter
+        If incompleteExitsCellNeedsHighlight(ws, kpiValueRow) Then
+            .Range("E" & kpiValueRow).Interior.Color = RGB(221, 235, 247)
+            .Range("E" & kpiValueRow).Font.Color = RGB(31, 78, 121)
+        End If
         
-        .Range("C9:E17").HorizontalAlignment = xlLeft
-        .Range("C9:E17").VerticalAlignment = xlCenter
-        .Range("C9:E17").WrapText = True
+        .Range("A" & alertsHeaderRow).Font.Bold = True
+        .Range("A" & alertsHeaderRow).Font.Size = 13
+        If alertsEndRow > alertsHeaderRow + 2 Then
+            .Range(.Cells(alertsHeaderRow + 1, 1), .Cells(alertsHeaderRow + 1, 5)).Font.Bold = True
+            .Range(.Cells(alertsHeaderRow + 1, 1), .Cells(alertsEndRow - 1, 5)).Borders.LineStyle = xlContinuous
+            .Range(.Cells(alertsHeaderRow + 1, 1), .Cells(alertsEndRow - 1, 5)).Borders.Weight = xlThin
+            .Range(.Cells(alertsHeaderRow + 2, 1), .Cells(alertsEndRow - 1, 1)).Font.Bold = True
+            .Range(.Cells(alertsHeaderRow + 2, 1), .Cells(alertsEndRow - 1, 1)).HorizontalAlignment = xlCenter
+            .Range(.Cells(alertsHeaderRow + 2, 2), .Cells(alertsEndRow - 1, 5)).WrapText = True
+            .Range(.Cells(alertsHeaderRow + 2, 2), .Cells(alertsEndRow - 1, 5)).VerticalAlignment = xlTop
+            .Range(.Cells(alertsHeaderRow + 2, 2), .Cells(alertsEndRow - 1, 5)).HorizontalAlignment = xlLeft
+        ElseIf alertsEndRow = alertsHeaderRow + 2 Then
+            .Range(.Cells(alertsHeaderRow + 1, 1), .Cells(alertsHeaderRow + 1, 5)).WrapText = True
+        End If
         
-        .Range("A19:B19").Font.Bold = True
-        .Range("A19:B19").Font.Size = 13
-        .Range("A19:B19").Borders.LineStyle = xlContinuous
-        .Range("A19:B19").Borders.Weight = xlMedium
-        .Range("A19:B19").HorizontalAlignment = xlCenter
-        
-        ApplyRiskFormatting .Range("B19"), riskLevel
-        
-        .Range("A21:E22").Borders.LineStyle = xlContinuous
-        .Range("A21").Font.Bold = True
-        .Range("B21:E22").WrapText = True
-        .Range("B21:E22").VerticalAlignment = xlTop
+        .Range("A" & recHeaderRow).Font.Bold = True
+        .Range("A" & recHeaderRow).Font.Size = 13
+        If recEndRow > recHeaderRow Then
+            .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 5)).Borders.LineStyle = xlContinuous
+            .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 5)).Borders.Weight = xlThin
+            .Range(.Cells(recHeaderRow + 1, 2), .Cells(recEndRow, 5)).WrapText = True
+            .Range(.Cells(recHeaderRow + 1, 2), .Cells(recEndRow, 5)).VerticalAlignment = xlTop
+            .Range(.Cells(recHeaderRow + 1, 2), .Cells(recEndRow, 5)).HorizontalAlignment = xlLeft
+            .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 1)).Font.Bold = True
+            .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 1)).HorizontalAlignment = xlCenter
+        End If
         
         .Range(.Cells(monthlyTitleRow, 1), .Cells(monthlyTitleRow, lastTableCol + 2)).Merge
         .Cells(monthlyTitleRow, 1).Font.Size = 16
@@ -511,14 +533,11 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Range("A" & explanationStartRow + 1 & ":A" & explanationStartRow + 8).Font.Bold = True
         .Range("B" & explanationStartRow + 1 & ":E" & explanationStartRow + 8).WrapText = True
         
-        .Range("B10").NumberFormat = "0.00%"
-        .Range("B11:B12").NumberFormat = "0.00"
-        
-        .Columns("A").ColumnWidth = 32
-        .Columns("B").ColumnWidth = 16
-        .Columns("C").ColumnWidth = 16
-        .Columns("D").ColumnWidth = 16
-        .Columns("E").ColumnWidth = 16
+        .Columns("A").ColumnWidth = 18
+        .Columns("B").ColumnWidth = 22
+        .Columns("C").ColumnWidth = 24
+        .Columns("D").ColumnWidth = 24
+        .Columns("E").ColumnWidth = 28
         .Columns("F").ColumnWidth = 18
         .Columns("G").ColumnWidth = 18
         .Columns("H").ColumnWidth = 22
@@ -526,16 +545,34 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Columns("J").ColumnWidth = 36
         .Columns("K").ColumnWidth = 36
         .Columns("L").ColumnWidth = 36
+        .Columns("P:Q").Hidden = True
         
-        .Rows("5:6").RowHeight = 42
-        .Rows("19:19").RowHeight = 24
-        .Rows("21:22").RowHeight = 48
+        .Rows(statusRow & ":" & statusRow + 1).RowHeight = 36
+        .Rows(kpiLabelRow & ":" & kpiValueRow).RowHeight = 22
+        If alertsEndRow > alertsHeaderRow + 2 Then
+            .Rows(alertsHeaderRow + 2 & ":" & alertsEndRow - 1).RowHeight = 34
+        ElseIf alertsEndRow = alertsHeaderRow + 2 Then
+            .Rows(alertsHeaderRow + 1).RowHeight = 34
+        End If
+        If recEndRow > recHeaderRow Then
+            .Rows(recHeaderRow + 1 & ":" & recEndRow).RowHeight = 30
+        End If
         .Rows(firstDataRow & ":" & outputRow - 1).RowHeight = 42
         .Rows(explanationStartRow + 1 & ":" & explanationStartRow + 8).RowHeight = 38
         
         .Range("A1:L" & explanationStartRow + 8).VerticalAlignment = xlCenter
+        .Range("C" & statusRow).VerticalAlignment = xlTop
     End With
 End Sub
+
+
+Private Function incompleteExitsCellNeedsHighlight(ByVal ws As Worksheet, ByVal kpiValueRow As Long) As Boolean
+    If IsNumeric(ws.Cells(kpiValueRow, 5).Value) Then
+        incompleteExitsCellNeedsHighlight = (CLng(ws.Cells(kpiValueRow, 5).Value) > 0)
+    Else
+        incompleteExitsCellNeedsHighlight = False
+    End If
+End Function
 
 
 Public Function GetMonthIndexFromName(ByVal monthName As String) As Long
@@ -837,6 +874,454 @@ Public Sub ApplyRiskFormatting(ByVal targetCell As Range, ByVal riskLevel As Str
                 .Font.Color = vbBlack
         End Select
     End With
+End Sub
+
+
+Public Function GetFluktuationManagerSummary(ByVal riskLevel As String, _
+                                              ByVal currentYear As Long, _
+                                              ByVal totalExits As Long, _
+                                              ByVal incompleteExits As Long, _
+                                              ByVal criticalExits As Long, _
+                                              ByVal ytdFluctuation As Double, _
+                                              ByVal totalLoss As Double) As String
+    If incompleteExits > 0 Then
+        GetFluktuationManagerSummary = "Die Auswertung ist noch nicht vollstaendig. " & incompleteExits & " Austritt(e) haben keinen gueltigen Austrittsgrund. Bitte zuerst die markierten Faelle unten in den Monatsblaettern ergaenzen."
+    ElseIf totalExits = 0 Then
+        GetFluktuationManagerSummary = "Im Jahr " & currentYear & " sind bisher keine Austritte erfasst. Die Fluktuation ist aktuell unauffaellig."
+    ElseIf riskLevel = "Kritisch" Then
+        GetFluktuationManagerSummary = "Die Fluktuation ist kritisch. Es gibt " & totalExits & " Austritte, davon " & criticalExits & " mit erhoehtem Risiko. Verlust-Score: " & Format(totalLoss, "0.00") & ". Sofort Massnahmen pruefen."
+    ElseIf riskLevel = "Hoch" Then
+        GetFluktuationManagerSummary = "Die Fluktuation ist erhoeht (" & Format(ytdFluctuation, "0.0%") & " bisher im Jahr). " & criticalExits & " Austritt(e) sind besonders relevant. Ursachen und Massnahmen unten pruefen."
+    ElseIf riskLevel = "Mittel" Then
+        GetFluktuationManagerSummary = "Es gibt " & totalExits & " Austritte im Jahr " & currentYear & ". Die Lage ist beobachtungswuerdig, aber noch nicht kritisch. Empfehlungen und Monatsdetails unten beachten."
+    Else
+        GetFluktuationManagerSummary = "Es gibt " & totalExits & " Austritte, die Gesamtbewertung ist aktuell stabil. Entwicklung weiter beobachten und Daten aktuell halten."
+    End If
+End Function
+
+
+Public Function GetFluktuationRecommendationItems(ByVal totalExits As Long, _
+                                                   ByVal neutralExits As Long, _
+                                                   ByVal earlyExits As Long, _
+                                                   ByVal experiencedLoss As Long, _
+                                                   ByVal importantExits As Long, _
+                                                   ByVal incompleteExits As Long, _
+                                                   ByVal totalLoss As Double, _
+                                                   ByVal ytdFluctuation As Double) As Variant
+    Dim items() As String
+    Dim itemCount As Long
+    
+    itemCount = 0
+    
+    If incompleteExits > 0 Then
+        itemCount = itemCount + 1
+        ReDim Preserve items(1 To itemCount)
+        items(itemCount) = "Daten vervollstaendigen: Bei jedem Austritt in Spalte I das Austrittsdatum und in Spalte N den Austrittsgrund aus der Liste eintragen. Ohne diese Angaben kann die Analyse nicht zuverlaessig bewerten."
+    End If
+    
+    If experiencedLoss >= 1 Then
+        itemCount = itemCount + 1
+        ReDim Preserve items(1 To itemCount)
+        items(itemCount) = "Erfahrene Mitarbeiter halten: Exit-Gespraeche auswerten, Entwicklungsgespraeche planen, Schichtplanung und Fuehrung im Team pruefen."
+    End If
+    
+    If earlyExits >= 1 Then
+        itemCount = itemCount + 1
+        ReDim Preserve items(1 To itemCount)
+        items(itemCount) = "Erste 90 Tage staerken: Recruiting, Einarbeitung, Buddy-System, Training und die ersten Dienstplaene gezielt verbessern."
+    End If
+    
+    If importantExits >= 1 Then
+        itemCount = itemCount + 1
+        ReDim Preserve items(1 To itemCount)
+        items(itemCount) = "Wichtige Austritte analysieren: Austrittsgrund, Arbeitsklima, Kommunikation und Fuehrung im betroffenen Bereich besprechen."
+    End If
+    
+    If totalLoss >= 3 And incompleteExits = 0 Then
+        itemCount = itemCount + 1
+        ReDim Preserve items(1 To itemCount)
+        items(itemCount) = "Verlust-Score senken: Haeufige Austrittsgruende sammeln und konkrete Massnahmen zur Mitarbeiterbindung ableiten."
+    End If
+    
+    If ytdFluctuation >= 0.08 And incompleteExits = 0 Then
+        itemCount = itemCount + 1
+        ReDim Preserve items(1 To itemCount)
+        items(itemCount) = "Fluktuation beobachten: Die bisherige Jahresfluktuation liegt ueber 8 Prozent. Personalplanung und Nachbesetzungen fruehzeitig abstimmen."
+    End If
+    
+    If totalExits = 0 Then
+        itemCount = itemCount + 1
+        ReDim Preserve items(1 To itemCount)
+        items(itemCount) = "Keine Massnahmen noetig: Keine Austritte erfasst. Monatsblaetter weiter aktuell pflegen."
+    ElseIf neutralExits = totalExits Then
+        itemCount = itemCount + 1
+        ReDim Preserve items(1 To itemCount)
+        items(itemCount) = "Neutrale Bewegungen: Storetransfer, Befoerderung oder Karenz sind kein negatives Fluktuationssignal. Kein unmittelbarer Handlungsbedarf."
+    ElseIf itemCount = 0 Then
+        itemCount = itemCount + 1
+        ReDim Preserve items(1 To itemCount)
+        items(itemCount) = "Entwicklung beobachten: Die Fluktuation ist vorhanden, aber aktuell nicht kritisch. Monatliche Entwicklung und Austrittsgruende im Blick behalten."
+    End If
+    
+    GetFluktuationRecommendationItems = items
+End Function
+
+
+Public Function WriteFluktuationAlertsSection(ByVal ws As Worksheet, _
+                                              ByVal dataWs As Worksheet, _
+                                              ByVal startRow As Long) As Long
+    Dim lastRow As Long
+    Dim r As Long
+    Dim outRow As Long
+    Dim alertNum As Long
+    Dim hasAlerts As Boolean
+    
+    ws.Range("A" & startRow).Value = "Sofort pruefen"
+    outRow = startRow + 1
+    
+    lastRow = dataWs.Cells(dataWs.Rows.count, "A").End(xlUp).Row
+    hasAlerts = FluktuationHasAlertRows(dataWs, lastRow)
+    
+    If hasAlerts Then
+        ws.Cells(outRow, 1).Value = "Nr."
+        ws.Cells(outRow, 2).Value = "Problem"
+        ws.Cells(outRow, 3).Value = "Wo nachschauen"
+        ws.Cells(outRow, 4).Value = "Naechster Schritt"
+        ws.Range(ws.Cells(outRow, 4), ws.Cells(outRow, 5)).Merge
+        outRow = outRow + 1
+    End If
+    
+    alertNum = 0
+    
+    If lastRow >= 2 And hasAlerts Then
+        For r = 2 To lastRow
+            If alertNum >= 12 Then Exit For
+            If WriteFluktuationAlertIfMatch(ws, dataWs, r, outRow, alertNum, True) Then
+                outRow = outRow + 1
+            End If
+        Next r
+        
+        For r = 2 To lastRow
+            If alertNum >= 12 Then Exit For
+            If WriteFluktuationAlertIfMatch(ws, dataWs, r, outRow, alertNum, False) Then
+                outRow = outRow + 1
+            End If
+        Next r
+    End If
+    
+    If Not hasAlerts Then
+        ws.Range(ws.Cells(outRow, 1), ws.Cells(outRow, 5)).Merge
+        ws.Cells(outRow, 1).Value = "Keine offenen Datenprobleme oder kritischen Einzelfaelle. Die erfassten Austritte sind vollstaendig und aktuell bewertbar."
+        ws.Cells(outRow, 1).Interior.Color = RGB(198, 239, 206)
+        ws.Cells(outRow, 1).Font.Color = RGB(0, 97, 0)
+        outRow = outRow + 1
+    End If
+    
+    WriteFluktuationAlertsSection = outRow
+End Function
+
+
+Private Function FluktuationHasAlertRows(ByVal dataWs As Worksheet, ByVal lastRow As Long) As Boolean
+    Dim r As Long
+    Dim categoryText As String
+    
+    If lastRow < 2 Then Exit Function
+    
+    For r = 2 To lastRow
+        categoryText = Trim$(CStr(dataWs.Cells(r, "K").Value))
+        If categoryText = "Austrittsgrund fehlt" Or categoryText = "Austrittsgrund unbekannt" Or _
+           categoryText = "Verlust erfahrener Mitarbeiter" Or _
+           categoryText = "Austritt in den ersten 90 Tagen" Or _
+           categoryText = "Wichtiger Austritt" Then
+            FluktuationHasAlertRows = True
+            Exit Function
+        End If
+    Next r
+End Function
+
+
+Private Function WriteFluktuationAlertIfMatch(ByVal ws As Worksheet, _
+                                              ByVal dataWs As Worksheet, _
+                                              ByVal sourceRow As Long, _
+                                              ByVal targetRow As Long, _
+                                              ByRef alertNum As Long, _
+                                              ByVal incompleteOnly As Boolean) As Boolean
+    Dim categoryText As String
+    Dim monthName As String
+    Dim personalID As Variant
+    Dim employeeName As String
+    Dim exitDate As Variant
+    Dim sheetRow As Long
+    Dim problemText As String
+    Dim locationText As String
+    Dim actionText As String
+    Dim reasonText As String
+    
+    categoryText = Trim$(CStr(dataWs.Cells(sourceRow, "K").Value))
+    
+    If incompleteOnly Then
+        If categoryText <> "Austrittsgrund fehlt" And categoryText <> "Austrittsgrund unbekannt" Then
+            WriteFluktuationAlertIfMatch = False
+            Exit Function
+        End If
+    Else
+        If categoryText = "Austrittsgrund fehlt" Or categoryText = "Austrittsgrund unbekannt" Then
+            WriteFluktuationAlertIfMatch = False
+            Exit Function
+        End If
+        If categoryText <> "Verlust erfahrener Mitarbeiter" And _
+           categoryText <> "Austritt in den ersten 90 Tagen" And _
+           categoryText <> "Wichtiger Austritt" Then
+            WriteFluktuationAlertIfMatch = False
+            Exit Function
+        End If
+    End If
+    
+    monthName = Trim$(CStr(dataWs.Cells(sourceRow, "A").Value))
+    personalID = dataWs.Cells(sourceRow, "B").Value
+    employeeName = Trim$(CStr(dataWs.Cells(sourceRow, "C").Value))
+    exitDate = dataWs.Cells(sourceRow, "E").Value
+    reasonText = Trim$(CStr(dataWs.Cells(sourceRow, "F").Value))
+    sheetRow = FindEmployeeRowOnMonthSheet(monthName, personalID, employeeName, exitDate)
+    
+    Select Case categoryText
+        Case "Austrittsgrund fehlt"
+            problemText = "Austrittsgrund fehlt"
+            actionText = "Monatsblatt oeffnen, Zeile finden, in Spalte N den Austrittsgrund aus der Liste waehlen."
+        Case "Austrittsgrund unbekannt"
+            problemText = "Austrittsgrund unbekannt"
+            actionText = "Spalte N pruefen und einen gueltigen Grund aus EINSTELLUNG / Dropdown waehlen."
+        Case "Verlust erfahrener Mitarbeiter"
+            problemText = "Erfahrener Mitarbeiter ausgeschieden"
+            actionText = "Exit-Gespraech auswerten, Wissensuebergabe und Nachbesetzung planen."
+        Case "Austritt in den ersten 90 Tagen"
+            problemText = "Austritt in den ersten 90 Tagen"
+            actionText = "Onboarding, Training und erste Dienstplaene fuer neue Mitarbeiter pruefen."
+        Case "Wichtiger Austritt"
+            problemText = "Wichtiger Austritt"
+            actionText = "Austrittsgrund und Teamsituation mit der Fuehrung besprechen."
+        Case Else
+            problemText = categoryText
+            actionText = "Fall im Monatsblatt pruefen."
+    End Select
+    
+    If employeeName = "" Then employeeName = "Unbekannter Name"
+    If sheetRow > 0 Then
+        locationText = "Blatt """ & monthName & """, Zeile " & sheetRow & ", Name: " & employeeName
+    Else
+        locationText = "Blatt """ & monthName & """, Name: " & employeeName
+    End If
+    
+    If reasonText <> "" And categoryText <> "Austrittsgrund fehlt" Then
+        locationText = locationText & ", Grund: " & reasonText
+    End If
+    
+    alertNum = alertNum + 1
+    ws.Cells(targetRow, 1).Value = alertNum
+    ws.Cells(targetRow, 2).Value = problemText
+    ws.Cells(targetRow, 3).Value = locationText
+    ws.Cells(targetRow, 4).Value = actionText
+    ws.Range(ws.Cells(targetRow, 4), ws.Cells(targetRow, 5)).Merge
+    
+    WriteFluktuationAlertIfMatch = True
+End Function
+
+
+Public Function WriteFluktuationRecommendationsSection(ByVal ws As Worksheet, _
+                                                       ByVal recommendationItems As Variant, _
+                                                       ByVal startRow As Long) As Long
+    Dim i As Long
+    Dim outRow As Long
+    Dim itemText As String
+    
+    ws.Range("A" & startRow).Value = "Empfehlungen"
+    outRow = startRow + 1
+    
+    If IsArray(recommendationItems) Then
+        For i = LBound(recommendationItems) To UBound(recommendationItems)
+            itemText = Trim$(CStr(recommendationItems(i)))
+            If itemText <> "" Then
+                ws.Cells(outRow, 1).Value = i & "."
+                ws.Cells(outRow, 2).Value = itemText
+                ws.Range(ws.Cells(outRow, 2), ws.Cells(outRow, 5)).Merge
+                outRow = outRow + 1
+            End If
+        Next i
+    Else
+        ws.Cells(outRow, 1).Value = "1."
+        ws.Cells(outRow, 2).Value = "Entwicklung beobachten und Monatsblaetter aktuell halten."
+        ws.Range(ws.Cells(outRow, 2), ws.Cells(outRow, 5)).Merge
+        outRow = outRow + 1
+    End If
+    
+    WriteFluktuationRecommendationsSection = outRow - 1
+End Function
+
+
+Public Function FindEmployeeRowOnMonthSheet(ByVal monthSheetName As String, _
+                                            ByVal personalID As Variant, _
+                                            ByVal employeeName As String, _
+                                            ByVal exitDate As Variant) As Long
+    Dim ws As Worksheet
+    Dim r As Long
+    Dim rowID As String
+    Dim rowName As String
+    
+    On Error GoTo SafeExit
+    
+    Set ws = ThisWorkbook.Worksheets(monthSheetName)
+    
+    For r = 3 To 82
+        rowID = Trim$(CStr(ws.Cells(r, "B").Value))
+        rowName = Trim$(CStr(ws.Cells(r, "C").Value))
+        
+        If Trim$(CStr(personalID)) <> "" Then
+            If rowID = Trim$(CStr(personalID)) Then
+                If IsDate(exitDate) And IsDate(ws.Cells(r, "I").Value) Then
+                    If CDate(ws.Cells(r, "I").Value) = CDate(exitDate) Then
+                        FindEmployeeRowOnMonthSheet = r
+                        Exit Function
+                    End If
+                Else
+                    FindEmployeeRowOnMonthSheet = r
+                    Exit Function
+                End If
+            End If
+        End If
+        
+        If employeeName <> "" Then
+            If UCase$(rowName) = UCase$(employeeName) Then
+                If IsDate(exitDate) And IsDate(ws.Cells(r, "I").Value) Then
+                    If CDate(ws.Cells(r, "I").Value) = CDate(exitDate) Then
+                        FindEmployeeRowOnMonthSheet = r
+                        Exit Function
+                    End If
+                ElseIf Not IsDate(exitDate) Then
+                    FindEmployeeRowOnMonthSheet = r
+                    Exit Function
+                End If
+            End If
+        End If
+    Next r
+
+SafeExit:
+    FindEmployeeRowOnMonthSheet = 0
+End Function
+
+
+Public Sub PID_ClearFluktuationCharts(ByVal ws As Worksheet)
+    Dim chartObj As ChartObject
+    
+    On Error Resume Next
+    For Each chartObj In ws.ChartObjects
+        chartObj.Delete
+    Next chartObj
+    On Error GoTo 0
+End Sub
+
+
+Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
+                                  ByVal chartRow As Long, _
+                                  ByVal monthNames As Variant, _
+                                  ByRef monthExit() As Long, _
+                                  ByVal earlyExits As Long, _
+                                  ByVal experiencedLoss As Long, _
+                                  ByVal importantExits As Long, _
+                                  ByVal neutralExits As Long, _
+                                  ByVal normalExits As Long, _
+                                  ByVal incompleteExits As Long)
+    Dim monthDataRow As Long
+    Dim categoryDataRow As Long
+    Dim monthCount As Long
+    Dim categoryCount As Long
+    Dim i As Long
+    Dim chartLeft As Double
+    Dim chartTop As Double
+    Dim monthChart As ChartObject
+    Dim categoryChart As ChartObject
+    Dim monthRange As Range
+    Dim categoryRange As Range
+    
+    monthDataRow = 2
+    categoryDataRow = 20
+    
+    ws.Range("P:Q").ClearContents
+    ws.Cells(1, 16).Value = "Monat"
+    ws.Cells(1, 17).Value = "Austritte"
+    
+    monthCount = 0
+    For i = 1 To 12
+        If monthExit(i) > 0 Then
+            monthCount = monthCount + 1
+            ws.Cells(monthDataRow + monthCount - 1, 16).Value = monthNames(i - 1)
+            ws.Cells(monthDataRow + monthCount - 1, 17).Value = monthExit(i)
+        End If
+    Next i
+    
+    ws.Cells(categoryDataRow, 16).Value = "Kategorie"
+    ws.Cells(categoryDataRow, 17).Value = "Anzahl"
+    
+    categoryCount = 0
+    If earlyExits > 0 Then
+        categoryCount = categoryCount + 1
+        ws.Cells(categoryDataRow + categoryCount, 16).Value = "Erste 90 Tage"
+        ws.Cells(categoryDataRow + categoryCount, 17).Value = earlyExits
+    End If
+    If experiencedLoss > 0 Then
+        categoryCount = categoryCount + 1
+        ws.Cells(categoryDataRow + categoryCount, 16).Value = "Erfahrene MA"
+        ws.Cells(categoryDataRow + categoryCount, 17).Value = experiencedLoss
+    End If
+    If importantExits > 0 Then
+        categoryCount = categoryCount + 1
+        ws.Cells(categoryDataRow + categoryCount, 16).Value = "Wichtige Austritte"
+        ws.Cells(categoryDataRow + categoryCount, 17).Value = importantExits
+    End If
+    If normalExits > 0 Then
+        categoryCount = categoryCount + 1
+        ws.Cells(categoryDataRow + categoryCount, 16).Value = "Normal"
+        ws.Cells(categoryDataRow + categoryCount, 17).Value = normalExits
+    End If
+    If neutralExits > 0 Then
+        categoryCount = categoryCount + 1
+        ws.Cells(categoryDataRow + categoryCount, 16).Value = "Neutral"
+        ws.Cells(categoryDataRow + categoryCount, 17).Value = neutralExits
+    End If
+    If incompleteExits > 0 Then
+        categoryCount = categoryCount + 1
+        ws.Cells(categoryDataRow + categoryCount, 16).Value = "Daten offen"
+        ws.Cells(categoryDataRow + categoryCount, 17).Value = incompleteExits
+    End If
+    
+    chartLeft = ws.Range("A" & chartRow).Left
+    chartTop = ws.Range("A" & chartRow).Top
+    
+    ws.Range("A" & chartRow).Value = "Diagramme"
+    ws.Range("A" & chartRow).Font.Bold = True
+    ws.Range("A" & chartRow).Font.Size = 13
+    
+    If monthCount > 0 Then
+        Set monthRange = ws.Range(ws.Cells(monthDataRow, 16), ws.Cells(monthDataRow + monthCount - 1, 17))
+        Set monthChart = ws.ChartObjects.Add(Left:=chartLeft, Top:=chartTop + 18, Width:=320, Height:=210)
+        With monthChart.Chart
+            .ChartType = xlColumnClustered
+            .SetSourceData Source:=monthRange, PlotBy:=xlColumns
+            .HasTitle = True
+            .ChartTitle.Text = "Austritte pro Monat"
+            .Legend.Delete
+        End With
+    End If
+    
+    If categoryCount > 0 Then
+        Set categoryRange = ws.Range(ws.Cells(categoryDataRow + 1, 16), ws.Cells(categoryDataRow + categoryCount, 17))
+        Set categoryChart = ws.ChartObjects.Add(Left:=chartLeft + 340, Top:=chartTop + 18, Width:=320, Height:=210)
+        With categoryChart.Chart
+            .ChartType = xlPie
+            .SetSourceData Source:=categoryRange, PlotBy:=xlColumns
+            .HasTitle = True
+            .ChartTitle.Text = "Austritte nach Kategorie"
+        End With
+    End If
 End Sub
 
 
