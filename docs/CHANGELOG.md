@@ -19,6 +19,7 @@
 - mod_BuildFluktuationAnalyse.bas: chart source columns stay visible for Mac Excel; charts use explicit series data. Alert/recommendation rows auto-fit height.
 - mod_BuildFluktuationAnalyse.bas: title row height and column A width fixed; added horizontal bar chart for Austrittsgruende (Einvernehmlich, Dienstnehmer, etc.).
 - mod_BuildFluktuationAnalyse.bas: merged-row height estimated for Empfehlungen/alerts; Wo nachschauen uses Monat statt Blatt without row numbers.
+- mod_BuildFluktuationAnalyse.bas: all FLUKTUATION content cells vertically center aligned after layout.
 - mod_BuildFluktuationAnalyse.bas: Monatsuebersicht lists only months with at least one exit again (no empty months).
 - mod_BuildFluktuationDaten.bas: month detection uses each sheet's `A1` month number for reliable exit assignment.
 - DieseArbeitsmappe.cls: opening `FLUKTUATION` always rebuilds analysis (not only when dirty flag is set).

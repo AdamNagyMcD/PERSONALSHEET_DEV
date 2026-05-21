@@ -103,7 +103,7 @@ Public Sub BuildFluktuationAnalyse()
         .Cells.Font.Color = vbBlack
         .Cells.Interior.Pattern = xlNone
         .Cells.HorizontalAlignment = xlGeneral
-        .Cells.VerticalAlignment = xlBottom
+        .Cells.VerticalAlignment = xlCenter
         .Cells.WrapText = False
         .Rows.RowHeight = 15
     End With
@@ -463,7 +463,6 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Range("B" & statusRow).Font.Size = 14
         ApplyRiskFormatting .Range("B" & statusRow), riskLevel
         .Range("C" & statusRow).WrapText = True
-        .Range("C" & statusRow).VerticalAlignment = xlTop
         .Range("C" & statusRow).HorizontalAlignment = xlLeft
         
         .Range("A" & kpiLabelRow & ":E" & kpiValueRow).Font.Bold = True
@@ -488,7 +487,6 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
             .Range(.Cells(alertsHeaderRow + 2, 1), .Cells(alertsEndRow - 1, 1)).Font.Bold = True
             .Range(.Cells(alertsHeaderRow + 2, 1), .Cells(alertsEndRow - 1, 1)).HorizontalAlignment = xlCenter
             .Range(.Cells(alertsHeaderRow + 2, 2), .Cells(alertsEndRow - 1, 5)).WrapText = True
-            .Range(.Cells(alertsHeaderRow + 2, 2), .Cells(alertsEndRow - 1, 5)).VerticalAlignment = xlTop
             .Range(.Cells(alertsHeaderRow + 2, 2), .Cells(alertsEndRow - 1, 5)).HorizontalAlignment = xlLeft
         ElseIf alertsEndRow = alertsHeaderRow + 2 Then
             .Range(.Cells(alertsHeaderRow + 1, 1), .Cells(alertsHeaderRow + 1, 5)).WrapText = True
@@ -500,7 +498,6 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
             .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 5)).Borders.LineStyle = xlContinuous
             .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 5)).Borders.Weight = xlThin
             .Range(.Cells(recHeaderRow + 1, 2), .Cells(recEndRow, 5)).WrapText = True
-            .Range(.Cells(recHeaderRow + 1, 2), .Cells(recEndRow, 5)).VerticalAlignment = xlTop
             .Range(.Cells(recHeaderRow + 1, 2), .Cells(recEndRow, 5)).HorizontalAlignment = xlLeft
             .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 1)).Font.Bold = True
             .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 1)).HorizontalAlignment = xlCenter
@@ -516,7 +513,6 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Range(.Cells(headerRow, 1), .Cells(outputRow - 1, lastTableCol + 2)).Borders.Weight = xlThin
         
         .Range(.Cells(headerRow, 1), .Cells(outputRow - 1, lastTableCol + 2)).HorizontalAlignment = xlCenter
-        .Range(.Cells(headerRow, 1), .Cells(outputRow - 1, lastTableCol + 2)).VerticalAlignment = xlCenter
         
         .Range(.Cells(firstDataRow, 1), .Cells(outputRow - 1, lastTableCol + 2)).WrapText = True
         
@@ -559,12 +555,12 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Rows(kpiValueRow).RowHeight = 22
         .Rows(firstDataRow & ":" & outputRow - 1).RowHeight = 42
         
-        .Range("A" & kpiLabelRow & ":E" & kpiValueRow).VerticalAlignment = xlCenter
-        .Range(.Cells(headerRow, 1), .Cells(outputRow - 1, lastTableCol + 2)).VerticalAlignment = xlCenter
-        .Range("C" & statusRow).VerticalAlignment = xlTop
         .Rows(chartRow + 1 & ":" & chartRow + 32).RowHeight = 18
         
         PID_AutoFitFluktuationTextRows ws, statusRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, explanationStartRow
+        
+        .Range(.Cells(1, 1), .Cells(explanationStartRow + 8, lastTableCol + 2)).VerticalAlignment = xlCenter
+        .Range("A" & kpiLabelRow & ":E" & kpiValueRow).HorizontalAlignment = xlCenter
     End With
 End Sub
 
