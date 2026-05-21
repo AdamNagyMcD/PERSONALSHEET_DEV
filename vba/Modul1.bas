@@ -45,7 +45,6 @@ Public Sub PID_FullSystemRefresh()
     
     PID_FormatAllMoneyColumns
     
-    PID_BuildMakrosReferenceSheet
     PID_SetupSheetProtectionForMacros
     
     MsgBox "Personalsheet wurde vollstaendig aktualisiert.", _

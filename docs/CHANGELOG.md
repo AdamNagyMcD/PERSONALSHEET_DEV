@@ -3,7 +3,6 @@
 ## Unreleased
 
 ### Added
-- mod_MakrosReference.bas: `MAKROS` sheet with macro overview (category, when to use, alternatives); rebuilt on workbook open via `PID_BuildMakrosReferenceSheet`.
 - Modul1.bas: `RestoreAktuelleStundenFormulas` / `PID_RestoreAktuelleStundenFormulas` restores column `H` pro-rata hour formulas on all month sheets using `EINSTELLUNG!C35` as workbook year.
 - Modul1.bas: `RestoreAustrittsdatumValidation` fixes month-sheet `AB1:AB2` date bounds and column `I` data validation after workbook year moved to `EINSTELLUNG!C35`.
 - mod_AddNewKVPeriodOnTop.bas: `AddCustomKVMonatsstunden` with dialog flow and green sheet button to insert custom Monatsstunden into a selected KV-Code block, sorted ascending by hours.
@@ -16,7 +15,7 @@
 - Added `.gitignore` entry for `.DS_Store` to prevent accidental macOS metadata commits.
 
 ### Changed
-- mod_MakrosReference.bas, DieseArbeitsmappe.cls: macro cheat sheet on `MAKROS` tab; removed unused `GetFluktuationFocusText` and `FindEmployeeRowOnMonthSheet`; wired existing dirty/clean helpers without behavior change.
+- mod_BuildFluktuationAnalyse.bas, mod_RefreshFluktuationAll.bas, mod_KVStundenDropdown.bas, Modul1.bas: removed unused Fluktuation helpers; wired dirty/clean helpers without behavior change.
 - mod_BuildFluktuationAnalyse.bas: FLUKTUATION dashboard redesigned for restaurant managers — status summary, KPI row, actionable alert table with month/row locations, numbered recommendations, and monthly/category charts.
 - mod_BuildFluktuationAnalyse.bas: chart source columns stay visible for Mac Excel; charts use explicit series data. Alert/recommendation rows auto-fit height.
 - mod_BuildFluktuationAnalyse.bas: title row height and column A width fixed; added horizontal bar chart for Austrittsgruende (Einvernehmlich, Dienstnehmer, etc.).

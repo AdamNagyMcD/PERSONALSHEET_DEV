@@ -23,7 +23,6 @@ Private Sub Workbook_Open()
     PID_SetupSheetProtectionForMacros
     EnsureAddNewKVPeriodButton
     FixLOHNTABELLE_HeaderTextIfNeeded
-    PID_BuildMakrosReferenceSheet
     
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
