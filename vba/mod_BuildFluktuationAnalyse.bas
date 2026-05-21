@@ -268,10 +268,9 @@ Public Sub BuildFluktuationAnalyse()
         recEndRow = WriteFluktuationRecommendationsSection(analyseWs, recommendationItems, recHeaderRow)
         
         chartRow = recEndRow + 2
-        BuildFluktuationCharts analyseWs, chartRow, monthNames, monthExit, earlyExits, experiencedLoss, importantExits, neutralExits, normalExits, incompleteExits
         
         ' --- Abschnitt 4b: Monatstabelle ---
-        monthlyTitleRow = chartRow + 14
+        monthlyTitleRow = chartRow + 18
         headerRow = monthlyTitleRow + 2
         firstDataRow = headerRow + 1
         
@@ -397,6 +396,8 @@ Public Sub BuildFluktuationAnalyse()
         PID_WriteFluktuationExplanationRows analyseWs, explanationStartRow
         
         FormatFluktuationSheet analyseWs, statusRow, kpiLabelRow, kpiValueRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, chartRow, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
+        
+        BuildFluktuationCharts analyseWs, chartRow, monthNames, monthExit, earlyExits, experiencedLoss, importantExits, neutralExits, normalExits, incompleteExits
         
         .Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     End With
@@ -533,11 +534,11 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Range("A" & explanationStartRow + 1 & ":A" & explanationStartRow + 8).Font.Bold = True
         .Range("B" & explanationStartRow + 1 & ":E" & explanationStartRow + 8).WrapText = True
         
-        .Columns("A").ColumnWidth = 18
-        .Columns("B").ColumnWidth = 22
-        .Columns("C").ColumnWidth = 24
-        .Columns("D").ColumnWidth = 24
-        .Columns("E").ColumnWidth = 28
+        .Columns("A").ColumnWidth = 6
+        .Columns("B").ColumnWidth = 26
+        .Columns("C").ColumnWidth = 32
+        .Columns("D").ColumnWidth = 34
+        .Columns("E").ColumnWidth = 34
         .Columns("F").ColumnWidth = 18
         .Columns("G").ColumnWidth = 18
         .Columns("H").ColumnWidth = 22
@@ -545,24 +546,65 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Columns("J").ColumnWidth = 36
         .Columns("K").ColumnWidth = 36
         .Columns("L").ColumnWidth = 36
-        .Columns("P:Q").Hidden = True
+        .Columns("P").ColumnWidth = 2
+        .Columns("Q").ColumnWidth = 2
         
-        .Rows(statusRow & ":" & statusRow + 1).RowHeight = 36
         .Rows(kpiLabelRow & ":" & kpiValueRow).RowHeight = 22
-        If alertsEndRow > alertsHeaderRow + 2 Then
-            .Rows(alertsHeaderRow + 2 & ":" & alertsEndRow - 1).RowHeight = 34
-        ElseIf alertsEndRow = alertsHeaderRow + 2 Then
-            .Rows(alertsHeaderRow + 1).RowHeight = 34
-        End If
-        If recEndRow > recHeaderRow Then
-            .Rows(recHeaderRow + 1 & ":" & recEndRow).RowHeight = 30
-        End If
         .Rows(firstDataRow & ":" & outputRow - 1).RowHeight = 42
-        .Rows(explanationStartRow + 1 & ":" & explanationStartRow + 8).RowHeight = 38
         
-        .Range("A1:L" & explanationStartRow + 8).VerticalAlignment = xlCenter
+        .Range("A" & kpiLabelRow & ":E" & kpiValueRow).VerticalAlignment = xlCenter
+        .Range(.Cells(headerRow, 1), .Cells(outputRow - 1, lastTableCol + 2)).VerticalAlignment = xlCenter
         .Range("C" & statusRow).VerticalAlignment = xlTop
+        .Rows(chartRow + 1 & ":" & chartRow + 16).RowHeight = 18
+        
+        PID_AutoFitFluktuationTextRows ws, statusRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, explanationStartRow
     End With
+End Sub
+
+
+Private Sub PID_AutoFitFluktuationTextRows(ByVal ws As Worksheet, _
+                                           ByVal statusRow As Long, _
+                                           ByVal alertsHeaderRow As Long, _
+                                           ByVal alertsEndRow As Long, _
+                                           ByVal recHeaderRow As Long, _
+                                           ByVal recEndRow As Long, _
+                                           ByVal explanationStartRow As Long)
+    Dim r As Long
+    Dim minHeight As Double
+    Dim maxHeight As Double
+    
+    minHeight = 18
+    maxHeight = 160
+    
+    ws.Rows(statusRow & ":" & statusRow + 1).AutoFit
+    For r = statusRow To statusRow + 1
+        If ws.Rows(r).RowHeight < 30 Then ws.Rows(r).RowHeight = 30
+    Next r
+    
+    If alertsEndRow > alertsHeaderRow + 2 Then
+        For r = alertsHeaderRow + 1 To alertsEndRow - 1
+            ws.Rows(r).AutoFit
+            If ws.Rows(r).RowHeight < 22 Then ws.Rows(r).RowHeight = 22
+            If ws.Rows(r).RowHeight > maxHeight Then ws.Rows(r).RowHeight = maxHeight
+        Next r
+    ElseIf alertsEndRow = alertsHeaderRow + 2 Then
+        ws.Rows(alertsHeaderRow + 1).AutoFit
+        If ws.Rows(alertsHeaderRow + 1).RowHeight < 28 Then ws.Rows(alertsHeaderRow + 1).RowHeight = 28
+    End If
+    
+    If recEndRow > recHeaderRow Then
+        For r = recHeaderRow + 1 To recEndRow
+            ws.Rows(r).AutoFit
+            If ws.Rows(r).RowHeight < 24 Then ws.Rows(r).RowHeight = 24
+            If ws.Rows(r).RowHeight > maxHeight Then ws.Rows(r).RowHeight = maxHeight
+        Next r
+    End If
+    
+    For r = explanationStartRow + 1 To explanationStartRow + 8
+        ws.Rows(r).AutoFit
+        If ws.Rows(r).RowHeight < 28 Then ws.Rows(r).RowHeight = 28
+        If ws.Rows(r).RowHeight > maxHeight Then ws.Rows(r).RowHeight = maxHeight
+    Next r
 End Sub
 
 
@@ -1234,13 +1276,17 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
     Dim categoryDataRow As Long
     Dim monthCount As Long
     Dim categoryCount As Long
+    Dim categoryLastRow As Long
+    Dim monthLastRow As Long
     Dim i As Long
     Dim chartLeft As Double
     Dim chartTop As Double
     Dim monthChart As ChartObject
     Dim categoryChart As ChartObject
-    Dim monthRange As Range
-    Dim categoryRange As Range
+    Dim valueRange As Range
+    Dim labelRange As Range
+    
+    On Error GoTo ChartFail
     
     monthDataRow = 2
     categoryDataRow = 20
@@ -1293,35 +1339,62 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
         ws.Cells(categoryDataRow + categoryCount, 17).Value = incompleteExits
     End If
     
-    chartLeft = ws.Range("A" & chartRow).Left
-    chartTop = ws.Range("A" & chartRow).Top
-    
     ws.Range("A" & chartRow).Value = "Diagramme"
     ws.Range("A" & chartRow).Font.Bold = True
     ws.Range("A" & chartRow).Font.Size = 13
+    ws.Range("A" & chartRow & ":E" & chartRow).Merge
+    
+    chartLeft = ws.Range("A" & (chartRow + 1)).Left
+    chartTop = ws.Range("A" & (chartRow + 1)).Top
     
     If monthCount > 0 Then
-        Set monthRange = ws.Range(ws.Cells(monthDataRow, 16), ws.Cells(monthDataRow + monthCount - 1, 17))
-        Set monthChart = ws.ChartObjects.Add(Left:=chartLeft, Top:=chartTop + 18, Width:=320, Height:=210)
+        monthLastRow = monthDataRow + monthCount - 1
+        Set labelRange = ws.Range(ws.Cells(monthDataRow, 16), ws.Cells(monthLastRow, 16))
+        Set valueRange = ws.Range(ws.Cells(monthDataRow, 17), ws.Cells(monthLastRow, 17))
+        
+        Set monthChart = ws.ChartObjects.Add(Left:=chartLeft, Top:=chartTop, Width:=340, Height:=230)
         With monthChart.Chart
             .ChartType = xlColumnClustered
-            .SetSourceData Source:=monthRange, PlotBy:=xlColumns
+            Do While .SeriesCollection.Count > 0
+                .SeriesCollection(1).Delete
+            Loop
+            With .SeriesCollection.NewSeries
+                .Name = "Austritte"
+                .Values = valueRange
+                .XValues = labelRange
+            End With
             .HasTitle = True
             .ChartTitle.Text = "Austritte pro Monat"
+            On Error Resume Next
             .Legend.Delete
+            On Error GoTo ChartFail
         End With
     End If
     
     If categoryCount > 0 Then
-        Set categoryRange = ws.Range(ws.Cells(categoryDataRow + 1, 16), ws.Cells(categoryDataRow + categoryCount, 17))
-        Set categoryChart = ws.ChartObjects.Add(Left:=chartLeft + 340, Top:=chartTop + 18, Width:=320, Height:=210)
+        categoryLastRow = categoryDataRow + categoryCount
+        Set labelRange = ws.Range(ws.Cells(categoryDataRow + 1, 16), ws.Cells(categoryLastRow, 16))
+        Set valueRange = ws.Range(ws.Cells(categoryDataRow + 1, 17), ws.Cells(categoryLastRow, 17))
+        
+        Set categoryChart = ws.ChartObjects.Add(Left:=chartLeft + 360, Top:=chartTop, Width:=340, Height:=230)
         With categoryChart.Chart
             .ChartType = xlPie
-            .SetSourceData Source:=categoryRange, PlotBy:=xlColumns
+            Do While .SeriesCollection.Count > 0
+                .SeriesCollection(1).Delete
+            Loop
+            With .SeriesCollection.NewSeries
+                .Name = "Kategorien"
+                .Values = valueRange
+                .XValues = labelRange
+            End With
             .HasTitle = True
             .ChartTitle.Text = "Austritte nach Kategorie"
         End With
     End If
+    
+    Exit Sub
+
+ChartFail:
 End Sub
 
 
