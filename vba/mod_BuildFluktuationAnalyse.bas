@@ -270,7 +270,7 @@ Public Sub BuildFluktuationAnalyse()
         chartRow = recEndRow + 2
         
         ' --- Abschnitt 4b: Monatstabelle ---
-        monthlyTitleRow = chartRow + 18
+        monthlyTitleRow = chartRow + 34
         headerRow = monthlyTitleRow + 2
         firstDataRow = headerRow + 1
         
@@ -397,7 +397,7 @@ Public Sub BuildFluktuationAnalyse()
         
         FormatFluktuationSheet analyseWs, statusRow, kpiLabelRow, kpiValueRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, chartRow, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
         
-        BuildFluktuationCharts analyseWs, chartRow, monthNames, monthExit, earlyExits, experiencedLoss, importantExits, neutralExits, normalExits, incompleteExits
+        BuildFluktuationCharts analyseWs, dataWs, chartRow, monthNames, monthExit, earlyExits, experiencedLoss, importantExits, neutralExits, normalExits, incompleteExits
         
         .Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     End With
@@ -443,9 +443,11 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
                                   ByVal riskLevel As String)
     With ws
         .Range("A1:E1").Merge
-        .Range("A1").Font.Size = 20
+        .Range("A1").Font.Size = 18
         .Range("A1").Font.Bold = True
         .Range("A1").HorizontalAlignment = xlCenter
+        .Range("A1").VerticalAlignment = xlCenter
+        .Rows(1).RowHeight = 44
         
         .Range("A2:D2").Font.Bold = True
         .Range("D2").HorizontalAlignment = xlLeft
@@ -467,6 +469,7 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Range("A" & kpiLabelRow & ":E" & kpiValueRow).Font.Bold = True
         .Range("A" & kpiLabelRow & ":E" & kpiValueRow).Borders.LineStyle = xlContinuous
         .Range("A" & kpiLabelRow & ":E" & kpiValueRow).Borders.Weight = xlThin
+        .Range("A" & kpiLabelRow & ":E" & kpiLabelRow).WrapText = True
         .Range("A" & kpiLabelRow & ":E" & kpiValueRow).HorizontalAlignment = xlCenter
         .Range("B" & kpiValueRow).NumberFormat = "0.00%"
         .Range("C" & kpiValueRow).NumberFormat = "0.00"
@@ -534,11 +537,11 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Range("A" & explanationStartRow + 1 & ":A" & explanationStartRow + 8).Font.Bold = True
         .Range("B" & explanationStartRow + 1 & ":E" & explanationStartRow + 8).WrapText = True
         
-        .Columns("A").ColumnWidth = 6
-        .Columns("B").ColumnWidth = 26
-        .Columns("C").ColumnWidth = 32
-        .Columns("D").ColumnWidth = 34
-        .Columns("E").ColumnWidth = 34
+        .Columns("A").ColumnWidth = 16
+        .Columns("B").ColumnWidth = 20
+        .Columns("C").ColumnWidth = 26
+        .Columns("D").ColumnWidth = 26
+        .Columns("E").ColumnWidth = 26
         .Columns("F").ColumnWidth = 18
         .Columns("G").ColumnWidth = 18
         .Columns("H").ColumnWidth = 22
@@ -548,14 +551,18 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Columns("L").ColumnWidth = 36
         .Columns("P").ColumnWidth = 2
         .Columns("Q").ColumnWidth = 2
+        .Columns("R").ColumnWidth = 2
+        .Columns("S").ColumnWidth = 2
         
-        .Rows(kpiLabelRow & ":" & kpiValueRow).RowHeight = 22
+        .Rows(kpiLabelRow).AutoFit
+        If .Rows(kpiLabelRow).RowHeight < 30 Then .Rows(kpiLabelRow).RowHeight = 30
+        .Rows(kpiValueRow).RowHeight = 22
         .Rows(firstDataRow & ":" & outputRow - 1).RowHeight = 42
         
         .Range("A" & kpiLabelRow & ":E" & kpiValueRow).VerticalAlignment = xlCenter
         .Range(.Cells(headerRow, 1), .Cells(outputRow - 1, lastTableCol + 2)).VerticalAlignment = xlCenter
         .Range("C" & statusRow).VerticalAlignment = xlTop
-        .Rows(chartRow + 1 & ":" & chartRow + 16).RowHeight = 18
+        .Rows(chartRow + 1 & ":" & chartRow + 32).RowHeight = 18
         
         PID_AutoFitFluktuationTextRows ws, statusRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, explanationStartRow
     End With
@@ -1263,6 +1270,7 @@ End Sub
 
 
 Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
+                                  ByVal dataWs As Worksheet, _
                                   ByVal chartRow As Long, _
                                   ByVal monthNames As Variant, _
                                   ByRef monthExit() As Long, _
@@ -1274,24 +1282,35 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
                                   ByVal incompleteExits As Long)
     Dim monthDataRow As Long
     Dim categoryDataRow As Long
+    Dim reasonDataRow As Long
     Dim monthCount As Long
     Dim categoryCount As Long
+    Dim reasonCount As Long
     Dim categoryLastRow As Long
     Dim monthLastRow As Long
+    Dim reasonLastRow As Long
     Dim i As Long
     Dim chartLeft As Double
     Dim chartTop As Double
+    Dim chartTopRow2 As Double
     Dim monthChart As ChartObject
     Dim categoryChart As ChartObject
+    Dim reasonChart As ChartObject
     Dim valueRange As Range
     Dim labelRange As Range
+    Dim chartWidth As Double
+    Dim chartHeight As Double
     
     On Error GoTo ChartFail
     
+    chartWidth = 300
+    chartHeight = 210
     monthDataRow = 2
     categoryDataRow = 20
+    reasonDataRow = 40
     
     ws.Range("P:Q").ClearContents
+    ws.Range("R:S").ClearContents
     ws.Cells(1, 16).Value = "Monat"
     ws.Cells(1, 17).Value = "Austritte"
     
@@ -1339,6 +1358,8 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
         ws.Cells(categoryDataRow + categoryCount, 17).Value = incompleteExits
     End If
     
+    reasonCount = WriteFluktuationReasonChartData(dataWs, ws, reasonDataRow)
+    
     ws.Range("A" & chartRow).Value = "Diagramme"
     ws.Range("A" & chartRow).Font.Bold = True
     ws.Range("A" & chartRow).Font.Size = 13
@@ -1346,13 +1367,14 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
     
     chartLeft = ws.Range("A" & (chartRow + 1)).Left
     chartTop = ws.Range("A" & (chartRow + 1)).Top
+    chartTopRow2 = chartTop + chartHeight + 12
     
     If monthCount > 0 Then
         monthLastRow = monthDataRow + monthCount - 1
         Set labelRange = ws.Range(ws.Cells(monthDataRow, 16), ws.Cells(monthLastRow, 16))
         Set valueRange = ws.Range(ws.Cells(monthDataRow, 17), ws.Cells(monthLastRow, 17))
         
-        Set monthChart = ws.ChartObjects.Add(Left:=chartLeft, Top:=chartTop, Width:=340, Height:=230)
+        Set monthChart = ws.ChartObjects.Add(Left:=chartLeft, Top:=chartTop, Width:=chartWidth, Height:=chartHeight)
         With monthChart.Chart
             .ChartType = xlColumnClustered
             Do While .SeriesCollection.Count > 0
@@ -1376,7 +1398,7 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
         Set labelRange = ws.Range(ws.Cells(categoryDataRow + 1, 16), ws.Cells(categoryLastRow, 16))
         Set valueRange = ws.Range(ws.Cells(categoryDataRow + 1, 17), ws.Cells(categoryLastRow, 17))
         
-        Set categoryChart = ws.ChartObjects.Add(Left:=chartLeft + 360, Top:=chartTop, Width:=340, Height:=230)
+        Set categoryChart = ws.ChartObjects.Add(Left:=chartLeft + chartWidth + 16, Top:=chartTop, Width:=chartWidth, Height:=chartHeight)
         With categoryChart.Chart
             .ChartType = xlPie
             Do While .SeriesCollection.Count > 0
@@ -1392,10 +1414,100 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
         End With
     End If
     
+    If reasonCount > 0 Then
+        reasonLastRow = reasonDataRow + reasonCount
+        Set labelRange = ws.Range(ws.Cells(reasonDataRow + 1, 18), ws.Cells(reasonLastRow, 18))
+        Set valueRange = ws.Range(ws.Cells(reasonDataRow + 1, 19), ws.Cells(reasonLastRow, 19))
+        
+        Set reasonChart = ws.ChartObjects.Add(Left:=chartLeft, Top:=chartTopRow2, Width:=(chartWidth * 2) + 16, Height:=chartHeight)
+        With reasonChart.Chart
+            .ChartType = xlBarClustered
+            Do While .SeriesCollection.Count > 0
+                .SeriesCollection(1).Delete
+            Loop
+            With .SeriesCollection.NewSeries
+                .Name = "Austritte"
+                .Values = valueRange
+                .XValues = labelRange
+            End With
+            .HasTitle = True
+            .ChartTitle.Text = "Austritte nach Austrittsgrund"
+            On Error Resume Next
+            .Legend.Delete
+            On Error GoTo ChartFail
+        End With
+    End If
+    
     Exit Sub
 
 ChartFail:
 End Sub
+
+
+Private Function WriteFluktuationReasonChartData(ByVal dataWs As Worksheet, _
+                                                 ByVal ws As Worksheet, _
+                                                 ByVal reasonDataRow As Long) As Long
+    Dim lastRow As Long
+    Dim r As Long
+    Dim reasonText As String
+    Dim categoryText As String
+    Dim summaryText As String
+    Dim parts As Variant
+    Dim i As Long
+    Dim partText As String
+    Dim baseReason As String
+    Dim countText As String
+    Dim countValue As Long
+    Dim outRow As Long
+    
+    WriteFluktuationReasonChartData = 0
+    summaryText = ""
+    
+    lastRow = dataWs.Cells(dataWs.Rows.count, "A").End(xlUp).Row
+    If lastRow < 2 Then Exit Function
+    
+    For r = 2 To lastRow
+        reasonText = Trim$(CStr(dataWs.Cells(r, "F").Value))
+        categoryText = Trim$(CStr(dataWs.Cells(r, "K").Value))
+        
+        If categoryText = "Austrittsgrund fehlt" Then
+            reasonText = "Grund fehlt"
+        ElseIf categoryText = "Austrittsgrund unbekannt" Then
+            reasonText = "Grund unbekannt"
+        ElseIf reasonText = "" Then
+            reasonText = "Grund fehlt"
+        End If
+        
+        summaryText = AddReasonToSummary(summaryText, reasonText)
+    Next r
+    
+    If summaryText = "" Then Exit Function
+    
+    ws.Cells(reasonDataRow, 18).Value = "Austrittsgrund"
+    ws.Cells(reasonDataRow, 19).Value = "Anzahl"
+    
+    parts = Split(summaryText, ", ")
+    outRow = reasonDataRow
+    
+    For i = LBound(parts) To UBound(parts)
+        partText = Trim$(CStr(parts(i)))
+        baseReason = partText
+        countValue = 1
+        
+        If InStr(partText, " (") > 0 Then
+            baseReason = Left$(partText, InStr(partText, " (") - 1)
+            countText = Replace(partText, baseReason & " (", "")
+            countText = Replace(countText, ")", "")
+            If IsNumeric(countText) Then countValue = CLng(countText)
+        End If
+        
+        outRow = outRow + 1
+        ws.Cells(outRow, 18).Value = baseReason
+        ws.Cells(outRow, 19).Value = countValue
+    Next i
+    
+    WriteFluktuationReasonChartData = outRow - reasonDataRow
+End Function
 
 
 Private Sub PID_WriteFluktuationExplanationRows(ByVal ws As Worksheet, ByVal startRow As Long)
