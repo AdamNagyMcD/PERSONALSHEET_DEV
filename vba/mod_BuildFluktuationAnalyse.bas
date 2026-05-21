@@ -577,11 +577,10 @@ Private Sub PID_AutoFitFluktuationTextRows(ByVal ws As Worksheet, _
                                            ByVal recEndRow As Long, _
                                            ByVal explanationStartRow As Long)
     Dim r As Long
-    Dim minHeight As Double
     Dim maxHeight As Double
+    Dim rowHeight As Double
     
-    minHeight = 18
-    maxHeight = 160
+    maxHeight = 180
     
     ws.Rows(statusRow & ":" & statusRow + 1).AutoFit
     For r = statusRow To statusRow + 1
@@ -589,30 +588,90 @@ Private Sub PID_AutoFitFluktuationTextRows(ByVal ws As Worksheet, _
     Next r
     
     If alertsEndRow > alertsHeaderRow + 2 Then
-        For r = alertsHeaderRow + 1 To alertsEndRow - 1
-            ws.Rows(r).AutoFit
-            If ws.Rows(r).RowHeight < 22 Then ws.Rows(r).RowHeight = 22
-            If ws.Rows(r).RowHeight > maxHeight Then ws.Rows(r).RowHeight = maxHeight
+        ws.Rows(alertsHeaderRow + 1).RowHeight = 22
+        For r = alertsHeaderRow + 2 To alertsEndRow - 1
+            rowHeight = PID_EstimateWrappedRowHeightForCell(ws, r, 2, 2)
+            rowHeight = Application.WorksheetFunction.Max(rowHeight, PID_EstimateWrappedRowHeightForCell(ws, r, 3, 3))
+            rowHeight = Application.WorksheetFunction.Max(rowHeight, PID_EstimateWrappedRowHeightForCell(ws, r, 4, 5))
+            If rowHeight > maxHeight Then rowHeight = maxHeight
+            ws.Rows(r).RowHeight = rowHeight
         Next r
     ElseIf alertsEndRow = alertsHeaderRow + 2 Then
-        ws.Rows(alertsHeaderRow + 1).AutoFit
-        If ws.Rows(alertsHeaderRow + 1).RowHeight < 28 Then ws.Rows(alertsHeaderRow + 1).RowHeight = 28
+        rowHeight = PID_EstimateWrappedRowHeightForCell(ws, alertsHeaderRow + 1, 1, 5)
+        If rowHeight < 28 Then rowHeight = 28
+        ws.Rows(alertsHeaderRow + 1).RowHeight = rowHeight
     End If
     
     If recEndRow > recHeaderRow Then
         For r = recHeaderRow + 1 To recEndRow
-            ws.Rows(r).AutoFit
-            If ws.Rows(r).RowHeight < 24 Then ws.Rows(r).RowHeight = 24
-            If ws.Rows(r).RowHeight > maxHeight Then ws.Rows(r).RowHeight = maxHeight
+            rowHeight = PID_EstimateWrappedRowHeightForCell(ws, r, 2, 5)
+            If rowHeight > maxHeight Then rowHeight = maxHeight
+            ws.Rows(r).RowHeight = rowHeight
         Next r
     End If
     
     For r = explanationStartRow + 1 To explanationStartRow + 8
-        ws.Rows(r).AutoFit
-        If ws.Rows(r).RowHeight < 28 Then ws.Rows(r).RowHeight = 28
-        If ws.Rows(r).RowHeight > maxHeight Then ws.Rows(r).RowHeight = maxHeight
+        rowHeight = PID_EstimateWrappedRowHeightForCell(ws, r, 2, 5)
+        If rowHeight < 28 Then rowHeight = 28
+        If rowHeight > maxHeight Then rowHeight = maxHeight
+        ws.Rows(r).RowHeight = rowHeight
     Next r
 End Sub
+
+
+Private Function PID_EstimateWrappedRowHeightForCell(ByVal ws As Worksheet, _
+                                                     ByVal rowNum As Long, _
+                                                     ByVal firstCol As Long, _
+                                                     ByVal lastCol As Long) As Double
+    Dim txt As String
+    Dim totalWidth As Double
+    Dim c As Long
+    Dim charsPerLine As Long
+    Dim lines As Long
+    Dim lineLen As Long
+    Dim words() As String
+    Dim i As Long
+    Dim word As String
+    
+    txt = Trim$(CStr(ws.Cells(rowNum, firstCol).Value))
+    If txt = "" Then
+        PID_EstimateWrappedRowHeightForCell = 24
+        Exit Function
+    End If
+    
+    totalWidth = 0
+    For c = firstCol To lastCol
+        totalWidth = totalWidth + ws.Columns(c).ColumnWidth
+    Next c
+    
+    charsPerLine = CLng(totalWidth)
+    If charsPerLine < 12 Then charsPerLine = 12
+    
+    words = Split(txt, " ")
+    lines = 0
+    lineLen = 0
+    
+    For i = LBound(words) To UBound(words)
+        word = Trim$(CStr(words(i)))
+        If word = "" Then GoTo NextWord
+        
+        If lineLen = 0 Then
+            lineLen = Len(word)
+            lines = lines + 1
+        ElseIf lineLen + 1 + Len(word) <= charsPerLine Then
+            lineLen = lineLen + 1 + Len(word)
+        Else
+            lines = lines + 1
+            lineLen = Len(word)
+        End If
+NextWord:
+    Next i
+    
+    If lines < 1 Then lines = 1
+    
+    PID_EstimateWrappedRowHeightForCell = (lines * 15.75) + 10
+    If PID_EstimateWrappedRowHeightForCell < 28 Then PID_EstimateWrappedRowHeightForCell = 28
+End Function
 
 
 Private Function incompleteExitsCellNeedsHighlight(ByVal ws As Worksheet, ByVal kpiValueRow As Long) As Boolean
@@ -1097,10 +1156,7 @@ Private Function WriteFluktuationAlertIfMatch(ByVal ws As Worksheet, _
                                               ByVal incompleteOnly As Boolean) As Boolean
     Dim categoryText As String
     Dim monthName As String
-    Dim personalID As Variant
     Dim employeeName As String
-    Dim exitDate As Variant
-    Dim sheetRow As Long
     Dim problemText As String
     Dim locationText As String
     Dim actionText As String
@@ -1127,16 +1183,13 @@ Private Function WriteFluktuationAlertIfMatch(ByVal ws As Worksheet, _
     End If
     
     monthName = Trim$(CStr(dataWs.Cells(sourceRow, "A").Value))
-    personalID = dataWs.Cells(sourceRow, "B").Value
     employeeName = Trim$(CStr(dataWs.Cells(sourceRow, "C").Value))
-    exitDate = dataWs.Cells(sourceRow, "E").Value
     reasonText = Trim$(CStr(dataWs.Cells(sourceRow, "F").Value))
-    sheetRow = FindEmployeeRowOnMonthSheet(monthName, personalID, employeeName, exitDate)
     
     Select Case categoryText
         Case "Austrittsgrund fehlt"
             problemText = "Austrittsgrund fehlt"
-            actionText = "Monatsblatt oeffnen, Zeile finden, in Spalte N den Austrittsgrund aus der Liste waehlen."
+            actionText = "Monat oeffnen, Mitarbeiter finden, in Spalte N den Austrittsgrund aus der Liste waehlen."
         Case "Austrittsgrund unbekannt"
             problemText = "Austrittsgrund unbekannt"
             actionText = "Spalte N pruefen und einen gueltigen Grund aus EINSTELLUNG / Dropdown waehlen."
@@ -1155,11 +1208,7 @@ Private Function WriteFluktuationAlertIfMatch(ByVal ws As Worksheet, _
     End Select
     
     If employeeName = "" Then employeeName = "Unbekannter Name"
-    If sheetRow > 0 Then
-        locationText = "Blatt """ & monthName & """, Zeile " & sheetRow & ", Name: " & employeeName
-    Else
-        locationText = "Blatt """ & monthName & """, Name: " & employeeName
-    End If
+    locationText = "Monat " & monthName & ", Name: " & employeeName
     
     If reasonText <> "" And categoryText <> "Austrittsgrund fehlt" Then
         locationText = locationText & ", Grund: " & reasonText
