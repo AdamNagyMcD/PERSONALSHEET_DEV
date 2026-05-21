@@ -572,12 +572,29 @@ Private Sub PID_ApplyLOHNTABELLE_TESTButtonStyle(ByVal btn As Shape, _
     btn.TextFrame.Characters.Font.Color = RGB(255, 255, 255)
     btn.TextFrame.Characters.Font.Bold = True
     btn.TextFrame.Characters.Font.Size = 8
-    btn.TextFrame.WordWrap = msoTrue
-    btn.TextFrame.VerticalAnchor = msoAnchorMiddle
-    btn.TextFrame.HorizontalAnchor = msoAnchorCenter
-    btn.Placement = xlFreeFloating
+    
+    ' Placement/Anchor: auf Mac per Late Binding, damit das Projekt kompiliert.
+    PID_ApplyShapeMacSafeOptions btn
     
 SafeExit:
+End Sub
+
+
+Private Sub PID_ApplyShapeMacSafeOptions(ByVal btn As Shape)
+    Dim shapeRef As Object
+    
+    On Error Resume Next
+    
+    If btn Is Nothing Then Exit Sub
+    
+    Set shapeRef = btn
+    
+    shapeRef.TextFrame.WordWrap = msoTrue
+    shapeRef.TextFrame.VerticalAnchor = msoAnchorMiddle
+    shapeRef.TextFrame.HorizontalAnchor = msoAnchorCenter
+    shapeRef.Placement = xlFreeFloating
+    
+    Set shapeRef = Nothing
 End Sub
 
 
