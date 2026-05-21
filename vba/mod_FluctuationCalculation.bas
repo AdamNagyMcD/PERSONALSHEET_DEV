@@ -2,7 +2,6 @@ Attribute VB_Name = "mod_FluctuationCalculation"
 Option Explicit
 
 Public Sub PID_CalculateFluctuation(ByVal ws As Worksheet)
-    Dim wsLohn As Worksheet
     Dim monthNumber As Long
     Dim currentYear As Long
     Dim monthEndDate As Date
@@ -26,13 +25,10 @@ Public Sub PID_CalculateFluctuation(ByVal ws As Worksheet)
     
     If ws Is Nothing Then Exit Sub
     
-    Set wsLohn = ThisWorkbook.Worksheets("LOHNTABELLE")
-    
     If Not IsNumeric(ws.Range("A1").Value) Then Exit Sub
-    If Not IsNumeric(wsLohn.Range("G3").Value) Then Exit Sub
     
     monthNumber = CLng(ws.Range("A1").Value)
-    currentYear = CLng(wsLohn.Range("G3").Value)
+    currentYear = PID_GetWorkbookYear()
     
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     

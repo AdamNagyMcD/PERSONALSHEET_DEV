@@ -49,23 +49,10 @@ End Sub
 
 
 Private Sub PID_EnsureWorkbookYearCached()
-    Dim wsLohn As Worksheet
-    
-    On Error GoTo SafeExit
-    
     If mWorkbookYearCached Then Exit Sub
     
-    On Error Resume Next
-    Set wsLohn = ThisWorkbook.Worksheets("LOHNTABELLE")
-    On Error GoTo SafeExit
-    
-    If wsLohn Is Nothing Then Exit Sub
-    If Not IsNumeric(wsLohn.Range("G3").Value) Then Exit Sub
-    
-    mCachedWorkbookYear = CLng(wsLohn.Range("G3").Value)
+    mCachedWorkbookYear = PID_GetWorkbookYear()
     mWorkbookYearCached = True
-    
-SafeExit:
 End Sub
 
 Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal changedRange As Range)

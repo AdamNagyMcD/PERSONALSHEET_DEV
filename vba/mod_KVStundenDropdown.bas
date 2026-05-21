@@ -276,7 +276,6 @@ End Function
 
 Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode As String) As Collection
     Dim wsKV As Worksheet
-    Dim wsLohn As Worksheet
     Dim currentYear As Long
     Dim targetPeriod As String
     Dim previousPeriod As String
@@ -287,11 +286,9 @@ Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode
     On Error GoTo SafeExit
     
     Set wsKV = ThisWorkbook.Worksheets("LOHNTABELLE_TEST")
-    Set wsLohn = ThisWorkbook.Worksheets("LOHNTABELLE")
     
-    If Not IsNumeric(wsLohn.Range("G3").Value) Then GoTo SafeExit
-    
-    currentYear = CLng(wsLohn.Range("G3").Value)
+    currentYear = PID_GetWorkbookYear()
+    If currentYear <= 0 Then GoTo SafeExit
     
     targetPeriod = NormalizeKVPeriodForLookup(GetKVPeriodForWorkbookYear(currentYear, monthNumber))
     previousPeriod = NormalizeKVPeriodForLookup(GetPreviousKVPeriodForWorkbookYear(currentYear, monthNumber))

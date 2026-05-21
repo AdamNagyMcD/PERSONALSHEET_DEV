@@ -5,7 +5,6 @@ Public Sub BuildFluktuationDaten()
     Dim monthNames As Variant
     Dim ws As Worksheet
     Dim outWs As Worksheet
-    Dim wsLohn As Worksheet
     
     Dim i As Long
     Dim r As Long 
@@ -47,10 +46,9 @@ Public Sub BuildFluktuationDaten()
     monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
     
     Set outWs = ThisWorkbook.Worksheets("FLUKTUATION_DATEN")
-    Set wsLohn = ThisWorkbook.Worksheets("LOHNTABELLE")
     
-    If Not IsNumeric(wsLohn.Range("G3").Value) Then GoTo CleanExit
-    currentYear = CLng(wsLohn.Range("G3").Value)
+    currentYear = PID_GetWorkbookYear()
+    If currentYear <= 0 Then GoTo CleanExit
     
     maxRows = 12 * 80
     ReDim arrOut(1 To maxRows, 1 To 11)
@@ -89,7 +87,7 @@ Public Sub BuildFluktuationDaten()
                                 End If
                                 
                                 reasonWeight = GetReasonWeight(exitReason)
-                                timeFactor = GetTimeFactor(daysInCompany, wsLohn)
+                                timeFactor = GetTimeFactor(daysInCompany)
                                 categoryText = GetFluctuationCategory(exitReason, daysInCompany, reasonWeight, timeFactor)
                                 
                                 If categoryText = "Austrittsgrund fehlt" Then
@@ -285,73 +283,81 @@ End Function
 
 
 Public Function GetReasonWeight(ByVal exitReason As String) As Double
+    Dim wsConfig As Worksheet
     Dim normalizedReason As String
+    Dim rowReason As String
+    Dim r As Long
     
     normalizedReason = NormalizeExitReason(exitReason)
     
-    Select Case normalizedReason
-        Case ""
-            GetReasonWeight = 0
+    If normalizedReason = "" Then
+        GetReasonWeight = 0
+        Exit Function
+    End If
+    
+    On Error GoTo UnknownReason
+    
+    Set wsConfig = ThisWorkbook.Worksheets(PID_EINSTELLUNG_SHEET)
+    
+    For r = PID_FLUKTUATION_REASON_FIRST_ROW To PID_FLUKTUATION_REASON_LAST_ROW
+        rowReason = NormalizeExitReason(CStr(wsConfig.Cells(r, "B").Value))
         
-        Case "Storetransfer"
-            GetReasonWeight = 0
-        
-        Case "Befoerderung"
-            GetReasonWeight = 0
-        
-        Case "Karenz"
-            GetReasonWeight = 0
-        
-        Case "Nicht eingetreten"
-            GetReasonWeight = 0
-        
-        Case "Befristung Ende"
-            GetReasonWeight = 0.2
-        
-        Case "Probezeit beendet"
-            GetReasonWeight = 0.35
-        
-        Case "Dienstgeber Kuendigung"
-            GetReasonWeight = 0.5
-        
-        Case "Berechtigter vorzeitiger Austritt"
-            GetReasonWeight = 0.6
-        
-        Case "Sonstiges"
-            GetReasonWeight = 0.7
-        
-        Case "Einvernehmliche Aufloesung"
-            GetReasonWeight = 0.75
-        
-        Case "Dienstnehmer Kuendigung"
-            GetReasonWeight = 1
-        
-        Case "Unberechtigter vorzeitiger Austritt"
-            GetReasonWeight = 1.1
-        
-        Case Else
-            GetReasonWeight = -1
-    End Select
+        If rowReason = normalizedReason Then
+            GetReasonWeight = GetSafeDouble(wsConfig.Cells(r, "C").Value, -1)
+            Exit Function
+        End If
+    Next r
+
+UnknownReason:
+    GetReasonWeight = -1
 End Function
 
 
-Public Function GetTimeFactor(ByVal daysInCompany As Long, ByVal wsLohn As Worksheet) As Double
+Public Function GetTimeFactor(ByVal daysInCompany As Long) As Double
+    Dim wsConfig As Worksheet
+    
     If daysInCompany <= 0 Then
         GetTimeFactor = 0
-    ElseIf daysInCompany <= 30 Then
-        GetTimeFactor = GetSafeDouble(wsLohn.Range("P17").Value, 0.4)
+        Exit Function
+    End If
+    
+    On Error GoTo UseDefaults
+    
+    Set wsConfig = ThisWorkbook.Worksheets(PID_EINSTELLUNG_SHEET)
+    
+    If daysInCompany <= 30 Then
+        GetTimeFactor = GetSafeDouble(wsConfig.Range("C53").Value, 0.3)
     ElseIf daysInCompany <= 90 Then
-        GetTimeFactor = GetSafeDouble(wsLohn.Range("P18").Value, 0.6)
+        GetTimeFactor = GetSafeDouble(wsConfig.Range("C54").Value, 0.5)
     ElseIf daysInCompany <= 180 Then
-        GetTimeFactor = GetSafeDouble(wsLohn.Range("P19").Value, 0.8)
+        GetTimeFactor = GetSafeDouble(wsConfig.Range("C55").Value, 0.75)
     ElseIf daysInCompany <= 365 Then
-        GetTimeFactor = GetSafeDouble(wsLohn.Range("P20").Value, 1)
+        GetTimeFactor = GetSafeDouble(wsConfig.Range("C56").Value, 1)
     ElseIf daysInCompany <= 730 Then
-        GetTimeFactor = GetSafeDouble(wsLohn.Range("P21").Value, 1.2)
+        GetTimeFactor = GetSafeDouble(wsConfig.Range("C57").Value, 1.25)
     ElseIf daysInCompany <= 1825 Then
-        GetTimeFactor = GetSafeDouble(wsLohn.Range("P22").Value, 1.5)
+        GetTimeFactor = GetSafeDouble(wsConfig.Range("C58").Value, 1.5)
     Else
-        GetTimeFactor = GetSafeDouble(wsLohn.Range("P23").Value, 2)
+        GetTimeFactor = GetSafeDouble(wsConfig.Range("C59").Value, 2)
+    End If
+    
+    Exit Function
+
+UseDefaults:
+    If daysInCompany <= 30 Then
+        GetTimeFactor = 0.3
+    ElseIf daysInCompany <= 90 Then
+        GetTimeFactor = 0.5
+    ElseIf daysInCompany <= 180 Then
+        GetTimeFactor = 0.75
+    ElseIf daysInCompany <= 365 Then
+        GetTimeFactor = 1
+    ElseIf daysInCompany <= 730 Then
+        GetTimeFactor = 1.25
+    ElseIf daysInCompany <= 1825 Then
+        GetTimeFactor = 1.5
+    Else
+        GetTimeFactor = 2
     End If
 End Function
 

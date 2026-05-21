@@ -4,6 +4,12 @@ Option Explicit
 Public Const PID_FIRST_ROW As Long = 3
 Public Const PID_LAST_ROW As Long = 82
 Public Const PID_WORKBOOK_PASSWORD As String = "company"
+Public Const PID_EINSTELLUNG_SHEET As String = "EINSTELLUNG"
+Public Const PID_WORKBOOK_YEAR_CELL As String = "C35"
+Public Const PID_FLUKTUATION_REASON_FIRST_ROW As Long = 38
+Public Const PID_FLUKTUATION_REASON_LAST_ROW As Long = 49
+Public Const PID_FLUKTUATION_TIME_FIRST_ROW As Long = 53
+Public Const PID_FLUKTUATION_TIME_LAST_ROW As Long = 59
 
 
 Public Sub PID_FullSystemRefresh()
@@ -76,6 +82,7 @@ Public Sub PID_QuickSystemCheck()
     msg = msg & "Calculation: " & PID_GetCalculationModeText() & vbCrLf & vbCrLf
     
     msg = msg & "Pflichtblaetter:" & vbCrLf
+    msg = msg & "- EINSTELLUNG: " & PID_YesNoText(PID_WorksheetExists(PID_EINSTELLUNG_SHEET)) & vbCrLf
     msg = msg & "- LOHNTABELLE: " & PID_YesNoText(PID_WorksheetExists("LOHNTABELLE")) & vbCrLf
     msg = msg & "- LOHNTABELLE_TEST: " & PID_YesNoText(PID_WorksheetExists("LOHNTABELLE_TEST")) & vbCrLf
     msg = msg & "- Fluktuation: " & PID_YesNoText(PID_WorksheetExists("Fluktuation")) & vbCrLf
@@ -274,6 +281,23 @@ Public Sub PID_ShowTechnicalSheets()
     MsgBox "Technische Blaetter wurden sichtbar gemacht.", _
            vbInformation, "Technische Blaetter"
 End Sub
+
+
+Public Function PID_GetWorkbookYear() As Long
+    Dim wsConfig As Worksheet
+    
+    On Error GoTo Fallback
+    
+    Set wsConfig = ThisWorkbook.Worksheets(PID_EINSTELLUNG_SHEET)
+    
+    If IsNumeric(wsConfig.Range(PID_WORKBOOK_YEAR_CELL).Value) Then
+        PID_GetWorkbookYear = CLng(wsConfig.Range(PID_WORKBOOK_YEAR_CELL).Value)
+        Exit Function
+    End If
+
+Fallback:
+    PID_GetWorkbookYear = Year(Date)
+End Function
 
 
 Public Function PID_WorksheetExists(ByVal sheetName As String) As Boolean

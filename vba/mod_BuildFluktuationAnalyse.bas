@@ -4,8 +4,6 @@ Option Explicit
 Public Sub BuildFluktuationAnalyse()
     Dim dataWs As Worksheet
     Dim analyseWs As Worksheet
-    Dim lohnWs As Worksheet
-    
     Dim lastRow As Long
     Dim r As Long
     Dim i As Long
@@ -22,7 +20,6 @@ Public Sub BuildFluktuationAnalyse()
     Dim riskLevel As String
     Dim focusText As String
     Dim explanationText As String
-    Dim yearValue As Variant
     Dim currentYear As Long
     
     Dim monthNames As Variant
@@ -83,15 +80,7 @@ Public Sub BuildFluktuationAnalyse()
     
     Set dataWs = ThisWorkbook.Worksheets("FLUKTUATION_DATEN")
     Set analyseWs = ThisWorkbook.Worksheets("Fluktuation")
-    Set lohnWs = ThisWorkbook.Worksheets("LOHNTABELLE")
-    
-    yearValue = lohnWs.Range("G3").Value
-    
-    If IsNumeric(yearValue) Then
-        currentYear = CLng(yearValue)
-    Else
-        currentYear = Year(Date)
-    End If
+    currentYear = PID_GetWorkbookYear()
     
     On Error Resume Next
     analyseWs.Unprotect Password:=PID_WORKBOOK_PASSWORD

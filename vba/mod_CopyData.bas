@@ -935,23 +935,6 @@ Public Function PID_MonthNames() As Variant
 End Function
 
 
-Public Function PID_GetWorkbookYear() As Long
-    Dim wsLohn As Worksheet
-    
-    On Error GoTo Fallback
-    
-    Set wsLohn = ThisWorkbook.Worksheets("LOHNTABELLE")
-    
-    If IsNumeric(wsLohn.Range("G3").Value) Then
-        PID_GetWorkbookYear = CLng(wsLohn.Range("G3").Value)
-        Exit Function
-    End If
-
-Fallback:
-    PID_GetWorkbookYear = Year(Date)
-End Function
-
-
 Public Sub PID_ShowEmploymentDuration(ByVal ws As Worksheet, ByVal targetCell As Range)
     Dim entryDate As Variant
     Dim diffYears As Long
