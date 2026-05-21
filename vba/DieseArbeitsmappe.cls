@@ -81,7 +81,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     Application.ScreenUpdating = False
     
     ' Fluktuation wird nur dann aktualisiert, wenn der Benutzer das Fluktuation-Blatt oeffnet.
-    If Sh.Name = "Fluktuation" Then
+    If Sh.Name = PID_FLUKTUATION_SHEET Then
         RefreshFluktuationIfDirty
         GoTo SafeExit
     End If

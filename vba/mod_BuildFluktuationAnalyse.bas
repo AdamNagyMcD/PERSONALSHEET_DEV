@@ -79,7 +79,7 @@ Public Sub BuildFluktuationAnalyse()
     monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
     
     Set dataWs = ThisWorkbook.Worksheets("FLUKTUATION_DATEN")
-    Set analyseWs = ThisWorkbook.Worksheets("Fluktuation")
+    Set analyseWs = ThisWorkbook.Worksheets(PID_FLUKTUATION_SHEET)
     currentYear = PID_GetWorkbookYear()
     
     On Error Resume Next

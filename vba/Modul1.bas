@@ -6,6 +6,7 @@ Public Const PID_LAST_ROW As Long = 82
 Public Const PID_WORKBOOK_PASSWORD As String = "company"
 Public Const PID_EINSTELLUNG_SHEET As String = "EINSTELLUNG"
 Public Const PID_LOHNTABELLE_SHEET As String = "LOHNTABELLE"
+Public Const PID_FLUKTUATION_SHEET As String = "FLUKTUATION"
 Public Const PID_WORKBOOK_YEAR_CELL As String = "C35"
 Public Const PID_FLUKTUATION_REASON_FIRST_ROW As Long = 38
 Public Const PID_FLUKTUATION_REASON_LAST_ROW As Long = 49
@@ -85,7 +86,7 @@ Public Sub PID_QuickSystemCheck()
     msg = msg & "Pflichtblaetter:" & vbCrLf
     msg = msg & "- EINSTELLUNG: " & PID_YesNoText(PID_WorksheetExists(PID_EINSTELLUNG_SHEET)) & vbCrLf
     msg = msg & "- LOHNTABELLE: " & PID_YesNoText(PID_WorksheetExists(PID_LOHNTABELLE_SHEET)) & vbCrLf
-    msg = msg & "- Fluktuation: " & PID_YesNoText(PID_WorksheetExists("Fluktuation")) & vbCrLf
+    msg = msg & "- FLUKTUATION: " & PID_YesNoText(PID_WorksheetExists(PID_FLUKTUATION_SHEET)) & vbCrLf
     msg = msg & "- FLUKTUATION_DATEN: " & PID_YesNoText(PID_WorksheetExists("FLUKTUATION_DATEN")) & vbCrLf
     msg = msg & "- KV_DROPDOWN_HELPER: " & PID_YesNoText(PID_WorksheetExists("KV_DROPDOWN_HELPER")) & vbCrLf & vbCrLf
     
