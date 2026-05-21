@@ -80,9 +80,9 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
-    ' Fluktuation wird nur dann aktualisiert, wenn der Benutzer das Fluktuation-Blatt oeffnet.
+    ' Fluktuation beim Oeffnen des Analyse-Blatts immer neu aufbauen.
     If Sh.Name = PID_FLUKTUATION_SHEET Then
-        RefreshFluktuationIfDirty
+        RefreshFluktuationAll
         GoTo SafeExit
     End If
     

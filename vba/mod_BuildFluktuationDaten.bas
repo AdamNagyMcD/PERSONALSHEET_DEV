@@ -68,6 +68,14 @@ Public Sub BuildFluktuationDaten()
         On Error GoTo CleanFail
         
         If Not ws Is Nothing Then
+            If IsNumeric(ws.Range("A1").Value) Then
+                monthNumber = CLng(ws.Range("A1").Value)
+            Else
+                monthNumber = i + 1
+            End If
+            
+            If monthNumber < 1 Or monthNumber > 12 Then GoTo NextMonthSheet
+            
             For r = 3 To 82
                 personalID = ws.Cells(r, "B").Value
                 employeeName = ws.Cells(r, "C").Value
@@ -102,7 +110,7 @@ Public Sub BuildFluktuationDaten()
                                 
                                 outRow = outRow + 1
                                 
-                                arrOut(outRow, 1) = monthName
+                                arrOut(outRow, 1) = CStr(monthNames(Month(CDate(exitDate)) - 1))
                                 arrOut(outRow, 2) = personalID
                                 arrOut(outRow, 3) = employeeName
                                 arrOut(outRow, 4) = entryDate
@@ -119,6 +127,8 @@ Public Sub BuildFluktuationDaten()
                 End If
             Next r
         End If
+        
+NextMonthSheet:
     Next i
     
     With outWs

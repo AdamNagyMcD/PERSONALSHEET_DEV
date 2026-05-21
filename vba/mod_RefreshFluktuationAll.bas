@@ -26,6 +26,11 @@ Public Sub RefreshFluktuationIfDirty()
 End Sub
 
 
+Public Sub RefreshFluktuationNow()
+    RefreshFluktuationAll
+End Sub
+
+
 Public Sub RefreshFluktuationAll()
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean

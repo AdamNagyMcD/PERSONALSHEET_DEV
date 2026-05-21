@@ -15,6 +15,10 @@
 - Added `.gitignore` entry for `.DS_Store` to prevent accidental macOS metadata commits.
 
 ### Changed
+- mod_BuildFluktuationAnalyse.bas: Monatsuebersicht lists all months through YTD/last exit (not only months with exits); month-name matching hardened.
+- mod_BuildFluktuationDaten.bas: month detection uses each sheet's `A1` month number for reliable exit assignment.
+- DieseArbeitsmappe.cls: opening `FLUKTUATION` always rebuilds analysis (not only when dirty flag is set).
+- mod_RefreshFluktuationAll.bas: added `RefreshFluktuationNow` manual refresh macro.
 - Modul1.bas, DieseArbeitsmappe.cls, mod_BuildFluktuationAnalyse.bas: analyse sheet name updated to `FLUKTUATION` (via `PID_FLUKTUATION_SHEET`).
 - LOHNTABELLE migration: legacy salary sheet removed in workbook; `LOHNTABELLE_TEST` renamed to `LOHNTABELLE` in VBA (KV table, buttons, events, protection). Legacy `_TEST` public macro names kept as thin aliases.
 - Modul1.bas: centralized workbook year and EINSTELLUNG config constants; `PID_GetWorkbookYear` now reads `EINSTELLUNG!C35` instead of legacy `LOHNTABELLE!G3`.
