@@ -56,7 +56,6 @@ Public Sub BuildFluktuationAnalyse()
     Dim outputRow As Long
     
     Dim ytdMonthLimit As Long
-    Dim displayMonthLimit As Long
     Dim ytdExits As Long
     Dim ytdPersonalSum As Long
     Dim ytdPersonalMonths As Long
@@ -209,11 +208,6 @@ Public Sub BuildFluktuationAnalyse()
         ytdFluctuation = 0
     End If
     
-    displayMonthLimit = ytdMonthLimit
-    If GetLastMonthWithExit(monthExit) > displayMonthLimit Then
-        displayMonthLimit = GetLastMonthWithExit(monthExit)
-    End If
-    
     ' --- Abschnitt 3: Risikobewertung und Empfehlungstext ---
     riskLevel = GetFluktuationRiskLevel(totalLoss, totalExits, earlyExits, experiencedLoss, importantExits, incompleteExits)
     focusText = GetFluktuationFocusText(totalExits, neutralExits, earlyExits, experiencedLoss, importantExits, incompleteExits, totalLoss)
@@ -341,66 +335,63 @@ Public Sub BuildFluktuationAnalyse()
         
         outputRow = firstDataRow
         
-        For i = 1 To displayMonthLimit
-            currentCol = 1
-            
-            .Cells(outputRow, currentCol).Value = monthNames(i - 1)
-            currentCol = currentCol + 1
-            
-            .Cells(outputRow, currentCol).Value = monthExit(i)
-            currentCol = currentCol + 1
-            
-            .Cells(outputRow, currentCol).Value = monthFluctuation(i)
-            currentCol = currentCol + 1
-            
-            .Cells(outputRow, currentCol).Value = monthLoss(i)
-            currentCol = currentCol + 1
-            
+        For i = 1 To 12
             If monthExit(i) > 0 Then
+                currentCol = 1
+                
+                .Cells(outputRow, currentCol).Value = monthNames(i - 1)
+                currentCol = currentCol + 1
+                
+                .Cells(outputRow, currentCol).Value = monthExit(i)
+                currentCol = currentCol + 1
+                
+                .Cells(outputRow, currentCol).Value = monthFluctuation(i)
+                currentCol = currentCol + 1
+                
+                .Cells(outputRow, currentCol).Value = monthLoss(i)
+                currentCol = currentCol + 1
+                
                 avgMonthLoss = monthLoss(i) / monthExit(i)
-            Else
-                avgMonthLoss = 0
-            End If
-            
-            .Cells(outputRow, currentCol).Value = avgMonthLoss
-            currentCol = currentCol + 1
-            
-            If showEarly Then
-                .Cells(outputRow, currentCol).Value = monthEarly(i)
+                
+                .Cells(outputRow, currentCol).Value = avgMonthLoss
                 currentCol = currentCol + 1
-            End If
-            
-            If showExperienced Then
-                .Cells(outputRow, currentCol).Value = monthExperienced(i)
+                
+                If showEarly Then
+                    .Cells(outputRow, currentCol).Value = monthEarly(i)
+                    currentCol = currentCol + 1
+                End If
+                
+                If showExperienced Then
+                    .Cells(outputRow, currentCol).Value = monthExperienced(i)
+                    currentCol = currentCol + 1
+                End If
+                
+                If showImportant Then
+                    .Cells(outputRow, currentCol).Value = monthImportant(i)
+                    currentCol = currentCol + 1
+                End If
+                
+                If showNeutral Then
+                    .Cells(outputRow, currentCol).Value = monthNeutral(i)
+                    currentCol = currentCol + 1
+                End If
+                
+                If showIncomplete Then
+                    .Cells(outputRow, currentCol).Value = monthIncomplete(i)
+                    currentCol = currentCol + 1
+                End If
+                
+                reasonSummary = GetExitReasonSummaryForMonth(dataWs, CStr(monthNames(i - 1)))
+                .Cells(outputRow, currentCol).Value = reasonSummary
                 currentCol = currentCol + 1
+                
+                monthHint = GetMonthHint(monthExit(i), monthEarly(i), monthExperienced(i), monthImportant(i), monthNeutral(i), monthIncomplete(i), monthLoss(i))
+                .Cells(outputRow, currentCol).Value = monthHint
+                
+                .Range(.Cells(outputRow, lastTableCol), .Cells(outputRow, lastTableCol + 2)).Merge
+                
+                outputRow = outputRow + 1
             End If
-            
-            If showImportant Then
-                .Cells(outputRow, currentCol).Value = monthImportant(i)
-                currentCol = currentCol + 1
-            End If
-            
-            If showNeutral Then
-                .Cells(outputRow, currentCol).Value = monthNeutral(i)
-                currentCol = currentCol + 1
-            End If
-            
-            If showIncomplete Then
-                .Cells(outputRow, currentCol).Value = monthIncomplete(i)
-                currentCol = currentCol + 1
-            End If
-            
-            reasonSummary = GetExitReasonSummaryForMonth(dataWs, CStr(monthNames(i - 1)))
-            If reasonSummary = "" Then reasonSummary = "-"
-            .Cells(outputRow, currentCol).Value = reasonSummary
-            currentCol = currentCol + 1
-            
-            monthHint = GetMonthHint(monthExit(i), monthEarly(i), monthExperienced(i), monthImportant(i), monthNeutral(i), monthIncomplete(i), monthLoss(i))
-            .Cells(outputRow, currentCol).Value = monthHint
-            
-            .Range(.Cells(outputRow, lastTableCol), .Cells(outputRow, lastTableCol + 2)).Merge
-            
-            outputRow = outputRow + 1
         Next i
         
         If outputRow = firstDataRow Then
