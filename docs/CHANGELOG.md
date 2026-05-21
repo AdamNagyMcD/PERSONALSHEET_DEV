@@ -16,7 +16,8 @@
 ### Changed
 - Modul1.bas: centralized workbook year and EINSTELLUNG config constants; `PID_GetWorkbookYear` now reads `EINSTELLUNG!C35` instead of legacy `LOHNTABELLE!G3`.
 - mod_BuildFluktuationDaten.bas: Fluktuation reason weights (`EINSTELLUNG!B38:C49`) and time factors (`EINSTELLUNG!C53:C59`) are read from EINSTELLUNG instead of hardcoded values or legacy LOHNTABELLE cells.
-- mod_BuildFluktuationAnalyse.bas, mod_FluctuationCalculation.bas, mod_KVLohnLookup.bas, mod_KVStundenDropdown.bas, mod_CopyData.bas: year lookup switched to `PID_GetWorkbookYear` / EINSTELLUNG.
+- mod_BuildFluktuationAnalyse.bas: fixed compile error on Fluktuation sheet open (`yearValue` replaced with `currentYear` after EINSTELLUNG year migration).
+- mod_FluctuationCalculation.bas, mod_KVLohnLookup.bas, mod_KVStundenDropdown.bas, mod_CopyData.bas: year lookup switched to `PID_GetWorkbookYear` / EINSTELLUNG.
 - mod_AddNewKVPeriodOnTop.bas: team-friendly KV button labels (1/2/3 + Hilfe), step-by-step dialogs, single-period delete with double confirm, plain-language errors, and updated A2 guidance text.
 - mod_AddNewKVPeriodOnTop.bas: `EnsureAddNewKVPeriodButton` now creates both KV sheet action buttons via `PID_EnsureLOHNTABELLE_TESTButtons`.
 - mod_DataClear.bas: error handling tightened by replacing broad `On Error Resume Next` blocks with focused sheet protect/unprotect helper procedures and preserved original error details in failure messages.

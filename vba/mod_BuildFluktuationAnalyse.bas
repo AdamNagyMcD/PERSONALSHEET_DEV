@@ -220,7 +220,7 @@ Public Sub BuildFluktuationAnalyse()
     With analyseWs
         .Range("A1").Value = "Fluktuation"
         .Range("A2").Value = "Jahresanalyse"
-        .Range("B2").Value = yearValue
+        .Range("B2").Value = currentYear
         
         .Range("A4").Value = "Was bedeutet diese Auswertung?"
         .Range("A5").Value = explanationText
