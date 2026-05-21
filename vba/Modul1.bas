@@ -478,11 +478,16 @@ SafeExit:
 End Function
 
 
+Private Function PID_GetEinstellungYearRefR1C1() As String
+    ' PID_WORKBOOK_YEAR_CELL = C35 -> R35C3 in R1C1 notation.
+    PID_GetEinstellungYearRefR1C1 = "'" & PID_EINSTELLUNG_SHEET & "'!R35C3"
+End Function
+
+
 Private Function PID_GetAktuelleStundenFormulaR1C1() As String
     Dim yearRef As String
     
-    ' PID_WORKBOOK_YEAR_CELL = C35 -> R35C3 in R1C1 notation.
-    yearRef = "'" & PID_EINSTELLUNG_SHEET & "'!R35C3"
+    yearRef = PID_GetEinstellungYearRefR1C1()
     
     PID_GetAktuelleStundenFormulaR1C1 = _
         "=IF(AND(ISNUMBER(RC[-4]),ISNUMBER(RC[-2]))," & _
@@ -492,5 +497,114 @@ Private Function PID_GetAktuelleStundenFormulaR1C1() As String
         "RC[1])-" & _
         "MAX(RC[-4],DATE(" & yearRef & ",R1C1,1))+1)/" & _
         "DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0))*RC[-2],2),"""")"
+End Function
+
+
+Public Sub RestoreAustrittsdatumValidation()
+    PID_RestoreAustrittsdatumValidation
+End Sub
+
+
+Public Sub PID_RestoreAustrittsdatumValidation()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim updatedCount As Long
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    monthNames = PID_MonthNames()
+    updatedCount = 0
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            If PID_RestoreAustrittsdatumValidationOnSheet(ws) Then
+                updatedCount = updatedCount + 1
+            End If
+        End If
+    Next i
+    
+    MsgBox "Austrittsdatum-Pruefung wurde wiederhergestellt." & vbCrLf & vbCrLf & _
+           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           "Spalte I: Datum zwischen AB1 und AB2" & vbCrLf & _
+           "Jahr aus: " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL, _
+           vbInformation, "Austrittsdatum"
+
+CleanExit:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    Exit Sub
+
+CleanFail:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    
+    MsgBox "Fehler bei PID_RestoreAustrittsdatumValidation:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "Austrittsdatum"
+End Sub
+
+
+Private Function PID_RestoreAustrittsdatumValidationOnSheet(ByVal ws As Worksheet) As Boolean
+    Dim wasProtected As Boolean
+    Dim targetRange As Range
+    Dim yearRef As String
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
+    If Not IsNumeric(ws.Range("A1").Value) Then Exit Function
+    
+    wasProtected = ws.ProtectContents
+    
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo SafeExit
+    
+    yearRef = PID_GetEinstellungYearRefR1C1()
+    
+    ws.Range("AB1").FormulaR1C1 = "=DATE(" & yearRef & ",R1C1,1)"
+    ws.Range("AB2").FormulaR1C1 = "=EOMONTH(DATE(" & yearRef & ",R1C1,1),0)"
+    
+    Set targetRange = ws.Range("I" & PID_FIRST_ROW & ":I" & PID_LAST_ROW)
+    
+    On Error Resume Next
+    targetRange.Validation.Delete
+    On Error GoTo SafeExit
+    
+    With targetRange.Validation
+        .Add Type:=xlValidateDate, AlertStyle:=xlValidAlertStop, _
+             Operator:=xlBetween, Formula1:="=$AB$1", Formula2:="=$AB$2"
+        .IgnoreBlank = True
+        .InCellDropdown = False
+        .ShowInput = False
+        .ShowError = True
+    End With
+    
+    PID_RestoreAustrittsdatumValidationOnSheet = True
+
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                   UserInterfaceOnly:=True, _
+                   AllowFiltering:=True, _
+                   AllowSorting:=True
+    End If
 End Function
 

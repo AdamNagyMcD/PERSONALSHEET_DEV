@@ -4,6 +4,7 @@
 
 ### Added
 - Modul1.bas: `RestoreAktuelleStundenFormulas` / `PID_RestoreAktuelleStundenFormulas` restores column `H` pro-rata hour formulas on all month sheets using `EINSTELLUNG!C35` as workbook year.
+- Modul1.bas: `RestoreAustrittsdatumValidation` fixes month-sheet `AB1:AB2` date bounds and column `I` data validation after workbook year moved to `EINSTELLUNG!C35`.
 - mod_AddNewKVPeriodOnTop.bas: `AddCustomKVMonatsstunden` with dialog flow and green sheet button to insert custom Monatsstunden into a selected KV-Code block, sorted ascending by hours.
 - Initial project structure
 - SPEC.md
