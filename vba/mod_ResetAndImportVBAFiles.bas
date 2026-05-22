@@ -110,7 +110,12 @@ Public Sub ResetAndImportVBAFiles()
     MsgBox deleted & " Module geloescht." & vbCrLf & _
            imported & " VBA-Dateien importiert." & vbCrLf & _
            updatedCodeModules & " Tabellen-/Workbook-Module aktualisiert." & vbCrLf & _
-           skipped & " Dateien uebersprungen.", _
+           skipped & " Dateien uebersprungen." & vbCrLf & vbCrLf & _
+           "Wichtig:" & vbCrLf & _
+           "1) Datei speichern" & vbCrLf & _
+           "2) Excel komplett schliessen und neu oeffnen" & vbCrLf & _
+           "3) Alt+F8: RestoreKVCodeDropdownValidation" & vbCrLf & vbCrLf & _
+           "Falls Makros fehlen: VBA-Editor > Debug > VBAProject kompilieren.", _
            vbInformation, "VBA Import"
 
     Exit Sub

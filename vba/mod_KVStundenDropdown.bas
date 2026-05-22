@@ -578,7 +578,7 @@ Public Function PID_GetKVCodeValidationFormula() As String
     Set listRange = wsHelper.Range(wsHelper.Cells(1, PID_KV_CODE_HELPER_COL), _
                                    wsHelper.Cells(codeCount, PID_KV_CODE_HELPER_COL))
     
-    PID_GetKVCodeValidationFormula = "=" & listRange.Worksheet.Name & "!" & listRange.Address(True, True)
+    PID_GetKVCodeValidationFormula = "='" & listRange.Worksheet.Name & "'!" & listRange.Address(True, True)
     Exit Function
 
 UseNamedRange:
@@ -627,16 +627,12 @@ End Function
 Public Sub PID_ApplyKVCodeDropdownValidation(ByVal ws As Worksheet)
     Dim targetRange As Range
     Dim validationFormula As String
+    Dim applied As Boolean
     
     On Error GoTo SafeExit
     
     If ws Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
-    
-    validationFormula = PID_GetKVCodeValidationFormula()
-    If Left$(validationFormula, 1) <> "=" Then
-        validationFormula = "=" & validationFormula
-    End If
     
     Set targetRange = ws.Range("E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW)
     targetRange.Locked = False
@@ -645,6 +641,28 @@ Public Sub PID_ApplyKVCodeDropdownValidation(ByVal ws As Worksheet)
     targetRange.Validation.Delete
     Err.Clear
     On Error GoTo SafeExit
+    
+    validationFormula = PID_GetKVCodeValidationFormula()
+    If Left$(validationFormula, 1) <> "=" Then
+        validationFormula = "=" & validationFormula
+    End If
+    
+    applied = PID_TryApplyKVCodeListValidation(targetRange, validationFormula)
+    
+    If Not applied Then
+        applied = PID_TryApplyKVCodeListValidation(targetRange, PID_GetStandardKVCodeValidationList())
+    End If
+
+SafeExit:
+End Sub
+
+
+Private Function PID_TryApplyKVCodeListValidation(ByVal targetRange As Range, _
+                                                  ByVal validationFormula As String) As Boolean
+    On Error GoTo Failed
+    
+    If targetRange Is Nothing Then Exit Function
+    If Trim$(validationFormula) = "" Then Exit Function
     
     With targetRange.Validation
         .Add Type:=xlValidateList, _
@@ -656,9 +674,15 @@ Public Sub PID_ApplyKVCodeDropdownValidation(ByVal ws As Worksheet)
         .ShowInput = True
         .ShowError = True
     End With
+    
+    PID_TryApplyKVCodeListValidation = True
+    Exit Function
 
-SafeExit:
-End Sub
+Failed:
+    On Error Resume Next
+    targetRange.Validation.Delete
+    Err.Clear
+End Function
 
 
 Public Function PID_MonthSheetHasValidKVCodeDropdown(ByVal wsMonth As Worksheet) As Boolean
@@ -689,11 +713,6 @@ Public Function PID_MonthSheetHasValidKVCodeDropdown(ByVal wsMonth As Worksheet)
     
     PID_MonthSheetHasValidKVCodeDropdown = True
 End Function
-
-
-Public Sub RestoreKVCodeDropdownValidation()
-    PID_RestoreKVCodeDropdownValidation
-End Sub
 
 
 Public Sub PID_RestoreKVCodeDropdownValidation()

@@ -14,6 +14,11 @@ Public Const PID_FLUKTUATION_TIME_FIRST_ROW As Long = 53
 Public Const PID_FLUKTUATION_TIME_LAST_ROW As Long = 59
 
 
+Public Sub FullSystemRefresh()
+    PID_FullSystemRefresh
+End Sub
+
+
 Public Sub PID_FullSystemRefresh()
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean

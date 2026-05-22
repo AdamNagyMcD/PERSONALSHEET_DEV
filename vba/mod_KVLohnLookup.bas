@@ -610,11 +610,6 @@ SafeExit:
 End Function
 
 
-Public Sub RestoreMonatslohnFormulas()
-    PID_RestoreMonatslohnFormulas
-End Sub
-
-
 Public Sub PID_RestoreMonatslohnFormulas()
     Dim monthNames As Variant
     Dim ws As Worksheet
