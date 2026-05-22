@@ -20,6 +20,9 @@
 - mod_KVLohnLookup.bas: LOHNTABELLE-Cache in PID_KVLohnLookup UDF (kein Invalidate pro Zelle); Cache-Clear bei MarkAllKVLohnDirty.
 - mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: G (Monatslohn) Calculate bei E/F-Aenderung (UDF+Cache Recalc-Fix).
 - DieseArbeitsmappe.cls: kein MarkAllKVDropdownsDirty mehr bei Open; PID_ResetMonthView ohne Activate/Select.
+- Modul1.bas + DieseArbeitsmappe.cls: kein CalculateFull mehr beim Oeffnen; Letztes-Gehalt nur bei fehlenden Formeln; E-Validierung lazy (SelectionChange) statt 24x Rebuild bei Open.
+- mod_SchutzHinzufugen.bas: kein E-Dropdown-Rebuild mehr im Protection-Setup (nur E/F entsperren).
+- mod_KVStundenDropdown.bas: KV-Code-Liste nur anlegen wenn Named Range fehlt.
 - mod_KVStundenDropdown.bas: F-Dropdown-Refresh nur Zeilen mit KV-Code (E nicht leer); ScreenUpdating aus waehrend Refresh.
 - DieseArbeitsmappe.cls: FLUKTUATION-Activate nur bei gFluktuationDirty; kein S35-S37-Calculate bei Monats-Activate.
 - mod_FluctuationCalculation.bas: UEBERSICHT nach Fluktuation-Sync wieder schuetzen.

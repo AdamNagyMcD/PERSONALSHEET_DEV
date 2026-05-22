@@ -585,12 +585,38 @@ End Sub
 
 
 Public Sub PID_EnsureLetztesGehaltFormulas()
+    If Not PID_AnyMonthNeedsLetztesGehaltRestore() Then Exit Sub
     PID_RestoreLetztesGehaltFormulasSilent
-    
-    On Error Resume Next
-    Application.CalculateFull
-    On Error GoTo 0
 End Sub
+
+
+Private Function PID_AnyMonthNeedsLetztesGehaltRestore() As Boolean
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    
+    monthNames = PID_MonthNames()
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        Err.Clear
+        
+        If Not ws Is Nothing Then
+            If Not PID_MonthSheetHasLetztesGehaltFormula(ws) Then
+                PID_AnyMonthNeedsLetztesGehaltRestore = True
+                Exit Function
+            End If
+            
+            If PID_MonthSheetHasLetztesGehaltRefError(ws) Then
+                PID_AnyMonthNeedsLetztesGehaltRestore = True
+                Exit Function
+            End If
+        End If
+    Next i
+End Function
 
 
 Public Sub PID_RestoreLetztesGehaltFormulasSilent()
@@ -625,13 +651,6 @@ Public Sub PID_RestoreLetztesGehaltFormulasSilent()
             Err.Clear
         End If
     Next i
-    
-    On Error GoTo SafeExit
-    
-    On Error Resume Next
-    Application.CalculateFull
-    Err.Clear
-    On Error GoTo SafeExit
 
 SafeExit:
     Application.ScreenUpdating = oldScreenUpdating
@@ -676,6 +695,13 @@ Private Function PID_RestoreLetztesGehaltFormulasOnSheet(ByVal ws As Worksheet, 
     If ws Is Nothing Then Exit Function
     If Not PID_IsWorkerMonthSheetName(ws.Name) Then Exit Function
     If Not IsNumeric(ws.Range("A1").Value) Then Exit Function
+    
+    If PID_MonthSheetHasLetztesGehaltFormula(ws) Then
+        If Not PID_MonthSheetHasLetztesGehaltRefError(ws) Then
+            PID_RestoreLetztesGehaltFormulasOnSheet = True
+            Exit Function
+        End If
+    End If
     
     wasProtected = ws.ProtectContents
     

@@ -597,6 +597,13 @@ UseNamedRange:
 End Function
 
 
+Private Function PID_KVCodeListNamedRangeExists() As Boolean
+    On Error Resume Next
+    PID_KVCodeListNamedRangeExists = (Len(ThisWorkbook.Names(PID_KV_CODE_LIST_NAME).Name) > 0)
+    Err.Clear
+End Function
+
+
 Public Sub PID_EnsureKVCodeListNamedRange()
     Dim wsHelper As Worksheet
     Dim codes As Variant
@@ -604,6 +611,8 @@ Public Sub PID_EnsureKVCodeListNamedRange()
     Dim listRange As Range
     
     On Error GoTo SafeExit
+    
+    If PID_KVCodeListNamedRangeExists() Then Exit Sub
     
     Set wsHelper = GetOrCreateKVDropdownHelperSheet()
     
@@ -779,7 +788,6 @@ End Sub
 
 
 Public Sub PID_EnsureKVCodeDropdownValidation()
-    ' Always rebuild on open: #REF! validation cannot be read safely for a pre-check.
     PID_RestoreKVCodeDropdownValidationSilent
 End Sub
 
@@ -822,7 +830,9 @@ Public Sub PID_RestoreKVCodeDropdownValidationSilent()
         On Error GoTo SafeExit
         
         If Not ws Is Nothing Then
-            PID_RestoreKVCodeDropdownOnSheet ws
+            If Not PID_MonthSheetHasValidKVCodeDropdown(ws) Then
+                PID_RestoreKVCodeDropdownOnSheet ws
+            End If
         End If
     Next i
 
