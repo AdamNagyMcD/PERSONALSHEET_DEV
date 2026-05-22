@@ -89,11 +89,10 @@ Public Sub PID_FormatEinstellungSheet()
         .Range("H22:I33").HorizontalAlignment = xlCenter
         .Range("K22:L33").HorizontalAlignment = xlCenter
         
-        .Rows(35).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
-        PID_StyleApplyHeaderBand .Range("B35")
+        .Rows(35).RowHeight = PID_STYLE_TOTAL_ROW_HEIGHT
+        PID_StyleApplyAccentSummaryBand .Range("B35:C35")
         .Range("B35").HorizontalAlignment = xlLeft
         .Range("B35").IndentLevel = 1
-        PID_StyleApplyInputHighlight .Range("C35")
         PID_StyleApplyTableBorders .Range("B35:C35")
         
         .Rows(37).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
@@ -137,6 +136,8 @@ Public Sub PID_FormatEinstellungSheet()
             .Rows(r).RowHeight = PID_STYLE_DATA_ROW_HEIGHT
         Next r
         
+        PID_ESApplyEinstellungAccentValues ws
+        
         .Range("B1:U59").VerticalAlignment = xlCenter
     End With
     
@@ -157,4 +158,20 @@ CleanProtect:
 
 CleanExit:
     Application.ScreenUpdating = oldScreenUpdating
+End Sub
+
+
+Private Sub PID_ESApplyEinstellungAccentValues(ByVal ws As Worksheet)
+    ' Gelbe Eingabefelder wie UEBERSICHT (Quartal/GESAMT + Plan-Zellen)
+    PID_StyleApplyEditableCell ws.Range("C6:F17")
+    PID_StyleApplyEditableCell ws.Range("H6:I17")
+    PID_StyleApplyEditableCell ws.Range("K6:L17")
+    PID_StyleApplyEditableCell ws.Range("N6:O17")
+    
+    PID_StyleApplyEditableCell ws.Range("C22:F33")
+    PID_StyleApplyEditableCell ws.Range("H22:I33")
+    PID_StyleApplyEditableCell ws.Range("K22:L33")
+    
+    PID_StyleApplyEditableCell ws.Range("C38:C49")
+    PID_StyleApplyEditableCell ws.Range("C53:C59")
 End Sub
