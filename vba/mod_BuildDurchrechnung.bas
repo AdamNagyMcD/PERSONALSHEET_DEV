@@ -481,7 +481,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     dataStartRow = headerRow + 1
     dataEndRow = dataStartRow + 3
     noteRow = headerRow + 5
-    inputBg = RGB(255, 242, 204)
+    inputBg = PID_StyleColorAccent()
     
     PID_UnmergeDurchrechnungBlock ws
     
@@ -489,27 +489,20 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     PID_DRMigrateJaennerMusterFormula ws
     PID_DRRefreshDisplayTexts ws, headerRow, dataStartRow, dataEndRow
     
-    ws.Rows(titleRow).RowHeight = 28
+    ws.Rows(titleRow).RowHeight = PID_STYLE_TITLE_ROW_HEIGHT
     ws.Rows(hintRow).RowHeight = 48
-    ws.Rows(inputRow).RowHeight = 40
-    ws.Rows(headerRow).RowHeight = 30
-    ws.Rows(noteRow).RowHeight = 40
+    ws.Rows(inputRow).RowHeight = 36
+    ws.Rows(headerRow).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
+    ws.Rows(noteRow).RowHeight = 36
     
     For dataRow = dataStartRow To dataEndRow
-        ws.Rows(dataRow).RowHeight = 42
+        ws.Rows(dataRow).RowHeight = PID_STYLE_DATA_ROW_HEIGHT
     Next dataRow
     
     Set blockRange = ws.Range("B" & titleRow & ":Q" & noteRow)
     Set tableRange = ws.Range("B" & headerRow & ":I" & dataEndRow)
     
-    With ws.Range("B" & titleRow & ":Q" & titleRow)
-        .Interior.Color = RGB(31, 78, 121)
-        .Font.Color = RGB(255, 255, 255)
-        .Font.Bold = True
-        .Font.Size = 13
-        .HorizontalAlignment = xlCenter
-        .VerticalAlignment = xlCenter
-    End With
+    PID_StyleApplyTitleBand ws.Range("B" & titleRow & ":Q" & titleRow)
     
     With ws.Range("B" & hintRow & ":Q" & hintRow)
         .Interior.Color = RGB(242, 242, 242)
@@ -542,33 +535,19 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     
     PID_DRCleanInputRow ws, inputRow
     
-    With ws.Range("B" & headerRow & ":I" & headerRow)
-        .Interior.Color = RGB(221, 235, 247)
-        .Font.Color = RGB(31, 78, 121)
-        .Font.Bold = True
-        .Font.Size = 10
-        .HorizontalAlignment = xlCenter
-        .VerticalAlignment = xlCenter
-        .WrapText = False
-    End With
+    PID_StyleApplyHeaderBand ws.Range("B" & headerRow & ":I" & headerRow)
+    ws.Range("B" & headerRow & ":I" & headerRow).WrapText = False
     
     ws.Range("J" & headerRow & ":Q" & headerRow).ClearContents
     ws.Cells(headerRow, 10).Value = "Status / Hinweis"
     
-    With ws.Range("J" & headerRow & ":Q" & headerRow)
-        .Interior.Color = RGB(221, 235, 247)
-        .Font.Color = RGB(31, 78, 121)
-        .Font.Bold = True
-        .Font.Size = 10
-        .HorizontalAlignment = xlCenter
-        .VerticalAlignment = xlCenter
-        .WrapText = False
-    End With
+    PID_StyleApplyHeaderBand ws.Range("J" & headerRow & ":Q" & headerRow)
+    ws.Range("J" & headerRow & ":Q" & headerRow).WrapText = False
     
     For dataRow = dataStartRow To dataEndRow
         If ((dataRow - dataStartRow) Mod 2) = 1 Then
-            ws.Range("B" & dataRow & ":I" & dataRow).Interior.Color = RGB(248, 248, 248)
-            ws.Range("J" & dataRow & ":Q" & dataRow).Interior.Color = RGB(248, 248, 248)
+            ws.Range("B" & dataRow & ":I" & dataRow).Interior.Color = PID_StyleColorZebra()
+            ws.Range("J" & dataRow & ":Q" & dataRow).Interior.Color = PID_StyleColorZebra()
         End If
     Next dataRow
     
@@ -698,22 +677,7 @@ End Sub
 
 
 Private Sub PID_DRApplyOuterBorder(ByVal target As Range)
-    On Error Resume Next
-    With target
-        .Borders(xlEdgeLeft).LineStyle = xlContinuous
-        .Borders(xlEdgeLeft).Weight = xlMedium
-        .Borders(xlEdgeLeft).Color = RGB(31, 78, 121)
-        .Borders(xlEdgeRight).LineStyle = xlContinuous
-        .Borders(xlEdgeRight).Weight = xlMedium
-        .Borders(xlEdgeRight).Color = RGB(31, 78, 121)
-        .Borders(xlEdgeTop).LineStyle = xlContinuous
-        .Borders(xlEdgeTop).Weight = xlMedium
-        .Borders(xlEdgeTop).Color = RGB(31, 78, 121)
-        .Borders(xlEdgeBottom).LineStyle = xlContinuous
-        .Borders(xlEdgeBottom).Weight = xlMedium
-        .Borders(xlEdgeBottom).Color = RGB(31, 78, 121)
-    End With
-    On Error GoTo 0
+    PID_StyleApplyOuterBorder target
 End Sub
 
 
@@ -856,42 +820,7 @@ End Sub
 
 
 Private Sub PID_DRApplyTableBorders(ByVal tableRange As Range)
-    On Error Resume Next
-    With tableRange.Borders(xlEdgeLeft)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    With tableRange.Borders(xlEdgeTop)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    With tableRange.Borders(xlEdgeBottom)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    With tableRange.Borders(xlEdgeRight)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    If tableRange.Rows.Count > 1 Then
-        With tableRange.Borders(xlInsideHorizontal)
-            .LineStyle = xlContinuous
-            .Weight = xlThin
-            .Color = RGB(180, 180, 180)
-        End With
-    End If
-    If tableRange.Columns.Count > 1 Then
-        With tableRange.Borders(xlInsideVertical)
-            .LineStyle = xlContinuous
-            .Weight = xlThin
-            .Color = RGB(180, 180, 180)
-        End With
-    End If
-    On Error GoTo 0
+    PID_StyleApplyTableBorders tableRange
 End Sub
 
 
@@ -1066,11 +995,9 @@ End Sub
 Private Sub PID_ApplyFinanzUebersichtFormats(ByVal ws As Worksheet, Optional ByVal syncFinanzValues As Boolean = False)
     Dim dataRow As Long
     Dim qRows As Variant
-    Dim accentBg As Long
     Dim i As Long
     Dim tableRange As Range
     
-    accentBg = RGB(255, 242, 204)
     qRows = Array(10, 14, 18, 22)
     
     PID_FixFinanzUebersichtFormulas ws
@@ -1079,55 +1006,37 @@ Private Sub PID_ApplyFinanzUebersichtFormats(ByVal ws As Worksheet, Optional ByV
         PID_SyncFinanzSummaryToUbersicht
     End If
     
-    ws.Rows(PID_FU_TITLE_TOP_ROW).RowHeight = 28
-    ws.Rows(PID_FU_TITLE_BOTTOM_ROW).RowHeight = 18
-    ws.Rows(PID_FU_HEADER_TOP_ROW).RowHeight = 24
-    ws.Rows(PID_FU_HEADER_BOTTOM_ROW).RowHeight = 30
+    ws.Rows(PID_FU_TITLE_TOP_ROW).RowHeight = PID_STYLE_TITLE_ROW_HEIGHT
+    ws.Rows(PID_FU_TITLE_BOTTOM_ROW).RowHeight = PID_STYLE_META_ROW_HEIGHT
+    ws.Rows(PID_FU_HEADER_TOP_ROW).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
+    ws.Rows(PID_FU_HEADER_BOTTOM_ROW).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
     
     For dataRow = PID_FU_DATA_START_ROW To PID_FU_DATA_END_ROW
-        ws.Rows(dataRow).RowHeight = 30
+        ws.Rows(dataRow).RowHeight = PID_STYLE_DATA_ROW_HEIGHT
     Next dataRow
-    ws.Rows(PID_FU_TOTAL_ROW).RowHeight = 32
+    ws.Rows(PID_FU_TOTAL_ROW).RowHeight = PID_STYLE_SUMMARY_ROW_HEIGHT
     
-    With ws.Range("B" & PID_FU_TITLE_TOP_ROW & ":Q" & PID_FU_TITLE_BOTTOM_ROW)
-        .Interior.Color = RGB(31, 78, 121)
-        .Font.Color = RGB(255, 255, 255)
-        .Font.Bold = True
-        .Font.Size = 13
-        .HorizontalAlignment = xlCenter
-        .VerticalAlignment = xlCenter
-    End With
-    
-    With ws.Range("B" & PID_FU_HEADER_TOP_ROW & ":Q" & PID_FU_HEADER_BOTTOM_ROW)
-        .Interior.Color = RGB(221, 235, 247)
-        .Font.Color = RGB(31, 78, 121)
-        .Font.Bold = True
-        .Font.Size = 10
-        .HorizontalAlignment = xlCenter
-        .VerticalAlignment = xlCenter
-        .WrapText = True
-    End With
+    PID_StyleApplyTitleBand ws.Range("B" & PID_FU_TITLE_TOP_ROW & ":Q" & PID_FU_TITLE_BOTTOM_ROW)
+    PID_StyleApplyHeaderBand ws.Range("B" & PID_FU_HEADER_TOP_ROW & ":Q" & PID_FU_HEADER_BOTTOM_ROW)
     
     ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Interior.Color = vbWhite
+    ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Name = "Calibri"
     ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Color = vbBlack
     ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Bold = False
+    ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Size = 10
     
     For dataRow = PID_FU_DATA_START_ROW To PID_FU_DATA_END_ROW
         If ((dataRow - PID_FU_DATA_START_ROW) Mod 2) = 1 Then
-            ws.Range("B" & dataRow & ":Q" & dataRow).Interior.Color = RGB(248, 248, 248)
+            ws.Range("B" & dataRow & ":Q" & dataRow).Interior.Color = PID_StyleColorZebra()
         End If
     Next dataRow
     
     For i = LBound(qRows) To UBound(qRows)
         dataRow = CLng(qRows(i))
-        ws.Range("B" & dataRow & ":Q" & dataRow).Interior.Color = accentBg
-        ws.Range("B" & dataRow & ":Q" & dataRow).Font.Bold = True
+        PID_StyleApplyAccentSummaryBand ws.Range("B" & dataRow & ":Q" & dataRow)
     Next i
     
-    With ws.Range("B" & PID_FU_TOTAL_ROW & ":Q" & PID_FU_TOTAL_ROW)
-        .Interior.Color = accentBg
-        .Font.Bold = True
-    End With
+    PID_StyleApplyAccentSummaryBand ws.Range("B" & PID_FU_TOTAL_ROW & ":Q" & PID_FU_TOTAL_ROW)
     
     ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_TOTAL_ROW).HorizontalAlignment = xlCenter
     ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_TOTAL_ROW).VerticalAlignment = xlCenter
