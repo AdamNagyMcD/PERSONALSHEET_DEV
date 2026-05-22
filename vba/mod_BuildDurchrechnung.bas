@@ -195,6 +195,11 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
         PID_ApplyFinanzUebersichtFormats ws, True
     End If
     
+    If PID_DurchrechnungBlockExists(ws) Then
+        PID_UnlockDurchrechnungInputs ws
+        PID_ApplyDurchrechnungFormats ws
+    End If
+    
     ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                UserInterfaceOnly:=True, _
                AllowFiltering:=True, _
@@ -202,7 +207,7 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     
     If showMessage Then
         MsgBox "Durchrechnungsblock auf UEBERSICHT wurde erstellt." & vbCrLf & vbCrLf & _
-               "Gelbe Felder (nur " & PID_DRTxtJaenner() & "-Plan):" & vbCrLf & _
+               "Weisse Felder (manuell editierbar):" & vbCrLf & _
                "- " & PID_DRTxtJaenner() & " " & PID_DRTxtVerfuegbar() & " Plan (E30)" & vbCrLf & _
                "- " & PID_DRTxtJaenner() & " Muster Plan (I30)" & vbCrLf & vbCrLf & _
                "Stundenlohn pro Zeile = AVG Bruttolohn/h aus dem Schlussmonat (Q42).", _
@@ -342,7 +347,7 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
             "Jede Zeile = 3 Monate bis zum Schlussmonat. " & _
             "Differenz rot = zu wenig Stunden (" & PID_DRTxtUeberstunden() & "-Risiko), gelb = Reserve. " & _
             PID_DRTxtUeberstunden() & "-EUR nutzt den AVG Bruttolohn/h aus dem Schlussmonat (Monatsblatt Q42). " & _
-            "Nur " & PID_DRTxtJaenner() & "-Plan (" & PID_DRTxtNaechstes() & " Jahr) ist gelb und manuell."
+            "Nur " & PID_DRTxtJaenner() & "-Plan (" & PID_DRTxtNaechstes() & " Jahr) sind die weissen Felder (E30, I30) manuell editierbar."
         .Cells(hintRow, 2).Font.Size = 9
         .Cells(hintRow, 2).WrapText = True
         
@@ -453,6 +458,9 @@ End Sub
 
 
 Private Sub PID_UnlockDurchrechnungInputs(ByVal ws As Worksheet)
+    If Not PID_DurchrechnungBlockExists(ws) Then Exit Sub
+    
+    ws.Range("B" & PID_DR_START_ROW & ":Q" & PID_DR_END_ROW).Locked = True
     ws.Range(PID_DR_JAEN_VERF_CELL).Locked = False
     ws.Range(PID_DR_JAEN_MUST_CELL).Locked = False
 End Sub
@@ -514,24 +522,8 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .WrapText = True
     End With
     
-    With ws.Range("B" & inputRow & ":Q" & inputRow)
-        .Interior.Color = inputBg
-    End With
-    
     ws.Cells(inputRow, 2).Font.Bold = True
     ws.Cells(inputRow, 6).Font.Bold = True
-    
-    With ws.Range(PID_DR_JAEN_VERF_CELL)
-        .Interior.Color = inputBg
-        .Font.Bold = True
-        PID_DRApplyInputBorder .Borders
-    End With
-    
-    With ws.Range(PID_DR_JAEN_MUST_CELL)
-        .Interior.Color = inputBg
-        .Font.Bold = True
-        PID_DRApplyInputBorder .Borders
-    End With
     
     PID_DRCleanInputRow ws, inputRow
     
@@ -620,7 +612,7 @@ Private Sub PID_DRRefreshDisplayTexts(ByVal ws As Worksheet, _
         "Jede Zeile = 3 Monate bis zum Schlussmonat. " & _
         "Differenz rot = zu wenig Stunden (" & PID_DRTxtUeberstunden() & "-Risiko), gelb = Reserve. " & _
         PID_DRTxtUeberstunden() & "-EUR nutzt den AVG Bruttolohn/h aus dem Schlussmonat (Monatsblatt Q42). " & _
-        "Nur " & PID_DRTxtJaenner() & "-Plan (" & PID_DRTxtNaechstes() & " Jahr) ist gelb und manuell."
+        "Nur " & PID_DRTxtJaenner() & "-Plan (" & PID_DRTxtNaechstes() & " Jahr) sind die weissen Felder (E30, I30) manuell editierbar."
     
     ws.Cells(inputRow, 2).Value = PID_DRTxtJaenner() & " " & PID_DRTxtVerfuegbar() & " Plan (" & PID_DRTxtNaechstes() & " Jahr):"
     ws.Cells(inputRow, 6).Value = PID_DRTxtJaenner() & " Muster Plan (" & PID_DRTxtNaechstes() & " Jahr):"
@@ -736,36 +728,36 @@ Private Sub PID_DRFormatInputRow(ByVal ws As Worksheet, ByVal inputRow As Long, 
     On Error Resume Next
     
     With ws.Range("B" & inputRow & ":Q" & inputRow)
-        .Interior.Color = inputBg
         .VerticalAlignment = xlCenter
     End With
     
+    PID_StyleApplyInputGuideLabel ws.Range("B" & inputRow & ":D" & inputRow)
     With ws.Range("B" & inputRow & ":D" & inputRow)
         .HorizontalAlignment = xlCenter
         .WrapText = True
-        .Font.Bold = True
     End With
     
+    PID_StyleApplyInputGuideLabel ws.Range("F" & inputRow & ":H" & inputRow)
     With ws.Range("F" & inputRow & ":H" & inputRow)
         .HorizontalAlignment = xlCenter
         .WrapText = True
-        .Font.Bold = True
     End With
     
+    PID_StyleApplyInputCell ws.Range(PID_DR_JAEN_VERF_CELL)
     With ws.Range(PID_DR_JAEN_VERF_CELL)
-        .Interior.Color = inputBg
         .HorizontalAlignment = xlCenter
-        .Font.Bold = True
+        .Font.Bold = False
         PID_DRApplyInputBorder .Borders
     End With
     
+    PID_StyleApplyInputCell ws.Range(PID_DR_JAEN_MUST_CELL)
     With ws.Range(PID_DR_JAEN_MUST_CELL)
-        .Interior.Color = inputBg
         .HorizontalAlignment = xlCenter
-        .Font.Bold = True
+        .Font.Bold = False
         PID_DRApplyInputBorder .Borders
     End With
     
+    PID_StyleApplyInputGuideLabel ws.Range("J" & inputRow & ":Q" & inputRow)
     With ws.Range("J" & inputRow & ":Q" & inputRow)
         .HorizontalAlignment = xlCenter
         .WrapText = False
