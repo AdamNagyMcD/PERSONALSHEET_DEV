@@ -154,17 +154,9 @@ Public Sub ResetAndImportVBAFiles()
     Application.StatusBar = False
     On Error GoTo ImportError
 
-    MsgBox deleted & " Module geloescht." & vbCrLf & _
-           imported & " VBA-Dateien importiert." & vbCrLf & _
-           updatedCodeModules & " Tabellen-/Workbook-Module aktualisiert." & vbCrLf & _
-           skipped & " Dateien uebersprungen." & vbCrLf & vbCrLf & _
-           "Wichtig - bitte genau in dieser Reihenfolge:" & vbCrLf & _
-           "1) VBA-Editor oeffnen: Debug > VBAProject kompilieren" & vbCrLf & _
-           "2) Datei > Speichern" & vbCrLf & _
-           "3) Excel komplett schliessen und neu oeffnen" & vbCrLf & _
-           "4) Alt+F8 > FullSystemRefresh ausfuehren" & vbCrLf & vbCrLf & _
-           "Spalte G (#NAME?) bedeutet: VBA ist noch nicht aktiv. " & _
-           "Schritte 1-4 beheben das.", _
+    MsgBox deleted & " Module geloescht, " & imported & " importiert, " & _
+           updatedCodeModules & " aktualisiert." & vbCrLf & vbCrLf & _
+           "Danach: Kompilieren > Speichern > Excel neu starten > FullSystemRefresh", _
            vbInformation, "VBA Import"
 
     Exit Sub

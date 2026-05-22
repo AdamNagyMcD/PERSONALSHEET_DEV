@@ -537,11 +537,11 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     ws.Range("B" & dataStartRow & ":I" & dataEndRow).VerticalAlignment = xlCenter
     
     ws.Range("D" & dataStartRow & ":F" & dataEndRow).NumberFormat = "#,##0.00"
-    ws.Range("G" & dataStartRow & ":G" & dataEndRow).NumberFormat = "#,##0.00"
     ws.Range("H" & dataStartRow & ":H" & dataEndRow).NumberFormat = "#,##0.00"
-    ws.Range("I" & dataStartRow & ":I" & dataEndRow).NumberFormat = "#,##0.00"
     ws.Range(PID_DR_JAEN_VERF_CELL).NumberFormat = "#,##0.00"
     ws.Range(PID_DR_JAEN_MUST_CELL).NumberFormat = "#,##0.00"
+    PID_ApplyEuroNumberFormat ws.Range("G" & dataStartRow & ":G" & dataEndRow)
+    PID_ApplyEuroNumberFormat ws.Range("I" & dataStartRow & ":I" & dataEndRow)
     
     With ws.Range("B" & noteRow & ":Q" & noteRow)
         .Interior.Color = RGB(245, 245, 245)
