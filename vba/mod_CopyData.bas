@@ -40,6 +40,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     Dim futureNewStarts As Collection
     
     Dim formulaH As Variant
+    Dim formulaG As String
     Dim formulaK As Variant
     Dim formulaL As Variant
     Dim infoOQ As Variant
@@ -88,6 +89,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     currentData = sourceData
     
     formulaH = wsSource.Range("H3:H82").FormulaR1C1
+    formulaG = PID_GetMonatslohnFormulaR1C1()
     formulaK = wsSource.Range("K3:K82").FormulaR1C1
     formulaL = wsSource.Range("L3:L82").FormulaR1C1
     infoOQ = wsSource.Range("O18:Q25").FormulaR1C1
@@ -103,7 +105,7 @@ Public Sub PID_CopyDataToFollowingMonths()
         
         currentData = PID_BuildTargetMonthData(currentData, futureOverrides, futureNewStarts, workbookYear, i)
         
-        PID_WriteMonthData targetSheetName, currentData, formulaH, formulaK, formulaL, infoOQ
+        PID_WriteMonthData targetSheetName, currentData, formulaH, formulaG, formulaK, formulaL, infoOQ
     Next i
     
     MarkFluktuationDirty
@@ -605,11 +607,12 @@ End Sub
 Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
                               ByVal dataToWrite As Variant, _
                               ByVal formulaH As Variant, _
+                              ByVal formulaG As String, _
                               ByVal formulaK As Variant, _
                               ByVal formulaL As Variant, _
                               ByVal infoOQ As Variant)
     Dim ws As Worksheet
-    Dim arrBG As Variant
+    Dim arrBF As Variant
     Dim arrIJ As Variant
     Dim arrMN As Variant
     Dim r As Long
@@ -623,17 +626,16 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo SafeExit
     
-    ReDim arrBG(1 To PID_LAST_ROW - PID_FIRST_ROW + 1, 1 To 6)
+    ReDim arrBF(1 To PID_LAST_ROW - PID_FIRST_ROW + 1, 1 To 5)
     ReDim arrIJ(1 To PID_LAST_ROW - PID_FIRST_ROW + 1, 1 To 2)
     ReDim arrMN(1 To PID_LAST_ROW - PID_FIRST_ROW + 1, 1 To 2)
     
     For r = 1 To UBound(dataToWrite, 1)
-        arrBG(r, 1) = dataToWrite(r, 1)
-        arrBG(r, 2) = dataToWrite(r, 2)
-        arrBG(r, 3) = dataToWrite(r, 3)
-        arrBG(r, 4) = dataToWrite(r, 4)
-        arrBG(r, 5) = dataToWrite(r, 5)
-        arrBG(r, 6) = ""
+        arrBF(r, 1) = dataToWrite(r, 1)
+        arrBF(r, 2) = dataToWrite(r, 2)
+        arrBF(r, 3) = dataToWrite(r, 3)
+        arrBF(r, 4) = dataToWrite(r, 4)
+        arrBF(r, 5) = dataToWrite(r, 5)
         
         arrIJ(r, 1) = dataToWrite(r, 8)
         arrIJ(r, 2) = dataToWrite(r, 9)
@@ -642,15 +644,14 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
         arrMN(r, 2) = dataToWrite(r, 13)
     Next r
     
-    ws.Range("B3:G82").Value = arrBG
+    ws.Range("B3:F82").Value = arrBF
     ws.Range("I3:J82").Value = arrIJ
     ws.Range("M3:N82").Value = arrMN
     
     PID_SortMonthSheet ws
     
-    PID_RestoreFormulas ws, formulaH, formulaK, formulaL, infoOQ
+    PID_RestoreFormulas ws, formulaH, formulaG, formulaK, formulaL, infoOQ
     
-    RefreshKVLohnForSheet ws
     PID_MarkKVLohnSheetRefreshed ws.Name
     
     If PID_CALCULATE_FLUCTUATION_DURING_COPY Then
@@ -710,10 +711,12 @@ End Function
 
 Private Sub PID_RestoreFormulas(ByVal ws As Worksheet, _
                                ByVal formulaH As Variant, _
+                               ByVal formulaG As String, _
                                ByVal formulaK As Variant, _
                                ByVal formulaL As Variant, _
                                ByVal infoOQ As Variant)
     ws.Range("H" & PID_FIRST_ROW & ":H" & PID_LAST_ROW).FormulaR1C1 = formulaH
+    ws.Range("G" & PID_FIRST_ROW & ":G" & PID_LAST_ROW).FormulaR1C1 = formulaG
     ws.Range("K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW).FormulaR1C1 = formulaK
     ws.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW).FormulaR1C1 = formulaL
     ws.Range("O18:Q25").FormulaR1C1 = infoOQ

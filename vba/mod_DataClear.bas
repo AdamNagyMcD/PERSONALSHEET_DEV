@@ -74,7 +74,7 @@ Public Sub PID_ClearCurrentMonthData()
     PID_ApplyMonthSheetFormatsAfterClear ws
     
     RefreshKVStundenDropdownForSheet ws
-    RefreshKVLohnForSheet ws
+    PID_EnsureMonatslohnFormulasOnSheet ws
     PID_CalculateFluctuation ws
     
     MarkFluktuationDirty
@@ -244,7 +244,7 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     Next rowNumber
     
     RefreshKVStundenDropdownForSheet ws
-    RefreshKVLohnForSheet ws
+    PID_EnsureMonatslohnFormulasOnSheet ws
     PID_CalculateFluctuation ws
     
     MarkFluktuationDirty

@@ -261,52 +261,7 @@ End Function
 
 
 Public Sub RefreshAllMonthKVLohn()
-    Dim monthNames As Variant
-    Dim i As Long
-    Dim ws As Worksheet
-    
-    Dim oldEnableEvents As Boolean
-    Dim oldScreenUpdating As Boolean
-    Dim oldDisplayAlerts As Boolean
-    
-    On Error GoTo CleanFail
-    
-    oldEnableEvents = Application.EnableEvents
-    oldScreenUpdating = Application.ScreenUpdating
-    oldDisplayAlerts = Application.DisplayAlerts
-    
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False
-    
-    monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
-    
-    For i = LBound(monthNames) To UBound(monthNames)
-        Set ws = Nothing
-        
-        On Error Resume Next
-        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
-        On Error GoTo CleanFail
-        
-        If Not ws Is Nothing Then
-            RefreshKVLohnForSheet ws
-        End If
-    Next i
-
-CleanExit:
-    Application.DisplayAlerts = oldDisplayAlerts
-    Application.ScreenUpdating = oldScreenUpdating
-    Application.EnableEvents = oldEnableEvents
-    Exit Sub
-
-CleanFail:
-    Application.DisplayAlerts = oldDisplayAlerts
-    Application.ScreenUpdating = oldScreenUpdating
-    Application.EnableEvents = oldEnableEvents
-    
-    MsgBox "Fehler bei RefreshAllMonthKVLohn:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
-           vbExclamation, "KV Lohn"
+    PID_RestoreMonatslohnFormulasSilent
 End Sub
 
 
@@ -567,6 +522,239 @@ Public Function GetPreviousKVPeriodForWorkbookYear(ByVal workbookYear As Long, B
 End Function
 
 
+Public Function PID_GetMonatslohnFormulaR1C1() As String
+    Dim yearRef As String
+    Dim normCode As String
+    Dim curPeriod As String
+    Dim prevPeriod As String
+    Dim lookupCur As String
+    Dim lookupPrev As String
+    
+    yearRef = "'" & PID_EINSTELLUNG_SHEET & "'!R35C3"
+    
+    normCode = "IF(RC[-2]="""",""""," & _
+        "IF(OR(RC[-2]=""BG1"",RC[-2]=""BG1_Basis"",RC[-2]=""BG1_BASIS""),""BG1_Basis""," & _
+        "IF(OR(RC[-2]=""BG2"",RC[-2]=""BG2_Basis"",RC[-2]=""BG2_BASIS""),""BG2_Basis""," & _
+        "IF(OR(RC[-2]=""BG3"",RC[-2]=""BG3_Basis"",RC[-2]=""BG3_BASIS""),""BG3_Basis""," & _
+        "SUBSTITUTE(SUBSTITUTE(RC[-2],""-"",""_""),"" "",""_"")))))"
+    
+    curPeriod = "IF(R1C1<=4,""KV ""&(" & yearRef & "-1)&""/""&" & yearRef & ",""KV ""&" & yearRef & "&""/""&(" & yearRef & "+1))"
+    prevPeriod = "IF(R1C1<=4,""KV ""&(" & yearRef & "-2)&""/""&(" & yearRef & "-1),""KV ""&(" & yearRef & "-1)&""/""&" & yearRef & ")"
+    
+    lookupCur = PID_BuildLohnMatchExprR1C1(curPeriod, normCode)
+    lookupPrev = PID_BuildLohnMatchExprR1C1(prevPeriod, normCode)
+    
+    PID_GetMonatslohnFormulaR1C1 = _
+        "=IF(OR(RC[-2]="""",RC[-1]=""""),""""," & _
+        "IFERROR(" & lookupCur & ",IFERROR(" & lookupPrev & ",""Nicht gefunden"")))"
+End Function
+
+
+Private Function PID_BuildLohnMatchExprR1C1(ByVal periodExpr As String, ByVal normCodeExpr As String) As String
+    Dim kv As String
+    
+    kv = "'" & PID_LOHNTABELLE_SHEET & "'"
+    
+    PID_BuildLohnMatchExprR1C1 = _
+        "INDEX(" & kv & "!R4C8:R500C8,MATCH(1,INDEX((TRIM(IF(ISERROR(FIND(""|""," & kv & "!R4C1:R500C1))," & kv & "!R4C1:R500C1,LEFT(" & kv & "!R4C1:R500C1,FIND(""|""," & kv & "!R4C1:R500C1)-1)))=" & periodExpr & ")*" & _
+        "(" & kv & "!R4C4:R500C4=" & normCodeExpr & ")*(ABS(" & kv & "!R4C7:R500C7-RC[-1])<0.001),0),0))"
+End Function
+
+
+Public Function PID_MonthSheetHasMonatslohnFormula(ByVal wsMonth As Worksheet) As Boolean
+    Dim formulaText As String
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
+    
+    formulaText = CStr(wsMonth.Range("G" & PID_FIRST_ROW).FormulaR1C1)
+    PID_MonthSheetHasMonatslohnFormula = (InStr(1, formulaText, PID_LOHNTABELLE_SHEET, vbTextCompare) > 0)
+
+SafeExit:
+End Function
+
+
+Public Sub RestoreMonatslohnFormulas()
+    PID_RestoreMonatslohnFormulas
+End Sub
+
+
+Public Sub PID_RestoreMonatslohnFormulas()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim updatedCount As Long
+    Dim formulaR1C1 As String
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    formulaR1C1 = PID_GetMonatslohnFormulaR1C1()
+    monthNames = PID_MonthNames()
+    updatedCount = 0
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            If PID_RestoreMonatslohnFormulasOnSheet(ws, formulaR1C1) Then
+                updatedCount = updatedCount + 1
+            End If
+        End If
+    Next i
+    
+    ClearAllKVLohnDirty
+    
+    MsgBox "Monatslohn-Formeln (Spalte G) wurden wiederhergestellt." & vbCrLf & vbCrLf & _
+           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           "Bereich: G" & PID_FIRST_ROW & ":G" & PID_LAST_ROW & vbCrLf & _
+           "Lookup aus: " & PID_LOHNTABELLE_SHEET & vbCrLf & vbCrLf & _
+           "Spalte G aktualisiert sich jetzt automatisch bei Aenderung von E/F.", _
+           vbInformation, "Spalte G"
+    
+    GoTo CleanExit
+
+CleanExit:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    Exit Sub
+
+CleanFail:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    
+    MsgBox "Fehler bei PID_RestoreMonatslohnFormulas:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "Spalte G"
+End Sub
+
+
+Public Sub PID_EnsureMonatslohnFormulas(Optional ByVal showMessage As Boolean = False)
+    Dim ws As Worksheet
+    
+    On Error GoTo SafeExit
+    
+    Set ws = Nothing
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("Januar")
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    
+    If PID_MonthSheetHasMonatslohnFormula(ws) Then Exit Sub
+    
+    If showMessage Then
+        PID_RestoreMonatslohnFormulas
+    Else
+        PID_RestoreMonatslohnFormulasSilent
+    End If
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_EnsureMonatslohnFormulasOnSheet(ByVal wsMonth As Worksheet)
+    Dim formulaR1C1 As String
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    If PID_MonthSheetHasMonatslohnFormula(wsMonth) Then Exit Sub
+    
+    formulaR1C1 = PID_GetMonatslohnFormulaR1C1()
+    PID_RestoreMonatslohnFormulasOnSheet wsMonth, formulaR1C1
+
+SafeExit:
+End Sub
+
+
+Private Sub PID_RestoreMonatslohnFormulasSilent()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim formulaR1C1 As String
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo SafeExit
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    formulaR1C1 = PID_GetMonatslohnFormulaR1C1()
+    monthNames = PID_MonthNames()
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo SafeExit
+        
+        If Not ws Is Nothing Then
+            PID_RestoreMonatslohnFormulasOnSheet ws, formulaR1C1
+        End If
+    Next i
+    
+    ClearAllKVLohnDirty
+
+SafeExit:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+End Sub
+
+
+Private Function PID_RestoreMonatslohnFormulasOnSheet(ByVal ws As Worksheet, _
+                                                      ByVal formulaR1C1 As String) As Boolean
+    Dim targetRange As Range
+    Dim wasProtected As Boolean
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
+    
+    wasProtected = ws.ProtectContents
+    If wasProtected Then
+        On Error Resume Next
+        ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+        On Error GoTo SafeExit
+    End If
+    
+    Set targetRange = ws.Range("G" & PID_FIRST_ROW & ":G" & PID_LAST_ROW)
+    targetRange.FormulaR1C1 = formulaR1C1
+    PID_ApplyEuroNumberFormat targetRange
+    
+    PID_RestoreMonatslohnFormulasOnSheet = True
+
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                   UserInterfaceOnly:=True, _
+                   AllowFiltering:=True, _
+                   AllowSorting:=True
+    End If
+End Function
+
+
 Public Sub MarkAllKVLohnDirty()
     gKVLohnAllMonthsDirty = True
     Set mKVLohnRefreshedSheets = New Collection
@@ -605,14 +793,14 @@ End Sub
 Public Sub RefreshKVLohnIfDirty(ByVal wsMonth As Worksheet)
     If wsMonth Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
-    If Not gKVLohnAllMonthsDirty Then Exit Sub
     
-    If Not mKVLohnRefreshedSheets Is Nothing Then
-        If CollectionHasKey_KVLohn(mKVLohnRefreshedSheets, wsMonth.Name) Then Exit Sub
+    ' Column G uses worksheet formulas; only restore if legacy static values remain.
+    If gKVLohnAllMonthsDirty Then
+        PID_EnsureMonatslohnFormulasOnSheet wsMonth
+        PID_MarkKVLohnSheetRefreshed wsMonth.Name
+    Else
+        PID_EnsureMonatslohnFormulasOnSheet wsMonth
     End If
-    
-    RefreshKVLohnForSheet wsMonth
-    PID_MarkKVLohnSheetRefreshed wsMonth.Name
 End Sub
 
 

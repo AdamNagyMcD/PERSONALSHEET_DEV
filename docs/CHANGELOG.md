@@ -10,7 +10,8 @@
 
 ### Changed
 - mod_BuildDurchrechnungUebersicht.bas: Ueberstunden EUR no longer requires ISNUMBER on C30 (text numbers like `1` or `12,5` now calculate).
-- mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: `G` (Lohn) refreshes on `F` (Stunden) change when LOHNTABELLE has a match; custom hour overrides keep existing `G`.
+- mod_KVLohnLookup.bas: column `G` (Monatslohn) is now a LOHNTABELLE lookup formula (auto-recalc on E/F change); `PID_EnsureMonatslohnFormulas` runs silently on workbook open for legacy static values.
+- mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: removed SheetChange VBA writes to `G` (they destroyed formulas and made lohn refresh appear dead).
 - Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
 
 ### Added

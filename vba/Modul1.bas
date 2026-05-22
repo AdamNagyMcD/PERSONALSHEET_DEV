@@ -36,7 +36,7 @@ Public Sub PID_FullSystemRefresh()
     PID_SetupSheetProtectionForMacros
     
     RefreshAllMonthKVStundenDropdowns
-    RefreshAllMonthKVLohn
+    PID_RestoreMonatslohnFormulasSilent
     ClearAllKVLohnDirty
     PID_RecalculateAllMonthFluctuation
     
@@ -503,6 +503,11 @@ End Function
 
 Public Sub RestoreLetztesGehaltFormulas()
     PID_RestoreLetztesGehaltFormulas
+End Sub
+
+
+Public Sub RestoreMonatslohnFormulas()
+    PID_RestoreMonatslohnFormulas
 End Sub
 
 
