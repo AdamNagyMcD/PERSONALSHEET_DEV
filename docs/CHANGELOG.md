@@ -10,7 +10,7 @@
 
 ### Changed
 - mod_BuildDurchrechnungUebersicht.bas: Ueberstunden EUR no longer requires ISNUMBER on C30 (text numbers like `1` or `12,5` now calculate).
-- DieseArbeitsmappe.cls: `G` (Lohn) refreshes only when `E` (KV-Code) changes, not when `F` (Stunden) changes.
+- mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: `G` (Lohn) refreshes on `F` (Stunden) change when LOHNTABELLE has a match; custom hour overrides keep existing `G`.
 - Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
 
 ### Added

@@ -55,7 +55,9 @@ Private Sub PID_EnsureWorkbookYearCached()
     mWorkbookYearCached = True
 End Sub
 
-Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal changedRange As Range)
+Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, _
+                                 Optional ByVal changedRange As Range, _
+                                 Optional ByVal preserveGOnMiss As Boolean = False)
     Dim r As Long
     Dim firstRow As Long
     Dim lastRow As Long
@@ -101,7 +103,7 @@ Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal chan
     If changedRange Is Nothing Then
         
         For r = firstRow To lastRow
-            RefreshKVLohnForRow wsMonth, r, monthNumber
+            RefreshKVLohnForRow wsMonth, r, monthNumber, preserveGOnMiss
         Next r
         
         PID_ApplyEuroNumberFormat wsMonth.Range("G" & firstRow & ":G" & lastRow)
@@ -117,7 +119,7 @@ Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, Optional ByVal chan
             
             If Not CollectionHasKey_KVLohn(checkedRows, rowKey) Then
                 checkedRows.Add rowKey, rowKey
-                RefreshKVLohnForRow wsMonth, c.Row, monthNumber
+                RefreshKVLohnForRow wsMonth, c.Row, monthNumber, preserveGOnMiss
             End If
         Next c
         
@@ -156,7 +158,10 @@ CleanFail:
 End Sub
 
 
-Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long, ByVal monthNumber As Long)
+Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, _
+                               ByVal rowNumber As Long, _
+                               ByVal monthNumber As Long, _
+                               Optional ByVal preserveGOnMiss As Boolean = False)
     Dim kvCode As String
     Dim monatsstunden As Variant
     Dim monatsstundenValue As Double
@@ -188,15 +193,19 @@ Public Sub RefreshKVLohnForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Lo
         lohnValue = GetKVLohnByPeriod(monthNumber, kvCode, monatsstundenValue, usedFallback)
         
         If IsError(lohnValue) Then
-            wsMonth.Cells(rowNumber, "G").Value = "Nicht gefunden"
-            wsMonth.Cells(rowNumber, "G").NumberFormat = "General"
+            If Not preserveGOnMiss Then
+                wsMonth.Cells(rowNumber, "G").Value = "Nicht gefunden"
+                wsMonth.Cells(rowNumber, "G").NumberFormat = "General"
+            End If
         Else
             wsMonth.Cells(rowNumber, "G").Value = CDbl(lohnValue)
         End If
         
     Else
         
-        wsMonth.Cells(rowNumber, "G").ClearContents
+        If Not preserveGOnMiss Then
+            wsMonth.Cells(rowNumber, "G").ClearContents
+        End If
         
     End If
 

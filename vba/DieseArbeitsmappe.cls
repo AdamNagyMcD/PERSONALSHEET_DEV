@@ -136,6 +136,7 @@ End Sub
 
 Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     Dim pasteHandled As Boolean
+    Dim fOnlyChange As Boolean
     
     On Error GoTo SafeExit
     
@@ -164,24 +165,21 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     EnforcePasteValuesOnly Sh, Target, pasteHandled
     
     ' Wenn Spalte E sich aendert:
-    ' E = KV-Code / BG
-    ' Dropdown F + Lohn G werden in der betreffenden Zeile aktualisiert.
+    ' E = KV-Code / BG -> Dropdown F + Lohn G in der betreffenden Zeile.
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
         RefreshKVStundenDropdownForSheet Sh, Target
-        RefreshKVLohnForSheet Sh, Target
+    End If
+    
+    ' Wenn E oder F sich aendert:
+    ' G = Monatslohn aus LOHNTABELLE (E+F). Bei reiner F-Aenderung nur bei KV-Treffer.
+    If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
+        fOnlyChange = (Intersect(Target, Sh.Range("E3:E82")) Is Nothing)
+        
+        RefreshKVLohnForSheet Sh, Target, fOnlyChange
         
         On Error Resume Next
         Application.Run "'" & ThisWorkbook.Name & "'!PID_LogEFAenderungForSheet", Sh, Target
         On Error GoTo SafeExit
-    End If
-    
-    ' F = Vertragsstunden. Aenderung nur protokollieren (CopyData), G nicht ueberschreiben.
-    If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
-        If Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
-            On Error Resume Next
-            Application.Run "'" & ThisWorkbook.Name & "'!PID_LogEFAenderungForSheet", Sh, Target
-            On Error GoTo SafeExit
-        End If
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:
