@@ -44,6 +44,10 @@ Public Sub PID_RefreshDurchrechnungUebersicht()
     
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    If Err.Number <> 0 Then
+        Err.Clear
+        ws.Unprotect
+    End If
     On Error GoTo CleanFail
     
     ws.Calculate
@@ -93,6 +97,10 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    If Err.Number <> 0 Then
+        Err.Clear
+        ws.Unprotect
+    End If
     On Error GoTo CleanFail
     
     PID_UnmergeDurchrechnungBlock ws
@@ -210,6 +218,8 @@ End Function
 
 Private Sub PID_ClearDurchrechnungBlock(ByVal ws As Worksheet)
     Dim target As Range
+    
+    PID_UnmergeDurchrechnungBlock ws
     
     Set target = ws.Range(ws.Cells(PID_DR_START_ROW, PID_DR_FIRST_COL), ws.Cells(PID_DR_END_ROW, PID_DR_LAST_COL))
     
@@ -382,8 +392,8 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     Dim statusRange As Range
     Dim ueberRange As Range
     Dim tableRange As Range
+    Dim blockRange As Range
     Dim inputBg As Long
-    Dim colNum As Long
     
     titleRow = PID_DR_START_ROW
     hintRow = PID_DR_START_ROW + 1
@@ -394,7 +404,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     noteRow = headerRow + 5
     inputBg = RGB(255, 242, 204)
     
-    PID_DREnsureInputRowLayout ws, inputRow
+    PID_UnmergeDurchrechnungBlock ws
     
     ws.Columns("B").ColumnWidth = 14
     ws.Columns("C").ColumnWidth = 12
@@ -416,9 +426,10 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         ws.Rows(dataRow).RowHeight = 36
     Next dataRow
     
+    Set blockRange = ws.Range("B" & titleRow & ":J" & noteRow)
     Set tableRange = ws.Range("B" & headerRow & ":J" & dataEndRow)
     
-    With PID_DRMergeOrCell(ws, titleRow, 2)
+    With ws.Range("B" & titleRow & ":J" & titleRow)
         .Interior.Color = RGB(31, 78, 121)
         .Font.Color = RGB(255, 255, 255)
         .Font.Bold = True
@@ -427,7 +438,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .VerticalAlignment = xlCenter
     End With
     
-    With PID_DRMergeOrCell(ws, hintRow, 2)
+    With ws.Range("B" & hintRow & ":J" & hintRow)
         .Interior.Color = RGB(242, 242, 242)
         .Font.Color = RGB(89, 89, 89)
         .Font.Italic = True
@@ -437,23 +448,14 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .WrapText = True
     End With
     
-    With PID_DRMergeOrCell(ws, inputRow, 2)
+    With ws.Range("B" & inputRow & ":J" & inputRow)
         .Interior.Color = inputBg
-        .Font.Bold = True
         .HorizontalAlignment = xlLeft
         .VerticalAlignment = xlCenter
     End With
     
-    With ws.Cells(inputRow, 6)
-        .Interior.Color = inputBg
-        .Font.Bold = True
-        .HorizontalAlignment = xlLeft
-        .VerticalAlignment = xlCenter
-    End With
-    
-    For colNum = 5 To 10
-        PID_DRMergeOrCell(ws, inputRow, colNum).Interior.Color = inputBg
-    Next colNum
+    ws.Cells(inputRow, 2).Font.Bold = True
+    ws.Cells(inputRow, 6).Font.Bold = True
     
     With ws.Range(PID_DR_JAEN_VERF_CELL)
         .Interior.Color = inputBg
@@ -497,7 +499,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     ws.Range(PID_DR_JAEN_VERF_CELL).NumberFormat = "#,##0.00"
     ws.Range(PID_DR_JAEN_MUST_CELL).NumberFormat = "#,##0.00"
     
-    With PID_DRMergeOrCell(ws, noteRow, 2)
+    With ws.Range("B" & noteRow & ":J" & noteRow)
         .Interior.Color = RGB(245, 245, 245)
         .Font.Color = RGB(89, 89, 89)
         .Font.Italic = True
@@ -507,11 +509,105 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .WrapText = True
     End With
     
-    PID_DRApplyBlockOutline ws, titleRow, noteRow
+    With blockRange.Borders(xlEdgeLeft)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    With blockRange.Borders(xlEdgeRight)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    With blockRange.Borders(xlEdgeTop)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    With blockRange.Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    
+    PID_DRApplyTableBorders tableRange
+    
+    Set diffRange = ws.Range("F" & dataStartRow & ":F" & dataEndRow)
+    PID_DRClearFormatConditions diffRange
+    PID_DRAddDiffFormatConditions diffRange
+    
+    Set statusRange = ws.Range("J" & dataStartRow & ":J" & dataEndRow)
+    PID_DRClearFormatConditions statusRange
+    PID_DRAddStatusFormatConditions statusRange
+    
+    Set ueberRange = ws.Range("H" & dataStartRow & ":I" & dataEndRow)
+    PID_DRClearFormatConditions ueberRange
+    ueberRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlGreater, Formula1:="0"
+    With ueberRange.FormatConditions(ueberRange.FormatConditions.Count)
+        .Interior.Color = RGB(252, 228, 214)
+        .Font.Color = RGB(132, 46, 43)
+        .Font.Bold = True
+    End With
+    
+    PID_DRMergeDisplayRows ws
+End Sub
+
+
+Private Sub PID_DRMergeDisplayRows(ByVal ws As Worksheet)
+    Dim titleRow As Long
+    Dim hintRow As Long
+    Dim inputRow As Long
+    Dim noteRow As Long
+    
+    titleRow = PID_DR_START_ROW
+    hintRow = titleRow + 1
+    inputRow = titleRow + 2
+    noteRow = PID_DR_START_ROW + 8
+    
+    On Error Resume Next
+    ws.Range("B" & titleRow & ":J" & titleRow).Merge
+    ws.Range("B" & hintRow & ":J" & hintRow).Merge
+    ws.Range("B" & inputRow & ":D" & inputRow).Merge
+    ws.Range("B" & noteRow & ":J" & noteRow).Merge
+    On Error GoTo 0
+End Sub
+
+
+Private Sub PID_DRApplyTableBorders(ByVal tableRange As Range)
+    Dim rowNum As Long
+    Dim colNum As Long
+    Dim edgeColor As Long
+    
+    edgeColor = RGB(180, 180, 180)
+    
+    For rowNum = tableRange.Row To tableRange.Row + tableRange.Rows.Count - 1
+        For colNum = tableRange.Column To tableRange.Column + tableRange.Columns.Count - 1
+            With tableRange.Worksheet.Cells(rowNum, colNum).Borders(xlEdgeLeft)
+                .LineStyle = xlContinuous
+                .Weight = xlThin
+                .Color = edgeColor
+            End With
+            With tableRange.Worksheet.Cells(rowNum, colNum).Borders(xlEdgeTop)
+                .LineStyle = xlContinuous
+                .Weight = xlThin
+                .Color = edgeColor
+            End With
+            With tableRange.Worksheet.Cells(rowNum, colNum).Borders(xlEdgeBottom)
+                .LineStyle = xlContinuous
+                .Weight = xlThin
+                .Color = edgeColor
+            End With
+            With tableRange.Worksheet.Cells(rowNum, colNum).Borders(xlEdgeRight)
+                .LineStyle = xlContinuous
+                .Weight = xlThin
+                .Color = edgeColor
+            End With
+        Next colNum
+    Next rowNum
     
     With tableRange.Borders(xlEdgeLeft)
         .LineStyle = xlContinuous
-        .Weight = xlThin
+        .Weight = xlMedium
     End With
     With tableRange.Borders(xlEdgeTop)
         .LineStyle = xlContinuous
@@ -523,22 +619,19 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     End With
     With tableRange.Borders(xlEdgeRight)
         .LineStyle = xlContinuous
-        .Weight = xlThin
+        .Weight = xlMedium
     End With
-    With tableRange.Borders(xlInsideVertical)
-        .LineStyle = xlContinuous
-        .Weight = xlThin
-    End With
-    With tableRange.Borders(xlInsideHorizontal)
-        .LineStyle = xlContinuous
-        .Weight = xlThin
-    End With
-    
-    Set diffRange = ws.Range("F" & dataStartRow & ":F" & dataEndRow)
+End Sub
+
+
+Private Sub PID_DRClearFormatConditions(ByVal target As Range)
     On Error Resume Next
-    diffRange.FormatConditions.Delete
+    target.FormatConditions.Delete
     On Error GoTo 0
-    
+End Sub
+
+
+Private Sub PID_DRAddDiffFormatConditions(ByVal diffRange As Range)
     diffRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlLess, Formula1:="0"
     With diffRange.FormatConditions(diffRange.FormatConditions.Count)
         .Interior.Color = RGB(255, 199, 206)
@@ -559,73 +652,37 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .Font.Color = RGB(0, 97, 0)
         .Font.Bold = True
     End With
+End Sub
+
+
+Private Sub PID_DRAddStatusFormatConditions(ByVal statusRange As Range)
+    Dim firstCell As String
     
-    Set statusRange = ws.Range("J" & dataStartRow & ":J" & dataEndRow)
-    On Error Resume Next
-    statusRange.FormatConditions.Delete
-    On Error GoTo 0
+    firstCell = statusRange.Cells(1, 1).Address(False, False)
     
-    statusRange.FormatConditions.Add Type:=xlTextString, String:="ACHTUNG", TextOperator:=xlContains
+    statusRange.FormatConditions.Add Type:=xlExpression, _
+        Formula1:="=ISNUMBER(SEARCH(""ACHTUNG""," & firstCell & "))"
     With statusRange.FormatConditions(statusRange.FormatConditions.Count)
         .Interior.Color = RGB(255, 199, 206)
         .Font.Color = RGB(156, 0, 6)
         .Font.Bold = True
     End With
     
-    statusRange.FormatConditions.Add Type:=xlTextString, String:="Hinweis", TextOperator:=xlContains
+    statusRange.FormatConditions.Add Type:=xlExpression, _
+        Formula1:="=ISNUMBER(SEARCH(""Hinweis""," & firstCell & "))"
     With statusRange.FormatConditions(statusRange.FormatConditions.Count)
         .Interior.Color = RGB(255, 235, 156)
         .Font.Color = RGB(156, 101, 0)
         .Font.Bold = True
     End With
     
-    statusRange.FormatConditions.Add Type:=xlTextString, String:="OK", TextOperator:=xlContains
+    statusRange.FormatConditions.Add Type:=xlExpression, _
+        Formula1:="=" & firstCell & "=""OK"""
     With statusRange.FormatConditions(statusRange.FormatConditions.Count)
         .Interior.Color = RGB(198, 239, 206)
         .Font.Color = RGB(0, 97, 0)
         .Font.Bold = True
     End With
-    
-    Set ueberRange = ws.Range("H" & dataStartRow & ":I" & dataEndRow)
-    On Error Resume Next
-    ueberRange.FormatConditions.Delete
-    On Error GoTo 0
-    
-    ueberRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlGreater, Formula1:="0"
-    With ueberRange.FormatConditions(ueberRange.FormatConditions.Count)
-        .Interior.Color = RGB(252, 228, 214)
-        .Font.Color = RGB(132, 46, 43)
-        .Font.Bold = True
-    End With
-End Sub
-
-
-Private Function PID_DRMergeOrCell(ByVal ws As Worksheet, ByVal rowNum As Long, ByVal colNum As Long) As Range
-    Set PID_DRMergeOrCell = ws.Cells(rowNum, colNum)
-    If PID_DRMergeOrCell.MergeCells Then
-        Set PID_DRMergeOrCell = PID_DRMergeOrCell.MergeArea
-    End If
-End Function
-
-
-Private Sub PID_DREnsureInputRowLayout(ByVal ws As Worksheet, ByVal inputRow As Long)
-    Dim mustCell As Range
-    Dim labelText As String
-    
-    Set mustCell = ws.Range(PID_DR_JAEN_MUST_CELL)
-    
-    If mustCell.MergeCells Then
-        If mustCell.MergeArea.Cells.Count > 1 Then
-            labelText = Trim$(CStr(ws.Cells(inputRow, 6).Value))
-            mustCell.MergeArea.UnMerge
-            
-            If Len(labelText) = 0 Then
-                ws.Cells(inputRow, 6).Value = "Jaenner Muster Plan (naechstes Jahr):"
-            Else
-                ws.Cells(inputRow, 6).Value = labelText
-            End If
-        End If
-    End If
 End Sub
 
 
@@ -642,52 +699,6 @@ Private Sub PID_DRApplyInputBorder(ByVal borders As Borders)
     borders(xlEdgeRight).LineStyle = xlContinuous
     borders(xlEdgeRight).Weight = xlMedium
     borders(xlEdgeRight).Color = RGB(255, 192, 0)
-End Sub
-
-
-Private Sub PID_DRApplyBlockOutline(ByVal ws As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
-    Dim rowNum As Long
-    Dim edgeColor As Long
-    Dim leftRng As Range
-    Dim rightRng As Range
-    
-    edgeColor = RGB(31, 78, 121)
-    
-    For rowNum = firstRow To lastRow
-        Set leftRng = PID_DRMergeOrCell(ws, rowNum, PID_DR_FIRST_COL)
-        Set rightRng = ws.Cells(rowNum, PID_DR_LAST_COL)
-        If rightRng.MergeCells Then
-            Set rightRng = rightRng.MergeArea
-        End If
-        
-        With leftRng.Borders(xlEdgeLeft)
-            .LineStyle = xlContinuous
-            .Weight = xlMedium
-            .Color = edgeColor
-        End With
-        
-        With rightRng.Borders(xlEdgeRight)
-            .LineStyle = xlContinuous
-            .Weight = xlMedium
-            .Color = edgeColor
-        End With
-        
-        If rowNum = firstRow Then
-            With leftRng.Borders(xlEdgeTop)
-                .LineStyle = xlContinuous
-                .Weight = xlMedium
-                .Color = edgeColor
-            End With
-        End If
-        
-        If rowNum = lastRow Then
-            With leftRng.Borders(xlEdgeBottom)
-                .LineStyle = xlContinuous
-                .Weight = xlMedium
-                .Color = edgeColor
-            End With
-        End If
-    Next rowNum
 End Sub
 
 
@@ -710,6 +721,10 @@ Public Sub PID_FormatDurchrechnungUebersicht()
     
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    If Err.Number <> 0 Then
+        Err.Clear
+        ws.Unprotect
+    End If
     On Error GoTo CleanFail
     
     PID_UnlockDurchrechnungInputs ws
