@@ -99,6 +99,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     End If
     
     If Sh.Name = "UBERSICHT" Then
+        PID_RecalculateFinanzSummaryChain
         PID_RefreshDurchrechnungUebersicht
         GoTo SafeExit
     End If
@@ -108,7 +109,9 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         PID_ResetMonthView Sh
         RefreshKVDropdownsIfDirtyForSheet Sh
         RefreshKVLohnIfDirty Sh
+        Sh.Range("S35").Calculate
         Sh.Range("S36").Calculate
+        Sh.Range("S37").Calculate
         GoTo SafeExit
     End If
 

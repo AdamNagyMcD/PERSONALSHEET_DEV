@@ -13,6 +13,7 @@
 - mod_BuildDurchrechnung.bas: FINANZIELL-Block (B2:Q23) im blau/gelb Design; B2/B23 #BEZUG! -> EINSTELLUNG!C35.
 - mod_FluctuationCalculation.bas: gemeinsame Fluktuationslogik; UEBERSICHT Q + Monatsblatt Q31 sync mit FLUKTUATION.
 - mod_SumMergedCells.bas: SumMergedCells volatile + S36-Neuberechnung auf allen Monatsblaettern (kein manuelles Enter).
+- mod_SumMergedCells.bas: PID_RecalculateFinanzSummaryChain — Monats-S35:S37, EINSTELLUNG E22:E33, UEBERSICHT G/J/H/K (FINANZIELL null-Werte behoben).
 - DieseArbeitsmappe.cls: `Union`-Aufruf in `EnforcePasteValuesOnly` ohne Zeilenfortsetzung (Mac VBA Syntaxfehler behoben).
 - mod_ResetAndImportVBAFiles.bas: ueberarbeiteter Import (Workbook-/Tabellenmodule per Code-Update statt Import); `ReadVBAFileWithoutAttributes` liest nur ab `Option Explicit` (kein VERSION/Attribute-Header mehr im Modul).
 - Modul1.bas: `SyncDieseArbeitsmappeFromExport` macro alias for manual workbook-module sync.

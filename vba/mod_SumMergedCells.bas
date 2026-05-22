@@ -261,8 +261,15 @@ End Function
 
 
 Public Sub PID_RecalculateAllMonthMergedFormulas()
+    PID_RecalculateFinanzSummaryChain
+End Sub
+
+
+Public Sub PID_RecalculateFinanzSummaryChain()
     Dim monthNames As Variant
     Dim ws As Worksheet
+    Dim einstellungWs As Worksheet
+    Dim ubersichtWs As Worksheet
     Dim i As Long
     
     On Error GoTo SafeExit
@@ -275,11 +282,30 @@ Public Sub PID_RecalculateAllMonthMergedFormulas()
         Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
         
         If Not ws Is Nothing Then
+            ws.Range("S35").Calculate
             ws.Range("S36").Calculate
+            ws.Range("S37").Calculate
+            ws.Range("Q37").Calculate
+            ws.Range("Q42").Calculate
         End If
         
         On Error GoTo SafeExit
     Next i
+    
+    On Error Resume Next
+    Set einstellungWs = ThisWorkbook.Worksheets("EINSTELLUNG")
+    If Not einstellungWs Is Nothing Then
+        einstellungWs.Range("E22:E33").Calculate
+    End If
+    
+    Set ubersichtWs = ThisWorkbook.Worksheets("UBERSICHT")
+    If Not ubersichtWs Is Nothing Then
+        ubersichtWs.Range("G7:G23").Calculate
+        ubersichtWs.Range("J7:J23").Calculate
+        ubersichtWs.Range("H7:H23").Calculate
+        ubersichtWs.Range("K7:K23").Calculate
+    End If
+    On Error GoTo SafeExit
 
 SafeExit:
 End Sub

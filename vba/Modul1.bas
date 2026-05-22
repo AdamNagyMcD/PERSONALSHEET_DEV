@@ -114,6 +114,11 @@ Public Sub PID_RecalculateAllMonthFluctuation()
 End Sub
 
 
+Public Sub RecalculateFinanzSummaryChain()
+    PID_RecalculateFinanzSummaryChain
+End Sub
+
+
 Public Sub PID_FormatAllMoneyColumns()
     Dim monthNames As Variant
     Dim ws As Worksheet
