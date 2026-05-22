@@ -282,17 +282,75 @@ Public Sub PID_RecalculateFinanzSummaryChain()
         Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
         
         If Not ws Is Nothing Then
-            ws.Range("S35").Calculate
-            ws.Range("S36").Calculate
-            ws.Range("S37").Calculate
-            ws.Range("Q37").Calculate
-            ws.Range("Q42").Calculate
+            PID_RecalculateFinanzSummaryMonthCells ws
         End If
         
         On Error GoTo SafeExit
     Next i
     
+    PID_RecalculateFinanzSummaryUbersichtCells
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_RecalculateFinanzSummaryForMonth(ByVal ws As Worksheet)
+    Dim monthIndex As Long
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    If Not IsNumeric(ws.Range("A1").Value) Then Exit Sub
+    
+    monthIndex = CLng(ws.Range("A1").Value)
+    If monthIndex < 1 Or monthIndex > 12 Then Exit Sub
+    
+    PID_RecalculateFinanzSummaryMonthCells ws
+    PID_RecalculateFinanzSummaryUbersichtForMonth monthIndex
+
+SafeExit:
+End Sub
+
+
+Public Function PID_MonthChangeAffectsFinanzSummary(ByVal ws As Worksheet, ByVal changedRange As Range) As Boolean
+    Dim watchRange As Range
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If changedRange Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
+    
+    Set watchRange = Union(ws.Range("E3:L82"), ws.Range("Q17:R29"), ws.Range("S35"), ws.Range("O18:Q25"))
+    
+    If Not Intersect(changedRange, watchRange) Is Nothing Then
+        PID_MonthChangeAffectsFinanzSummary = True
+    End If
+
+SafeExit:
+End Function
+
+
+Private Sub PID_RecalculateFinanzSummaryMonthCells(ByVal ws As Worksheet)
     On Error Resume Next
+    
+    ws.Range("S35").Calculate
+    ws.Range("S36").Calculate
+    ws.Range("S37").Calculate
+    ws.Range("Q37").Calculate
+    ws.Range("Q42").Calculate
+    
+    On Error GoTo 0
+End Sub
+
+
+Private Sub PID_RecalculateFinanzSummaryUbersichtCells()
+    Dim einstellungWs As Worksheet
+    Dim ubersichtWs As Worksheet
+    
+    On Error Resume Next
+    
     Set einstellungWs = ThisWorkbook.Worksheets("EINSTELLUNG")
     If Not einstellungWs Is Nothing Then
         einstellungWs.Range("E22:E33").Calculate
@@ -305,7 +363,33 @@ Public Sub PID_RecalculateFinanzSummaryChain()
         ubersichtWs.Range("H7:H23").Calculate
         ubersichtWs.Range("K7:K23").Calculate
     End If
-    On Error GoTo SafeExit
+    
+    On Error GoTo 0
+End Sub
 
-SafeExit:
+
+Private Sub PID_RecalculateFinanzSummaryUbersichtForMonth(ByVal monthIndex As Long)
+    Dim einstellungWs As Worksheet
+    Dim ubersichtWs As Worksheet
+    Dim ubersichtRow As Long
+    Dim quarterRow As Long
+    
+    On Error Resume Next
+    
+    Set einstellungWs = ThisWorkbook.Worksheets("EINSTELLUNG")
+    If Not einstellungWs Is Nothing Then
+        einstellungWs.Cells(21 + monthIndex, "E").Calculate
+    End If
+    
+    Set ubersichtWs = ThisWorkbook.Worksheets("UBERSICHT")
+    If Not ubersichtWs Is Nothing Then
+        ubersichtRow = 6 + monthIndex
+        quarterRow = 10 + 4 * Int((monthIndex - 1) / 3)
+        
+        ubersichtWs.Range("G" & ubersichtRow & ",J" & ubersichtRow & ",H" & ubersichtRow & ",K" & ubersichtRow).Calculate
+        ubersichtWs.Range("G" & quarterRow & ",J" & quarterRow & ",H" & quarterRow & ",K" & quarterRow).Calculate
+        ubersichtWs.Range("G23,J23,H23,K23").Calculate
+    End If
+    
+    On Error GoTo 0
 End Sub

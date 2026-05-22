@@ -196,6 +196,10 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     If Not Intersect(Target, Sh.Range("D3:D82,I3:I82,N3:N82")) Is Nothing Then
         MarkFluktuationDirty
     End If
+    
+    If PID_MonthChangeAffectsFinanzSummary(Sh, Target) Then
+        PID_RecalculateFinanzSummaryForMonth Sh
+    End If
 
 SafeExit:
     Application.ScreenUpdating = True
