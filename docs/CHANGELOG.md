@@ -53,6 +53,7 @@
 - Personalsheet.xlsm: reverted broken direct XML patch on `UBERSICHT`; Durchrechnung block must be created via `BuildDurchrechnungUebersicht` macro (avoids corrupted `sharedStrings` counts on Mac Excel).
 
 ### Changed
+- mod_BuildFluktuationAnalyse.bas: FLUKTUATION-Blatt im gleichen Design wie UEBERSICHT FINANZIELL (Navy-Titel, hellblaue Header, Zebra-Zeilen, Akzent-Gelb, Tabellenrahmen); Risiko-Farben bleiben erhalten.
 - mod_BuildDurchrechnungUebersicht.bas: Durchrechnung block clearer for managers; new column `AVG Lohn/h` from Schlussmonat `Q42`; Ueberstunden EUR = Std x Lohn/h x 1,5 (removed manual C30 Stundenlohn); only Jaenner plan inputs (E30/G30) stay yellow; full block styling (title/header colors, CF on Differenz/Status/Ueberstunden, `#,##0.00` formats); `FormatDurchrechnungUebersicht` macro; Mac-safe formatting unmerges block first, formats, then re-merges display rows (fixes error 1004).
 - mod_BuildDurchrechnungUebersicht.bas: Ueberstunden EUR no longer requires ISNUMBER on C30 (text numbers like `1` or `12,5` now calculate).
 - mod_KVLohnLookup.bas: column `G` uses `PID_KVLohnLookup` UDF (same logic as VBA lookup; fixes `BG3_15` etc.).
