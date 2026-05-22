@@ -800,7 +800,6 @@ Public Sub MarkAllKVLohnDirty()
     gKVLohnAllMonthsDirty = True
     Set mKVLohnRefreshedSheets = New Collection
     PID_ClearLohnTableCache
-    PID_ClearStundenValuesCache
 End Sub
 
 
@@ -867,25 +866,38 @@ End Sub
 
 Public Sub PID_RecalculateMonatslohnForUsedRows(ByVal wsMonth As Worksheet)
     Dim r As Long
+    Dim hasUsedRows As Boolean
     
     On Error GoTo SafeExit
     
     If wsMonth Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
     
+    PID_PreloadKVLohnCaches
+    hasUsedRows = False
+    
     For r = PID_FIRST_ROW To PID_LAST_ROW
         If Len(Trim$(CStr(wsMonth.Cells(r, "E").Value))) > 0 Then
             If Len(Trim$(CStr(wsMonth.Cells(r, "F").Value))) > 0 Then
-                PID_ForceMonatslohnRecalcForRow wsMonth, r
+                PID_ForceMonatslohnRecalcForRow wsMonth, r, True
+                hasUsedRows = True
             End If
         End If
     Next r
+    
+    If hasUsedRows Then
+        On Error Resume Next
+        wsMonth.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW).Calculate
+        Err.Clear
+    End If
 
 SafeExit:
 End Sub
 
 
-Public Sub PID_ForceMonatslohnRecalcForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long)
+Public Sub PID_ForceMonatslohnRecalcForRow(ByVal wsMonth As Worksheet, _
+                                           ByVal rowNumber As Long, _
+                                           Optional ByVal skipLetztesGehaltRecalc As Boolean = False)
     Dim gCell As Range
     Dim monthNumber As Long
     Dim kvCode As String
@@ -905,7 +917,9 @@ Public Sub PID_ForceMonatslohnRecalcForRow(ByVal wsMonth As Worksheet, ByVal row
     kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
     If kvCode = "" Or Not PID_TryGetDouble(wsMonth.Cells(rowNumber, "F").Value, stunden) Then
         gCell.Value2 = 0
-        PID_RecalculateLetztesGehaltForRow wsMonth, rowNumber
+        If Not skipLetztesGehaltRecalc Then
+            PID_RecalculateLetztesGehaltForRow wsMonth, rowNumber
+        End If
         Exit Sub
     End If
     
@@ -917,7 +931,9 @@ Public Sub PID_ForceMonatslohnRecalcForRow(ByVal wsMonth As Worksheet, ByVal row
         gCell.Value2 = CDbl(lohn)
     End If
     
-    PID_RecalculateLetztesGehaltForRow wsMonth, rowNumber
+    If Not skipLetztesGehaltRecalc Then
+        PID_RecalculateLetztesGehaltForRow wsMonth, rowNumber
+    End If
 
 SafeExit:
 End Sub

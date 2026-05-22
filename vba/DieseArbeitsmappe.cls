@@ -174,8 +174,12 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' Wenn die KV-Basistabelle geaendert wird, wird die Dropdown-Liste spaeter neu aufgebaut.
     If Sh.Name = PID_LOHNTABELLE_SHEET Then
         If Not Intersect(Target, Sh.Range("D4:J500")) Is Nothing Then
-            MarkAllKVDropdownsDirty
             MarkAllKVLohnDirty
+            
+            ' F-Dropdown nur bei Struktur/Stunden-Aenderung (D:G), nicht bei Monatslohn (H) allein.
+            If Not Intersect(Target, Sh.Range("D4:G500")) Is Nothing Then
+                MarkAllKVDropdownsDirty
+            End If
         End If
         Exit Sub
     End If
