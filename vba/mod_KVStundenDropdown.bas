@@ -138,7 +138,6 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     
     On Error Resume Next
     wsMonth.Unprotect Password:=PID_WORKBOOK_PASSWORD
-    wsHelper.Visible = xlSheetVisible
     wsHelper.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
     
@@ -226,19 +225,21 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     
     wsMonth.Cells(rowNumber, "F").Locked = False
     
-    On Error Resume Next
-    wsMonth.Cells(rowNumber, "F").Validation.Delete
-    On Error GoTo SafeExit
-    
     If kvCode = "" Then
+        On Error Resume Next
+        wsMonth.Cells(rowNumber, "F").Validation.Delete
         wsMonth.Cells(rowNumber, "F").ClearContents
+        Err.Clear
         Exit Sub
     End If
     
     Set values = GetKVMonatsstundenValues(monthNumber, kvCode)
     
     If values.count = 0 Then
+        On Error Resume Next
+        wsMonth.Cells(rowNumber, "F").Validation.Delete
         wsMonth.Cells(rowNumber, "F").ClearContents
+        Err.Clear
         Exit Sub
     End If
     
@@ -254,10 +255,16 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     
     listName = GetDropdownNameForMonthRow(wsMonth.Name, rowNumber)
     
-    CreateOrReplaceWorkbookName listName, listRange
+    PID_EnsureWorkbookNameRefersTo listName, listRange
+    
+    If PID_RowHasValidFStundenDropdown(wsMonth, rowNumber) Then Exit Sub
+    
+    On Error Resume Next
+    wsMonth.Cells(rowNumber, "F").Validation.Delete
+    Err.Clear
+    On Error GoTo SafeExit
     
     With wsMonth.Cells(rowNumber, "F").Validation
-        .Delete
         .Add Type:=xlValidateList, _
              AlertStyle:=xlValidAlertStop, _
              Operator:=xlBetween, _
@@ -393,20 +400,35 @@ End Function
 
 
 Public Sub CreateOrReplaceWorkbookName(ByVal nameText As String, ByVal targetRange As Range)
+    PID_EnsureWorkbookNameRefersTo nameText, targetRange, True
+End Sub
+
+
+Public Sub PID_EnsureWorkbookNameRefersTo(ByVal nameText As String, _
+                                          ByVal targetRange As Range, _
+                                          Optional ByVal replaceIfDifferent As Boolean = False)
     Dim refersText As String
+    Dim existingRefersTo As String
     
     On Error GoTo SafeExit
     
     If targetRange Is Nothing Then Exit Sub
     If Trim$(nameText) = "" Then Exit Sub
     
-    On Error Resume Next
-    ThisWorkbook.Names(nameText).Delete
-    On Error GoTo SafeExit
-    
     refersText = "='" & targetRange.Worksheet.Name & "'!" & targetRange.Address(True, True)
     
-    ThisWorkbook.Names.Add Name:=nameText, RefersTo:=refersText
+    On Error Resume Next
+    existingRefersTo = CStr(ThisWorkbook.Names(nameText).RefersTo)
+    
+    If Err.Number = 0 Then
+        If StrComp(existingRefersTo, "=" & refersText, vbTextCompare) = 0 Then Exit Sub
+        If Not replaceIfDifferent Then Exit Sub
+        ThisWorkbook.Names(nameText).Delete
+        Err.Clear
+    End If
+    
+    On Error GoTo SafeExit
+    ThisWorkbook.Names.Add Name:=nameText, RefersTo:="=" & refersText
 
 SafeExit:
 End Sub

@@ -203,8 +203,27 @@ End Sub
 
 
 Public Sub PID_RefreshKVButtons()
-    PID_EnsureLOHNTABELLEButtons
+    PID_EnsureLOHNTABELLEButtons True
 End Sub
+
+
+Private Function PID_LOHNTABELLEButtonsExist(ByVal wsKV As Worksheet) As Boolean
+    On Error GoTo Missing
+    
+    If wsKV.Shapes(PID_ADD_PERIOD_BUTTON_NAME).Name = PID_ADD_PERIOD_BUTTON_NAME Then
+        If wsKV.Shapes(PID_ADD_CUSTOM_HOURS_BUTTON_NAME).Name = PID_ADD_CUSTOM_HOURS_BUTTON_NAME Then
+            If wsKV.Shapes(PID_DELETE_PERIODS_BUTTON_NAME).Name = PID_DELETE_PERIODS_BUTTON_NAME Then
+                If wsKV.Shapes(PID_HELP_BUTTON_NAME).Name = PID_HELP_BUTTON_NAME Then
+                    PID_LOHNTABELLEButtonsExist = True
+                    Exit Function
+                End If
+            End If
+        End If
+    End If
+
+Missing:
+    PID_LOHNTABELLEButtonsExist = False
+End Function
 
 
 Public Sub ShowLOHNTABELLEButtonHelp()
@@ -465,7 +484,7 @@ Private Sub PID_EnsureLOHNTABELLEButton()
 End Sub
 
 
-Private Sub PID_EnsureLOHNTABELLEButtons()
+Private Sub PID_EnsureLOHNTABELLEButtons(Optional ByVal forceRecreate As Boolean = False)
     Dim wsKV As Worksheet
     Dim btn As Shape
     Dim wasProtected As Boolean
@@ -481,6 +500,10 @@ Private Sub PID_EnsureLOHNTABELLEButtons()
     
     Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     If wsKV Is Nothing Then Exit Sub
+    
+    If Not forceRecreate Then
+        If PID_LOHNTABELLEButtonsExist(wsKV) Then Exit Sub
+    End If
     
     wasProtected = wsKV.ProtectContents
     

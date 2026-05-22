@@ -13,20 +13,23 @@ Private mInternalChange As Boolean
 
 
 Private Sub Workbook_Open()
+    Dim oldCalculation As XlCalculation
+    
     On Error GoTo SafeExit
     
     mInternalChange = True
     
+    oldCalculation = Application.Calculation
+    
     Application.ScreenUpdating = False
     Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
     
     PID_EnsureKVCodeListNamedRange
     PID_EnsureMonatslohnFormulas
     PID_EnsureLetztesGehaltFormulas
     
     PID_SetupSheetProtectionForOpen
-    EnsureAddNewKVPeriodButton
-    FixLOHNTABELLE_HeaderTextIfNeeded
     
     MarkFinanzSummaryDirty
     
@@ -41,13 +44,11 @@ Private Sub Workbook_Open()
     On Error GoTo SafeExit
 
 SafeExit:
+    Application.Calculation = oldCalculation
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
-End Sub
-
-
-Private Sub Workbook_BeforeSave(ByVal SaveAsUI As Boolean, Cancel As Boolean)
+End Sub(ByVal SaveAsUI As Boolean, Cancel As Boolean)
     On Error GoTo SafeExit
     
     If mInternalChange Then Exit Sub
@@ -93,6 +94,8 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     End If
     
     If Sh.Name = PID_LOHNTABELLE_SHEET Then
+        EnsureAddNewKVPeriodButton
+        FixLOHNTABELLE_HeaderTextIfNeeded
         PID_ConfigureLohntabelleView
         GoTo SafeExit
     End If
@@ -173,17 +176,16 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     
     ' Wenn Spalte E sich aendert:
     ' E = KV-Code / BG -> Dropdown F in der betreffenden Zeile.
-    ' G (Monatslohn) ist Formel und aktualisiert sich automatisch bei E/F-Aenderung.
-    If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
-        RefreshKVStundenDropdownForSheet Sh, Target
-    End If
-    
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
         On Error Resume Next
         Application.Run "'" & ThisWorkbook.Name & "'!PID_LogEFAenderungForSheet", Sh, Target
         On Error GoTo SafeExit
         
         PID_RecalculateMonatslohnForChangedRows Sh, Target
+    End If
+    
+    If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
+        RefreshKVStundenDropdownForSheet Sh, Target
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:
