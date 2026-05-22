@@ -532,32 +532,56 @@ Public Function PID_GetMonatslohnFormulaR1C1() As String
     
     yearRef = "'" & PID_EINSTELLUNG_SHEET & "'!R35C3"
     
-    normCode = "IF(RC[-2]="""",""""," & _
-        "IF(OR(RC[-2]=""BG1"",RC[-2]=""BG1_Basis"",RC[-2]=""BG1_BASIS""),""BG1_Basis""," & _
-        "IF(OR(RC[-2]=""BG2"",RC[-2]=""BG2_Basis"",RC[-2]=""BG2_BASIS""),""BG2_Basis""," & _
-        "IF(OR(RC[-2]=""BG3"",RC[-2]=""BG3_Basis"",RC[-2]=""BG3_BASIS""),""BG3_Basis""," & _
-        "SUBSTITUTE(SUBSTITUTE(RC[-2],""-"",""_""),"" "",""_"")))))"
+    normCode = PID_GetNormalizedKVCodeExprR1C1()
     
     curPeriod = "IF(R1C1<=4,""KV ""&(" & yearRef & "-1)&""/""&" & yearRef & ",""KV ""&" & yearRef & "&""/""&(" & yearRef & "+1))"
     prevPeriod = "IF(R1C1<=4,""KV ""&(" & yearRef & "-2)&""/""&(" & yearRef & "-1),""KV ""&(" & yearRef & "-1)&""/""&" & yearRef & ")"
     
-    lookupCur = PID_BuildLohnMatchExprR1C1(curPeriod, normCode)
-    lookupPrev = PID_BuildLohnMatchExprR1C1(prevPeriod, normCode)
+    lookupCur = "IFERROR(" & PID_BuildLohnMatchExprR1C1(curPeriod, normCode) & ",0)"
+    lookupPrev = "IFERROR(" & PID_BuildLohnMatchExprR1C1(prevPeriod, normCode) & ",0)"
     
     PID_GetMonatslohnFormulaR1C1 = _
         "=IF(OR(RC[-2]="""",RC[-1]=""""),""""," & _
-        "IFERROR(" & lookupCur & ",IFERROR(" & lookupPrev & ",""Nicht gefunden"")))"
+        "IF(AND(" & lookupCur & ">0)," & lookupCur & "," & _
+        "IF(AND(" & lookupPrev & ">0)," & lookupPrev & ",""Nicht gefunden"")))"
+End Function
+
+
+Private Function PID_GetNormalizedKVCodeExprR1C1() As String
+    PID_GetNormalizedKVCodeExprR1C1 = _
+        "IF(RC[-2]="""",""""," & _
+        "IF(OR(RC[-2]=""BG1"",RC[-2]=""BG1_Basis"",RC[-2]=""BG1_BASIS""),""BG1_Basis""," & _
+        "IF(OR(RC[-2]=""BG2"",RC[-2]=""BG2_Basis"",RC[-2]=""BG2_BASIS""),""BG2_Basis""," & _
+        "IF(OR(RC[-2]=""BG3"",RC[-2]=""BG3_Basis"",RC[-2]=""BG3_BASIS""),""BG3_Basis""," & _
+        "SUBSTITUTE(SUBSTITUTE(RC[-2],""-"",""_""),"" "",""_"")))))"
 End Function
 
 
 Private Function PID_BuildLohnMatchExprR1C1(ByVal periodExpr As String, ByVal normCodeExpr As String) As String
     Dim kv As String
+    Dim periodCol As String
+    Dim codeCol As String
+    Dim stundenCol As String
+    Dim lohnCol As String
     
     kv = "'" & PID_LOHNTABELLE_SHEET & "'"
+    periodCol = kv & "!R4C1:R500C1"
+    codeCol = kv & "!R4C4:R500C4"
+    stundenCol = kv & "!R4C7:R500C7"
+    lohnCol = kv & "!R4C8:R500C8"
     
     PID_BuildLohnMatchExprR1C1 = _
-        "INDEX(" & kv & "!R4C8:R500C8,MATCH(1,INDEX((TRIM(IF(ISERROR(FIND(""|""," & kv & "!R4C1:R500C1))," & kv & "!R4C1:R500C1,LEFT(" & kv & "!R4C1:R500C1,FIND(""|""," & kv & "!R4C1:R500C1)-1)))=" & periodExpr & ")*" & _
-        "(" & kv & "!R4C4:R500C4=" & normCodeExpr & ")*(ABS(" & kv & "!R4C7:R500C7-RC[-1])<0.001),0),0))"
+        "INDEX(" & lohnCol & ",MATCH(1,INDEX((" & _
+        PID_GetNormalizedKVPeriodColExprR1C1(periodCol) & "=" & periodExpr & ")*" & _
+        "(" & codeCol & "=" & normCodeExpr & ")*" & _
+        "(ABS(" & stundenCol & "-RC[-1])<0.001)*" & _
+        "(ISNUMBER(" & lohnCol & "))*(" & lohnCol & ">0),0),0))"
+End Function
+
+
+Private Function PID_GetNormalizedKVPeriodColExprR1C1(ByVal periodColRef As String) As String
+    PID_GetNormalizedKVPeriodColExprR1C1 = _
+        "TRIM(IF(ISERROR(FIND(""|""," & periodColRef & "))," & periodColRef & ",LEFT(" & periodColRef & ",FIND(""|""," & periodColRef & ")-1)))"
 End Function
 
 
@@ -570,7 +594,11 @@ Public Function PID_MonthSheetHasMonatslohnFormula(ByVal wsMonth As Worksheet) A
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
     
     formulaText = CStr(wsMonth.Range("G" & PID_FIRST_ROW).FormulaR1C1)
-    PID_MonthSheetHasMonatslohnFormula = (InStr(1, formulaText, PID_LOHNTABELLE_SHEET, vbTextCompare) > 0)
+    
+    ' v2: usable-lohn filter + explicit current/previous period fallback.
+    PID_MonthSheetHasMonatslohnFormula = _
+        (InStr(1, formulaText, PID_LOHNTABELLE_SHEET, vbTextCompare) > 0) And _
+        (InStr(1, formulaText, "R4C8:R500C8>0", vbTextCompare) > 0)
 
 SafeExit:
 End Function
@@ -794,12 +822,16 @@ Public Sub RefreshKVLohnIfDirty(ByVal wsMonth As Worksheet)
     If wsMonth Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
     
-    ' Column G uses worksheet formulas; only restore if legacy static values remain.
+    If Not PID_MonthSheetHasMonatslohnFormula(wsMonth) Then
+        PID_RestoreMonatslohnFormulasOnSheet wsMonth, PID_GetMonatslohnFormulaR1C1()
+    End If
+    
     If gKVLohnAllMonthsDirty Then
-        PID_EnsureMonatslohnFormulasOnSheet wsMonth
+        If Not mKVLohnRefreshedSheets Is Nothing Then
+            If CollectionHasKey_KVLohn(mKVLohnRefreshedSheets, wsMonth.Name) Then Exit Sub
+        End If
+        
         PID_MarkKVLohnSheetRefreshed wsMonth.Name
-    Else
-        PID_EnsureMonatslohnFormulasOnSheet wsMonth
     End If
 End Sub
 
