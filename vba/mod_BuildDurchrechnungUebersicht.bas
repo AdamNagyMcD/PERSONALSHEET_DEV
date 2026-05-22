@@ -301,7 +301,8 @@ End Sub
 
 Private Function PID_GetEuroFormula(ByVal dataRow As Long) As String
     ' 3/2 statt 1,5 wegen Excel-2016/Mac Dezimal-Trennzeichen.
-    PID_GetEuroFormula = "=IF(OR($C$30="""",NOT(ISNUMBER($C$30))),"""",G" & dataRow & "*$C$30*3/2)"
+    ' Kein ISNUMBER: Text-Zahlen wie "12,5" sollen trotzdem rechnen.
+    PID_GetEuroFormula = "=IF(OR($C$30="""",G" & dataRow & "=0),"""",G" & dataRow & "*$C$30*3/2)"
 End Function
 
 
