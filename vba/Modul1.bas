@@ -946,6 +946,11 @@ Public Sub FormatFinanzUebersicht()
 End Sub
 
 
+Public Sub FormatEinstellung()
+    PID_FormatEinstellungSheet
+End Sub
+
+
 Public Sub SyncDieseArbeitsmappeFromExport()
     Dim syncOk As Boolean
     Dim syncDetails As String
