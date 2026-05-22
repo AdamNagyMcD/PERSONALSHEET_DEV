@@ -51,6 +51,7 @@
 - mod_ResetAndImportVBAFiles.bas: ueberarbeiteter Import (Workbook-/Tabellenmodule per Code-Update statt Import); `ReadVBAFileWithoutAttributes` liest nur ab `Option Explicit` (kein VERSION/Attribute-Header mehr im Modul).
 - Modul1.bas: `SyncDieseArbeitsmappeFromExport` macro alias for manual workbook-module sync.
 - Personalsheet.xlsm: reverted broken direct XML patch on `UBERSICHT`; Durchrechnung block must be created via `BuildDurchrechnungUebersicht` macro (avoids corrupted `sharedStrings` counts on Mac Excel).
+- mod_FormatEinstellung.bas: Compile-Fix — kein `ws.DisplayGridlines` (nur Window-Eigenschaft).
 
 ### Changed
 - mod_FormatEinstellung.bas: EINSTELLUNG-Blatt im UEBERSICHT-Design (Navy-Titelbaender, Header, Zebra, Rahmen); `FormatEinstellung`-Makro; C35 (Arbeitsjahr) gelb hervorgehoben.

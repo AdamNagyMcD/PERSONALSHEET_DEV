@@ -24,8 +24,6 @@ Public Sub PID_FormatEinstellungSheet()
     End If
     On Error GoTo CleanFail
     
-    ws.DisplayGridlines = False
-    
     With ws
         On Error Resume Next
         .Range("B1:U1").Merge
