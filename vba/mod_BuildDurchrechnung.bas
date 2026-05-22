@@ -4,10 +4,12 @@ Option Explicit
 Private Const PID_DR_START_ROW As Long = 28
 Private Const PID_DR_END_ROW As Long = 38
 Private Const PID_DR_FIRST_COL As Long = 2   ' B
-Private Const PID_DR_LAST_COL As Long = 10   ' J
+Private Const PID_DR_LAST_COL As Long = 17   ' Q (align with FINANZIELL block above)
+Private Const PID_DR_STATUS_FIRST_COL As Long = 10 ' J
+Private Const PID_DR_STATUS_LAST_COL As Long = 17  ' Q
 
 Private Const PID_DR_JAEN_VERF_CELL As String = "E30"
-Private Const PID_DR_JAEN_MUST_CELL As String = "G30"
+Private Const PID_DR_JAEN_MUST_CELL As String = "I30"
 
 Private Const PID_UBERSICHT_SHEET As String = "UBERSICHT"
 
@@ -94,6 +96,9 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     
     savedJaenVerf = ws.Range(PID_DR_JAEN_VERF_CELL).Value2
     savedJaenMust = ws.Range(PID_DR_JAEN_MUST_CELL).Value2
+    If Len(Trim$(CStr(savedJaenMust))) = 0 Then
+        savedJaenMust = ws.Range("G30").Value2
+    End If
     
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
@@ -122,7 +127,7 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
         MsgBox "Durchrechnungsblock auf UEBERSICHT wurde erstellt." & vbCrLf & vbCrLf & _
                "Gelbe Felder (nur Jaenner-Plan):" & vbCrLf & _
                "- Jaenner Verfuegbar Plan (E30)" & vbCrLf & _
-               "- Jaenner Muster Plan (G30)" & vbCrLf & vbCrLf & _
+               "- Jaenner Muster Plan (I30)" & vbCrLf & vbCrLf & _
                "Stundenlohn pro Zeile = AVG Bruttolohn/h aus dem Schlussmonat (Q42).", _
                vbInformation, "Durchrechnung"
     End If
@@ -189,7 +194,7 @@ Private Sub PID_UnmergeDurchrechnungBlock(ByVal ws As Worksheet)
     
     Set mergedAreas = New Collection
     
-    For Each cell In ws.Range("B" & PID_DR_START_ROW & ":J" & PID_DR_END_ROW).Cells
+    For Each cell In ws.Range("B" & PID_DR_START_ROW & ":Q" & PID_DR_END_ROW).Cells
         If cell.MergeCells Then
             areaKey = cell.MergeArea.Address(False, False)
             
@@ -252,12 +257,12 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
     noteRow = headerRow + 5
     
     With ws
-        .Range("B" & titleRow & ":J" & titleRow).Merge
+        .Range("B" & titleRow & ":Q" & titleRow).Merge
         .Cells(titleRow, 2).Formula = "= ""DURCHRECHNUNGSSTUNDEN - "" & EINSTELLUNG!C35"
         .Cells(titleRow, 2).Font.Bold = True
         .Cells(titleRow, 2).Font.Size = 12
         
-        .Range("B" & hintRow & ":J" & hintRow).Merge
+        .Range("B" & hintRow & ":Q" & hintRow).Merge
         .Cells(hintRow, 2).Value = _
             "Jede Zeile = 3 Monate bis zum Schlussmonat. " & _
             "Differenz rot = zu wenig Stunden (Ueberstunden-Risiko), gelb = Reserve. " & _
@@ -268,17 +273,18 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
         
         .Range("B" & inputRow & ":D" & inputRow).Merge
         .Cells(inputRow, 2).Value = "Jaenner Verfuegbar Plan (naechstes Jahr):"
+        .Range("F" & inputRow & ":H" & inputRow).Merge
         .Cells(inputRow, 6).Value = "Jaenner Muster Plan (naechstes Jahr):"
         
         .Cells(headerRow, 2).Value = "Zeitraum"
-        .Cells(headerRow, 3).Value = "Schlussmonat"
+        .Cells(headerRow, 3).Value = "Endmonat"
         .Cells(headerRow, 4).Value = "Verfuegbar Summe"
         .Cells(headerRow, 5).Value = "Muster Summe"
         .Cells(headerRow, 6).Value = "Differenz"
         .Cells(headerRow, 7).Value = "AVG Lohn/h"
-        .Cells(headerRow, 8).Value = "Ueberstunden Std"
-        .Cells(headerRow, 9).Value = "Ueberstunden EUR"
-        .Cells(headerRow, 10).Value = "Status"
+        .Cells(headerRow, 8).Value = "Ueber-Std"
+        .Cells(headerRow, 9).Value = "Ueber-EUR"
+        .Cells(headerRow, 10).Value = "Status / Hinweis"
         .Rows(headerRow).Font.Bold = True
         
         dataRow = headerRow + 1
@@ -309,7 +315,7 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
             "=D" & dataRow & "-E" & dataRow, _
             "=Dezember!Q42"
         
-        .Range("B" & noteRow & ":J" & noteRow).Merge
+        .Range("B" & noteRow & ":Q" & noteRow).Merge
         .Cells(noteRow, 2).Value = _
             "Ueberstunden EUR = Ueberstunden Std x AVG Lohn/h x 1,5 (Spalte G aus Schlussmonat Q42). " & _
             "Nur bei negativem Schluss (rote Differenz). Positive Differenz = Reserve ohne EUR-Kosten."
@@ -406,30 +412,22 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     
     PID_UnmergeDurchrechnungBlock ws
     
-    ws.Columns("B").ColumnWidth = 14
-    ws.Columns("C").ColumnWidth = 12
-    ws.Columns("D").ColumnWidth = 15
-    ws.Columns("E").ColumnWidth = 14
-    ws.Columns("F").ColumnWidth = 12
-    ws.Columns("G").ColumnWidth = 11
-    ws.Columns("H").ColumnWidth = 14
-    ws.Columns("I").ColumnWidth = 15
-    ws.Columns("J").ColumnWidth = 28
+    PID_DRMigrateJaennerMusterInput ws
     
     ws.Rows(titleRow).RowHeight = 28
-    ws.Rows(hintRow).RowHeight = 52
-    ws.Rows(inputRow).RowHeight = 24
-    ws.Rows(headerRow).RowHeight = 36
-    ws.Rows(noteRow).RowHeight = 44
+    ws.Rows(hintRow).RowHeight = 48
+    ws.Rows(inputRow).RowHeight = 26
+    ws.Rows(headerRow).RowHeight = 32
+    ws.Rows(noteRow).RowHeight = 40
     
     For dataRow = dataStartRow To dataEndRow
-        ws.Rows(dataRow).RowHeight = 36
+        ws.Rows(dataRow).RowHeight = 40
     Next dataRow
     
-    Set blockRange = ws.Range("B" & titleRow & ":J" & noteRow)
-    Set tableRange = ws.Range("B" & headerRow & ":J" & dataEndRow)
+    Set blockRange = ws.Range("B" & titleRow & ":Q" & noteRow)
+    Set tableRange = ws.Range("B" & headerRow & ":Q" & dataEndRow)
     
-    With ws.Range("B" & titleRow & ":J" & titleRow)
+    With ws.Range("B" & titleRow & ":Q" & titleRow)
         .Interior.Color = RGB(31, 78, 121)
         .Font.Color = RGB(255, 255, 255)
         .Font.Bold = True
@@ -438,7 +436,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .VerticalAlignment = xlCenter
     End With
     
-    With ws.Range("B" & hintRow & ":J" & hintRow)
+    With ws.Range("B" & hintRow & ":Q" & hintRow)
         .Interior.Color = RGB(242, 242, 242)
         .Font.Color = RGB(89, 89, 89)
         .Font.Italic = True
@@ -448,7 +446,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .WrapText = True
     End With
     
-    With ws.Range("B" & inputRow & ":J" & inputRow)
+    With ws.Range("B" & inputRow & ":Q" & inputRow)
         .Interior.Color = inputBg
         .HorizontalAlignment = xlLeft
         .VerticalAlignment = xlCenter
@@ -469,28 +467,36 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         PID_DRApplyInputBorder .Borders
     End With
     
-    With ws.Range("B" & headerRow & ":J" & headerRow)
+    With ws.Range("B" & headerRow & ":I" & headerRow)
         .Interior.Color = RGB(221, 235, 247)
         .Font.Color = RGB(31, 78, 121)
         .Font.Bold = True
         .Font.Size = 10
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
-        .WrapText = True
+        .WrapText = False
+    End With
+    
+    With ws.Range("J" & headerRow & ":Q" & headerRow)
+        .Interior.Color = RGB(221, 235, 247)
+        .Font.Color = RGB(31, 78, 121)
+        .Font.Bold = True
+        .Font.Size = 10
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = False
     End With
     
     For dataRow = dataStartRow To dataEndRow
         If ((dataRow - dataStartRow) Mod 2) = 1 Then
-            ws.Range("B" & dataRow & ":E" & dataRow).Interior.Color = RGB(248, 248, 248)
-            ws.Range("G" & dataRow & ":J" & dataRow).Interior.Color = RGB(248, 248, 248)
+            ws.Range("B" & dataRow & ":Q" & dataRow).Interior.Color = RGB(248, 248, 248)
         End If
     Next dataRow
     
     ws.Range("B" & dataStartRow & ":C" & dataEndRow).HorizontalAlignment = xlLeft
     ws.Range("D" & dataStartRow & ":I" & dataEndRow).HorizontalAlignment = xlRight
-    ws.Range("J" & dataStartRow & ":J" & dataEndRow).HorizontalAlignment = xlLeft
-    ws.Range("J" & dataStartRow & ":J" & dataEndRow).WrapText = True
-    ws.Range("B" & dataStartRow & ":J" & dataEndRow).VerticalAlignment = xlCenter
+    ws.Range("J" & dataStartRow & ":Q" & dataEndRow).HorizontalAlignment = xlLeft
+    ws.Range("B" & dataStartRow & ":Q" & dataEndRow).VerticalAlignment = xlCenter
     
     ws.Range("D" & dataStartRow & ":F" & dataEndRow).NumberFormat = "#,##0.00"
     ws.Range("G" & dataStartRow & ":G" & dataEndRow).NumberFormat = "#,##0.00"
@@ -499,7 +505,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     ws.Range(PID_DR_JAEN_VERF_CELL).NumberFormat = "#,##0.00"
     ws.Range(PID_DR_JAEN_MUST_CELL).NumberFormat = "#,##0.00"
     
-    With ws.Range("B" & noteRow & ":J" & noteRow)
+    With ws.Range("B" & noteRow & ":Q" & noteRow)
         .Interior.Color = RGB(245, 245, 245)
         .Font.Color = RGB(89, 89, 89)
         .Font.Italic = True
@@ -549,15 +555,29 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .Font.Bold = True
     End With
     
-    PID_DRMergeDisplayRows ws
+    PID_DRMergeDisplayRows ws, dataStartRow, dataEndRow
 End Sub
 
 
-Private Sub PID_DRMergeDisplayRows(ByVal ws As Worksheet)
+Private Sub PID_DRMigrateJaennerMusterInput(ByVal ws As Worksheet)
+    On Error Resume Next
+    
+    If Len(Trim$(CStr(ws.Range(PID_DR_JAEN_MUST_CELL).Value2))) = 0 Then
+        If Len(Trim$(CStr(ws.Range("G30").Value2))) > 0 Then
+            ws.Range(PID_DR_JAEN_MUST_CELL).Value2 = ws.Range("G30").Value2
+        End If
+    End If
+End Sub
+
+
+Private Sub PID_DRMergeDisplayRows(ByVal ws As Worksheet, _
+                                   ByVal dataStartRow As Long, _
+                                   ByVal dataEndRow As Long)
     Dim titleRow As Long
     Dim hintRow As Long
     Dim inputRow As Long
     Dim noteRow As Long
+    Dim dataRow As Long
     
     titleRow = PID_DR_START_ROW
     hintRow = titleRow + 1
@@ -565,10 +585,18 @@ Private Sub PID_DRMergeDisplayRows(ByVal ws As Worksheet)
     noteRow = PID_DR_START_ROW + 8
     
     On Error Resume Next
-    ws.Range("B" & titleRow & ":J" & titleRow).Merge
-    ws.Range("B" & hintRow & ":J" & hintRow).Merge
+    ws.Range("B" & titleRow & ":Q" & titleRow).Merge
+    ws.Range("B" & hintRow & ":Q" & hintRow).Merge
     ws.Range("B" & inputRow & ":D" & inputRow).Merge
-    ws.Range("B" & noteRow & ":J" & noteRow).Merge
+    ws.Range("F" & inputRow & ":H" & inputRow).Merge
+    ws.Range("B" & noteRow & ":Q" & noteRow).Merge
+    
+    For dataRow = dataStartRow To dataEndRow
+        ws.Range("J" & dataRow & ":Q" & dataRow).Merge
+        ws.Range("J" & dataRow).WrapText = True
+        ws.Range("J" & dataRow).VerticalAlignment = xlCenter
+    Next dataRow
+    
     On Error GoTo 0
 End Sub
 
