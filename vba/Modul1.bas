@@ -496,6 +496,25 @@ Private Function PID_GetEinstellungYearRefR1C1() As String
 End Function
 
 
+Private Function PID_GetEinstellungYearRefA1() As String
+    PID_GetEinstellungYearRefA1 = PID_EINSTELLUNG_SHEET & "!$C$35"
+End Function
+
+
+Private Function PID_MonthSheetHasLetztesGehaltRefError(ByVal wsMonth As Worksheet) As Boolean
+    Dim formulaText As String
+    
+    If wsMonth Is Nothing Then Exit Function
+    
+    On Error Resume Next
+    formulaText = UCase$(CStr(wsMonth.Range("L" & PID_FIRST_ROW).Formula))
+    If Err.Number <> 0 Then Exit Function
+    On Error GoTo 0
+    
+    PID_MonthSheetHasLetztesGehaltRefError = (InStr(1, formulaText, "#REF", vbTextCompare) > 0)
+End Function
+
+
 Private Function PID_GetAktuelleStundenFormulaR1C1() As String
     Dim yearRef As String
     
@@ -557,7 +576,7 @@ Public Sub PID_RestoreLetztesGehaltFormulas()
         On Error GoTo CleanFail
         
         If Not ws Is Nothing Then
-            If PID_MonthSheetHasLetztesGehaltFormula(ws) Then
+            If Not PID_MonthSheetHasLetztesGehaltRefError(ws) Then
                 updatedCount = updatedCount + 1
             End If
         End If
@@ -584,6 +603,10 @@ End Sub
 
 Public Sub PID_EnsureLetztesGehaltFormulas()
     PID_RestoreLetztesGehaltFormulasSilent
+    
+    On Error Resume Next
+    Application.CalculateFull
+    On Error GoTo 0
 End Sub
 
 
@@ -609,14 +632,23 @@ Public Sub PID_RestoreLetztesGehaltFormulasSilent()
     
     For i = LBound(monthNames) To UBound(monthNames)
         Set ws = Nothing
+        
         On Error Resume Next
         Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
-        On Error GoTo SafeExit
+        Err.Clear
         
         If Not ws Is Nothing Then
             PID_RestoreLetztesGehaltFormulasOnSheet ws, formulaR1C1
+            Err.Clear
         End If
     Next i
+    
+    On Error GoTo SafeExit
+    
+    On Error Resume Next
+    Application.CalculateFull
+    Err.Clear
+    On Error GoTo SafeExit
 
 SafeExit:
     Application.ScreenUpdating = oldScreenUpdating
@@ -650,6 +682,11 @@ Private Function PID_RestoreLetztesGehaltFormulasOnSheet(ByVal ws As Worksheet, 
                                                          ByVal formulaR1C1 As String) As Boolean
     Dim wasProtected As Boolean
     Dim euroSymbol As String
+    Dim sampleFormula As String
+    Dim fixedFormula As String
+    Dim sourceCell As Range
+    Dim targetRange As Range
+    Dim yearRefA1 As String
     
     On Error GoTo SafeExit
     
@@ -659,28 +696,45 @@ Private Function PID_RestoreLetztesGehaltFormulasOnSheet(ByVal ws As Worksheet, 
     
     wasProtected = ws.ProtectContents
     
-    On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
-    On Error GoTo SafeExit
+    If ws.ProtectContents Then Exit Function
     
     If Trim$(CStr(ws.Range("L1").Value)) = "" Then
         ws.Range("L1").Value = "Letztes Gehalt"
     End If
     
-    ws.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW).FormulaR1C1 = formulaR1C1
+    Set sourceCell = ws.Range("L" & PID_FIRST_ROW)
+    Set targetRange = ws.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW)
+    yearRefA1 = PID_GetEinstellungYearRefA1()
+    
+    sampleFormula = CStr(sourceCell.Formula)
+    
+    If InStr(1, sampleFormula, "#REF", vbTextCompare) > 0 Then
+        fixedFormula = Replace(sampleFormula, "#REF!", yearRefA1)
+        fixedFormula = Replace(fixedFormula, "#REF", yearRefA1)
+        sourceCell.Formula = fixedFormula
+        
+        If PID_LAST_ROW > PID_FIRST_ROW Then
+            sourceCell.AutoFill Destination:=targetRange
+        End If
+    ElseIf Not PID_MonthSheetHasLetztesGehaltFormula(ws) Then
+        targetRange.FormulaR1C1 = formulaR1C1
+    End If
     
     euroSymbol = PID_GetEuroSymbol()
-    ws.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW).NumberFormat = euroSymbol & " #,##0.00"
+    targetRange.NumberFormat = euroSymbol & " #,##0.00"
     
-    PID_RestoreLetztesGehaltFormulasOnSheet = True
+    PID_RestoreLetztesGehaltFormulasOnSheet = Not PID_MonthSheetHasLetztesGehaltRefError(ws)
 
 SafeExit:
     On Error Resume Next
-    If wasProtected Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                   UserInterfaceOnly:=True, _
-                   AllowFiltering:=True, _
-                   AllowSorting:=True
+    If Not ws Is Nothing Then
+        If wasProtected Then
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                       UserInterfaceOnly:=True, _
+                       AllowFiltering:=True, _
+                       AllowSorting:=True
+        End If
     End If
 End Function
 

@@ -22,6 +22,7 @@
 - Modul1.bas: `FullSystemRefresh` runs `CalculateFull` after formula restore (fixes G `#NAME?` when VBA UDF was inactive).
 - mod_KVStundenDropdown.bas + mod_SchutzHinzufugen.bas: unlock column `F` on protected sheets; broken F validation auto-repair on cell select; `RestoreKVStundenDropdownValidation` macro.
 - Personalsheet.xlsm + DieseArbeitsmappe.cls: column `L` `#REF!` year refs fixed again; `PID_EnsureLetztesGehaltFormulas` restored on workbook open.
+- Modul1.bas: column `L` restore replaces legacy `#REF!` in existing A1 formulas (AutoFill) instead of silent R1C1 overwrite; `CalculateFull` after restore.
 - mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: removed SheetChange VBA writes to `G` (they destroyed formulas and made lohn refresh appear dead).
 - Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
 
