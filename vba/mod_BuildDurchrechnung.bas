@@ -14,6 +14,44 @@ Private Const PID_DR_JAEN_MUST_CELL As String = "I30"
 Private Const PID_UBERSICHT_SHEET As String = "UBERSICHT"
 
 
+' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Win/Mac Excel 2016).
+Private Function PID_DRTxtVerfuegbar() As String
+    PID_DRTxtVerfuegbar = "Verf" & ChrW(252) & "gbar"
+End Function
+
+Private Function PID_DRTxtUeberstunden() As String
+    PID_DRTxtUeberstunden = ChrW(220) & "berstunden"
+End Function
+
+Private Function PID_DRTxtMoeglich() As String
+    PID_DRTxtMoeglich = "m" & ChrW(246) & "glich"
+End Function
+
+Private Function PID_DRTxtJaenner() As String
+    PID_DRTxtJaenner = "J" & ChrW(228) & "nner"
+End Function
+
+Private Function PID_DRTxtJaenPlan() As String
+    PID_DRTxtJaenPlan = "J" & ChrW(228) & "n (Plan)"
+End Function
+
+Private Function PID_DRTxtNaechstes() As String
+    PID_DRTxtNaechstes = "n" & ChrW(228) & "chstes"
+End Function
+
+Private Function PID_DRTxtFebMaerApr() As String
+    PID_DRTxtFebMaerApr = "Feb-M" & ChrW(228) & "r-Apr"
+End Function
+
+Private Function PID_DRTxtNovDezJaen() As String
+    PID_DRTxtNovDezJaen = "Nov-Dez-J" & ChrW(228) & "n"
+End Function
+
+Private Function PID_DRGetStatusFormula(ByVal dataRow As Long) As String
+    PID_DRGetStatusFormula = "=IF(F" & dataRow & "<0,""ACHTUNG: " & PID_DRTxtUeberstunden() & """,IF(F" & dataRow & ">0,""Reserve " & PID_DRTxtMoeglich() & """,""OK""))"
+End Function
+
+
 Public Sub PID_BuildDurchrechnungUebersicht()
     PID_BuildDurchrechnungUebersichtInternal True
 End Sub
@@ -125,9 +163,9 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     
     If showMessage Then
         MsgBox "Durchrechnungsblock auf UEBERSICHT wurde erstellt." & vbCrLf & vbCrLf & _
-               "Gelbe Felder (nur Jaenner-Plan):" & vbCrLf & _
-               "- Jaenner Verfuegbar Plan (E30)" & vbCrLf & _
-               "- Jaenner Muster Plan (I30)" & vbCrLf & vbCrLf & _
+               "Gelbe Felder (nur " & PID_DRTxtJaenner() & "-Plan):" & vbCrLf & _
+               "- " & PID_DRTxtJaenner() & " " & PID_DRTxtVerfuegbar() & " Plan (E30)" & vbCrLf & _
+               "- " & PID_DRTxtJaenner() & " Muster Plan (I30)" & vbCrLf & vbCrLf & _
                "Stundenlohn pro Zeile = AVG Bruttolohn/h aus dem Schlussmonat (Q42).", _
                vbInformation, "Durchrechnung"
     End If
@@ -263,18 +301,18 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
         
         .Cells(hintRow, 2).Value = _
             "Jede Zeile = 3 Monate bis zum Schlussmonat. " & _
-            "Differenz rot = zu wenig Stunden (Ueberstunden-Risiko), gelb = Reserve. " & _
-            "Ueberstunden-EUR nutzt den AVG Bruttolohn/h aus dem Schlussmonat (Monatsblatt Q42). " & _
-            "Nur Jaenner-Plan (naechstes Jahr) ist gelb und manuell."
+            "Differenz rot = zu wenig Stunden (" & PID_DRTxtUeberstunden() & "-Risiko), gelb = Reserve. " & _
+            PID_DRTxtUeberstunden() & "-EUR nutzt den AVG Bruttolohn/h aus dem Schlussmonat (Monatsblatt Q42). " & _
+            "Nur " & PID_DRTxtJaenner() & "-Plan (" & PID_DRTxtNaechstes() & " Jahr) ist gelb und manuell."
         .Cells(hintRow, 2).Font.Size = 9
         .Cells(hintRow, 2).WrapText = True
         
-        .Cells(inputRow, 2).Value = "Jaenner Verfuegbar Plan (naechstes Jahr):"
-        .Cells(inputRow, 6).Value = "Jaenner Muster Plan (naechstes Jahr):"
+        .Cells(inputRow, 2).Value = PID_DRTxtJaenner() & " " & PID_DRTxtVerfuegbar() & " Plan (" & PID_DRTxtNaechstes() & " Jahr):"
+        .Cells(inputRow, 6).Value = PID_DRTxtJaenner() & " Muster Plan (" & PID_DRTxtNaechstes() & " Jahr):"
         
         .Cells(headerRow, 2).Value = "Zeitraum"
         .Cells(headerRow, 3).Value = "Endmonat"
-        .Cells(headerRow, 4).Value = "Verfuegbar"
+        .Cells(headerRow, 4).Value = PID_DRTxtVerfuegbar()
         .Cells(headerRow, 5).Value = "Muster"
         .Cells(headerRow, 6).Value = "Differenz"
         .Cells(headerRow, 7).Value = "Lohn/h"
@@ -285,7 +323,7 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
         .Rows(headerRow).Font.Bold = True
         
         dataRow = headerRow + 1
-        PID_WriteDurchrechnungDataRow ws, dataRow, "Feb-Maer-Apr", "April", _
+        PID_WriteDurchrechnungDataRow ws, dataRow, PID_DRTxtFebMaerApr(), "April", _
             "=Februar!Q12+Marz!Q13+April!Q13", _
             "=EINSTELLUNG!L7+EINSTELLUNG!L8+EINSTELLUNG!L9", _
             "=April!Q15", _
@@ -306,14 +344,14 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
             "=Oktober!Q42"
         
         dataRow = dataRow + 1
-        PID_WriteDurchrechnungDataRow ws, dataRow, "Nov-Dez-Jaen", "Jaen (Plan)", _
+        PID_WriteDurchrechnungDataRow ws, dataRow, PID_DRTxtNovDezJaen(), PID_DRTxtJaenPlan(), _
             "=November!Q12+Dezember!Q13+" & PID_DR_JAEN_VERF_CELL, _
             "=EINSTELLUNG!L16+EINSTELLUNG!L17+" & PID_DR_JAEN_MUST_CELL, _
             "=D" & dataRow & "-E" & dataRow, _
             "=Dezember!Q42"
         
         .Cells(noteRow, 2).Value = _
-            "Ueberstunden EUR = Ueberstunden Std x AVG Lohn/h x 1,5 (Spalte G aus Schlussmonat Q42). " & _
+            PID_DRTxtUeberstunden() & " EUR = " & PID_DRTxtUeberstunden() & " Std x AVG Lohn/h x 1,5 (Spalte G aus Schlussmonat Q42). " & _
             "Nur bei negativem Schluss (rote Differenz). Positive Differenz = Reserve ohne EUR-Kosten."
         .Cells(noteRow, 2).Font.Size = 9
         .Cells(noteRow, 2).WrapText = True
@@ -338,7 +376,7 @@ Private Sub PID_WriteDurchrechnungDataRow(ByVal ws As Worksheet, _
         .Cells(dataRow, 7).Formula = lohnFormula
         .Cells(dataRow, 8).Formula = "=MAX(0,-F" & dataRow & ")"
         .Cells(dataRow, 9).Formula = PID_GetEuroFormula(dataRow)
-        .Cells(dataRow, 10).Formula = "=IF(F" & dataRow & "<0,""ACHTUNG: Ueberstunden"",IF(F" & dataRow & ">0,""Reserve moeglich"",""OK""))"
+        .Cells(dataRow, 10).Formula = PID_DRGetStatusFormula(dataRow)
     End With
 End Sub
 
@@ -410,7 +448,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     
     PID_DRMigrateJaennerMusterInput ws
     PID_DRMigrateJaennerMusterFormula ws
-    PID_DRRefreshBlockLabels ws, headerRow
+    PID_DRRefreshDisplayTexts ws, headerRow, dataStartRow, dataEndRow
     
     ws.Rows(titleRow).RowHeight = 28
     ws.Rows(hintRow).RowHeight = 48
@@ -537,16 +575,49 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
 End Sub
 
 
-Private Sub PID_DRRefreshBlockLabels(ByVal ws As Worksheet, ByVal headerRow As Long)
+Private Sub PID_DRRefreshDisplayTexts(ByVal ws As Worksheet, _
+                                      ByVal headerRow As Long, _
+                                      ByVal dataStartRow As Long, _
+                                      ByVal dataEndRow As Long)
+    Dim hintRow As Long
+    Dim inputRow As Long
+    Dim noteRow As Long
+    Dim dataRow As Long
+    
+    hintRow = PID_DR_START_ROW + 1
+    inputRow = PID_DR_START_ROW + 2
+    noteRow = headerRow + 5
+    
     ws.Cells(headerRow, 2).Value = "Zeitraum"
     ws.Cells(headerRow, 3).Value = "Endmonat"
-    ws.Cells(headerRow, 4).Value = "Verfuegbar"
+    ws.Cells(headerRow, 4).Value = PID_DRTxtVerfuegbar()
     ws.Cells(headerRow, 5).Value = "Muster"
     ws.Cells(headerRow, 6).Value = "Differenz"
     ws.Cells(headerRow, 7).Value = "Lohn/h"
     ws.Cells(headerRow, 8).Value = "Std"
     ws.Cells(headerRow, 9).Value = "EUR"
     ws.Cells(headerRow, 10).Value = "Status / Hinweis"
+    
+    ws.Cells(hintRow, 2).Value = _
+        "Jede Zeile = 3 Monate bis zum Schlussmonat. " & _
+        "Differenz rot = zu wenig Stunden (" & PID_DRTxtUeberstunden() & "-Risiko), gelb = Reserve. " & _
+        PID_DRTxtUeberstunden() & "-EUR nutzt den AVG Bruttolohn/h aus dem Schlussmonat (Monatsblatt Q42). " & _
+        "Nur " & PID_DRTxtJaenner() & "-Plan (" & PID_DRTxtNaechstes() & " Jahr) ist gelb und manuell."
+    
+    ws.Cells(inputRow, 2).Value = PID_DRTxtJaenner() & " " & PID_DRTxtVerfuegbar() & " Plan (" & PID_DRTxtNaechstes() & " Jahr):"
+    ws.Cells(inputRow, 6).Value = PID_DRTxtJaenner() & " Muster Plan (" & PID_DRTxtNaechstes() & " Jahr):"
+    
+    ws.Cells(noteRow, 2).Value = _
+        PID_DRTxtUeberstunden() & " EUR = " & PID_DRTxtUeberstunden() & " Std x AVG Lohn/h x 1,5 (Spalte G aus Schlussmonat Q42). " & _
+        "Nur bei negativem Schluss (rote Differenz). Positive Differenz = Reserve ohne EUR-Kosten."
+    
+    ws.Cells(dataStartRow, 2).Value = PID_DRTxtFebMaerApr()
+    ws.Cells(dataStartRow + 3, 2).Value = PID_DRTxtNovDezJaen()
+    ws.Cells(dataStartRow + 3, 3).Value = PID_DRTxtJaenPlan()
+    
+    For dataRow = dataStartRow To dataEndRow
+        ws.Cells(dataRow, 10).Formula = PID_DRGetStatusFormula(dataRow)
+    Next dataRow
 End Sub
 
 
