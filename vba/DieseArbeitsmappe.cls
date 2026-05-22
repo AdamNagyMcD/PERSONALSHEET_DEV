@@ -180,15 +180,13 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' Wenn Spalte E sich aendert:
     ' E = KV-Code / BG -> Dropdown F in der betreffenden Zeile.
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
-        On Error Resume Next
-        Application.Run "'" & ThisWorkbook.Name & "'!PID_LogEFAenderungForSheet", Sh, Target
-        On Error GoTo SafeExit
-        
+        PID_LogEFAenderungForSheet Sh, Target
+        PID_PreloadKVLohnCaches
         PID_RecalculateMonatslohnForChangedRows Sh, Target
     End If
     
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
-        RefreshKVStundenDropdownForSheet Sh, Target
+        PID_InvalidateFStundenDropdownForRows Sh, Target
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:
@@ -199,8 +197,10 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
         MarkFluktuationDirty
     End If
     
-    If PID_MonthChangeAffectsFinanzSummary(Sh, Target) Then
+    If PID_MonthChangeNeedsImmediateFinanzSync(Sh, Target) Then
         PID_SyncFinanzSummaryForMonth Sh
+    ElseIf PID_MonthChangeDefersFinanzSummarySync(Sh, Target) Then
+        MarkFinanzSummaryDirty
     End If
 
 SafeExit:

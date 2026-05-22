@@ -28,6 +28,8 @@
 - mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE-Buttons nur anlegen wenn fehlend (nicht jedes Open neu).
 - DieseArbeitsmappe.cls: LOHNTABELLE-Setup deferred auf Tab-Activate; Calculation=Manual waehrend Open.
 - mod_KVStundenDropdown.bas: F-Dropdown bei E-Aenderung nur Helper-Werte aktualisieren wenn Validation schon OK.
+- mod_SumMergedCells.bas + DieseArbeitsmappe.cls: FINANZIELL-Sync bei E/F deferred (MarkDirty), nicht sofort bei jeder KV-Aenderung.
+- mod_KVStundenDropdown.bas: F-Dropdown lazy bei E-Aenderung (Invalidate), Rebuild erst bei F-Klick; Stunden-Lookup-Cache.
 - mod_KVStundenDropdown.bas: F-Dropdown-Refresh nur Zeilen mit KV-Code (E nicht leer); ScreenUpdating aus waehrend Refresh.
 - DieseArbeitsmappe.cls: FLUKTUATION-Activate nur bei gFluktuationDirty; kein S35-S37-Calculate bei Monats-Activate.
 - mod_FluctuationCalculation.bas: UEBERSICHT nach Fluktuation-Sync wieder schuetzen.

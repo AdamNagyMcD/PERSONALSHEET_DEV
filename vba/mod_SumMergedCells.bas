@@ -453,6 +453,18 @@ End Sub
 
 
 Public Function PID_MonthChangeAffectsFinanzSummary(ByVal ws As Worksheet, ByVal changedRange As Range) As Boolean
+    If PID_MonthChangeNeedsImmediateFinanzSync(ws, changedRange) Then
+        PID_MonthChangeAffectsFinanzSummary = True
+        Exit Function
+    End If
+    
+    If PID_MonthChangeDefersFinanzSummarySync(ws, changedRange) Then
+        PID_MonthChangeAffectsFinanzSummary = True
+    End If
+End Function
+
+
+Public Function PID_MonthChangeNeedsImmediateFinanzSync(ByVal ws As Worksheet, ByVal changedRange As Range) As Boolean
     Dim watchRange As Range
     
     On Error GoTo SafeExit
@@ -461,10 +473,25 @@ Public Function PID_MonthChangeAffectsFinanzSummary(ByVal ws As Worksheet, ByVal
     If changedRange Is Nothing Then Exit Function
     If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
     
-    Set watchRange = Union(ws.Range("E3:L82"), ws.Range("Q17:R29"), ws.Range("S35"), ws.Range("O18:Q25"))
+    Set watchRange = Union(ws.Range("Q17:R29"), ws.Range("S35"), ws.Range("O18:Q25"))
     
     If Not Intersect(changedRange, watchRange) Is Nothing Then
-        PID_MonthChangeAffectsFinanzSummary = True
+        PID_MonthChangeNeedsImmediateFinanzSync = True
+    End If
+
+SafeExit:
+End Function
+
+
+Public Function PID_MonthChangeDefersFinanzSummarySync(ByVal ws As Worksheet, ByVal changedRange As Range) As Boolean
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If changedRange Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
+    
+    If Not Intersect(changedRange, ws.Range("E3:L82")) Is Nothing Then
+        PID_MonthChangeDefersFinanzSummarySync = True
     End If
 
 SafeExit:

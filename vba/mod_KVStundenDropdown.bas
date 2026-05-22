@@ -6,6 +6,7 @@ Private Const PID_KV_CODE_HELPER_COL As Long = 961
 
 Public gKVDropdownsDirty As Boolean
 Private mKVDropdownRefreshedSheets As Collection
+Private mStundenValuesCache As Collection
 
 
 Public Sub MarkKVDropdownsDirty()
@@ -16,6 +17,7 @@ End Sub
 Public Sub MarkAllKVDropdownsDirty()
     gKVDropdownsDirty = True
     Set mKVDropdownRefreshedSheets = New Collection
+    PID_ClearStundenValuesCache
 End Sub
 
 
@@ -119,6 +121,7 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     
     Dim oldDisplayAlerts As Boolean
     Dim oldScreenUpdating As Boolean
+    Dim monthWasProtected As Boolean
     
     On Error GoTo CleanFail
     
@@ -135,6 +138,8 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     Application.ScreenUpdating = False
     
     Set wsHelper = GetOrCreateKVDropdownHelperSheet()
+    
+    monthWasProtected = wsMonth.ProtectContents
     
     On Error Resume Next
     wsMonth.Unprotect Password:=PID_WORKBOOK_PASSWORD
@@ -175,7 +180,9 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     wsHelper.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     wsHelper.Visible = xlSheetVeryHidden
     
-    wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    If monthWasProtected Then
+        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
 
 CleanExit:
     Application.ScreenUpdating = oldScreenUpdating
@@ -191,7 +198,9 @@ CleanFail:
     End If
     
     If Not wsMonth Is Nothing Then
-        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        If monthWasProtected Then
+            wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        End If
     End If
     
     Application.ScreenUpdating = oldScreenUpdating
@@ -245,7 +254,7 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     
     helperCol = GetHelperColumnForMonthRow(wsMonth.Name, rowNumber)
     
-    wsHelper.Columns(helperCol).Clear
+    wsHelper.Range(wsHelper.Cells(1, helperCol), wsHelper.Cells(30, helperCol)).ClearContents
     
     helperLastRow = WriteDropdownValuesToHelper(wsHelper, helperCol, values)
     
@@ -301,10 +310,28 @@ Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode
     Dim targetPeriod As String
     Dim previousPeriod As String
     Dim values As Collection
+    Dim cacheKey As String
+    Dim cachedValues As Collection
     
     Set values = New Collection
     
     On Error GoTo SafeExit
+    
+    kvCode = NormalizeKVCodeForLookup(kvCode)
+    If kvCode = "" Then GoTo SafeExit
+    
+    cacheKey = CStr(monthNumber) & "|" & kvCode
+    
+    If Not mStundenValuesCache Is Nothing Then
+        On Error Resume Next
+        Set cachedValues = mStundenValuesCache(cacheKey)
+        If Err.Number = 0 Then
+            Set GetKVMonatsstundenValues = PID_CloneStundenValuesCollection(cachedValues)
+            Exit Function
+        End If
+        Err.Clear
+        On Error GoTo SafeExit
+    End If
     
     Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
     
@@ -319,9 +346,68 @@ Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode
     If values.Count = 0 Then
         AddMonatsstundenValuesFromPeriod wsKV, previousPeriod, kvCode, values
     End If
+    
+    PID_StoreStundenValuesInCache cacheKey, values
+    Set GetKVMonatsstundenValues = PID_CloneStundenValuesCollection(values)
+    Exit Function
 
 SafeExit:
     Set GetKVMonatsstundenValues = values
+End Function
+
+
+Public Sub PID_InvalidateFStundenDropdownForRows(ByVal wsMonth As Worksheet, ByVal changedRange As Range)
+    Dim rowsToCheck As Range
+    Dim c As Range
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If changedRange Is Nothing Then Exit Sub
+    
+    Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:E82"))
+    If rowsToCheck Is Nothing Then Exit Sub
+    
+    For Each c In rowsToCheck.Cells
+        On Error Resume Next
+        wsMonth.Cells(c.Row, "F").Validation.Delete
+        Err.Clear
+    Next c
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_ClearStundenValuesCache()
+    Set mStundenValuesCache = Nothing
+End Sub
+
+
+Private Sub PID_StoreStundenValuesInCache(ByVal cacheKey As String, ByVal values As Collection)
+    On Error Resume Next
+    
+    If mStundenValuesCache Is Nothing Then Set mStundenValuesCache = New Collection
+    mStundenValuesCache.Remove cacheKey
+    mStundenValuesCache.Add PID_CloneStundenValuesCollection(values), cacheKey
+End Sub
+
+
+Private Function PID_CloneStundenValuesCollection(ByVal sourceValues As Collection) As Collection
+    Dim cloneValues As Collection
+    Dim i As Long
+    
+    Set cloneValues = New Collection
+    
+    If sourceValues Is Nothing Then
+        Set PID_CloneStundenValuesCollection = cloneValues
+        Exit Function
+    End If
+    
+    For i = 1 To sourceValues.Count
+        cloneValues.Add sourceValues(i)
+    Next i
+    
+    Set PID_CloneStundenValuesCollection = cloneValues
 End Function
 
 

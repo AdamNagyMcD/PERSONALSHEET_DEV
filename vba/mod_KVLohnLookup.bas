@@ -20,6 +20,12 @@ Private Sub PID_EnsureLohnTableCacheLoaded()
 End Sub
 
 
+Public Sub PID_PreloadKVLohnCaches()
+    PID_EnsureLohnTableCacheLoaded
+    PID_EnsureWorkbookYearCached
+End Sub
+
+
 Private Sub PID_LoadLohnTableCache()
     Dim wsKV As Worksheet
     Dim lastRow As Long
@@ -794,6 +800,7 @@ Public Sub MarkAllKVLohnDirty()
     gKVLohnAllMonthsDirty = True
     Set mKVLohnRefreshedSheets = New Collection
     PID_ClearLohnTableCache
+    PID_ClearStundenValuesCache
 End Sub
 
 
