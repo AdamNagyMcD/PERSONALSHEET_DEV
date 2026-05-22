@@ -407,15 +407,15 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Rows(1).RowHeight = PID_STYLE_TITLE_ROW_HEIGHT
         PID_StyleApplyTitleBand .Range("A1:E1")
         
-        .Rows(2).RowHeight = PID_STYLE_META_ROW_HEIGHT
-        PID_StyleApplyMetaBand .Range("A2:E2")
+        .Rows(2).RowHeight = PID_STYLE_TITLE_SUB_ROW_HEIGHT
+        PID_StyleApplyHeaderBand .Range("A2:E2")
         
         .Range("A4:E4").Merge
-        .Rows(4).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range("A4:E4"), True
+        .Rows(4).RowHeight = 22
+        PID_StyleApplySubsectionTitle .Range("A4:E4"), True
         
-        .Rows(statusRow).RowHeight = PID_STYLE_DATA_ROW_HEIGHT
-        .Rows(statusRow + 1).RowHeight = PID_STYLE_DATA_ROW_HEIGHT
+        .Rows(statusRow).RowHeight = 30
+        .Rows(statusRow + 1).RowHeight = 30
         PID_StyleApplyHeaderBand .Range("A" & statusRow & ":A" & statusRow + 1)
         .Range("A" & statusRow).HorizontalAlignment = xlCenter
         .Range("C" & statusRow & ":E" & statusRow + 1).Interior.Color = vbWhite
@@ -423,12 +423,12 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Range("C" & statusRow & ":E" & statusRow + 1).Font.Bold = False
         .Range("C" & statusRow).WrapText = True
         .Range("C" & statusRow).HorizontalAlignment = xlLeft
-        .Range("B" & statusRow).Font.Size = 10
+        .Range("B" & statusRow).Font.Size = 11
         ApplyRiskFormatting .Range("B" & statusRow), riskLevel
         PID_StyleApplyTableBorders .Range("A" & statusRow & ":E" & statusRow + 1)
         
-        .Rows(kpiLabelRow).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
-        .Rows(kpiValueRow).RowHeight = PID_STYLE_DATA_ROW_HEIGHT
+        .Rows(kpiLabelRow).RowHeight = 30
+        .Rows(kpiValueRow).RowHeight = 22
         PID_StyleApplyHeaderBand .Range("A" & kpiLabelRow & ":E" & kpiLabelRow)
         .Range("A" & kpiLabelRow & ":E" & kpiLabelRow).WrapText = True
         .Range("A" & kpiValueRow & ":E" & kpiValueRow).Interior.Color = vbWhite
@@ -444,10 +444,9 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         PID_StyleApplyTableBorders .Range("A" & kpiLabelRow & ":E" & kpiValueRow)
         
         .Range("A" & alertsHeaderRow & ":E" & alertsHeaderRow).Merge
-        .Rows(alertsHeaderRow).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range("A" & alertsHeaderRow & ":E" & alertsHeaderRow), True
+        .Rows(alertsHeaderRow).RowHeight = 22
+        PID_StyleApplySubsectionTitle .Range("A" & alertsHeaderRow & ":E" & alertsHeaderRow), True
         If alertsEndRow > alertsHeaderRow + 2 Then
-            .Rows(alertsHeaderRow + 1).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
             PID_StyleApplyHeaderBand .Range(.Cells(alertsHeaderRow + 1, 1), .Cells(alertsHeaderRow + 1, 5))
             PID_StyleApplyZebraRows .Range(.Cells(alertsHeaderRow + 2, 1), .Cells(alertsEndRow - 1, 5))
             PID_StyleApplyTableBorders .Range(.Cells(alertsHeaderRow + 1, 1), .Cells(alertsEndRow - 1, 5))
@@ -461,8 +460,8 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         End If
         
         .Range("A" & recHeaderRow & ":E" & recHeaderRow).Merge
-        .Rows(recHeaderRow).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range("A" & recHeaderRow & ":E" & recHeaderRow), True
+        .Rows(recHeaderRow).RowHeight = 22
+        PID_StyleApplySubsectionTitle .Range("A" & recHeaderRow & ":E" & recHeaderRow), True
         If recEndRow > recHeaderRow Then
             PID_StyleApplyZebraRows .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 5))
             PID_StyleApplyTableBorders .Range(.Cells(recHeaderRow + 1, 1), .Cells(recEndRow, 5))
@@ -474,10 +473,10 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         End If
         
         .Range(.Cells(monthlyTitleRow, 1), .Cells(monthlyTitleRow, tableLastCol)).Merge
-        .Rows(monthlyTitleRow).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range(.Cells(monthlyTitleRow, 1), .Cells(monthlyTitleRow, tableLastCol)), False
+        .Rows(monthlyTitleRow).RowHeight = PID_STYLE_TITLE_ROW_HEIGHT
+        PID_StyleApplyTitleBand .Range(.Cells(monthlyTitleRow, 1), .Cells(monthlyTitleRow, tableLastCol))
         
-        .Rows(headerRow).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
+        .Rows(headerRow).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
         PID_StyleApplyHeaderBand .Range(.Cells(headerRow, 1), .Cells(headerRow, tableLastCol))
         
         For dataRow = firstDataRow To outputRow - 1
@@ -486,10 +485,8 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
             Else
                 .Range(.Cells(dataRow, 1), .Cells(dataRow, tableLastCol)).Interior.Color = vbWhite
             End If
-            .Range(.Cells(dataRow, 1), .Cells(dataRow, tableLastCol)).Font.Name = "Calibri"
             .Range(.Cells(dataRow, 1), .Cells(dataRow, tableLastCol)).Font.Color = vbBlack
             .Range(.Cells(dataRow, 1), .Cells(dataRow, tableLastCol)).Font.Bold = False
-            .Range(.Cells(dataRow, 1), .Cells(dataRow, tableLastCol)).Font.Size = 10
         Next dataRow
         
         PID_StyleApplyTableBorders .Range(.Cells(headerRow, 1), .Cells(outputRow - 1, tableLastCol))
@@ -504,8 +501,8 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Range(.Cells(firstDataRow, 4), .Cells(outputRow - 1, 5)).NumberFormat = "0.00"
         
         .Range("A" & explanationStartRow & ":E" & explanationStartRow).Merge
-        .Rows(explanationStartRow).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range("A" & explanationStartRow & ":E" & explanationStartRow), True
+        .Rows(explanationStartRow).RowHeight = 22
+        PID_StyleApplySubsectionTitle .Range("A" & explanationStartRow & ":E" & explanationStartRow), True
         PID_StyleApplyZebraRows .Range("A" & explanationStartRow + 1 & ":E" & explanationStartRow + 8)
         .Range("A" & explanationStartRow + 1 & ":A" & explanationStartRow + 8).Font.Bold = True
         .Range("A" & explanationStartRow + 1 & ":A" & explanationStartRow + 8).Font.Color = PID_StyleColorNavy()

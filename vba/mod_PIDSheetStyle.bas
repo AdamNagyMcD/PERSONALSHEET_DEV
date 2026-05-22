@@ -1,12 +1,13 @@
 Attribute VB_Name = "mod_PIDSheetStyle"
 Option Explicit
 
-Public Const PID_STYLE_TITLE_ROW_HEIGHT As Single = 26
-Public Const PID_STYLE_META_ROW_HEIGHT As Single = 18
-Public Const PID_STYLE_SECTION_ROW_HEIGHT As Single = 20
-Public Const PID_STYLE_HEADER_ROW_HEIGHT As Single = 20
-Public Const PID_STYLE_DATA_ROW_HEIGHT As Single = 22
-Public Const PID_STYLE_SUMMARY_ROW_HEIGHT As Single = 24
+' Referenz: UEBERSICHT FINANZIELL-Block (Original-Design)
+Public Const PID_STYLE_TITLE_ROW_HEIGHT As Single = 28
+Public Const PID_STYLE_TITLE_SUB_ROW_HEIGHT As Single = 18
+Public Const PID_STYLE_HEADER_TOP_ROW_HEIGHT As Single = 24
+Public Const PID_STYLE_HEADER_BOTTOM_ROW_HEIGHT As Single = 30
+Public Const PID_STYLE_DATA_ROW_HEIGHT As Single = 30
+Public Const PID_STYLE_TOTAL_ROW_HEIGHT As Single = 32
 
 
 Public Function PID_StyleColorNavy() As Long
@@ -31,11 +32,10 @@ End Function
 
 Public Sub PID_StyleApplyTitleBand(ByVal target As Range)
     With target
-        .Font.Name = "Calibri"
         .Interior.Color = PID_StyleColorNavy()
         .Font.Color = RGB(255, 255, 255)
         .Font.Bold = True
-        .Font.Size = 12
+        .Font.Size = 13
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
         .WrapText = True
@@ -43,23 +43,22 @@ Public Sub PID_StyleApplyTitleBand(ByVal target As Range)
 End Sub
 
 
-Public Sub PID_StyleApplyMetaBand(ByVal target As Range)
+Public Sub PID_StyleApplyHeaderBand(ByVal target As Range)
     With target
-        .Font.Name = "Calibri"
         .Interior.Color = PID_StyleColorHeaderBg()
         .Font.Color = PID_StyleColorNavy()
-        .Font.Bold = False
-        .Font.Size = 9
+        .Font.Bold = True
+        .Font.Size = 10
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
+        .WrapText = True
     End With
 End Sub
 
 
-Public Sub PID_StyleApplySectionBand(ByVal target As Range, Optional ByVal alignLeft As Boolean = True)
+Public Sub PID_StyleApplySubsectionTitle(ByVal target As Range, Optional ByVal alignLeft As Boolean = True)
     With target
-        .Font.Name = "Calibri"
-        .Interior.Color = PID_StyleColorAccent()
+        .Interior.Color = PID_StyleColorHeaderBg()
         .Font.Color = PID_StyleColorNavy()
         .Font.Bold = True
         .Font.Size = 10
@@ -76,23 +75,8 @@ Public Sub PID_StyleApplySectionBand(ByVal target As Range, Optional ByVal align
 End Sub
 
 
-Public Sub PID_StyleApplyHeaderBand(ByVal target As Range)
-    With target
-        .Font.Name = "Calibri"
-        .Interior.Color = PID_StyleColorHeaderBg()
-        .Font.Color = PID_StyleColorNavy()
-        .Font.Bold = False
-        .Font.Size = 9
-        .HorizontalAlignment = xlCenter
-        .VerticalAlignment = xlCenter
-        .WrapText = True
-    End With
-End Sub
-
-
 Public Sub PID_StyleApplyAccentSummaryBand(ByVal target As Range)
     With target
-        .Font.Name = "Calibri"
         .Interior.Color = PID_StyleColorAccent()
         .Font.Color = PID_StyleColorNavy()
         .Font.Bold = True
@@ -104,14 +88,7 @@ End Sub
 
 
 Public Sub PID_StyleApplyInputHighlight(ByVal target As Range)
-    With target
-        .Font.Name = "Calibri"
-        .Interior.Color = PID_StyleColorAccent()
-        .Font.Color = PID_StyleColorNavy()
-        .Font.Bold = True
-        .HorizontalAlignment = xlCenter
-        .VerticalAlignment = xlCenter
-    End With
+    PID_StyleApplyAccentSummaryBand target
 End Sub
 
 
@@ -126,10 +103,8 @@ Public Sub PID_StyleApplyZebraRows(ByVal dataRange As Range)
         Else
             dataRange.Rows(r).Interior.Color = vbWhite
         End If
-        dataRange.Rows(r).Font.Name = "Calibri"
         dataRange.Rows(r).Font.Color = vbBlack
         dataRange.Rows(r).Font.Bold = False
-        dataRange.Rows(r).Font.Size = 10
     Next r
 End Sub
 

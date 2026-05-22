@@ -491,12 +491,12 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     
     ws.Rows(titleRow).RowHeight = PID_STYLE_TITLE_ROW_HEIGHT
     ws.Rows(hintRow).RowHeight = 48
-    ws.Rows(inputRow).RowHeight = 36
-    ws.Rows(headerRow).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
-    ws.Rows(noteRow).RowHeight = 36
+    ws.Rows(inputRow).RowHeight = 40
+    ws.Rows(headerRow).RowHeight = PID_STYLE_HEADER_BOTTOM_ROW_HEIGHT
+    ws.Rows(noteRow).RowHeight = 40
     
     For dataRow = dataStartRow To dataEndRow
-        ws.Rows(dataRow).RowHeight = PID_STYLE_DATA_ROW_HEIGHT
+        ws.Rows(dataRow).RowHeight = 42
     Next dataRow
     
     Set blockRange = ws.Range("B" & titleRow & ":Q" & noteRow)
@@ -1007,23 +1007,21 @@ Private Sub PID_ApplyFinanzUebersichtFormats(ByVal ws As Worksheet, Optional ByV
     End If
     
     ws.Rows(PID_FU_TITLE_TOP_ROW).RowHeight = PID_STYLE_TITLE_ROW_HEIGHT
-    ws.Rows(PID_FU_TITLE_BOTTOM_ROW).RowHeight = PID_STYLE_META_ROW_HEIGHT
-    ws.Rows(PID_FU_HEADER_TOP_ROW).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
-    ws.Rows(PID_FU_HEADER_BOTTOM_ROW).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
+    ws.Rows(PID_FU_TITLE_BOTTOM_ROW).RowHeight = PID_STYLE_TITLE_SUB_ROW_HEIGHT
+    ws.Rows(PID_FU_HEADER_TOP_ROW).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
+    ws.Rows(PID_FU_HEADER_BOTTOM_ROW).RowHeight = PID_STYLE_HEADER_BOTTOM_ROW_HEIGHT
     
     For dataRow = PID_FU_DATA_START_ROW To PID_FU_DATA_END_ROW
         ws.Rows(dataRow).RowHeight = PID_STYLE_DATA_ROW_HEIGHT
     Next dataRow
-    ws.Rows(PID_FU_TOTAL_ROW).RowHeight = PID_STYLE_SUMMARY_ROW_HEIGHT
+    ws.Rows(PID_FU_TOTAL_ROW).RowHeight = PID_STYLE_TOTAL_ROW_HEIGHT
     
     PID_StyleApplyTitleBand ws.Range("B" & PID_FU_TITLE_TOP_ROW & ":Q" & PID_FU_TITLE_BOTTOM_ROW)
     PID_StyleApplyHeaderBand ws.Range("B" & PID_FU_HEADER_TOP_ROW & ":Q" & PID_FU_HEADER_BOTTOM_ROW)
     
     ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Interior.Color = vbWhite
-    ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Name = "Calibri"
     ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Color = vbBlack
     ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Bold = False
-    ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Size = 10
     
     For dataRow = PID_FU_DATA_START_ROW To PID_FU_DATA_END_ROW
         If ((dataRow - PID_FU_DATA_START_ROW) Mod 2) = 1 Then

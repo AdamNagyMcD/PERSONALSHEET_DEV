@@ -34,14 +34,14 @@ Public Sub PID_FormatEinstellungSheet()
         .Rows(1).RowHeight = PID_STYLE_TITLE_ROW_HEIGHT
         PID_StyleApplyTitleBand .Range("B1:U1")
         
-        .Rows(3).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        .Rows(4).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range("B3:F4"), False
-        PID_StyleApplySectionBand .Range("H3:I4"), False
-        PID_StyleApplySectionBand .Range("K3:L4"), False
-        PID_StyleApplySectionBand .Range("N3:O4"), False
+        .Rows(3).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
+        .Rows(4).RowHeight = PID_STYLE_HEADER_BOTTOM_ROW_HEIGHT
+        PID_StyleApplyTitleBand .Range("B3:F4")
+        PID_StyleApplyTitleBand .Range("H3:I4")
+        PID_StyleApplyTitleBand .Range("K3:L4")
+        PID_StyleApplyTitleBand .Range("N3:O4")
         
-        .Rows(5).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
+        .Rows(5).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
         PID_StyleApplyHeaderBand .Range("C5:F5")
         PID_StyleApplyHeaderBand .Range("H5:I5")
         PID_StyleApplyHeaderBand .Range("K5:L5")
@@ -64,13 +64,13 @@ Public Sub PID_FormatEinstellungSheet()
         .Range("K6:L17").HorizontalAlignment = xlCenter
         .Range("N6:O17").HorizontalAlignment = xlCenter
         
-        .Rows(19).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        .Rows(20).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range("B19:F20"), False
-        PID_StyleApplySectionBand .Range("H19:I20"), False
-        PID_StyleApplySectionBand .Range("K19:L20"), False
+        .Rows(19).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
+        .Rows(20).RowHeight = PID_STYLE_HEADER_BOTTOM_ROW_HEIGHT
+        PID_StyleApplyTitleBand .Range("B19:F20")
+        PID_StyleApplyTitleBand .Range("H19:I20")
+        PID_StyleApplyTitleBand .Range("K19:L20")
         
-        .Rows(21).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
+        .Rows(21).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
         PID_StyleApplyHeaderBand .Range("C21:F21")
         PID_StyleApplyHeaderBand .Range("H21:I21")
         PID_StyleApplyHeaderBand .Range("K21:L21")
@@ -89,20 +89,22 @@ Public Sub PID_FormatEinstellungSheet()
         .Range("H22:I33").HorizontalAlignment = xlCenter
         .Range("K22:L33").HorizontalAlignment = xlCenter
         
-        .Rows(35).RowHeight = PID_STYLE_SECTION_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range("B35"), True
+        .Rows(35).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
+        PID_StyleApplyHeaderBand .Range("B35")
+        .Range("B35").HorizontalAlignment = xlLeft
+        .Range("B35").IndentLevel = 1
         PID_StyleApplyInputHighlight .Range("C35")
         PID_StyleApplyTableBorders .Range("B35:C35")
         
-        .Rows(37).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range("B37:C37"), False
+        .Rows(37).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
+        PID_StyleApplyHeaderBand .Range("B37:C37")
         PID_StyleApplyZebraRows .Range("B38:C49")
         PID_StyleApplyTableBorders .Range("B37:C49")
         .Range("B38:B49").HorizontalAlignment = xlLeft
         .Range("C38:C49").HorizontalAlignment = xlCenter
         
-        .Rows(52).RowHeight = PID_STYLE_HEADER_ROW_HEIGHT
-        PID_StyleApplySectionBand .Range("B52:C52"), False
+        .Rows(52).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
+        PID_StyleApplyHeaderBand .Range("B52:C52")
         PID_StyleApplyZebraRows .Range("B53:C59")
         PID_StyleApplyTableBorders .Range("B52:C59")
         .Range("B53:B59").HorizontalAlignment = xlLeft
