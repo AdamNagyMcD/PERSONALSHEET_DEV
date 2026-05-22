@@ -49,6 +49,8 @@ Public Sub PID_FullSystemRefresh()
     MarkFluktuationDirty
     RefreshFluktuationAll
     
+    PID_RecalculateAllMonthMergedFormulas
+    
     PID_FormatAllMoneyColumns
     
     On Error Resume Next

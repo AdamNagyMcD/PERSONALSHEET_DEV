@@ -9,6 +9,9 @@ Public Function SumMergedCells(ByVal targetRange As Range) As Double
     Dim valueToAdd As Variant
     Dim resultValue As Double
     
+    ' Excel erkennt Aenderungen in zusammengefuehrten Zellen sonst oft nicht.
+    Application.Volatile
+    
     On Error GoTo SafeExit
     
     If targetRange Is Nothing Then
@@ -255,3 +258,28 @@ Private Function SumMergedCellsCollectionHasKey(ByVal col As Collection, ByVal k
 NotFound:
     SumMergedCellsCollectionHasKey = False
 End Function
+
+
+Public Sub PID_RecalculateAllMonthMergedFormulas()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    
+    On Error GoTo SafeExit
+    
+    monthNames = PID_MonthNames()
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        On Error Resume Next
+        Set ws = Nothing
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        
+        If Not ws Is Nothing Then
+            ws.Range("S36").Calculate
+        End If
+        
+        On Error GoTo SafeExit
+    Next i
+
+SafeExit:
+End Sub

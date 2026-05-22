@@ -31,6 +31,8 @@ Private Sub Workbook_Open()
     
     MarkAllKVDropdownsDirty
     
+    PID_RecalculateAllMonthMergedFormulas
+    
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
     ' Das ermoeglicht schnelleres Oeffnen - aktualisiert wird nur wenn wirklich noetig.
@@ -106,6 +108,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         PID_ResetMonthView Sh
         RefreshKVDropdownsIfDirtyForSheet Sh
         RefreshKVLohnIfDirty Sh
+        Sh.Range("S36").Calculate
         GoTo SafeExit
     End If
 
