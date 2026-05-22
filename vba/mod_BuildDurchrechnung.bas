@@ -1058,7 +1058,7 @@ Private Sub PID_ApplyFinanzUebersichtFormats(ByVal ws As Worksheet)
     
     PID_FixFinanzUebersichtFormulas ws
     
-    PID_RecalculateFinanzSummaryChain
+    PID_SyncFinanzSummaryToUbersicht
     
     ws.Rows(PID_FU_TITLE_TOP_ROW).RowHeight = 28
     ws.Rows(PID_FU_TITLE_BOTTOM_ROW).RowHeight = 18

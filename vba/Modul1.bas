@@ -115,7 +115,12 @@ End Sub
 
 
 Public Sub RecalculateFinanzSummaryChain()
-    PID_RecalculateFinanzSummaryChain
+    PID_SyncFinanzSummaryToUbersicht
+End Sub
+
+
+Public Sub SyncFinanzSummaryToUbersicht()
+    PID_SyncFinanzSummaryToUbersicht
 End Sub
 
 

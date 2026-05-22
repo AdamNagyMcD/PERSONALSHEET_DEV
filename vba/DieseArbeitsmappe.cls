@@ -99,7 +99,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     End If
     
     If Sh.Name = "UBERSICHT" Then
-        PID_RecalculateFinanzSummaryChain
+        PID_SyncFinanzSummaryToUbersicht
         PID_RefreshDurchrechnungUebersicht
         GoTo SafeExit
     End If
@@ -198,7 +198,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     End If
     
     If PID_MonthChangeAffectsFinanzSummary(Sh, Target) Then
-        PID_RecalculateFinanzSummaryForMonth Sh
+        PID_SyncFinanzSummaryForMonth Sh
     End If
 
 SafeExit:

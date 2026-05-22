@@ -261,15 +261,18 @@ End Function
 
 
 Public Sub PID_RecalculateAllMonthMergedFormulas()
-    PID_RecalculateFinanzSummaryChain
+    PID_SyncFinanzSummaryToUbersicht
 End Sub
 
 
 Public Sub PID_RecalculateFinanzSummaryChain()
+    PID_SyncFinanzSummaryToUbersicht
+End Sub
+
+
+Public Sub PID_SyncFinanzSummaryToUbersicht()
     Dim monthNames As Variant
     Dim ws As Worksheet
-    Dim einstellungWs As Worksheet
-    Dim ubersichtWs As Worksheet
     Dim i As Long
     
     On Error GoTo SafeExit
@@ -282,13 +285,14 @@ Public Sub PID_RecalculateFinanzSummaryChain()
         Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
         
         If Not ws Is Nothing Then
-            PID_RecalculateFinanzSummaryMonthCells ws
+            PID_SyncFinanzSummaryMonthToDisplay ws, i - LBound(monthNames) + 1
         End If
         
         On Error GoTo SafeExit
     Next i
     
-    PID_RecalculateFinanzSummaryUbersichtCells
+    PID_SyncFinanzSummaryQuarterAndTotalRows
+    PID_RecalculateFinanzDiffColumns
 
 SafeExit:
 End Sub
@@ -306,10 +310,16 @@ Public Sub PID_RecalculateFinanzSummaryForMonth(ByVal ws As Worksheet)
     monthIndex = CLng(ws.Range("A1").Value)
     If monthIndex < 1 Or monthIndex > 12 Then Exit Sub
     
-    PID_RecalculateFinanzSummaryMonthCells ws
-    PID_RecalculateFinanzSummaryUbersichtForMonth monthIndex
+    PID_SyncFinanzSummaryMonthToDisplay ws, monthIndex
+    PID_SyncFinanzSummaryQuarterAndTotalRows
+    PID_RecalculateFinanzDiffColumns
 
 SafeExit:
+End Sub
+
+
+Public Sub PID_SyncFinanzSummaryForMonth(ByVal ws As Worksheet)
+    PID_RecalculateFinanzSummaryForMonth ws
 End Sub
 
 
@@ -332,63 +342,172 @@ SafeExit:
 End Function
 
 
-Private Sub PID_RecalculateFinanzSummaryMonthCells(ByVal ws As Worksheet)
+Private Function PID_GetMonthCrewLaborValue(ByVal ws As Worksheet) As Double
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    
+    PID_GetMonthCrewLaborValue = SumMergedCells(ws.Range("Q17:R29"))
+
+SafeExit:
+End Function
+
+
+Private Function PID_GetMonthCrewLaborPct(ByVal ws As Worksheet, ByVal crewLabor As Double) As Double
+    Dim salesValue As Double
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    
+    salesValue = CDbl(ws.Range("S35").Value2)
+    
+    If salesValue <> 0 Then
+        PID_GetMonthCrewLaborPct = crewLabor / salesValue
+    End If
+
+SafeExit:
+End Function
+
+
+Private Sub PID_SyncFinanzSummaryMonthToDisplay(ByVal ws As Worksheet, ByVal monthIndex As Long)
+    Dim crewLabor As Double
+    Dim crewPct As Double
+    Dim ubersichtWs As Worksheet
+    Dim einstellungWs As Worksheet
+    Dim monthRows As Variant
+    Dim ubersichtRow As Long
+    Dim ubersichtWasProtected As Boolean
+    Dim einstellungWasProtected As Boolean
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If monthIndex < 1 Or monthIndex > 12 Then Exit Sub
+    
+    monthRows = Array(7, 8, 9, 11, 12, 13, 15, 16, 17, 19, 20, 21)
+    ubersichtRow = CLng(monthRows(monthIndex - 1))
+    
+    crewLabor = PID_GetMonthCrewLaborValue(ws)
+    crewPct = PID_GetMonthCrewLaborPct(ws, crewLabor)
+    
+    PID_RefreshMonthFinanzSummaryCells ws
+    
     On Error Resume Next
+    Set einstellungWs = ThisWorkbook.Worksheets("EINSTELLUNG")
+    If Not einstellungWs Is Nothing Then
+        einstellungWasProtected = einstellungWs.ProtectContents
+        PID_UnprotectWorksheet einstellungWs
+        einstellungWs.Cells(21 + monthIndex, "E").Value2 = crewPct
+        PID_ReprotectWorksheet einstellungWs, einstellungWasProtected
+    End If
+    
+    Set ubersichtWs = ThisWorkbook.Worksheets("UBERSICHT")
+    If Not ubersichtWs Is Nothing Then
+        ubersichtWasProtected = ubersichtWs.ProtectContents
+        PID_UnprotectWorksheet ubersichtWs
+        ubersichtWs.Cells(ubersichtRow, "G").Value2 = crewLabor
+        ubersichtWs.Cells(ubersichtRow, "J").Value2 = crewPct
+        PID_ReprotectWorksheet ubersichtWs, ubersichtWasProtected
+    End If
+    On Error GoTo SafeExit
+
+SafeExit:
+End Sub
+
+
+Private Sub PID_RefreshMonthFinanzSummaryCells(ByVal ws As Worksheet)
+    Dim wasProtected As Boolean
+    Dim formulaText As String
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    
+    wasProtected = ws.ProtectContents
+    PID_UnprotectWorksheet ws
+    
+    ws.Range("Q17:R29").Calculate
+    
+    formulaText = CStr(ws.Range("S36").Formula)
+    If Len(formulaText) > 0 Then
+        ws.Range("S36").Formula = formulaText
+    End If
+    
+    formulaText = CStr(ws.Range("S37").Formula)
+    If Len(formulaText) > 0 Then
+        ws.Range("S37").Formula = formulaText
+    End If
     
     ws.Range("S35").Calculate
     ws.Range("S36").Calculate
     ws.Range("S37").Calculate
-    ws.Range("Q37").Calculate
-    ws.Range("Q42").Calculate
     
+    PID_ReprotectWorksheet ws, wasProtected
+
+SafeExit:
+End Sub
+
+
+Private Sub PID_SyncFinanzSummaryQuarterAndTotalRows()
+    Dim ubersichtWs As Worksheet
+    Dim wasProtected As Boolean
+    
+    On Error GoTo SafeExit
+    
+    Set ubersichtWs = ThisWorkbook.Worksheets("UBERSICHT")
+    If ubersichtWs Is Nothing Then Exit Sub
+    
+    wasProtected = ubersichtWs.ProtectContents
+    PID_UnprotectWorksheet ubersichtWs
+    
+    ubersichtWs.Range("G10,G14,G18,G22,J10,J14,J18,J22,G23,J23").Calculate
+    
+    PID_ReprotectWorksheet ubersichtWs, wasProtected
+
+SafeExit:
+End Sub
+
+
+Private Sub PID_RecalculateFinanzDiffColumns()
+    Dim ubersichtWs As Worksheet
+    Dim wasProtected As Boolean
+    
+    On Error GoTo SafeExit
+    
+    Set ubersichtWs = ThisWorkbook.Worksheets("UBERSICHT")
+    If ubersichtWs Is Nothing Then Exit Sub
+    
+    wasProtected = ubersichtWs.ProtectContents
+    PID_UnprotectWorksheet ubersichtWs
+    
+    ubersichtWs.Range("H7:H23,K7:K23").Calculate
+    
+    PID_ReprotectWorksheet ubersichtWs, wasProtected
+
+SafeExit:
+End Sub
+
+
+Private Sub PID_UnprotectWorksheet(ByVal ws As Worksheet)
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    If Err.Number <> 0 Then
+        Err.Clear
+        ws.Unprotect
+    End If
     On Error GoTo 0
 End Sub
 
 
-Private Sub PID_RecalculateFinanzSummaryUbersichtCells()
-    Dim einstellungWs As Worksheet
-    Dim ubersichtWs As Worksheet
-    
+Private Sub PID_ReprotectWorksheet(ByVal ws As Worksheet, ByVal wasProtected As Boolean)
     On Error Resume Next
     
-    Set einstellungWs = ThisWorkbook.Worksheets("EINSTELLUNG")
-    If Not einstellungWs Is Nothing Then
-        einstellungWs.Range("E22:E33").Calculate
-    End If
-    
-    Set ubersichtWs = ThisWorkbook.Worksheets("UBERSICHT")
-    If Not ubersichtWs Is Nothing Then
-        ubersichtWs.Range("G7:G23").Calculate
-        ubersichtWs.Range("J7:J23").Calculate
-        ubersichtWs.Range("H7:H23").Calculate
-        ubersichtWs.Range("K7:K23").Calculate
-    End If
-    
-    On Error GoTo 0
-End Sub
-
-
-Private Sub PID_RecalculateFinanzSummaryUbersichtForMonth(ByVal monthIndex As Long)
-    Dim einstellungWs As Worksheet
-    Dim ubersichtWs As Worksheet
-    Dim ubersichtRow As Long
-    Dim quarterRow As Long
-    
-    On Error Resume Next
-    
-    Set einstellungWs = ThisWorkbook.Worksheets("EINSTELLUNG")
-    If Not einstellungWs Is Nothing Then
-        einstellungWs.Cells(21 + monthIndex, "E").Calculate
-    End If
-    
-    Set ubersichtWs = ThisWorkbook.Worksheets("UBERSICHT")
-    If Not ubersichtWs Is Nothing Then
-        ubersichtRow = 6 + monthIndex
-        quarterRow = 10 + 4 * Int((monthIndex - 1) / 3)
-        
-        ubersichtWs.Range("G" & ubersichtRow & ",J" & ubersichtRow & ",H" & ubersichtRow & ",K" & ubersichtRow).Calculate
-        ubersichtWs.Range("G" & quarterRow & ",J" & quarterRow & ",H" & quarterRow & ",K" & quarterRow).Calculate
-        ubersichtWs.Range("G23,J23,H23,K23").Calculate
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                   UserInterfaceOnly:=True, _
+                   AllowFiltering:=True, _
+                   AllowSorting:=True
     End If
     
     On Error GoTo 0
