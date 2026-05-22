@@ -9,6 +9,8 @@ Public Sub ResetAndImportVBAFiles()
     Dim i As Long
     Dim imported As Long
     Dim deleted As Long
+    Dim syncOk As Boolean
+    Dim syncDetails As String
 
     ' --- Betriebssystem erkennen ---
     If InStr(1, Application.OperatingSystem, "Mac", vbTextCompare) > 0 Then
@@ -89,8 +91,18 @@ Public Sub ResetAndImportVBAFiles()
 
     Loop
 
-    MsgBox deleted & " Module geloescht." & vbCrLf & _
-           imported & " VBA-Dateien importiert.", vbInformation
+    PID_SyncDieseArbeitsmappeFromExport syncOk, syncDetails
+    
+    If syncOk Then
+        MsgBox deleted & " Module geloescht." & vbCrLf & _
+               imported & " VBA-Dateien importiert." & vbCrLf & _
+               "DieseArbeitsmappe aus vba/DieseArbeitsmappe.cls synchronisiert.", vbInformation
+    Else
+        MsgBox deleted & " Module geloescht." & vbCrLf & _
+               imported & " VBA-Dateien importiert." & vbCrLf & vbCrLf & _
+               "Hinweis: DieseArbeitsmappe konnte nicht automatisch synchronisiert werden." & vbCrLf & _
+               syncDetails, vbInformation
+    End If
     Exit Sub
 
 VBProjectBlocked:
@@ -101,5 +113,60 @@ VBProjectBlocked:
            "Excel danach neu starten und dieses Makro erneut ausfuehren.", _
            vbExclamation, "VBA Import"
 
+End Sub
+
+
+Public Sub PID_SyncDieseArbeitsmappeFromExport(Optional ByRef syncOk As Boolean = False, Optional ByRef syncDetails As String = "")
+    Dim vbaFolder As String
+    Dim filePath As String
+    Dim fileNum As Integer
+    Dim fileContent As String
+    Dim codeStart As Long
+    Dim codeText As String
+    Dim codeModule As Object
+    
+    syncOk = False
+    syncDetails = ""
+    
+    On Error GoTo SyncFail
+    
+    If ThisWorkbook.Path = "" Then
+        syncDetails = "Arbeitsmappe ist noch nicht gespeichert."
+        Exit Sub
+    End If
+    
+    vbaFolder = ThisWorkbook.Path & Application.PathSeparator & "vba" & Application.PathSeparator
+    filePath = vbaFolder & "DieseArbeitsmappe.cls"
+    
+    If Dir(filePath) = "" Then
+        syncDetails = "Datei nicht gefunden: " & filePath
+        Exit Sub
+    End If
+    
+    fileNum = FreeFile
+    Open filePath For Input As #fileNum
+    fileContent = Input(LOF(fileNum), fileNum)
+    Close #fileNum
+    
+    codeStart = InStr(1, fileContent, "Option Explicit", vbTextCompare)
+    If codeStart = 0 Then
+        syncDetails = "Option Explicit nicht gefunden in DieseArbeitsmappe.cls."
+        Exit Sub
+    End If
+    
+    codeText = Mid$(fileContent, codeStart)
+    Set codeModule = ThisWorkbook.VBProject.VBComponents("DieseArbeitsmappe").CodeModule
+    
+    If codeModule.CountOfLines > 0 Then
+        codeModule.DeleteLines 1, codeModule.CountOfLines
+    End If
+    
+    codeModule.AddFromString codeText
+    
+    syncOk = True
+    Exit Sub
+
+SyncFail:
+    syncDetails = Err.Number & " - " & Err.Description
 End Sub
 

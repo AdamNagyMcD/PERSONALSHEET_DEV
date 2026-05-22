@@ -511,6 +511,20 @@ Public Sub BuildDurchrechnungUebersicht()
 End Sub
 
 
+Public Sub SyncDieseArbeitsmappeFromExport()
+    Dim syncOk As Boolean
+    Dim syncDetails As String
+    
+    PID_SyncDieseArbeitsmappeFromExport syncOk, syncDetails
+    
+    If syncOk Then
+        MsgBox "DieseArbeitsmappe wurde aus vba/DieseArbeitsmappe.cls synchronisiert.", vbInformation, "VBA Sync"
+    Else
+        MsgBox "Synchronisation fehlgeschlagen:" & vbCrLf & syncDetails, vbExclamation, "VBA Sync"
+    End If
+End Sub
+
+
 Public Sub PID_RestoreAustrittsdatumValidation()
     Dim monthNames As Variant
     Dim ws As Worksheet

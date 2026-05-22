@@ -40,6 +40,7 @@ Public Sub PID_BuildDurchrechnungUebersicht()
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
     
+    PID_UnmergeDurchrechnungBlock ws
     PID_ClearDurchrechnungBlock ws
     PID_WriteDurchrechnungBlock ws
     
@@ -76,11 +77,44 @@ CleanExit:
 End Sub
 
 
+Private Sub PID_UnmergeDurchrechnungBlock(ByVal ws As Worksheet)
+    Dim cell As Range
+    Dim mergedAreas As Collection
+    Dim areaKey As String
+    
+    Set mergedAreas = New Collection
+    
+    For Each cell In ws.Range("B" & PID_DR_START_ROW & ":I" & PID_DR_END_ROW).Cells
+        If cell.MergeCells Then
+            areaKey = cell.MergeArea.Address(False, False)
+            
+            If Not PID_DRCollectionHasKey(mergedAreas, areaKey) Then
+                mergedAreas.Add areaKey, areaKey
+                cell.MergeArea.UnMerge
+            End If
+        End If
+    Next cell
+End Sub
+
+
+Private Function PID_DRCollectionHasKey(ByVal col As Collection, ByVal key As String) As Boolean
+    Dim tmp As Variant
+    
+    On Error GoTo NotFound
+    
+    tmp = col.item(key)
+    PID_DRCollectionHasKey = True
+    Exit Function
+
+NotFound:
+    PID_DRCollectionHasKey = False
+End Function
+
+
 Private Sub PID_ClearDurchrechnungBlock(ByVal ws As Worksheet)
     Dim target As Range
     
-    Set target = ws.Range(ws.Cells(PID_DR_START_ROW, PID_DR_FIRST_COL), _
-                          ws.Cells(PID_DR_END_ROW, PID_DR_LAST_COL))
+    Set target = ws.Range(ws.Cells(PID_DR_START_ROW, PID_DR_FIRST_COL), ws.Cells(PID_DR_END_ROW, PID_DR_LAST_COL))
     
     target.ClearContents
     target.Interior.Pattern = xlNone
@@ -90,7 +124,9 @@ Private Sub PID_ClearDurchrechnungBlock(ByVal ws As Worksheet)
     target.VerticalAlignment = xlCenter
     target.WrapText = False
     
+    On Error Resume Next
     target.FormatConditions.Delete
+    On Error GoTo 0
 End Sub
 
 
