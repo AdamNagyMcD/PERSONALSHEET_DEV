@@ -8,6 +8,11 @@
 - Modul1.bas: `SyncDieseArbeitsmappeFromExport` macro alias for manual workbook-module sync.
 - Personalsheet.xlsm: reverted broken direct XML patch on `UBERSICHT`; Durchrechnung block must be created via `BuildDurchrechnungUebersicht` macro (avoids corrupted `sharedStrings` counts on Mac Excel).
 
+### Changed
+- mod_BuildDurchrechnungUebersicht.bas: wider column layout, taller rows, `PID_RefreshDurchrechnungUebersicht` for silent recalc/format refresh on UEBERSICHT activate.
+- DieseArbeitsmappe.cls: refreshes Durchrechnungsblock when `UBERSICHT` sheet is activated.
+- Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
+
 ### Added
 - mod_BuildDurchrechnungUebersicht.bas: Durchrechnungszeitraum block on `UBERSICHT` (rows 28+) with period sums, Schlussmonat differenz, Ueberstunden EUR estimate, and manual Jaenner plan inputs (C30/E30/G30).
 - Modul1.bas: `BuildDurchrechnungUebersicht` macro alias to rebuild the UEBERSICHT Durchrechnung block safely without touching rows 2-27.

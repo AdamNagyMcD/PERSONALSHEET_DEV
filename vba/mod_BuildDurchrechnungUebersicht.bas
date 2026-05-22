@@ -10,8 +10,59 @@ Private Const PID_DR_LOHN_CELL As String = "C30"
 Private Const PID_DR_JAEN_VERF_CELL As String = "E30"
 Private Const PID_DR_JAEN_MUST_CELL As String = "G30"
 
+Private Const PID_UBERSICHT_SHEET As String = "UBERSICHT"
+
 
 Public Sub PID_BuildDurchrechnungUebersicht()
+    PID_BuildDurchrechnungUebersichtInternal True
+End Sub
+
+
+Public Sub PID_RefreshDurchrechnungUebersicht()
+    Dim ws As Worksheet
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    Set ws = ThisWorkbook.Worksheets(PID_UBERSICHT_SHEET)
+    
+    If Not PID_DurchrechnungBlockExists(ws) Then
+        PID_BuildDurchrechnungUebersichtInternal False
+        GoTo CleanExit
+    End If
+    
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
+    ws.Calculate
+    PID_UnlockDurchrechnungInputs ws
+    PID_ApplyDurchrechnungFormats ws
+    
+    ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+               UserInterfaceOnly:=True, _
+               AllowFiltering:=True, _
+               AllowSorting:=True
+    
+    GoTo CleanExit
+
+CleanFail:
+    ' Keine Meldung beim Blattwechsel.
+
+CleanExit:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+End Sub
+
+
+Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolean)
     Dim ws As Worksheet
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -56,25 +107,51 @@ Public Sub PID_BuildDurchrechnungUebersicht()
                AllowFiltering:=True, _
                AllowSorting:=True
     
-    MsgBox "Durchrechnungsblock auf UEBERSICHT wurde erstellt." & vbCrLf & vbCrLf & _
-           "Gelbe Felder:" & vbCrLf & _
-           "- Stundenlohn (C30)" & vbCrLf & _
-           "- Jaenner Verfuegbar Plan (E30)" & vbCrLf & _
-           "- Jaenner Muster Plan (G30)", _
-           vbInformation, "Durchrechnung"
+    If showMessage Then
+        MsgBox "Durchrechnungsblock auf UEBERSICHT wurde erstellt." & vbCrLf & vbCrLf & _
+               "Gelbe Felder:" & vbCrLf & _
+               "- Stundenlohn (C30)" & vbCrLf & _
+               "- Jaenner Verfuegbar Plan (E30)" & vbCrLf & _
+               "- Jaenner Muster Plan (G30)", _
+               vbInformation, "Durchrechnung"
+    End If
     
     GoTo CleanExit
 
 CleanFail:
-    MsgBox "Fehler bei PID_BuildDurchrechnungUebersicht:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
-           vbExclamation, "Durchrechnung"
+    If showMessage Then
+        MsgBox "Fehler bei PID_BuildDurchrechnungUebersicht:" & vbCrLf & _
+               Err.Number & " - " & Err.Description, _
+               vbExclamation, "Durchrechnung"
+    End If
 
 CleanExit:
     Application.DisplayAlerts = oldDisplayAlerts
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
 End Sub
+
+
+Private Function PID_DurchrechnungBlockExists(ByVal ws As Worksheet) As Boolean
+    Dim titleText As String
+    
+    On Error GoTo SafeExit
+    
+    titleText = CStr(ws.Cells(PID_DR_START_ROW, 2).Text)
+    
+    If InStr(1, titleText, "DURCHRECHNUNGSSTUNDEN", vbTextCompare) > 0 Then
+        PID_DurchrechnungBlockExists = True
+        Exit Function
+    End If
+    
+    If Trim$(CStr(ws.Cells(PID_DR_START_ROW + 3, 2).Value)) = "Zeitraum" Then
+        PID_DurchrechnungBlockExists = True
+        Exit Function
+    End If
+
+SafeExit:
+    PID_DurchrechnungBlockExists = False
+End Function
 
 
 Private Sub PID_UnmergeDurchrechnungBlock(ByVal ws As Worksheet)
@@ -233,26 +310,55 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     Dim dataStartRow As Long
     Dim dataEndRow As Long
     Dim inputRow As Long
+    Dim hintRow As Long
+    Dim dataRow As Long
     Dim diffRange As Range
     Dim yellowColor As Long
     
     headerRow = PID_DR_START_ROW + 3
+    hintRow = PID_DR_START_ROW + 1
     inputRow = PID_DR_START_ROW + 2
     dataStartRow = headerRow + 1
     dataEndRow = dataStartRow + 3
     yellowColor = RGB(255, 242, 204)
     
-    ws.Rows(PID_DR_START_ROW).RowHeight = 18
-    ws.Rows(PID_DR_START_ROW + 1).RowHeight = 30
-    ws.Rows(inputRow).RowHeight = 18
-    ws.Rows(headerRow).RowHeight = 18
-    ws.Rows(PID_DR_END_ROW).RowHeight = 36
+    ws.Columns("B").ColumnWidth = 14
+    ws.Columns("C").ColumnWidth = 12
+    ws.Columns("D").ColumnWidth = 15
+    ws.Columns("E").ColumnWidth = 12
+    ws.Columns("F").ColumnWidth = 12
+    ws.Columns("G").ColumnWidth = 14
+    ws.Columns("H").ColumnWidth = 15
+    ws.Columns("I").ColumnWidth = 34
+    
+    ws.Rows(PID_DR_START_ROW).RowHeight = 20
+    ws.Rows(hintRow).RowHeight = 36
+    ws.Rows(inputRow).RowHeight = 20
+    ws.Rows(headerRow).RowHeight = 30
+    ws.Rows(PID_DR_END_ROW).RowHeight = 40
+    
+    For dataRow = dataStartRow To dataEndRow
+        ws.Rows(dataRow).RowHeight = 34
+    Next dataRow
+    
+    With ws.Range("B" & PID_DR_START_ROW & ":I" & hintRow)
+        .HorizontalAlignment = xlLeft
+        .VerticalAlignment = xlCenter
+    End With
+    
+    ws.Range("B" & inputRow).HorizontalAlignment = xlLeft
+    ws.Range("D" & inputRow).HorizontalAlignment = xlLeft
+    ws.Range("F" & inputRow).HorizontalAlignment = xlLeft
     
     ws.Range("B" & headerRow & ":I" & headerRow).HorizontalAlignment = xlCenter
+    ws.Range("B" & headerRow & ":I" & headerRow).WrapText = True
+    ws.Range("B" & headerRow & ":I" & headerRow).VerticalAlignment = xlCenter
+    
     ws.Range("B" & dataStartRow & ":C" & dataEndRow).HorizontalAlignment = xlLeft
     ws.Range("D" & dataStartRow & ":H" & dataEndRow).HorizontalAlignment = xlRight
     ws.Range("I" & dataStartRow & ":I" & dataEndRow).HorizontalAlignment = xlLeft
     ws.Range("I" & dataStartRow & ":I" & dataEndRow).WrapText = True
+    ws.Range("B" & dataStartRow & ":I" & dataEndRow).VerticalAlignment = xlCenter
     
     ws.Range(PID_DR_LOHN_CELL).Interior.Color = yellowColor
     ws.Range(PID_DR_JAEN_VERF_CELL).Interior.Color = yellowColor

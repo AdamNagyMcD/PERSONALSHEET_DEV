@@ -511,6 +511,11 @@ Public Sub BuildDurchrechnungUebersicht()
 End Sub
 
 
+Public Sub RefreshDurchrechnungUebersicht()
+    PID_RefreshDurchrechnungUebersicht
+End Sub
+
+
 Public Sub SyncDieseArbeitsmappeFromExport()
     Dim syncOk As Boolean
     Dim syncDetails As String

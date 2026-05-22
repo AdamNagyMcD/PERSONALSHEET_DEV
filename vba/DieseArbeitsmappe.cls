@@ -89,6 +89,11 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         GoTo SafeExit
     End If
     
+    If Sh.Name = "UBERSICHT" Then
+        PID_RefreshDurchrechnungUebersicht
+        GoTo SafeExit
+    End If
+    
     ' Dropdown/Lohn nur bei Bedarf (nach KV-Tabelle-Aenderung), pro Monat einmal.
     If PID_IsWorkerMonthSheet(Sh) Then
         PID_ResetMonthView Sh
