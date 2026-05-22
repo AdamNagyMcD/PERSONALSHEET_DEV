@@ -165,20 +165,23 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     
     ' Wenn Spalte E sich aendert:
     ' E = KV-Code / BG
-    ' Dropdown der Spalte F wird in der betreffenden Zeile aktualisiert.
+    ' Dropdown F + Lohn G werden in der betreffenden Zeile aktualisiert.
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
         RefreshKVStundenDropdownForSheet Sh, Target
-    End If
-    
-    ' Wenn E oder F sich aendert:
-    ' G = Monatslohn wird nur in der betreffenden Zeile aktualisiert.
-    If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
         RefreshKVLohnForSheet Sh, Target
         
-        ' Log E/F hour changes for deterministic future-month propagation in CopyData.
         On Error Resume Next
         Application.Run "'" & ThisWorkbook.Name & "'!PID_LogEFAenderungForSheet", Sh, Target
         On Error GoTo SafeExit
+    End If
+    
+    ' F = Vertragsstunden. Aenderung nur protokollieren (CopyData), G nicht ueberschreiben.
+    If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
+        If Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
+            On Error Resume Next
+            Application.Run "'" & ThisWorkbook.Name & "'!PID_LogEFAenderungForSheet", Sh, Target
+            On Error GoTo SafeExit
+        End If
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:

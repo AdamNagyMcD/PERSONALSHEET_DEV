@@ -10,7 +10,7 @@
 
 ### Changed
 - mod_BuildDurchrechnungUebersicht.bas: Ueberstunden EUR no longer requires ISNUMBER on C30 (text numbers like `1` or `12,5` now calculate).
-- DieseArbeitsmappe.cls: refreshes Durchrechnungsblock when `UBERSICHT` sheet is activated.
+- DieseArbeitsmappe.cls: `G` (Lohn) refreshes only when `E` (KV-Code) changes, not when `F` (Stunden) changes.
 - Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
 
 ### Added
