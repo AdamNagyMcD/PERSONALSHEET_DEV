@@ -110,6 +110,47 @@ CleanFail:
 End Sub
 
 
+Public Sub RefreshKVStundenDropdownForSingleRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long)
+    Dim wsHelper As Worksheet
+    Dim monthNumber As Long
+    Dim oldScreenUpdating As Boolean
+    Dim monthWasProtected As Boolean
+    
+    On Error GoTo CleanExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
+    If Not IsNumeric(wsMonth.Range("A1").Value) Then Exit Sub
+    
+    monthNumber = CLng(wsMonth.Range("A1").Value)
+    If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
+    
+    oldScreenUpdating = Application.ScreenUpdating
+    Application.ScreenUpdating = False
+    
+    Set wsHelper = GetOrCreateKVDropdownHelperSheet()
+    
+    monthWasProtected = wsMonth.ProtectContents
+    
+    On Error Resume Next
+    If monthWasProtected Then wsMonth.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    wsHelper.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanExit
+    
+    RefreshKVStundenDropdownForRow wsMonth, wsHelper, rowNumber, monthNumber
+    
+    wsHelper.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
+    
+    If monthWasProtected Then
+        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+
+CleanExit:
+    Application.ScreenUpdating = oldScreenUpdating
+End Sub
+
+
 Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional ByVal changedRange As Range)
     Dim wsHelper As Worksheet
     Dim monthNumber As Long

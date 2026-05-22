@@ -888,24 +888,46 @@ End Sub
 Public Sub PID_ForceMonatslohnRecalcForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long)
     Dim gCell As Range
     Dim formulaR1C1 As String
+    Dim monthNumber As Long
+    Dim kvCode As String
+    Dim stunden As Double
+    Dim lohn As Variant
+    Dim usedFallback As Boolean
     
     On Error GoTo SafeExit
     
     If wsMonth Is Nothing Then Exit Sub
     If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
+    If Not IsNumeric(wsMonth.Range("A1").Value) Then Exit Sub
     
+    monthNumber = CLng(wsMonth.Range("A1").Value)
     Set gCell = wsMonth.Cells(rowNumber, "G")
     
-    If Not gCell.HasFormula Then
-        If Not PID_MonthSheetHasMonatslohnFormula(wsMonth) Then
-            PID_RestoreMonatslohnFormulasOnSheet wsMonth, PID_GetMonatslohnFormulaR1C1()
+    kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
+    If kvCode = "" Or Not PID_TryGetDouble(wsMonth.Cells(rowNumber, "F").Value, stunden) Then
+        If gCell.HasFormula Then
+            formulaR1C1 = gCell.FormulaR1C1
+            gCell.FormulaR1C1 = ""
+            gCell.FormulaR1C1 = formulaR1C1
+        Else
+            gCell.ClearContents
         End If
         Exit Sub
     End If
     
-    formulaR1C1 = gCell.FormulaR1C1
-    gCell.FormulaR1C1 = ""
-    gCell.FormulaR1C1 = formulaR1C1
+    lohn = GetKVLohnByPeriod(monthNumber, kvCode, stunden, usedFallback)
+    
+    If IsError(lohn) Then
+        If Not gCell.HasFormula Then
+            PID_RestoreMonatslohnFormulasOnSheet wsMonth, PID_GetMonatslohnFormulaR1C1()
+        End If
+        formulaR1C1 = gCell.FormulaR1C1
+        gCell.FormulaR1C1 = ""
+        gCell.FormulaR1C1 = formulaR1C1
+        Exit Sub
+    End If
+    
+    gCell.Value2 = CDbl(lohn)
 
 SafeExit:
 End Sub

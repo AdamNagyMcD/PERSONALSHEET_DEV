@@ -12,6 +12,18 @@ Option Explicit
 Private mInternalChange As Boolean
 
 
+Private mWorkerSheetRuntimeReady As Boolean
+
+
+Private Sub PID_EnsureWorkerSheetRuntimeReady()
+    If mWorkerSheetRuntimeReady Then Exit Sub
+    
+    PID_EnsureMonatslohnFormulas
+    PID_EnsureLetztesGehaltFormulas
+    mWorkerSheetRuntimeReady = True
+End Sub
+
+
 Private Sub Workbook_Open()
     On Error GoTo SafeExit
     
@@ -26,8 +38,6 @@ Private Sub Workbook_Open()
     Err.Clear
     
     PID_EnsureKVCodeListNamedRange
-    PID_EnsureMonatslohnFormulas
-    PID_EnsureLetztesGehaltFormulas
     
     PID_SetupSheetProtectionForOpen
     
@@ -43,6 +53,13 @@ Private Sub Workbook_Open()
 
 SafeExit:
     PID_ConfigureDeferredWorkbookCalculationOnOpen
+    
+    If Not ActiveSheet Is Nothing Then
+        If PID_IsWorkerMonthSheet(ActiveSheet) Then
+            PID_EnsureWorkerSheetRuntimeReady
+        End If
+    End If
+    
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
@@ -87,7 +104,6 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     Application.ScreenUpdating = False
     
     PID_EnsureSheetProtectionForMacros Sh
-    PID_EnsureWorksheetCalculationEnabled Sh
     
     ' Fluktuation beim Oeffnen des Analyse-Blatts immer neu aufbauen.
     If Sh.Name = PID_FLUKTUATION_SHEET Then
@@ -109,7 +125,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     
     ' Dropdown/Lohn nur bei Bedarf (nach KV-Tabelle-Aenderung), pro Monat einmal.
     If PID_IsWorkerMonthSheet(Sh) Then
-        PID_ResetMonthView Sh
+        PID_EnsureWorkerSheetRuntimeReady
         RefreshKVDropdownsIfDirtyForSheet Sh
         RefreshKVLohnIfDirty Sh
         GoTo SafeExit
@@ -183,9 +199,12 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' Wenn Spalte E sich aendert:
     ' E = KV-Code / BG -> Dropdown F in der betreffenden Zeile.
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
-        PID_LogEFAenderungForSheet Sh, Target
         PID_PreloadKVLohnCaches
         PID_RecalculateMonatslohnForChangedRows Sh, Target
+    End If
+    
+    If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
+        PID_LogEFAenderungForSheet Sh, Target
     End If
     
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
@@ -241,7 +260,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
         If Not PID_RowHasValidFStundenDropdown(Sh, Target.Row) Then
             If Trim$(CStr(Sh.Cells(Target.Row, "E").Value)) <> "" Then
                 On Error Resume Next
-                RefreshKVStundenDropdownForSheet Sh, Sh.Cells(Target.Row, "E")
+                RefreshKVStundenDropdownForSingleRow Sh, Target.Row
                 On Error GoTo SafeExit
             End If
         End If

@@ -32,6 +32,9 @@
 - mod_KVStundenDropdown.bas: F-Dropdown lazy bei E-Aenderung (Invalidate), Rebuild erst bei F-Klick; Stunden-Lookup-Cache.
 - Modul1.bas + DieseArbeitsmappe.cls: EnableCalculation nur fuer aktiven Tab beim Open (kein 12-Blatt-UDF-Recalc); kein MarkFinanzSummaryDirty beim Open.
 - Modul1.bas: FormatStaleValues=False (kein Strikethrough bei Manual/Partial Calc); Manual nach Open ohne Sheet-Calculate.
+- mod_KVLohnLookup.bas: G (Lohn) direkt via GetKVLohnByPeriod statt UDF-Formel-Reset bei E/F-Aenderung.
+- mod_KVStundenDropdown.bas: RefreshKVStundenDropdownForSingleRow fuer schnellen F-Dropdown bei F-Klick.
+- DieseArbeitsmappe.cls: Formula-Checks lazy beim ersten Monats-Tab; Hour-Override-Log nur bei F-Aenderung.
 - mod_KVStundenDropdown.bas: F-Dropdown-Refresh nur Zeilen mit KV-Code (E nicht leer); ScreenUpdating aus waehrend Refresh.
 - DieseArbeitsmappe.cls: FLUKTUATION-Activate nur bei gFluktuationDirty; kein S35-S37-Calculate bei Monats-Activate.
 - mod_FluctuationCalculation.bas: UEBERSICHT nach Fluktuation-Sync wieder schuetzen.
