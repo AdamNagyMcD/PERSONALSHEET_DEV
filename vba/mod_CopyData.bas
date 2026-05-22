@@ -655,7 +655,7 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     PID_MarkKVLohnSheetRefreshed ws.Name
     
     If PID_CALCULATE_FLUCTUATION_DURING_COPY Then
-        PID_CalculateFluctuation ws
+        MarkFluktuationDirty
     End If
     
     If PID_APPLY_FORMATS_DURING_COPY Then

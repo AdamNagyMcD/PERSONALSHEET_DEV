@@ -65,12 +65,8 @@ Public Sub BuildFluktuationAnalyse()
     Dim explanationStartRow As Long
     Dim outputRow As Long
     
-    Dim ytdMonthLimit As Long
-    Dim ytdExits As Long
-    Dim ytdPersonalSum As Long
-    Dim ytdPersonalMonths As Long
-    Dim ytdAveragePersonal As Double
     Dim ytdFluctuation As Double
+    Dim quarterFluctuation(1 To 4) As Double
     
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -176,50 +172,7 @@ Public Sub BuildFluktuationAnalyse()
     End If
     
     ' --- Abschnitt 2: Monatliche Fluktuation und YTD berechnen ---
-    For i = 1 To 12
-        monthPersonalEnde(i) = GetPersonalEndeForMonth(CStr(monthNames(i - 1)), currentYear, i)
-        
-        If monthPersonalEnde(i) > 0 Then
-            monthFluctuation(i) = monthExit(i) / monthPersonalEnde(i)
-        Else
-            monthFluctuation(i) = 0
-        End If
-    Next i
-    
-    If currentYear = Year(Date) Then
-        ytdMonthLimit = Month(Date)
-    ElseIf currentYear < Year(Date) Then
-        ytdMonthLimit = 12
-    Else
-        ytdMonthLimit = GetLastMonthWithExit(monthExit)
-    End If
-    
-    ytdExits = 0
-    ytdPersonalSum = 0
-    ytdPersonalMonths = 0
-    
-    If ytdMonthLimit > 0 Then
-        For i = 1 To ytdMonthLimit
-            ytdExits = ytdExits + monthExit(i)
-            
-            If monthPersonalEnde(i) > 0 Then
-                ytdPersonalSum = ytdPersonalSum + monthPersonalEnde(i)
-                ytdPersonalMonths = ytdPersonalMonths + 1
-            End If
-        Next i
-    End If
-    
-    If ytdPersonalMonths > 0 Then
-        ytdAveragePersonal = ytdPersonalSum / ytdPersonalMonths
-    Else
-        ytdAveragePersonal = 0
-    End If
-    
-    If ytdAveragePersonal > 0 Then
-        ytdFluctuation = ytdExits / ytdAveragePersonal
-    Else
-        ytdFluctuation = 0
-    End If
+    PID_FillFluktuationRates monthExit, monthPersonalEnde, monthFluctuation, quarterFluctuation, ytdFluctuation, currentYear
     
     ' --- Abschnitt 3: Risikobewertung und Manager-Texte ---
     criticalExits = earlyExits + experiencedLoss + importantExits
@@ -398,6 +351,8 @@ Public Sub BuildFluktuationAnalyse()
         FormatFluktuationSheet analyseWs, statusRow, kpiLabelRow, kpiValueRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, chartRow, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
         
         BuildFluktuationCharts analyseWs, dataWs, chartRow, monthNames, monthExit, earlyExits, experiencedLoss, importantExits, neutralExits, normalExits, incompleteExits
+        
+        PID_SyncFluktuationToDisplaySheets monthFluctuation, quarterFluctuation, ytdFluctuation
         
         .Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     End With

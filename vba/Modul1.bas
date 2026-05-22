@@ -45,7 +45,6 @@ Public Sub PID_FullSystemRefresh()
     PID_RestoreLetztesGehaltFormulasSilent
     PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty
-    PID_RecalculateAllMonthFluctuation
     
     MarkFluktuationDirty
     RefreshFluktuationAll
@@ -109,32 +108,7 @@ End Sub
 
 
 Public Sub PID_RecalculateAllMonthFluctuation()
-    Dim monthNames As Variant
-    Dim ws As Worksheet
-    Dim i As Long
-    
-    On Error GoTo CleanFail
-    
-    monthNames = PID_MonthNames()
-    
-    For i = LBound(monthNames) To UBound(monthNames)
-        Set ws = Nothing
-        
-        On Error Resume Next
-        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
-        On Error GoTo CleanFail
-        
-        If Not ws Is Nothing Then
-            PID_CalculateFluctuation ws
-        End If
-    Next i
-    
-    Exit Sub
-
-CleanFail:
-    MsgBox "Fehler bei PID_RecalculateAllMonthFluctuation:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
-           vbExclamation, "Fluktuation"
+    RefreshFluktuationAll
 End Sub
 
 

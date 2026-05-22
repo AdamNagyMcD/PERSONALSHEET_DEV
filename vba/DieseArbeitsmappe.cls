@@ -188,7 +188,6 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' I = Austrittsdatum
     ' N = Austrittsgrund
     If Not Intersect(Target, Sh.Range("D3:D82,I3:I82,N3:N82")) Is Nothing Then
-        PID_CalculateFluctuation Sh
         MarkFluktuationDirty
     End If
 
