@@ -22,6 +22,7 @@ Private Sub Workbook_Open()
     
     PID_EnsureKVCodeListNamedRange
     PID_EnsureMonatslohnFormulas
+    PID_EnsureLetztesGehaltFormulas
     PID_EnsureKVCodeDropdownValidation
     
     PID_SetupSheetProtectionForMacros

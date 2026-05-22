@@ -16,6 +16,7 @@
 - Modul1.bas / mod_KVStundenDropdown.bas / mod_KVLohnLookup.bas: removed duplicate `Restore*` macro aliases (fixes VBA compile error and missing Alt+F8 entries).
 - mod_KVStundenDropdown.bas: moved `PID_KV_CODE_*` constants to module top (fixes Mac VBA “Variable not defined” compile error).
 - mod_KVLohnLookup.bas: `PID_RestoreMonatslohnFormulasSilent` made Public (fixes Modul1 compile error in `FullSystemRefresh`).
+- Modul1.bas + DieseArbeitsmappe.cls + mod_CopyData.bas: auto-restore column `L` Letztes Gehalt formulas on open; CopyData uses canonical L formula (not broken source copy).
 - mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: removed SheetChange VBA writes to `G` (they destroyed formulas and made lohn refresh appear dead).
 - Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
 

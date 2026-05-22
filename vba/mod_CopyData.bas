@@ -91,7 +91,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     formulaH = wsSource.Range("H3:H82").FormulaR1C1
     formulaG = PID_GetMonatslohnFormulaR1C1()
     formulaK = wsSource.Range("K3:K82").FormulaR1C1
-    formulaL = wsSource.Range("L3:L82").FormulaR1C1
+    formulaL = PID_GetLetztesGehaltFormulaR1C1()
     infoOQ = wsSource.Range("O18:Q25").FormulaR1C1
     
     Set futureOverrides = New Collection

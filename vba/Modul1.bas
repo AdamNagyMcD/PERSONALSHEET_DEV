@@ -42,6 +42,7 @@ Public Sub PID_FullSystemRefresh()
     
     RefreshAllMonthKVStundenDropdowns
     PID_RestoreMonatslohnFormulasSilent
+    PID_RestoreLetztesGehaltFormulasSilent
     PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty
     PID_RecalculateAllMonthFluctuation
@@ -527,20 +528,11 @@ Public Sub PID_RestoreLetztesGehaltFormulas()
     Dim ws As Worksheet
     Dim i As Long
     Dim updatedCount As Long
-    Dim formulaR1C1 As String
-    
-    Dim oldEnableEvents As Boolean
-    Dim oldScreenUpdating As Boolean
     
     On Error GoTo CleanFail
     
-    oldEnableEvents = Application.EnableEvents
-    oldScreenUpdating = Application.ScreenUpdating
+    PID_RestoreLetztesGehaltFormulasSilent
     
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    
-    formulaR1C1 = PID_GetLetztesGehaltFormulaR1C1()
     monthNames = PID_MonthNames()
     updatedCount = 0
     
@@ -551,7 +543,7 @@ Public Sub PID_RestoreLetztesGehaltFormulas()
         On Error GoTo CleanFail
         
         If Not ws Is Nothing Then
-            If PID_RestoreLetztesGehaltFormulasOnSheet(ws, formulaR1C1) Then
+            If PID_MonthSheetHasLetztesGehaltFormula(ws) Then
                 updatedCount = updatedCount + 1
             End If
         End If
@@ -567,18 +559,85 @@ Public Sub PID_RestoreLetztesGehaltFormulas()
     GoTo CleanExit
 
 CleanExit:
-    Application.ScreenUpdating = oldScreenUpdating
-    Application.EnableEvents = oldEnableEvents
     Exit Sub
 
 CleanFail:
-    Application.ScreenUpdating = oldScreenUpdating
-    Application.EnableEvents = oldEnableEvents
-    
     MsgBox "Fehler bei PID_RestoreLetztesGehaltFormulas:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
            vbExclamation, "Spalte L"
 End Sub
+
+
+Public Sub PID_EnsureLetztesGehaltFormulas()
+    Dim ws As Worksheet
+    
+    Set ws = Nothing
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("Januar")
+    On Error GoTo 0
+    
+    If ws Is Nothing Then Exit Sub
+    If PID_MonthSheetHasLetztesGehaltFormula(ws) Then Exit Sub
+    
+    PID_RestoreLetztesGehaltFormulasSilent
+End Sub
+
+
+Public Sub PID_RestoreLetztesGehaltFormulasSilent()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim formulaR1C1 As String
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo SafeExit
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    formulaR1C1 = PID_GetLetztesGehaltFormulaR1C1()
+    monthNames = PID_MonthNames()
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo SafeExit
+        
+        If Not ws Is Nothing Then
+            PID_RestoreLetztesGehaltFormulasOnSheet ws, formulaR1C1
+        End If
+    Next i
+
+SafeExit:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+End Sub
+
+
+Public Function PID_MonthSheetHasLetztesGehaltFormula(ByVal wsMonth As Worksheet) As Boolean
+    Dim formulaText As String
+    
+    If wsMonth Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheetName(wsMonth.Name) Then Exit Function
+    
+    On Error Resume Next
+    formulaText = UCase$(CStr(wsMonth.Range("L" & PID_FIRST_ROW).FormulaR1C1))
+    If Err.Number <> 0 Then Exit Function
+    On Error GoTo 0
+    
+    If Left$(formulaText, 1) <> "=" Then Exit Function
+    If InStr(1, formulaText, "#REF", vbTextCompare) > 0 Then Exit Function
+    If InStr(1, formulaText, UCase$(PID_EINSTELLUNG_SHEET), vbTextCompare) = 0 Then Exit Function
+    If InStr(1, formulaText, "R35C3", vbTextCompare) = 0 Then Exit Function
+    
+    PID_MonthSheetHasLetztesGehaltFormula = True
+End Function
 
 
 Private Function PID_RestoreLetztesGehaltFormulasOnSheet(ByVal ws As Worksheet, _
@@ -620,7 +679,7 @@ SafeExit:
 End Function
 
 
-Private Function PID_GetLetztesGehaltFormulaR1C1() As String
+Public Function PID_GetLetztesGehaltFormulaR1C1() As String
     Dim yearRef As String
     
     yearRef = PID_GetEinstellungYearRefR1C1()
