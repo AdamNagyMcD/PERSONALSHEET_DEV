@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- mod_BuildDurchrechnungUebersicht.bas: Durchrechnungszeitraum block on `UBERSICHT` (rows 28+) with period sums, Schlussmonat differenz, Ueberstunden EUR estimate, and manual Jaenner plan inputs (C30/E30/G30).
+- Modul1.bas: `BuildDurchrechnungUebersicht` macro alias to rebuild the UEBERSICHT Durchrechnung block safely without touching rows 2-27.
 - docs/Kurzanleitung_Personalsheet_A4.html: printable A4 user guide (German) for restaurant managers.
 - Modul1.bas: `RestoreAktuelleStundenFormulas` / `PID_RestoreAktuelleStundenFormulas` restores column `H` pro-rata hour formulas on all month sheets using `EINSTELLUNG!C35` as workbook year.
 - Modul1.bas: `RestoreAustrittsdatumValidation` fixes month-sheet `AB1:AB2` date bounds and column `I` data validation after workbook year moved to `EINSTELLUNG!C35`.

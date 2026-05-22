@@ -506,6 +506,11 @@ Public Sub RestoreAustrittsdatumValidation()
 End Sub
 
 
+Public Sub BuildDurchrechnungUebersicht()
+    PID_BuildDurchrechnungUebersicht
+End Sub
+
+
 Public Sub PID_RestoreAustrittsdatumValidation()
     Dim monthNames As Variant
     Dim ws As Worksheet
