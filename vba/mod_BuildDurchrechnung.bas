@@ -94,10 +94,10 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     
     Set ws = ThisWorkbook.Worksheets("UBERSICHT")
     
-    savedJaenVerf = ws.Range(PID_DR_JAEN_VERF_CELL).Value2
-    savedJaenMust = ws.Range(PID_DR_JAEN_MUST_CELL).Value2
+    savedJaenVerf = PID_DRSafeCellValue(ws.Range(PID_DR_JAEN_VERF_CELL))
+    savedJaenMust = PID_DRSafeCellValue(ws.Range(PID_DR_JAEN_MUST_CELL))
     If Len(Trim$(CStr(savedJaenMust))) = 0 Then
-        savedJaenMust = ws.Range("G30").Value2
+        savedJaenMust = PID_DRSafeCellValue(ws.Range("G30"))
     End If
     
     On Error Resume Next
@@ -521,6 +521,8 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     PID_DRApplyTableBorders tableRange
     PID_DRApplyOuterBorder ws.Range("J" & headerRow & ":Q" & dataEndRow)
     
+    PID_DRMergeDisplayRows ws, headerRow, dataStartRow, dataEndRow
+    
     Set diffRange = ws.Range("F" & dataStartRow & ":F" & dataEndRow)
     PID_DRClearFormatConditions diffRange
     PID_DRAddDiffFormatConditions diffRange
@@ -532,8 +534,6 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     Set ueberRange = ws.Range("H" & dataStartRow & ":I" & dataEndRow)
     PID_DRClearFormatConditions ueberRange
     PID_DRAddUeberFormatConditions ueberRange
-    
-    PID_DRMergeDisplayRows ws, headerRow, dataStartRow, dataEndRow
 End Sub
 
 
@@ -573,6 +573,8 @@ Private Sub PID_DRAddUeberFormatConditions(ByVal ueberRange As Range)
     
     firstCell = ueberRange.Cells(1, 1).Address(False, False)
     
+    On Error Resume Next
+    
     ueberRange.FormatConditions.Add Type:=xlExpression, _
         Formula1:="=AND(ISNUMBER(" & firstCell & ")," & firstCell & ">0)"
     With ueberRange.FormatConditions(ueberRange.FormatConditions.Count)
@@ -580,6 +582,8 @@ Private Sub PID_DRAddUeberFormatConditions(ByVal ueberRange As Range)
         .Font.Color = RGB(132, 46, 43)
         .Font.Bold = True
     End With
+    
+    On Error GoTo 0
 End Sub
 
 
@@ -601,6 +605,17 @@ Private Sub PID_DRApplyOuterBorder(ByVal target As Range)
     End With
     On Error GoTo 0
 End Sub
+
+
+Private Function PID_DRSafeCellValue(ByVal target As Range) As Variant
+    On Error Resume Next
+    PID_DRSafeCellValue = target.Value2
+    If Err.Number <> 0 Then
+        Err.Clear
+        PID_DRSafeCellValue = Empty
+    End If
+    On Error GoTo 0
+End Function
 
 
 Private Sub PID_DRMigrateJaennerMusterInput(ByVal ws As Worksheet)
@@ -659,15 +674,40 @@ End Sub
 
 Private Sub PID_DRApplyTableBorders(ByVal tableRange As Range)
     On Error Resume Next
-    With tableRange
-        .Borders(xlInsideHorizontal).LineStyle = xlContinuous
-        .Borders(xlInsideHorizontal).Weight = xlThin
-        .Borders(xlInsideHorizontal).Color = RGB(180, 180, 180)
-        .Borders(xlInsideVertical).LineStyle = xlContinuous
-        .Borders(xlInsideVertical).Weight = xlThin
-        .Borders(xlInsideVertical).Color = RGB(180, 180, 180)
-        .BorderAround LineStyle:=xlContinuous, Weight:=xlMedium, Color:=RGB(31, 78, 121)
+    With tableRange.Borders(xlEdgeLeft)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
     End With
+    With tableRange.Borders(xlEdgeTop)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    With tableRange.Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    With tableRange.Borders(xlEdgeRight)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    If tableRange.Rows.Count > 1 Then
+        With tableRange.Borders(xlInsideHorizontal)
+            .LineStyle = xlContinuous
+            .Weight = xlThin
+            .Color = RGB(180, 180, 180)
+        End With
+    End If
+    If tableRange.Columns.Count > 1 Then
+        With tableRange.Borders(xlInsideVertical)
+            .LineStyle = xlContinuous
+            .Weight = xlThin
+            .Color = RGB(180, 180, 180)
+        End With
+    End If
     On Error GoTo 0
 End Sub
 
@@ -680,26 +720,37 @@ End Sub
 
 
 Private Sub PID_DRAddDiffFormatConditions(ByVal diffRange As Range)
-    diffRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlLess, Formula1:="0"
+    Dim firstCell As String
+    
+    firstCell = diffRange.Cells(1, 1).Address(False, False)
+    
+    On Error Resume Next
+    
+    diffRange.FormatConditions.Add Type:=xlExpression, _
+        Formula1:="=AND(ISNUMBER(" & firstCell & ")," & firstCell & "<0)"
     With diffRange.FormatConditions(diffRange.FormatConditions.Count)
         .Interior.Color = RGB(255, 199, 206)
         .Font.Color = RGB(156, 0, 6)
         .Font.Bold = True
     End With
     
-    diffRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlGreater, Formula1:="0"
+    diffRange.FormatConditions.Add Type:=xlExpression, _
+        Formula1:="=AND(ISNUMBER(" & firstCell & ")," & firstCell & ">0)"
     With diffRange.FormatConditions(diffRange.FormatConditions.Count)
         .Interior.Color = RGB(255, 235, 156)
         .Font.Color = RGB(156, 101, 0)
         .Font.Bold = True
     End With
     
-    diffRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlEqual, Formula1:="0"
+    diffRange.FormatConditions.Add Type:=xlExpression, _
+        Formula1:="=AND(ISNUMBER(" & firstCell & ")," & firstCell & "=0)"
     With diffRange.FormatConditions(diffRange.FormatConditions.Count)
         .Interior.Color = RGB(198, 239, 206)
         .Font.Color = RGB(0, 97, 0)
         .Font.Bold = True
     End With
+    
+    On Error GoTo 0
 End Sub
 
 
@@ -707,6 +758,8 @@ Private Sub PID_DRAddStatusFormatConditions(ByVal statusRange As Range)
     Dim firstCell As String
     
     firstCell = statusRange.Cells(1, 1).Address(False, False)
+    
+    On Error Resume Next
     
     statusRange.FormatConditions.Add Type:=xlExpression, _
         Formula1:="=ISNUMBER(SEARCH(""ACHTUNG""," & firstCell & "))"
@@ -731,10 +784,13 @@ Private Sub PID_DRAddStatusFormatConditions(ByVal statusRange As Range)
         .Font.Color = RGB(0, 97, 0)
         .Font.Bold = True
     End With
+    
+    On Error GoTo 0
 End Sub
 
 
 Private Sub PID_DRApplyInputBorder(ByVal borders As Borders)
+    On Error Resume Next
     borders(xlEdgeLeft).LineStyle = xlContinuous
     borders(xlEdgeLeft).Weight = xlMedium
     borders(xlEdgeLeft).Color = RGB(255, 192, 0)
@@ -747,6 +803,7 @@ Private Sub PID_DRApplyInputBorder(ByVal borders As Borders)
     borders(xlEdgeRight).LineStyle = xlContinuous
     borders(xlEdgeRight).Weight = xlMedium
     borders(xlEdgeRight).Color = RGB(255, 192, 0)
+    On Error GoTo 0
 End Sub
 
 
