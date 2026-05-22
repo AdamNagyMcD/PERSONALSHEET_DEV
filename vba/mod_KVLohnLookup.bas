@@ -711,7 +711,7 @@ SafeExit:
 End Sub
 
 
-Private Sub PID_RestoreMonatslohnFormulasSilent()
+Public Sub PID_RestoreMonatslohnFormulasSilent()
     Dim monthNames As Variant
     Dim ws As Worksheet
     Dim i As Long
