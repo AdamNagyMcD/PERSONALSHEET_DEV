@@ -522,66 +522,76 @@ Public Function GetPreviousKVPeriodForWorkbookYear(ByVal workbookYear As Long, B
 End Function
 
 
+Public Function PID_KVLohnLookup(ByVal monthNumber As Variant, _
+                                 ByVal kvCode As Variant, _
+                                 ByVal monatsstunden As Variant, _
+                                 Optional ByVal lohnTableTouch As Variant) As Variant
+    Dim monthNum As Long
+    Dim stundenValue As Double
+    Dim normalizedCode As String
+    Dim usedFallback As Boolean
+    Dim resultValue As Variant
+    
+    On Error GoTo SafeExit
+    
+    If IsEmpty(monthNumber) Or IsEmpty(kvCode) Or IsEmpty(monatsstunden) Then
+        PID_KVLohnLookup = ""
+        Exit Function
+    End If
+    
+    If Len(Trim$(CStr(kvCode))) = 0 Or Len(Trim$(CStr(monatsstunden))) = 0 Then
+        PID_KVLohnLookup = ""
+        Exit Function
+    End If
+    
+    If Not IsNumeric(monthNumber) Then
+        PID_KVLohnLookup = ""
+        Exit Function
+    End If
+    
+    monthNum = CLng(monthNumber)
+    If monthNum < 1 Or monthNum > 12 Then
+        PID_KVLohnLookup = ""
+        Exit Function
+    End If
+    
+    normalizedCode = NormalizeKVCodeForLookup(CStr(kvCode))
+    If normalizedCode = "" Then
+        PID_KVLohnLookup = ""
+        Exit Function
+    End If
+    
+    If Not PID_TryGetDouble(monatsstunden, stundenValue) Then
+        PID_KVLohnLookup = ""
+        Exit Function
+    End If
+    
+    mLohnTableCacheLoaded = False
+    mWorkbookYearCached = False
+    
+    resultValue = GetKVLohnByPeriod(monthNum, normalizedCode, stundenValue, usedFallback)
+    
+    If IsError(resultValue) Then
+        PID_KVLohnLookup = "Nicht gefunden"
+    Else
+        PID_KVLohnLookup = CDbl(resultValue)
+    End If
+    Exit Function
+
+SafeExit:
+    PID_KVLohnLookup = "Nicht gefunden"
+End Function
+
+
 Public Function PID_GetMonatslohnFormulaR1C1() As String
-    Dim yearRef As String
-    Dim normCode As String
-    Dim curPeriod As String
-    Dim prevPeriod As String
-    Dim lookupCur As String
-    Dim lookupPrev As String
+    Dim kvSheet As String
     
-    yearRef = "'" & PID_EINSTELLUNG_SHEET & "'!R35C3"
+    kvSheet = "'" & PID_LOHNTABELLE_SHEET & "'"
     
-    normCode = PID_GetNormalizedKVCodeExprR1C1()
-    
-    curPeriod = "IF(R1C1<=4,""KV ""&(" & yearRef & "-1)&""/""&" & yearRef & ",""KV ""&" & yearRef & "&""/""&(" & yearRef & "+1))"
-    prevPeriod = "IF(R1C1<=4,""KV ""&(" & yearRef & "-2)&""/""&(" & yearRef & "-1),""KV ""&(" & yearRef & "-1)&""/""&" & yearRef & ")"
-    
-    lookupCur = "IFERROR(" & PID_BuildLohnMatchExprR1C1(curPeriod, normCode) & ",0)"
-    lookupPrev = "IFERROR(" & PID_BuildLohnMatchExprR1C1(prevPeriod, normCode) & ",0)"
-    
+    ' UDF mirrors VBA lookup (BG3_15 etc.) and LOHNTABELLE anchor keeps recalc on table edits.
     PID_GetMonatslohnFormulaR1C1 = _
         "=IF(OR(RC[-2]="""",RC[-1]=""""),""""," & _
-        "IF(AND(" & lookupCur & ">0)," & lookupCur & "," & _
-        "IF(AND(" & lookupPrev & ">0)," & lookupPrev & ",""Nicht gefunden"")))"
-End Function
-
-
-Private Function PID_GetNormalizedKVCodeExprR1C1() As String
-    PID_GetNormalizedKVCodeExprR1C1 = _
-        "IF(RC[-2]="""",""""," & _
-        "IF(OR(RC[-2]=""BG1"",RC[-2]=""BG1_Basis"",RC[-2]=""BG1_BASIS""),""BG1_Basis""," & _
-        "IF(OR(RC[-2]=""BG2"",RC[-2]=""BG2_Basis"",RC[-2]=""BG2_BASIS""),""BG2_Basis""," & _
-        "IF(OR(RC[-2]=""BG3"",RC[-2]=""BG3_Basis"",RC[-2]=""BG3_BASIS""),""BG3_Basis""," & _
-        "SUBSTITUTE(SUBSTITUTE(RC[-2],""-"",""_""),"" "",""_"")))))"
-End Function
-
-
-Private Function PID_BuildLohnMatchExprR1C1(ByVal periodExpr As String, ByVal normCodeExpr As String) As String
-    Dim kv As String
-    Dim periodCol As String
-    Dim codeCol As String
-    Dim stundenCol As String
-    Dim lohnCol As String
-    
-    kv = "'" & PID_LOHNTABELLE_SHEET & "'"
-    periodCol = kv & "!R4C1:R500C1"
-    codeCol = kv & "!R4C4:R500C4"
-    stundenCol = kv & "!R4C7:R500C7"
-    lohnCol = kv & "!R4C8:R500C8"
-    
-    PID_BuildLohnMatchExprR1C1 = _
-        "INDEX(" & lohnCol & ",MATCH(1,INDEX((" & _
-        PID_GetNormalizedKVPeriodColExprR1C1(periodCol) & "=" & periodExpr & ")*" & _
-        "(" & codeCol & "=" & normCodeExpr & ")*" & _
-        "(ABS(" & stundenCol & "-RC[-1])<0.001)*" & _
-        "(ISNUMBER(" & lohnCol & "))*(" & lohnCol & ">0),0),0))"
-End Function
-
-
-Private Function PID_GetNormalizedKVPeriodColExprR1C1(ByVal periodColRef As String) As String
-    PID_GetNormalizedKVPeriodColExprR1C1 = _
-        "TRIM(IF(ISERROR(FIND(""|""," & periodColRef & "))," & periodColRef & ",LEFT(" & periodColRef & ",FIND(""|""," & periodColRef & ")-1)))"
+        "PID_KVLohnLookup(R1C1,RC[-2],RC[-1]," & kvSheet & "!R4C8))"
 End Function
 
 
@@ -594,11 +604,7 @@ Public Function PID_MonthSheetHasMonatslohnFormula(ByVal wsMonth As Worksheet) A
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
     
     formulaText = CStr(wsMonth.Range("G" & PID_FIRST_ROW).FormulaR1C1)
-    
-    ' v2: usable-lohn filter + explicit current/previous period fallback.
-    PID_MonthSheetHasMonatslohnFormula = _
-        (InStr(1, formulaText, PID_LOHNTABELLE_SHEET, vbTextCompare) > 0) And _
-        (InStr(1, formulaText, "R4C8:R500C8>0", vbTextCompare) > 0)
+    PID_MonthSheetHasMonatslohnFormula = (InStr(1, formulaText, "PID_KVLohnLookup", vbTextCompare) > 0)
 
 SafeExit:
 End Function

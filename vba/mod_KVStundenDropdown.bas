@@ -528,3 +528,200 @@ NotFound:
     CollectionHasKey_KVDropdown = False
 End Function
 
+
+Public Function PID_GetStandardKVCodeValidationList() As String
+    PID_GetStandardKVCodeValidationList = _
+        "BG1,BG1_5,BG1_10,BG1_15,BG2,BG2_5,BG2_10,BG2_15,BG3,BG3_5,BG3_10,BG3_15"
+End Function
+
+
+Public Function PID_MonthSheetHasValidKVCodeDropdown(ByVal wsMonth As Worksheet) As Boolean
+    Dim validationFormula As String
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
+    
+    validationFormula = CStr(wsMonth.Range("E" & PID_FIRST_ROW).Validation.Formula1)
+    
+    If wsMonth.Range("E" & PID_FIRST_ROW).Validation.Type <> xlValidateList Then Exit Function
+    If InStr(1, validationFormula, "#REF", vbTextCompare) > 0 Then Exit Function
+    If Len(Trim$(validationFormula)) = 0 Then Exit Function
+    
+    PID_MonthSheetHasValidKVCodeDropdown = True
+
+SafeExit:
+End Function
+
+
+Public Sub RestoreKVCodeDropdownValidation()
+    PID_RestoreKVCodeDropdownValidation
+End Sub
+
+
+Public Sub PID_RestoreKVCodeDropdownValidation()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim updatedCount As Long
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    monthNames = PID_MonthNames()
+    updatedCount = 0
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            If PID_RestoreKVCodeDropdownOnSheet(ws) Then
+                updatedCount = updatedCount + 1
+            End If
+        End If
+    Next i
+    
+    MsgBox "KV-Code Dropdown (Spalte E) wurde wiederhergestellt." & vbCrLf & vbCrLf & _
+           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           "Bereich: E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW, _
+           vbInformation, "Spalte E"
+
+CleanExit:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    Exit Sub
+
+CleanFail:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    
+    MsgBox "Fehler bei PID_RestoreKVCodeDropdownValidation:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "Spalte E"
+End Sub
+
+
+Public Sub PID_EnsureKVCodeDropdownValidation()
+    Dim ws As Worksheet
+    
+    On Error GoTo SafeExit
+    
+    Set ws = Nothing
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("Januar")
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If PID_MonthSheetHasValidKVCodeDropdown(ws) Then Exit Sub
+    
+    PID_RestoreKVCodeDropdownValidationSilent
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_EnsureKVCodeDropdownOnSheet(ByVal wsMonth As Worksheet)
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    If PID_MonthSheetHasValidKVCodeDropdown(wsMonth) Then Exit Sub
+    
+    PID_RestoreKVCodeDropdownOnSheet wsMonth
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_RestoreKVCodeDropdownValidationSilent()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo SafeExit
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    monthNames = PID_MonthNames()
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo SafeExit
+        
+        If Not ws Is Nothing Then
+            PID_RestoreKVCodeDropdownOnSheet ws
+        End If
+    Next i
+
+SafeExit:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+End Sub
+
+
+Public Function PID_RestoreKVCodeDropdownOnSheet(ByVal ws As Worksheet) As Boolean
+    Dim targetRange As Range
+    Dim wasProtected As Boolean
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
+    
+    wasProtected = ws.ProtectContents
+    If wasProtected Then
+        On Error Resume Next
+        ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+        On Error GoTo SafeExit
+    End If
+    
+    Set targetRange = ws.Range("E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW)
+    
+    On Error Resume Next
+    targetRange.Validation.Delete
+    On Error GoTo SafeExit
+    
+    With targetRange.Validation
+        .Add Type:=xlValidateList, _
+             AlertStyle:=xlValidAlertStop, _
+             Operator:=xlBetween, _
+             Formula1:=PID_GetStandardKVCodeValidationList()
+        .IgnoreBlank = True
+        .InCellDropdown = True
+        .ShowInput = True
+        .ShowError = True
+    End With
+    
+    PID_RestoreKVCodeDropdownOnSheet = True
+
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                   UserInterfaceOnly:=True, _
+                   AllowFiltering:=True, _
+                   AllowSorting:=True
+    End If
+End Function
+

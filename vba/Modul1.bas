@@ -37,6 +37,7 @@ Public Sub PID_FullSystemRefresh()
     
     RefreshAllMonthKVStundenDropdowns
     PID_RestoreMonatslohnFormulasSilent
+    PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty
     PID_RecalculateAllMonthFluctuation
     
@@ -508,6 +509,11 @@ End Sub
 
 Public Sub RestoreMonatslohnFormulas()
     PID_RestoreMonatslohnFormulas
+End Sub
+
+
+Public Sub RestoreKVCodeDropdownValidation()
+    PID_RestoreKVCodeDropdownValidation
 End Sub
 
 
