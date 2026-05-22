@@ -167,6 +167,10 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
+    On Error Resume Next
+    Application.FormatStaleValues = False
+    On Error GoTo SafeExit
+    
     ' Einfuege-Schutz:
     ' Beim Einfuegen aus alten Dateien oder anderen Quellen soll nur der Wert uebernommen werden.
     pasteHandled = False
