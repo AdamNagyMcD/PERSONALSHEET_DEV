@@ -887,7 +887,6 @@ End Sub
 
 Public Sub PID_ForceMonatslohnRecalcForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long)
     Dim gCell As Range
-    Dim formulaR1C1 As String
     Dim monthNumber As Long
     Dim kvCode As String
     Dim stunden As Double
@@ -905,29 +904,20 @@ Public Sub PID_ForceMonatslohnRecalcForRow(ByVal wsMonth As Worksheet, ByVal row
     
     kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
     If kvCode = "" Or Not PID_TryGetDouble(wsMonth.Cells(rowNumber, "F").Value, stunden) Then
-        If gCell.HasFormula Then
-            formulaR1C1 = gCell.FormulaR1C1
-            gCell.FormulaR1C1 = ""
-            gCell.FormulaR1C1 = formulaR1C1
-        Else
-            gCell.ClearContents
-        End If
+        gCell.Value2 = 0
+        PID_RecalculateLetztesGehaltForRow wsMonth, rowNumber
         Exit Sub
     End If
     
     lohn = GetKVLohnByPeriod(monthNumber, kvCode, stunden, usedFallback)
     
     If IsError(lohn) Then
-        If Not gCell.HasFormula Then
-            PID_RestoreMonatslohnFormulasOnSheet wsMonth, PID_GetMonatslohnFormulaR1C1()
-        End If
-        formulaR1C1 = gCell.FormulaR1C1
-        gCell.FormulaR1C1 = ""
-        gCell.FormulaR1C1 = formulaR1C1
-        Exit Sub
+        gCell.Value2 = 0
+    Else
+        gCell.Value2 = CDbl(lohn)
     End If
     
-    gCell.Value2 = CDbl(lohn)
+    PID_RecalculateLetztesGehaltForRow wsMonth, rowNumber
 
 SafeExit:
 End Sub

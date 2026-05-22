@@ -829,7 +829,8 @@ End Sub
 
 Public Sub PID_RecalculateLetztesGehaltForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long)
     Dim lCell As Range
-    Dim formulaR1C1 As String
+    Dim calcResult As Variant
+    Dim formulaText As String
     
     On Error GoTo SafeExit
     
@@ -839,15 +840,26 @@ Public Sub PID_RecalculateLetztesGehaltForRow(ByVal wsMonth As Worksheet, ByVal 
     Set lCell = wsMonth.Cells(rowNumber, "L")
     If Not lCell.HasFormula Then Exit Sub
     
+    formulaText = lCell.Formula
+    If Len(Trim$(formulaText)) = 0 Then Exit Sub
+    
     On Error Resume Next
-    lCell.Calculate
-    If Err.Number = 0 Then Exit Sub
-    Err.Clear
+    calcResult = Application.Evaluate(formulaText)
+    If Err.Number <> 0 Then
+        Err.Clear
+        Exit Sub
+    End If
     On Error GoTo SafeExit
     
-    formulaR1C1 = lCell.FormulaR1C1
-    lCell.FormulaR1C1 = ""
-    lCell.FormulaR1C1 = formulaR1C1
+    If IsError(calcResult) Then
+        lCell.Value2 = 0
+    ElseIf IsNumeric(calcResult) Then
+        lCell.Value2 = CDbl(calcResult)
+    ElseIf IsEmpty(calcResult) Then
+        lCell.ClearContents
+    Else
+        lCell.Value2 = calcResult
+    End If
 
 SafeExit:
 End Sub

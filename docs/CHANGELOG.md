@@ -36,6 +36,7 @@
 - mod_KVStundenDropdown.bas: RefreshKVStundenDropdownForSingleRow fuer schnellen F-Dropdown bei F-Klick.
 - DieseArbeitsmappe.cls: Formula-Checks lazy beim ersten Monats-Tab; Hour-Override-Log nur bei F-Aenderung.
 - Modul1.bas + DieseArbeitsmappe.cls: L (Letztes Gehalt) Calculate bei D/E/F/G/I/K-Aenderung (Manual-Calc-Fix).
+- Modul1.bas: L via Application.Evaluate statt Calculate/Formel-Reset; L nur einmal pro G-Update.
 - mod_KVStundenDropdown.bas: F-Dropdown-Refresh nur Zeilen mit KV-Code (E nicht leer); ScreenUpdating aus waehrend Refresh.
 - DieseArbeitsmappe.cls: FLUKTUATION-Activate nur bei gFluktuationDirty; kein S35-S37-Calculate bei Monats-Activate.
 - mod_FluctuationCalculation.bas: UEBERSICHT nach Fluktuation-Sync wieder schuetzen.
