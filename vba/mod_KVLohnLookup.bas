@@ -800,6 +800,7 @@ Public Sub MarkAllKVLohnDirty()
     gKVLohnAllMonthsDirty = True
     Set mKVLohnRefreshedSheets = New Collection
     PID_ClearLohnTableCache
+    MarkFinanzSummaryDirty
 End Sub
 
 
