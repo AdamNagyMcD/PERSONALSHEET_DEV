@@ -43,6 +43,7 @@ Public Sub PID_RefreshDurchrechnungUebersicht()
     On Error GoTo CleanFail
     
     ws.Calculate
+    PID_UpdateDurchrechnungEuroFormulas ws
     PID_UnlockDurchrechnungInputs ws
     PID_ApplyDurchrechnungFormats ws
     
@@ -271,7 +272,7 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
             "=D" & dataRow & "-E" & dataRow
         
         .Range("B" & noteRow & ":I" & noteRow).Merge
-        .Cells(noteRow, 2).Value = "Ueberstunden EUR = Ueberstunden Std x Stundenlohn x 1,5. Nur bei negativem Schluss (Muster hoeher als Verfuegbar). Positive Differenz = Reserve, kein EUR-Risiko."
+        .Cells(noteRow, 2).Value = "Ueberstunden EUR = Ueberstunden Std x Stundenlohn x 1,5 (in C30 als Zahl, z. B. 12,5). Nur bei negativem Schluss. Positive Differenz = Reserve, kein EUR-Risiko."
         .Cells(noteRow, 2).Font.Size = 9
         .Cells(noteRow, 2).WrapText = True
     End With
@@ -292,9 +293,27 @@ Private Sub PID_WriteDurchrechnungDataRow(ByVal ws As Worksheet, _
         .Cells(dataRow, 5).Formula = musterFormula
         .Cells(dataRow, 6).Formula = diffFormula
         .Cells(dataRow, 7).Formula = "=MAX(0,-F" & dataRow & ")"
-        .Cells(dataRow, 8).Formula = "=IF($C$30="""","""",G" & dataRow & "*$C$30*1.5)"
+        .Cells(dataRow, 8).Formula = PID_GetEuroFormula(dataRow)
         .Cells(dataRow, 9).Formula = "=IF(F" & dataRow & "<0,""ACHTUNG: Ueberstunden-Risiko"",IF(F" & dataRow & ">0,""Hinweis: Reserve / Minus-Stunden moeglich"",""OK""))"
     End With
+End Sub
+
+
+Private Function PID_GetEuroFormula(ByVal dataRow As Long) As String
+    ' 3/2 statt 1,5 wegen Excel-2016/Mac Dezimal-Trennzeichen.
+    PID_GetEuroFormula = "=IF(OR($C$30="""",NOT(ISNUMBER($C$30))),"""",G" & dataRow & "*$C$30*3/2)"
+End Function
+
+
+Private Sub PID_UpdateDurchrechnungEuroFormulas(ByVal ws As Worksheet)
+    Dim dataRow As Long
+    Dim headerRow As Long
+    
+    headerRow = PID_DR_START_ROW + 3
+    
+    For dataRow = headerRow + 1 To headerRow + 4
+        ws.Cells(dataRow, 8).Formula = PID_GetEuroFormula(dataRow)
+    Next dataRow
 End Sub
 
 

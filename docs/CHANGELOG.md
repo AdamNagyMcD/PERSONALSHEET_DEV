@@ -9,7 +9,7 @@
 - Personalsheet.xlsm: reverted broken direct XML patch on `UBERSICHT`; Durchrechnung block must be created via `BuildDurchrechnungUebersicht` macro (avoids corrupted `sharedStrings` counts on Mac Excel).
 
 ### Changed
-- mod_BuildDurchrechnungUebersicht.bas: wider column layout, taller rows, `PID_RefreshDurchrechnungUebersicht` for silent recalc/format refresh on UEBERSICHT activate.
+- mod_BuildDurchrechnungUebersicht.bas: fixed `#WERT!` in Ueberstunden EUR (`*3/2` instead of `*1.5`, ISNUMBER check on C30); euro formulas refreshed on UEBERSICHT activate.
 - DieseArbeitsmappe.cls: refreshes Durchrechnungsblock when `UBERSICHT` sheet is activated.
 - Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
 
