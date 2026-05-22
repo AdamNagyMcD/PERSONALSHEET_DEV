@@ -376,48 +376,124 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     Dim dataEndRow As Long
     Dim inputRow As Long
     Dim hintRow As Long
+    Dim noteRow As Long
+    Dim titleRow As Long
     Dim dataRow As Long
     Dim diffRange As Range
-    Dim yellowColor As Long
+    Dim statusRange As Range
+    Dim ueberRange As Range
+    Dim blockRange As Range
+    Dim tableRange As Range
     
-    headerRow = PID_DR_START_ROW + 3
+    titleRow = PID_DR_START_ROW
     hintRow = PID_DR_START_ROW + 1
     inputRow = PID_DR_START_ROW + 2
+    headerRow = PID_DR_START_ROW + 3
     dataStartRow = headerRow + 1
     dataEndRow = dataStartRow + 3
-    yellowColor = RGB(255, 242, 204)
+    noteRow = headerRow + 5
     
     ws.Columns("B").ColumnWidth = 14
     ws.Columns("C").ColumnWidth = 12
-    ws.Columns("D").ColumnWidth = 14
-    ws.Columns("E").ColumnWidth = 12
-    ws.Columns("F").ColumnWidth = 11
-    ws.Columns("G").ColumnWidth = 10
-    ws.Columns("H").ColumnWidth = 13
-    ws.Columns("I").ColumnWidth = 14
-    ws.Columns("J").ColumnWidth = 30
+    ws.Columns("D").ColumnWidth = 15
+    ws.Columns("E").ColumnWidth = 14
+    ws.Columns("F").ColumnWidth = 12
+    ws.Columns("G").ColumnWidth = 11
+    ws.Columns("H").ColumnWidth = 14
+    ws.Columns("I").ColumnWidth = 15
+    ws.Columns("J").ColumnWidth = 28
     
-    ws.Rows(PID_DR_START_ROW).RowHeight = 20
-    ws.Rows(hintRow).RowHeight = 48
-    ws.Rows(inputRow).RowHeight = 22
-    ws.Rows(headerRow).RowHeight = 32
-    ws.Rows(PID_DR_END_ROW).RowHeight = 40
+    ws.Rows(titleRow).RowHeight = 28
+    ws.Rows(hintRow).RowHeight = 52
+    ws.Rows(inputRow).RowHeight = 24
+    ws.Rows(headerRow).RowHeight = 36
+    ws.Rows(noteRow).RowHeight = 44
     
     For dataRow = dataStartRow To dataEndRow
-        ws.Rows(dataRow).RowHeight = 34
+        ws.Rows(dataRow).RowHeight = 36
     Next dataRow
     
-    With ws.Range("B" & PID_DR_START_ROW & ":J" & hintRow)
+    Set blockRange = ws.Range("B" & titleRow & ":J" & noteRow)
+    Set tableRange = ws.Range("B" & headerRow & ":J" & dataEndRow)
+    
+    With ws.Range("B" & titleRow & ":J" & titleRow)
+        .Interior.Color = RGB(31, 78, 121)
+        .Font.Color = RGB(255, 255, 255)
+        .Font.Bold = True
+        .Font.Size = 13
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+    End With
+    
+    With ws.Range("B" & hintRow & ":J" & hintRow)
+        .Interior.Color = RGB(242, 242, 242)
+        .Font.Color = RGB(89, 89, 89)
+        .Font.Italic = True
+        .Font.Size = 9
+        .HorizontalAlignment = xlLeft
+        .VerticalAlignment = xlCenter
+        .WrapText = True
+    End With
+    
+    With ws.Range("B" & inputRow & ":J" & inputRow)
+        .Interior.Color = RGB(255, 242, 204)
         .HorizontalAlignment = xlLeft
         .VerticalAlignment = xlCenter
     End With
     
-    ws.Range("B" & inputRow).HorizontalAlignment = xlLeft
-    ws.Range("F" & inputRow).HorizontalAlignment = xlLeft
+    ws.Range("B" & inputRow).Font.Bold = True
+    ws.Range("F" & inputRow).Font.Bold = True
     
-    ws.Range("B" & headerRow & ":J" & headerRow).HorizontalAlignment = xlCenter
-    ws.Range("B" & headerRow & ":J" & headerRow).WrapText = True
-    ws.Range("B" & headerRow & ":J" & headerRow).VerticalAlignment = xlCenter
+    With ws.Range(PID_DR_JAEN_VERF_CELL)
+        .Interior.Color = RGB(255, 242, 204)
+        .Font.Bold = True
+        .Borders(xlEdgeLeft).LineStyle = xlContinuous
+        .Borders(xlEdgeLeft).Weight = xlMedium
+        .Borders(xlEdgeLeft).Color = RGB(255, 192, 0)
+        .Borders(xlEdgeTop).LineStyle = xlContinuous
+        .Borders(xlEdgeTop).Weight = xlMedium
+        .Borders(xlEdgeTop).Color = RGB(255, 192, 0)
+        .Borders(xlEdgeBottom).LineStyle = xlContinuous
+        .Borders(xlEdgeBottom).Weight = xlMedium
+        .Borders(xlEdgeBottom).Color = RGB(255, 192, 0)
+        .Borders(xlEdgeRight).LineStyle = xlContinuous
+        .Borders(xlEdgeRight).Weight = xlMedium
+        .Borders(xlEdgeRight).Color = RGB(255, 192, 0)
+    End With
+    
+    With ws.Range(PID_DR_JAEN_MUST_CELL)
+        .Interior.Color = RGB(255, 242, 204)
+        .Font.Bold = True
+        .Borders(xlEdgeLeft).LineStyle = xlContinuous
+        .Borders(xlEdgeLeft).Weight = xlMedium
+        .Borders(xlEdgeLeft).Color = RGB(255, 192, 0)
+        .Borders(xlEdgeTop).LineStyle = xlContinuous
+        .Borders(xlEdgeTop).Weight = xlMedium
+        .Borders(xlEdgeTop).Color = RGB(255, 192, 0)
+        .Borders(xlEdgeBottom).LineStyle = xlContinuous
+        .Borders(xlEdgeBottom).Weight = xlMedium
+        .Borders(xlEdgeBottom).Color = RGB(255, 192, 0)
+        .Borders(xlEdgeRight).LineStyle = xlContinuous
+        .Borders(xlEdgeRight).Weight = xlMedium
+        .Borders(xlEdgeRight).Color = RGB(255, 192, 0)
+    End With
+    
+    With ws.Range("B" & headerRow & ":J" & headerRow)
+        .Interior.Color = RGB(221, 235, 247)
+        .Font.Color = RGB(31, 78, 121)
+        .Font.Bold = True
+        .Font.Size = 10
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = True
+    End With
+    
+    For dataRow = dataStartRow To dataEndRow
+        If ((dataRow - dataStartRow) Mod 2) = 1 Then
+            ws.Range("B" & dataRow & ":E" & dataRow).Interior.Color = RGB(248, 248, 248)
+            ws.Range("G" & dataRow & ":J" & dataRow).Interior.Color = RGB(248, 248, 248)
+        End If
+    Next dataRow
     
     ws.Range("B" & dataStartRow & ":C" & dataEndRow).HorizontalAlignment = xlLeft
     ws.Range("D" & dataStartRow & ":I" & dataEndRow).HorizontalAlignment = xlRight
@@ -425,47 +501,171 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     ws.Range("J" & dataStartRow & ":J" & dataEndRow).WrapText = True
     ws.Range("B" & dataStartRow & ":J" & dataEndRow).VerticalAlignment = xlCenter
     
-    ws.Range(PID_DR_JAEN_VERF_CELL).Interior.Color = yellowColor
-    ws.Range(PID_DR_JAEN_MUST_CELL).Interior.Color = yellowColor
+    ws.Range("D" & dataStartRow & ":F" & dataEndRow).NumberFormat = "#,##0.00"
+    ws.Range("G" & dataStartRow & ":G" & dataEndRow).NumberFormat = "#,##0.00"
+    ws.Range("H" & dataStartRow & ":H" & dataEndRow).NumberFormat = "#,##0.00"
+    ws.Range("I" & dataStartRow & ":I" & dataEndRow).NumberFormat = "#,##0.00"
+    ws.Range(PID_DR_JAEN_VERF_CELL).NumberFormat = "#,##0.00"
+    ws.Range(PID_DR_JAEN_MUST_CELL).NumberFormat = "#,##0.00"
     
-    ws.Range("D" & dataStartRow & ":I" & dataEndRow).NumberFormat = "0.00"
-    ws.Range(PID_DR_JAEN_VERF_CELL).NumberFormat = "0.00"
-    ws.Range(PID_DR_JAEN_MUST_CELL).NumberFormat = "0.00"
+    With ws.Range("B" & noteRow & ":J" & noteRow)
+        .Interior.Color = RGB(245, 245, 245)
+        .Font.Color = RGB(89, 89, 89)
+        .Font.Italic = True
+        .Font.Size = 9
+        .HorizontalAlignment = xlLeft
+        .VerticalAlignment = xlCenter
+        .WrapText = True
+    End With
     
-    With ws.Range("B" & headerRow & ":J" & dataEndRow).Borders(xlEdgeLeft)
+    With blockRange.Borders(xlEdgeLeft)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    With blockRange.Borders(xlEdgeRight)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    With blockRange.Borders(xlEdgeTop)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    With blockRange.Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(31, 78, 121)
+    End With
+    
+    With tableRange.Borders(xlEdgeLeft)
         .LineStyle = xlContinuous
         .Weight = xlThin
     End With
-    With ws.Range("B" & headerRow & ":J" & dataEndRow).Borders(xlEdgeTop)
+    With tableRange.Borders(xlEdgeTop)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+    End With
+    With tableRange.Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+    End With
+    With tableRange.Borders(xlEdgeRight)
         .LineStyle = xlContinuous
         .Weight = xlThin
     End With
-    With ws.Range("B" & headerRow & ":J" & dataEndRow).Borders(xlEdgeBottom)
+    With tableRange.Borders(xlInsideVertical)
         .LineStyle = xlContinuous
         .Weight = xlThin
     End With
-    With ws.Range("B" & headerRow & ":J" & dataEndRow).Borders(xlEdgeRight)
-        .LineStyle = xlContinuous
-        .Weight = xlThin
-    End With
-    With ws.Range("B" & headerRow & ":J" & dataEndRow).Borders(xlInsideVertical)
-        .LineStyle = xlContinuous
-        .Weight = xlThin
-    End With
-    With ws.Range("B" & headerRow & ":J" & dataEndRow).Borders(xlInsideHorizontal)
+    With tableRange.Borders(xlInsideHorizontal)
         .LineStyle = xlContinuous
         .Weight = xlThin
     End With
     
     Set diffRange = ws.Range("F" & dataStartRow & ":F" & dataEndRow)
+    On Error Resume Next
     diffRange.FormatConditions.Delete
+    On Error GoTo 0
     
     diffRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlLess, Formula1:="0"
-    diffRange.FormatConditions(diffRange.FormatConditions.Count).Interior.Color = RGB(255, 199, 206)
+    With diffRange.FormatConditions(diffRange.FormatConditions.Count)
+        .Interior.Color = RGB(255, 199, 206)
+        .Font.Color = RGB(156, 0, 6)
+        .Font.Bold = True
+    End With
     
     diffRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlGreater, Formula1:="0"
-    diffRange.FormatConditions(diffRange.FormatConditions.Count).Interior.Color = RGB(255, 235, 156)
+    With diffRange.FormatConditions(diffRange.FormatConditions.Count)
+        .Interior.Color = RGB(255, 235, 156)
+        .Font.Color = RGB(156, 101, 0)
+        .Font.Bold = True
+    End With
     
     diffRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlEqual, Formula1:="0"
-    diffRange.FormatConditions(diffRange.FormatConditions.Count).Interior.Color = RGB(198, 239, 206)
+    With diffRange.FormatConditions(diffRange.FormatConditions.Count)
+        .Interior.Color = RGB(198, 239, 206)
+        .Font.Color = RGB(0, 97, 0)
+        .Font.Bold = True
+    End With
+    
+    Set statusRange = ws.Range("J" & dataStartRow & ":J" & dataEndRow)
+    On Error Resume Next
+    statusRange.FormatConditions.Delete
+    On Error GoTo 0
+    
+    statusRange.FormatConditions.Add Type:=xlTextString, String:="ACHTUNG", TextOperator:=xlContains
+    With statusRange.FormatConditions(statusRange.FormatConditions.Count)
+        .Interior.Color = RGB(255, 199, 206)
+        .Font.Color = RGB(156, 0, 6)
+        .Font.Bold = True
+    End With
+    
+    statusRange.FormatConditions.Add Type:=xlTextString, String:="Hinweis", TextOperator:=xlContains
+    With statusRange.FormatConditions(statusRange.FormatConditions.Count)
+        .Interior.Color = RGB(255, 235, 156)
+        .Font.Color = RGB(156, 101, 0)
+        .Font.Bold = True
+    End With
+    
+    statusRange.FormatConditions.Add Type:=xlTextString, String:="OK", TextOperator:=xlContains
+    With statusRange.FormatConditions(statusRange.FormatConditions.Count)
+        .Interior.Color = RGB(198, 239, 206)
+        .Font.Color = RGB(0, 97, 0)
+        .Font.Bold = True
+    End With
+    
+    Set ueberRange = ws.Range("H" & dataStartRow & ":I" & dataEndRow)
+    On Error Resume Next
+    ueberRange.FormatConditions.Delete
+    On Error GoTo 0
+    
+    ueberRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlGreater, Formula1:="0"
+    With ueberRange.FormatConditions(ueberRange.FormatConditions.Count)
+        .Interior.Color = RGB(252, 228, 214)
+        .Font.Color = RGB(132, 46, 43)
+        .Font.Bold = True
+    End With
+End Sub
+
+
+Public Sub PID_FormatDurchrechnungUebersicht()
+    Dim ws As Worksheet
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldScreenUpdating = Application.ScreenUpdating
+    Application.ScreenUpdating = False
+    
+    Set ws = ThisWorkbook.Worksheets(PID_UBERSICHT_SHEET)
+    
+    If Not PID_DurchrechnungBlockExists(ws) Then
+        MsgBox "Kein Durchrechnungsblock auf UEBERSICHT gefunden. Bitte zuerst BuildDurchrechnungUebersicht ausfuehren.", _
+               vbExclamation, "Durchrechnung"
+        GoTo CleanExit
+    End If
+    
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
+    PID_UnlockDurchrechnungInputs ws
+    PID_ApplyDurchrechnungFormats ws
+    
+    ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+               UserInterfaceOnly:=True, _
+               AllowFiltering:=True, _
+               AllowSorting:=True
+    
+    GoTo CleanExit
+
+CleanFail:
+    MsgBox "Fehler bei FormatDurchrechnungUebersicht:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "Durchrechnung"
+
+CleanExit:
+    Application.ScreenUpdating = oldScreenUpdating
 End Sub

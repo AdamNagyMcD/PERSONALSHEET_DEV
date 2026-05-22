@@ -802,6 +802,11 @@ Public Sub RefreshDurchrechnungUebersicht()
 End Sub
 
 
+Public Sub FormatDurchrechnungUebersicht()
+    PID_FormatDurchrechnungUebersicht
+End Sub
+
+
 Public Sub SyncDieseArbeitsmappeFromExport()
     Dim syncOk As Boolean
     Dim syncDetails As String
