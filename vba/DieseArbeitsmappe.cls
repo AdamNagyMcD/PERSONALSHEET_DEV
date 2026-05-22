@@ -21,6 +21,10 @@ Private Sub Workbook_Open()
     Application.EnableEvents = False
     Application.Calculation = xlCalculationManual
     
+    On Error Resume Next
+    Application.FormatStaleValues = False
+    Err.Clear
+    
     PID_EnsureKVCodeListNamedRange
     PID_EnsureMonatslohnFormulas
     PID_EnsureLetztesGehaltFormulas

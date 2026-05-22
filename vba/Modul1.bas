@@ -15,40 +15,16 @@ Public Const PID_FLUKTUATION_TIME_LAST_ROW As Long = 59
 
 
 Public Sub PID_ConfigureDeferredWorkbookCalculationOnOpen()
-    Dim ws As Worksheet
-    
     On Error Resume Next
     Application.FormatStaleValues = False
     Err.Clear
-    
-    For Each ws In ThisWorkbook.Worksheets
-        ws.EnableCalculation = False
-    Next ws
-    
-    If Not ActiveSheet Is Nothing Then
-        If TypeOf ActiveSheet Is Worksheet Then
-            ActiveSheet.EnableCalculation = True
-        End If
-    End If
-    
-    Application.Calculation = xlCalculationAutomatic
+    Application.Calculation = xlCalculationManual
 End Sub
 
 
 Public Sub PID_EnsureWorksheetCalculationEnabled(ByVal ws As Worksheet)
-    Dim wasDisabled As Boolean
-    
     On Error Resume Next
-    
-    If ws Is Nothing Then Exit Sub
-    
     Application.FormatStaleValues = False
-    
-    wasDisabled = Not ws.EnableCalculation
-    If Not wasDisabled Then Exit Sub
-    
-    ws.EnableCalculation = True
-    ws.Calculate
 End Sub
 
 
