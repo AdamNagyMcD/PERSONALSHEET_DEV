@@ -17,8 +17,9 @@
 - mod_KVStundenDropdown.bas: moved `PID_KV_CODE_*` constants to module top (fixes Mac VBA “Variable not defined” compile error).
 - mod_KVLohnLookup.bas: `PID_RestoreMonatslohnFormulasSilent` made Public (fixes Modul1 compile error in `FullSystemRefresh`).
 - Modul1.bas + DieseArbeitsmappe.cls + mod_CopyData.bas: auto-restore column `L` Letztes Gehalt formulas on open; CopyData uses canonical L formula (not broken source copy).
-- Personalsheet.xlsm: column `L` `#REF!` year refs replaced with `EINSTELLUNG!$C$35` on all month sheets.
-- mod_ResetAndImportVBAFiles.bas + Modul1.bas: post-import Excel state reset, forced `DieseArbeitsmappe` sync, and `RepairWorkbookAfterVBAImport` in import module (avoids compile error before Modul1 sync).
+- Personalsheet.xlsm: column `L` `#REF!` year refs replaced with `EINSTELLUNG!$C$35` on all month sheets (re-applied after accidental revert).
+- mod_ResetAndImportVBAFiles.bas: removed auto-repair during import (caused compile/state issues); clear post-import steps via `FullSystemRefresh`.
+- Modul1.bas: `FullSystemRefresh` runs `CalculateFull` after formula restore (fixes G `#NAME?` when VBA UDF was inactive).
 - mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: removed SheetChange VBA writes to `G` (they destroyed formulas and made lohn refresh appear dead).
 - Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
 

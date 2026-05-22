@@ -52,6 +52,10 @@ Public Sub PID_FullSystemRefresh()
     
     PID_FormatAllMoneyColumns
     
+    On Error Resume Next
+    Application.CalculateFull
+    On Error GoTo CleanFail
+    
     PID_SetupSheetProtectionForMacros
     
     MsgBox "Personalsheet wurde vollstaendig aktualisiert.", _

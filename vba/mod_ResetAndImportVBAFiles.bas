@@ -116,19 +116,17 @@ Public Sub ResetAndImportVBAFiles()
     Application.StatusBar = False
     On Error GoTo ImportError
 
-    On Error Resume Next
-    PID_RepairWorkbookAfterVBAImport
-    On Error GoTo ImportError
-
     MsgBox deleted & " Module geloescht." & vbCrLf & _
            imported & " VBA-Dateien importiert." & vbCrLf & _
            updatedCodeModules & " Tabellen-/Workbook-Module aktualisiert." & vbCrLf & _
            skipped & " Dateien uebersprungen." & vbCrLf & vbCrLf & _
-           "Wichtig:" & vbCrLf & _
-           "1) Datei speichern (Datei > Speichern)" & vbCrLf & _
-           "2) Excel komplett schliessen und neu oeffnen" & vbCrLf & vbCrLf & _
-           "Falls Visual Basic ausgegraut ist: Excel schliessen, neu oeffnen, " & _
-           "dann Alt+F8 > RepairWorkbookAfterVBAImport.", _
+           "Wichtig - bitte genau in dieser Reihenfolge:" & vbCrLf & _
+           "1) VBA-Editor oeffnen: Debug > VBAProject kompilieren" & vbCrLf & _
+           "2) Datei > Speichern" & vbCrLf & _
+           "3) Excel komplett schliessen und neu oeffnen" & vbCrLf & _
+           "4) Alt+F8 > FullSystemRefresh ausfuehren" & vbCrLf & vbCrLf & _
+           "Spalte G (#NAME?) bedeutet: VBA ist noch nicht aktiv. " & _
+           "Schritte 1-4 beheben das.", _
            vbInformation, "VBA Import"
 
     Exit Sub
