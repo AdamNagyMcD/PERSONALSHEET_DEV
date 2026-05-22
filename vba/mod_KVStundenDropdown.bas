@@ -554,6 +554,34 @@ End Function
 
 
 Public Function PID_GetKVCodeValidationFormula() As String
+    Dim wsHelper As Worksheet
+    Dim listRange As Range
+    Dim codes As Variant
+    Dim i As Long
+    Dim codeCount As Long
+    
+    On Error GoTo UseNamedRange
+    
+    Set wsHelper = GetOrCreateKVDropdownHelperSheet()
+    
+    On Error Resume Next
+    wsHelper.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo UseNamedRange
+    
+    codes = PID_GetStandardKVCodeArray()
+    codeCount = UBound(codes) - LBound(codes) + 1
+    
+    For i = LBound(codes) To UBound(codes)
+        wsHelper.Cells(i - LBound(codes) + 1, PID_KV_CODE_HELPER_COL).Value = CStr(codes(i))
+    Next i
+    
+    Set listRange = wsHelper.Range(wsHelper.Cells(1, PID_KV_CODE_HELPER_COL), _
+                                   wsHelper.Cells(codeCount, PID_KV_CODE_HELPER_COL))
+    
+    PID_GetKVCodeValidationFormula = "=" & listRange.Worksheet.Name & "!" & listRange.Address(True, True)
+    Exit Function
+
+UseNamedRange:
     PID_EnsureKVCodeListNamedRange
     PID_GetKVCodeValidationFormula = "=" & PID_KV_CODE_LIST_NAME
 End Function
@@ -598,26 +626,31 @@ End Function
 
 Public Sub PID_ApplyKVCodeDropdownValidation(ByVal ws As Worksheet)
     Dim targetRange As Range
+    Dim validationFormula As String
     
     On Error GoTo SafeExit
     
     If ws Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
     
-    PID_EnsureKVCodeListNamedRange
+    validationFormula = PID_GetKVCodeValidationFormula()
+    If Left$(validationFormula, 1) <> "=" Then
+        validationFormula = "=" & validationFormula
+    End If
     
     Set targetRange = ws.Range("E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW)
     targetRange.Locked = False
     
     On Error Resume Next
     targetRange.Validation.Delete
+    Err.Clear
     On Error GoTo SafeExit
     
     With targetRange.Validation
         .Add Type:=xlValidateList, _
              AlertStyle:=xlValidAlertStop, _
              Operator:=xlBetween, _
-             Formula1:=PID_GetKVCodeValidationFormula()
+             Formula1:=validationFormula
         .IgnoreBlank = True
         .InCellDropdown = True
         .ShowInput = True
@@ -630,21 +663,31 @@ End Sub
 
 Public Function PID_MonthSheetHasValidKVCodeDropdown(ByVal wsMonth As Worksheet) As Boolean
     Dim validationFormula As String
-    
-    On Error GoTo SafeExit
+    Dim validationType As Long
+    Dim validationCell As Range
     
     If wsMonth Is Nothing Then Exit Function
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
     
-    validationFormula = UCase$(CStr(wsMonth.Range("E" & PID_FIRST_ROW).Validation.Formula1))
+    Set validationCell = wsMonth.Range("E" & PID_FIRST_ROW)
     
-    If wsMonth.Range("E" & PID_FIRST_ROW).Validation.Type <> xlValidateList Then Exit Function
+    ' Broken #REF! validation throws on read; Resume Next avoids debugger breaks.
+    On Error Resume Next
+    validationType = validationCell.Validation.Type
+    If Err.Number <> 0 Then Exit Function
+    
+    If validationType <> xlValidateList Then Exit Function
+    
+    validationFormula = UCase$(CStr(validationCell.Validation.Formula1))
+    If Err.Number <> 0 Then Exit Function
+    On Error GoTo 0
+    
     If InStr(1, validationFormula, "#REF", vbTextCompare) > 0 Then Exit Function
-    If InStr(1, validationFormula, PID_KV_CODE_LIST_NAME, vbTextCompare) = 0 Then Exit Function
+    If InStr(1, validationFormula, PID_KV_CODE_LIST_NAME, vbTextCompare) = 0 Then
+        If InStr(1, validationFormula, "KV_DROPDOWN_HELPER", vbTextCompare) = 0 Then Exit Function
+    End If
     
     PID_MonthSheetHasValidKVCodeDropdown = True
-
-SafeExit:
 End Function
 
 
@@ -707,21 +750,8 @@ End Sub
 
 
 Public Sub PID_EnsureKVCodeDropdownValidation()
-    Dim ws As Worksheet
-    
-    On Error GoTo SafeExit
-    
-    Set ws = Nothing
-    On Error Resume Next
-    Set ws = ThisWorkbook.Worksheets("Januar")
-    On Error GoTo SafeExit
-    
-    If ws Is Nothing Then Exit Sub
-    If PID_MonthSheetHasValidKVCodeDropdown(ws) Then Exit Sub
-    
+    ' Always rebuild on open: #REF! validation cannot be read safely for a pre-check.
     PID_RestoreKVCodeDropdownValidationSilent
-
-SafeExit:
 End Sub
 
 

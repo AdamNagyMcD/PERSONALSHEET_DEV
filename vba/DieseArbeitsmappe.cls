@@ -214,7 +214,9 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     ' If user selects E and dropdown is broken/missing, rebuild column E validation.
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
         If Not PID_MonthSheetHasValidKVCodeDropdown(Sh) Then
+            On Error Resume Next
             PID_RestoreKVCodeDropdownOnSheet Sh
+            On Error GoTo SafeExit
         End If
     End If
     

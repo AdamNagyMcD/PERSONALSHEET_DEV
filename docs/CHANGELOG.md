@@ -12,6 +12,7 @@
 - mod_BuildDurchrechnungUebersicht.bas: Ueberstunden EUR no longer requires ISNUMBER on C30 (text numbers like `1` or `12,5` now calculate).
 - mod_KVLohnLookup.bas: column `G` uses `PID_KVLohnLookup` UDF (same logic as VBA lookup; fixes `BG3_15` etc.).
 - mod_KVStundenDropdown.bas: column `E` dropdown uses named range `PID_KV_CODE_LIST` (fixes `#REF!` and German list separator); applied on every sheet protect/open.
+- mod_KVStundenDropdown.bas + DieseArbeitsmappe.cls: safe read of broken `#REF!` validation (no debugger break); direct helper-sheet list reference; silent restore on every open.
 - mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: removed SheetChange VBA writes to `G` (they destroyed formulas and made lohn refresh appear dead).
 - Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
 
