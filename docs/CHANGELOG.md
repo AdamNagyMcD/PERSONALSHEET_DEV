@@ -7,6 +7,7 @@
 - mod_BuildDurchrechnung.bas: module/file renamed from `mod_BuildDurchrechnungUebersicht` (name exceeded VBA 31-char limit).
 - mod_BuildDurchrechnung.bas: fix error 5 — merge before CF, safe borders, ISNUMBER-based diff/ueber CF.
 - mod_BuildDurchrechnung.bas: Anzeigetexte mit Umlauten via ChrW (Verfuegbar, Ueberstunden, Jaenner usw.); Blattnamen bleiben ASCII.
+- mod_BuildDurchrechnung.bas: Tabellenzellen zentriert; Eingabezeile 30 bereinigt (G30-Altlast, J:Q-Merge).
 - DieseArbeitsmappe.cls: `Union`-Aufruf in `EnforcePasteValuesOnly` ohne Zeilenfortsetzung (Mac VBA Syntaxfehler behoben).
 - mod_ResetAndImportVBAFiles.bas: ueberarbeiteter Import (Workbook-/Tabellenmodule per Code-Update statt Import); `ReadVBAFileWithoutAttributes` liest nur ab `Option Explicit` (kein VERSION/Attribute-Header mehr im Modul).
 - Modul1.bas: `SyncDieseArbeitsmappeFromExport` macro alias for manual workbook-module sync.

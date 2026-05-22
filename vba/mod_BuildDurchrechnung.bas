@@ -452,7 +452,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     
     ws.Rows(titleRow).RowHeight = 28
     ws.Rows(hintRow).RowHeight = 48
-    ws.Rows(inputRow).RowHeight = 26
+    ws.Rows(inputRow).RowHeight = 40
     ws.Rows(headerRow).RowHeight = 30
     ws.Rows(noteRow).RowHeight = 40
     
@@ -484,8 +484,6 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     
     With ws.Range("B" & inputRow & ":Q" & inputRow)
         .Interior.Color = inputBg
-        .HorizontalAlignment = xlLeft
-        .VerticalAlignment = xlCenter
     End With
     
     ws.Cells(inputRow, 2).Font.Bold = True
@@ -502,6 +500,8 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .Font.Bold = True
         PID_DRApplyInputBorder .Borders
     End With
+    
+    PID_DRCleanInputRow ws, inputRow
     
     With ws.Range("B" & headerRow & ":I" & headerRow)
         .Interior.Color = RGB(221, 235, 247)
@@ -533,8 +533,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         End If
     Next dataRow
     
-    ws.Range("B" & dataStartRow & ":C" & dataEndRow).HorizontalAlignment = xlLeft
-    ws.Range("D" & dataStartRow & ":I" & dataEndRow).HorizontalAlignment = xlRight
+    ws.Range("B" & dataStartRow & ":I" & dataEndRow).HorizontalAlignment = xlCenter
     ws.Range("B" & dataStartRow & ":I" & dataEndRow).VerticalAlignment = xlCenter
     
     ws.Range("D" & dataStartRow & ":F" & dataEndRow).NumberFormat = "#,##0.00"
@@ -560,6 +559,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     PID_DRApplyOuterBorder ws.Range("J" & headerRow & ":Q" & dataEndRow)
     
     PID_DRMergeDisplayRows ws, headerRow, dataStartRow, dataEndRow
+    PID_DRFormatInputRow ws, inputRow, inputBg
     
     Set diffRange = ws.Range("F" & dataStartRow & ":F" & dataEndRow)
     PID_DRClearFormatConditions diffRange
@@ -695,8 +695,80 @@ Private Sub PID_DRMigrateJaennerMusterInput(ByVal ws As Worksheet)
     If Len(Trim$(CStr(ws.Range(PID_DR_JAEN_MUST_CELL).Value2))) = 0 Then
         If Len(Trim$(CStr(ws.Range("G30").Value2))) > 0 Then
             ws.Range(PID_DR_JAEN_MUST_CELL).Value2 = ws.Range("G30").Value2
+            ws.Range("G30").ClearContents
         End If
     End If
+    
+    On Error Resume Next
+    ws.Range("G30").ClearContents
+    With ws.Range("G30").Borders
+        .LineStyle = xlNone
+    End With
+    On Error GoTo 0
+End Sub
+
+
+Private Sub PID_DRCleanInputRow(ByVal ws As Worksheet, ByVal inputRow As Long)
+    Dim labelVerf As String
+    Dim labelMust As String
+    Dim valVerf As Variant
+    Dim valMust As Variant
+    
+    labelVerf = CStr(ws.Cells(inputRow, 2).Value)
+    labelMust = CStr(ws.Cells(inputRow, 6).Value)
+    valVerf = ws.Range(PID_DR_JAEN_VERF_CELL).Value2
+    valMust = ws.Range(PID_DR_JAEN_MUST_CELL).Value2
+    
+    ws.Range("D" & inputRow & ",G" & inputRow & ",H" & inputRow & ",J" & inputRow & ":Q" & inputRow).ClearContents
+    
+    ws.Cells(inputRow, 2).Value = labelVerf
+    ws.Cells(inputRow, 6).Value = labelMust
+    
+    If Len(Trim$(CStr(valVerf))) > 0 Then ws.Range(PID_DR_JAEN_VERF_CELL).Value2 = valVerf
+    If Len(Trim$(CStr(valMust))) > 0 Then ws.Range(PID_DR_JAEN_MUST_CELL).Value2 = valMust
+End Sub
+
+
+Private Sub PID_DRFormatInputRow(ByVal ws As Worksheet, ByVal inputRow As Long, ByVal inputBg As Long)
+    On Error Resume Next
+    
+    With ws.Range("B" & inputRow & ":Q" & inputRow)
+        .Interior.Color = inputBg
+        .VerticalAlignment = xlCenter
+    End With
+    
+    With ws.Range("B" & inputRow & ":D" & inputRow)
+        .HorizontalAlignment = xlCenter
+        .WrapText = True
+        .Font.Bold = True
+    End With
+    
+    With ws.Range("F" & inputRow & ":H" & inputRow)
+        .HorizontalAlignment = xlCenter
+        .WrapText = True
+        .Font.Bold = True
+    End With
+    
+    With ws.Range(PID_DR_JAEN_VERF_CELL)
+        .Interior.Color = inputBg
+        .HorizontalAlignment = xlCenter
+        .Font.Bold = True
+        PID_DRApplyInputBorder .Borders
+    End With
+    
+    With ws.Range(PID_DR_JAEN_MUST_CELL)
+        .Interior.Color = inputBg
+        .HorizontalAlignment = xlCenter
+        .Font.Bold = True
+        PID_DRApplyInputBorder .Borders
+    End With
+    
+    With ws.Range("J" & inputRow & ":Q" & inputRow)
+        .HorizontalAlignment = xlCenter
+        .WrapText = False
+    End With
+    
+    On Error GoTo 0
 End Sub
 
 
@@ -721,6 +793,7 @@ Private Sub PID_DRMergeDisplayRows(ByVal ws As Worksheet, _
     ws.Range("B" & hintRow & ":Q" & hintRow).Merge
     ws.Range("B" & inputRow & ":D" & inputRow).Merge
     ws.Range("F" & inputRow & ":H" & inputRow).Merge
+    ws.Range("J" & inputRow & ":Q" & inputRow).Merge
     ws.Range("B" & noteRow & ":Q" & noteRow).Merge
     ws.Range("J" & headerRow & ":Q" & headerRow).Merge
     
@@ -728,7 +801,7 @@ Private Sub PID_DRMergeDisplayRows(ByVal ws As Worksheet, _
         ws.Range("J" & dataRow & ":Q" & dataRow).Merge
         With ws.Range("J" & dataRow)
             .WrapText = True
-            .HorizontalAlignment = xlLeft
+            .HorizontalAlignment = xlCenter
             .VerticalAlignment = xlCenter
         End With
     Next dataRow
