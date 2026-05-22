@@ -4,7 +4,7 @@
 
 ### Fixed
 - DieseArbeitsmappe.cls: `Union`-Aufruf in `EnforcePasteValuesOnly` ohne Zeilenfortsetzung (Mac VBA Syntaxfehler behoben).
-- mod_ResetAndImportVBAFiles.bas: `PID_SyncDieseArbeitsmappeFromExport` liest nur ab `Option Explicit` zeilenweise (kein VERSION/Attribute-Header mehr im Modul).
+- mod_ResetAndImportVBAFiles.bas: ueberarbeiteter Import (Workbook-/Tabellenmodule per Code-Update statt Import); `ReadVBAFileWithoutAttributes` liest nur ab `Option Explicit` (kein VERSION/Attribute-Header mehr im Modul).
 - Modul1.bas: `SyncDieseArbeitsmappeFromExport` macro alias for manual workbook-module sync.
 - Personalsheet.xlsm: reverted broken direct XML patch on `UBERSICHT`; Durchrechnung block must be created via `BuildDurchrechnungUebersicht` macro (avoids corrupted `sharedStrings` counts on Mac Excel).
 
