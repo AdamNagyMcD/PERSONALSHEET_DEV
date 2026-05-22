@@ -2,6 +2,7 @@ Attribute VB_Name = "mod_SumMergedCells"
 Option Explicit
 
 Public gFinanzSummaryDirty As Boolean
+Private gFinanzSummaryDirtyMonth As Long
 
 
 Public Function SumMergedCells(ByVal targetRange As Range) As Double
@@ -264,11 +265,34 @@ End Function
 
 Public Sub MarkFinanzSummaryDirty()
     gFinanzSummaryDirty = True
+    gFinanzSummaryDirtyMonth = 0
+End Sub
+
+
+Public Sub MarkFinanzSummaryDirtyForMonth(ByVal wsMonth As Worksheet)
+    Dim monthIndex As Long
+    
+    gFinanzSummaryDirty = True
+    gFinanzSummaryDirtyMonth = 0
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    If Not IsNumeric(wsMonth.Range("A1").Value) Then Exit Sub
+    
+    monthIndex = CLng(wsMonth.Range("A1").Value)
+    If monthIndex >= 1 And monthIndex <= 12 Then
+        gFinanzSummaryDirtyMonth = monthIndex
+    End If
+
+SafeExit:
 End Sub
 
 
 Public Sub ClearFinanzSummaryDirty()
     gFinanzSummaryDirty = False
+    gFinanzSummaryDirtyMonth = 0
 End Sub
 
 
@@ -297,13 +321,11 @@ Public Sub PID_SyncFinanzSummaryToUbersicht()
     Dim monthRows As Variant
     Dim i As Long
     Dim monthIndex As Long
-    Dim ubersichtRow As Long
-    Dim crewLabor As Double
-    Dim crewPct As Double
     Dim ubersichtProtected As Boolean
     Dim einstellungProtected As Boolean
     Dim oldScreenUpdating As Boolean
     Dim oldCalculation As XlCalculation
+    Dim syncSingleMonthOnly As Boolean
     
     On Error GoTo SafeExit
     
@@ -314,6 +336,7 @@ Public Sub PID_SyncFinanzSummaryToUbersicht()
     
     monthRows = Array(7, 8, 9, 11, 12, 13, 15, 16, 17, 19, 20, 21)
     monthNames = PID_MonthNames()
+    syncSingleMonthOnly = (gFinanzSummaryDirtyMonth >= 1 And gFinanzSummaryDirtyMonth <= 12)
     
     Set ubersichtWs = Nothing
     Set einstellungWs = Nothing
@@ -332,27 +355,33 @@ Public Sub PID_SyncFinanzSummaryToUbersicht()
         PID_UnprotectWorksheet einstellungWs
     End If
     
-    For i = LBound(monthNames) To UBound(monthNames)
-        monthIndex = i - LBound(monthNames) + 1
-        ubersichtRow = CLng(monthRows(monthIndex - 1))
+    If syncSingleMonthOnly Then
+        monthIndex = gFinanzSummaryDirtyMonth
         
         On Error Resume Next
         Set wsMonth = Nothing
-        Set wsMonth = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        Set wsMonth = ThisWorkbook.Worksheets(CStr(monthNames(monthIndex - 1)))
         On Error GoTo SafeExit
         
         If Not wsMonth Is Nothing Then
-            crewLabor = PID_GetMonthCrewLaborValue(wsMonth)
-            crewPct = PID_GetMonthCrewLaborPct(wsMonth, crewLabor)
-            
-            ubersichtWs.Cells(ubersichtRow, "G").Value2 = crewLabor
-            ubersichtWs.Cells(ubersichtRow, "J").Value2 = crewPct
-            
-            If Not einstellungWs Is Nothing Then
-                einstellungWs.Cells(21 + monthIndex, "E").Value2 = crewPct
-            End If
+            PID_WriteFinanzSummaryMonthRow ubersichtWs, einstellungWs, wsMonth, monthIndex, _
+                                           CLng(monthRows(monthIndex - 1))
         End If
-    Next i
+    Else
+        For i = LBound(monthNames) To UBound(monthNames)
+            monthIndex = i - LBound(monthNames) + 1
+            
+            On Error Resume Next
+            Set wsMonth = Nothing
+            Set wsMonth = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+            On Error GoTo SafeExit
+            
+            If Not wsMonth Is Nothing Then
+                PID_WriteFinanzSummaryMonthRow ubersichtWs, einstellungWs, wsMonth, monthIndex, _
+                                               CLng(monthRows(monthIndex - 1))
+            End If
+        Next i
+    End If
     
     PID_SyncFinanzSummaryQuarterAndTotalRows ubersichtWs
     PID_RecalculateFinanzDiffColumns ubersichtWs
@@ -496,6 +525,34 @@ Public Function PID_MonthChangeDefersFinanzSummarySync(ByVal ws As Worksheet, By
 
 SafeExit:
 End Function
+
+
+Private Sub PID_WriteFinanzSummaryMonthRow(ByVal ubersichtWs As Worksheet, _
+                                           ByVal einstellungWs As Worksheet, _
+                                           ByVal wsMonth As Worksheet, _
+                                           ByVal monthIndex As Long, _
+                                           ByVal ubersichtRow As Long)
+    Dim crewLabor As Double
+    Dim crewPct As Double
+    
+    On Error GoTo SafeExit
+    
+    If ubersichtWs Is Nothing Then Exit Sub
+    If wsMonth Is Nothing Then Exit Sub
+    If monthIndex < 1 Or monthIndex > 12 Then Exit Sub
+    
+    crewLabor = PID_GetMonthCrewLaborValue(wsMonth)
+    crewPct = PID_GetMonthCrewLaborPct(wsMonth, crewLabor)
+    
+    ubersichtWs.Cells(ubersichtRow, "G").Value2 = crewLabor
+    ubersichtWs.Cells(ubersichtRow, "J").Value2 = crewPct
+    
+    If Not einstellungWs Is Nothing Then
+        einstellungWs.Cells(21 + monthIndex, "E").Value2 = crewPct
+    End If
+
+SafeExit:
+End Sub
 
 
 Private Function PID_GetMonthCrewLaborValue(ByVal ws As Worksheet) As Double

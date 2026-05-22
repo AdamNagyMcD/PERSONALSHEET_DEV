@@ -38,6 +38,7 @@
 - Modul1.bas + DieseArbeitsmappe.cls: L (Letztes Gehalt) Calculate bei D/E/F/G/I/K-Aenderung (Manual-Calc-Fix).
 - Modul1.bas: L via Application.Evaluate statt Calculate/Formel-Reset; L nur einmal pro G-Update.
 - Modul1.bas: L-Recalc nur .Calculate (Formel bleibt); AutoFill-Reparatur bei statischen L-Werten.
+- mod_SumMergedCells.bas + mod_DataClear.bas: FINANZIELL-Sync nach Monats-Loeschen nur betroffener Monat (kein 12x S37-Recalc).
 - mod_KVStundenDropdown.bas: F-Dropdown-Refresh nur Zeilen mit KV-Code (E nicht leer); ScreenUpdating aus waehrend Refresh.
 - DieseArbeitsmappe.cls: FLUKTUATION-Activate nur bei gFluktuationDirty; kein S35-S37-Calculate bei Monats-Activate.
 - mod_FluctuationCalculation.bas: UEBERSICHT nach Fluktuation-Sync wieder schuetzen.

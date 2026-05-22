@@ -226,7 +226,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     If PID_MonthChangeNeedsImmediateFinanzSync(Sh, Target) Then
         PID_SyncFinanzSummaryForMonth Sh
     ElseIf PID_MonthChangeDefersFinanzSummarySync(Sh, Target) Then
-        MarkFinanzSummaryDirty
+        MarkFinanzSummaryDirtyForMonth Sh
     End If
 
 SafeExit:

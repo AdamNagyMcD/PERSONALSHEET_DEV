@@ -77,7 +77,7 @@ Public Sub PID_ClearCurrentMonthData()
     PID_EnsureMonatslohnFormulasOnSheet ws
 
     MarkFluktuationDirty
-    MarkFinanzSummaryDirty
+    MarkFinanzSummaryDirtyForMonth ws
     MarkKVDropdownsDirty
     
     PID_TryProtectMonthSheet ws
@@ -247,7 +247,7 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     PID_EnsureMonatslohnFormulasOnSheet ws
 
     MarkFluktuationDirty
-    MarkFinanzSummaryDirty
+    MarkFinanzSummaryDirtyForMonth ws
     MarkKVDropdownsDirty
     
     PID_TryProtectMonthSheet ws
