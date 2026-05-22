@@ -1,6 +1,8 @@
 Attribute VB_Name = "mod_SumMergedCells"
 Option Explicit
 
+Public gFinanzSummaryDirty As Boolean
+
 
 Public Function SumMergedCells(ByVal targetRange As Range) As Double
     Dim c As Range
@@ -258,9 +260,6 @@ Private Function SumMergedCellsCollectionHasKey(ByVal col As Collection, ByVal k
 NotFound:
     SumMergedCellsCollectionHasKey = False
 End Function
-
-
-Public gFinanzSummaryDirty As Boolean
 
 
 Public Sub MarkFinanzSummaryDirty()
