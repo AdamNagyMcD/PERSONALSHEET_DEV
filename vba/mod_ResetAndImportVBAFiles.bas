@@ -90,7 +90,7 @@ Public Sub ResetAndImportVBAFiles()
                 Set vbComp = vbProj.VBComponents(compName)
 
                 If vbComp.Type = 100 Then
-                    If UpdateCodeModuleFromFile(vbComp, vbaFolder & fileName) Then
+                    If UpdateCodeModuleFromFile(vbComp, vbaFolder & fileName, True) Then
                         updatedCodeModules = updatedCodeModules + 1
                     End If
                 Else
@@ -107,15 +107,28 @@ Public Sub ResetAndImportVBAFiles()
 
     Loop
 
+    On Error Resume Next
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.CutCopyMode = False
+    Application.StatusBar = False
+    On Error GoTo ImportError
+
+    On Error Resume Next
+    PID_RepairWorkbookAfterVBAImport
+    On Error GoTo ImportError
+
     MsgBox deleted & " Module geloescht." & vbCrLf & _
            imported & " VBA-Dateien importiert." & vbCrLf & _
            updatedCodeModules & " Tabellen-/Workbook-Module aktualisiert." & vbCrLf & _
            skipped & " Dateien uebersprungen." & vbCrLf & vbCrLf & _
            "Wichtig:" & vbCrLf & _
-           "1) Datei speichern" & vbCrLf & _
-           "2) Excel komplett schliessen und neu oeffnen" & vbCrLf & _
-           "3) Alt+F8: RestoreKVCodeDropdownValidation" & vbCrLf & vbCrLf & _
-           "Falls Makros fehlen: VBA-Editor > Debug > VBAProject kompilieren.", _
+           "1) Datei speichern (Datei > Speichern)" & vbCrLf & _
+           "2) Excel komplett schliessen und neu oeffnen" & vbCrLf & vbCrLf & _
+           "Falls Visual Basic ausgegraut ist: Excel schliessen, neu oeffnen, " & _
+           "dann Alt+F8 > RepairWorkbookAfterVBAImport.", _
            vbInformation, "VBA Import"
 
     Exit Sub
@@ -219,7 +232,8 @@ Private Function FileNameWithoutExtension(ByVal fileName As String) As String
 End Function
 
 
-Private Function UpdateCodeModuleFromFile(ByVal vbComp As Object, ByVal fullPath As String) As Boolean
+Private Function UpdateCodeModuleFromFile(ByVal vbComp As Object, ByVal fullPath As String, _
+                                          Optional ByVal forceUpdate As Boolean = False) As Boolean
     Dim newCode As String
     Dim oldCode As String
     Dim cm As Object
@@ -237,9 +251,11 @@ Private Function UpdateCodeModuleFromFile(ByVal vbComp As Object, ByVal fullPath
         oldCode = ""
     End If
 
-    If NormalizeCodeText(oldCode) = NormalizeCodeText(newCode) Then
-        UpdateCodeModuleFromFile = False
-        Exit Function
+    If Not forceUpdate Then
+        If NormalizeCodeText(oldCode) = NormalizeCodeText(newCode) Then
+            UpdateCodeModuleFromFile = False
+            Exit Function
+        End If
     End If
 
     If cm.CountOfLines > 0 Then

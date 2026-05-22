@@ -569,17 +569,45 @@ End Sub
 
 
 Public Sub PID_EnsureLetztesGehaltFormulas()
-    Dim ws As Worksheet
-    
-    Set ws = Nothing
-    On Error Resume Next
-    Set ws = ThisWorkbook.Worksheets("Januar")
-    On Error GoTo 0
-    
-    If ws Is Nothing Then Exit Sub
-    If PID_MonthSheetHasLetztesGehaltFormula(ws) Then Exit Sub
-    
     PID_RestoreLetztesGehaltFormulasSilent
+End Sub
+
+
+Public Sub PID_RepairWorkbookAfterVBAImport()
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldCalculation As XlCalculation
+    
+    On Error GoTo CleanFail
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    oldCalculation = Application.Calculation
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    
+    PID_RestoreMonatslohnFormulasSilent
+    PID_RestoreLetztesGehaltFormulasSilent
+    PID_RestoreKVCodeDropdownValidationSilent
+    
+    On Error Resume Next
+    Application.CalculateFull
+    On Error GoTo CleanFail
+    
+    GoTo CleanExit
+
+CleanFail:
+CleanExit:
+    Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+End Sub
+
+
+Public Sub RepairWorkbookAfterVBAImport()
+    PID_RepairWorkbookAfterVBAImport
 End Sub
 
 
@@ -634,7 +662,9 @@ Public Function PID_MonthSheetHasLetztesGehaltFormula(ByVal wsMonth As Worksheet
     If Left$(formulaText, 1) <> "=" Then Exit Function
     If InStr(1, formulaText, "#REF", vbTextCompare) > 0 Then Exit Function
     If InStr(1, formulaText, UCase$(PID_EINSTELLUNG_SHEET), vbTextCompare) = 0 Then Exit Function
-    If InStr(1, formulaText, "R35C3", vbTextCompare) = 0 Then Exit Function
+    If InStr(1, formulaText, "R35C3", vbTextCompare) = 0 Then
+        If InStr(1, formulaText, "$C$35", vbTextCompare) = 0 Then Exit Function
+    End If
     
     PID_MonthSheetHasLetztesGehaltFormula = True
 End Function
