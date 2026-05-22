@@ -258,7 +258,6 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
         
         .Range("B" & inputRow & ":D" & inputRow).Merge
         .Cells(inputRow, 2).Value = "Jaenner Verfuegbar Plan (naechstes Jahr):"
-        .Range("F" & inputRow & ":G" & inputRow).Merge
         .Cells(inputRow, 6).Value = "Jaenner Muster Plan (naechstes Jahr):"
         
         .Cells(headerRow, 2).Value = "Zeitraum"
@@ -382,8 +381,9 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     Dim diffRange As Range
     Dim statusRange As Range
     Dim ueberRange As Range
-    Dim blockRange As Range
     Dim tableRange As Range
+    Dim inputBg As Long
+    Dim colNum As Long
     
     titleRow = PID_DR_START_ROW
     hintRow = PID_DR_START_ROW + 1
@@ -392,6 +392,9 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     dataStartRow = headerRow + 1
     dataEndRow = dataStartRow + 3
     noteRow = headerRow + 5
+    inputBg = RGB(255, 242, 204)
+    
+    PID_DREnsureInputRowLayout ws, inputRow
     
     ws.Columns("B").ColumnWidth = 14
     ws.Columns("C").ColumnWidth = 12
@@ -413,10 +416,9 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         ws.Rows(dataRow).RowHeight = 36
     Next dataRow
     
-    Set blockRange = ws.Range("B" & titleRow & ":J" & noteRow)
     Set tableRange = ws.Range("B" & headerRow & ":J" & dataEndRow)
     
-    With ws.Range("B" & titleRow & ":J" & titleRow)
+    With PID_DRMergeOrCell(ws, titleRow, 2)
         .Interior.Color = RGB(31, 78, 121)
         .Font.Color = RGB(255, 255, 255)
         .Font.Bold = True
@@ -425,7 +427,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .VerticalAlignment = xlCenter
     End With
     
-    With ws.Range("B" & hintRow & ":J" & hintRow)
+    With PID_DRMergeOrCell(ws, hintRow, 2)
         .Interior.Color = RGB(242, 242, 242)
         .Font.Color = RGB(89, 89, 89)
         .Font.Italic = True
@@ -435,47 +437,34 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .WrapText = True
     End With
     
-    With ws.Range("B" & inputRow & ":J" & inputRow)
-        .Interior.Color = RGB(255, 242, 204)
+    With PID_DRMergeOrCell(ws, inputRow, 2)
+        .Interior.Color = inputBg
+        .Font.Bold = True
         .HorizontalAlignment = xlLeft
         .VerticalAlignment = xlCenter
     End With
     
-    ws.Range("B" & inputRow).Font.Bold = True
-    ws.Range("F" & inputRow).Font.Bold = True
+    With ws.Cells(inputRow, 6)
+        .Interior.Color = inputBg
+        .Font.Bold = True
+        .HorizontalAlignment = xlLeft
+        .VerticalAlignment = xlCenter
+    End With
+    
+    For colNum = 5 To 10
+        PID_DRMergeOrCell(ws, inputRow, colNum).Interior.Color = inputBg
+    Next colNum
     
     With ws.Range(PID_DR_JAEN_VERF_CELL)
-        .Interior.Color = RGB(255, 242, 204)
+        .Interior.Color = inputBg
         .Font.Bold = True
-        .Borders(xlEdgeLeft).LineStyle = xlContinuous
-        .Borders(xlEdgeLeft).Weight = xlMedium
-        .Borders(xlEdgeLeft).Color = RGB(255, 192, 0)
-        .Borders(xlEdgeTop).LineStyle = xlContinuous
-        .Borders(xlEdgeTop).Weight = xlMedium
-        .Borders(xlEdgeTop).Color = RGB(255, 192, 0)
-        .Borders(xlEdgeBottom).LineStyle = xlContinuous
-        .Borders(xlEdgeBottom).Weight = xlMedium
-        .Borders(xlEdgeBottom).Color = RGB(255, 192, 0)
-        .Borders(xlEdgeRight).LineStyle = xlContinuous
-        .Borders(xlEdgeRight).Weight = xlMedium
-        .Borders(xlEdgeRight).Color = RGB(255, 192, 0)
+        PID_DRApplyInputBorder .Borders
     End With
     
     With ws.Range(PID_DR_JAEN_MUST_CELL)
-        .Interior.Color = RGB(255, 242, 204)
+        .Interior.Color = inputBg
         .Font.Bold = True
-        .Borders(xlEdgeLeft).LineStyle = xlContinuous
-        .Borders(xlEdgeLeft).Weight = xlMedium
-        .Borders(xlEdgeLeft).Color = RGB(255, 192, 0)
-        .Borders(xlEdgeTop).LineStyle = xlContinuous
-        .Borders(xlEdgeTop).Weight = xlMedium
-        .Borders(xlEdgeTop).Color = RGB(255, 192, 0)
-        .Borders(xlEdgeBottom).LineStyle = xlContinuous
-        .Borders(xlEdgeBottom).Weight = xlMedium
-        .Borders(xlEdgeBottom).Color = RGB(255, 192, 0)
-        .Borders(xlEdgeRight).LineStyle = xlContinuous
-        .Borders(xlEdgeRight).Weight = xlMedium
-        .Borders(xlEdgeRight).Color = RGB(255, 192, 0)
+        PID_DRApplyInputBorder .Borders
     End With
     
     With ws.Range("B" & headerRow & ":J" & headerRow)
@@ -508,7 +497,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     ws.Range(PID_DR_JAEN_VERF_CELL).NumberFormat = "#,##0.00"
     ws.Range(PID_DR_JAEN_MUST_CELL).NumberFormat = "#,##0.00"
     
-    With ws.Range("B" & noteRow & ":J" & noteRow)
+    With PID_DRMergeOrCell(ws, noteRow, 2)
         .Interior.Color = RGB(245, 245, 245)
         .Font.Color = RGB(89, 89, 89)
         .Font.Italic = True
@@ -518,26 +507,7 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .WrapText = True
     End With
     
-    With blockRange.Borders(xlEdgeLeft)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    With blockRange.Borders(xlEdgeRight)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    With blockRange.Borders(xlEdgeTop)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    With blockRange.Borders(xlEdgeBottom)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
+    PID_DRApplyBlockOutline ws, titleRow, noteRow
     
     With tableRange.Borders(xlEdgeLeft)
         .LineStyle = xlContinuous
@@ -627,6 +597,97 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .Font.Color = RGB(132, 46, 43)
         .Font.Bold = True
     End With
+End Sub
+
+
+Private Function PID_DRMergeOrCell(ByVal ws As Worksheet, ByVal rowNum As Long, ByVal colNum As Long) As Range
+    Set PID_DRMergeOrCell = ws.Cells(rowNum, colNum)
+    If PID_DRMergeOrCell.MergeCells Then
+        Set PID_DRMergeOrCell = PID_DRMergeOrCell.MergeArea
+    End If
+End Function
+
+
+Private Sub PID_DREnsureInputRowLayout(ByVal ws As Worksheet, ByVal inputRow As Long)
+    Dim mustCell As Range
+    Dim labelText As String
+    
+    Set mustCell = ws.Range(PID_DR_JAEN_MUST_CELL)
+    
+    If mustCell.MergeCells Then
+        If mustCell.MergeArea.Cells.Count > 1 Then
+            labelText = Trim$(CStr(ws.Cells(inputRow, 6).Value))
+            mustCell.MergeArea.UnMerge
+            
+            If Len(labelText) = 0 Then
+                ws.Cells(inputRow, 6).Value = "Jaenner Muster Plan (naechstes Jahr):"
+            Else
+                ws.Cells(inputRow, 6).Value = labelText
+            End If
+        End If
+    End If
+End Sub
+
+
+Private Sub PID_DRApplyInputBorder(ByVal borders As Borders)
+    borders(xlEdgeLeft).LineStyle = xlContinuous
+    borders(xlEdgeLeft).Weight = xlMedium
+    borders(xlEdgeLeft).Color = RGB(255, 192, 0)
+    borders(xlEdgeTop).LineStyle = xlContinuous
+    borders(xlEdgeTop).Weight = xlMedium
+    borders(xlEdgeTop).Color = RGB(255, 192, 0)
+    borders(xlEdgeBottom).LineStyle = xlContinuous
+    borders(xlEdgeBottom).Weight = xlMedium
+    borders(xlEdgeBottom).Color = RGB(255, 192, 0)
+    borders(xlEdgeRight).LineStyle = xlContinuous
+    borders(xlEdgeRight).Weight = xlMedium
+    borders(xlEdgeRight).Color = RGB(255, 192, 0)
+End Sub
+
+
+Private Sub PID_DRApplyBlockOutline(ByVal ws As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
+    Dim rowNum As Long
+    Dim edgeColor As Long
+    Dim leftRng As Range
+    Dim rightRng As Range
+    
+    edgeColor = RGB(31, 78, 121)
+    
+    For rowNum = firstRow To lastRow
+        Set leftRng = PID_DRMergeOrCell(ws, rowNum, PID_DR_FIRST_COL)
+        Set rightRng = ws.Cells(rowNum, PID_DR_LAST_COL)
+        If rightRng.MergeCells Then
+            Set rightRng = rightRng.MergeArea
+        End If
+        
+        With leftRng.Borders(xlEdgeLeft)
+            .LineStyle = xlContinuous
+            .Weight = xlMedium
+            .Color = edgeColor
+        End With
+        
+        With rightRng.Borders(xlEdgeRight)
+            .LineStyle = xlContinuous
+            .Weight = xlMedium
+            .Color = edgeColor
+        End With
+        
+        If rowNum = firstRow Then
+            With leftRng.Borders(xlEdgeTop)
+                .LineStyle = xlContinuous
+                .Weight = xlMedium
+                .Color = edgeColor
+            End With
+        End If
+        
+        If rowNum = lastRow Then
+            With leftRng.Borders(xlEdgeBottom)
+                .LineStyle = xlContinuous
+                .Weight = xlMedium
+                .Color = edgeColor
+            End With
+        End If
+    Next rowNum
 End Sub
 
 
