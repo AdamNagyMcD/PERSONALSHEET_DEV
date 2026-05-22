@@ -118,6 +118,7 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     Dim rowKey As String
     
     Dim oldDisplayAlerts As Boolean
+    Dim oldScreenUpdating As Boolean
     
     On Error GoTo CleanFail
     
@@ -129,7 +130,9 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
     oldDisplayAlerts = Application.DisplayAlerts
+    oldScreenUpdating = Application.ScreenUpdating
     Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
     
     Set wsHelper = GetOrCreateKVDropdownHelperSheet()
     
@@ -145,8 +148,10 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
         
         ClearHelperColumnsForSheet wsHelper, wsMonth.Name
         
-        For r = 3 To 82
-            RefreshKVStundenDropdownForRow wsMonth, wsHelper, r, monthNumber
+        For r = PID_FIRST_ROW To PID_LAST_ROW
+            If Len(Trim$(CStr(wsMonth.Cells(r, "E").Value))) > 0 Then
+                RefreshKVStundenDropdownForRow wsMonth, wsHelper, r, monthNumber
+            End If
         Next r
         
     Else
@@ -174,6 +179,7 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
 
 CleanExit:
+    Application.ScreenUpdating = oldScreenUpdating
     Application.DisplayAlerts = oldDisplayAlerts
     Exit Sub
 
@@ -189,6 +195,7 @@ CleanFail:
         wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
     
+    Application.ScreenUpdating = oldScreenUpdating
     Application.DisplayAlerts = oldDisplayAlerts
     
     MsgBox "Fehler bei RefreshKVStundenDropdownForSheet:" & vbCrLf & _

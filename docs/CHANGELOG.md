@@ -19,6 +19,8 @@
 - mod_SumMergedCells.bas: gFinanzSummaryDirty + RefreshFinanzSummaryIfDirty; UEBERSICHT-Activate nur bei Bedarf; Batch-Unprotect, VBA-Quartals-/Diff-Berechnung.
 - mod_KVLohnLookup.bas: LOHNTABELLE-Cache in PID_KVLohnLookup UDF (kein Invalidate pro Zelle); Cache-Clear bei MarkAllKVLohnDirty.
 - mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: G (Monatslohn) Calculate bei E/F-Aenderung (UDF+Cache Recalc-Fix).
+- DieseArbeitsmappe.cls: kein MarkAllKVDropdownsDirty mehr bei Open; PID_ResetMonthView ohne Activate/Select.
+- mod_KVStundenDropdown.bas: F-Dropdown-Refresh nur Zeilen mit KV-Code (E nicht leer); ScreenUpdating aus waehrend Refresh.
 - DieseArbeitsmappe.cls: FLUKTUATION-Activate nur bei gFluktuationDirty; kein S35-S37-Calculate bei Monats-Activate.
 - mod_FluctuationCalculation.bas: UEBERSICHT nach Fluktuation-Sync wieder schuetzen.
 - mod_DataClear.bas: MarkFinanzSummaryDirty nach Monatsdaten-Loeschen.

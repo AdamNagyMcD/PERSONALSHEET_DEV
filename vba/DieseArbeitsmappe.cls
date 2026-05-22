@@ -29,7 +29,6 @@ Private Sub Workbook_Open()
     EnsureAddNewKVPeriodButton
     FixLOHNTABELLE_HeaderTextIfNeeded
     
-    MarkAllKVDropdownsDirty
     MarkFinanzSummaryDirty
     
     ' Wichtig:
@@ -133,10 +132,10 @@ Private Sub PID_ResetMonthView(ByVal ws As Worksheet)
     If ws Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
     
-    ws.Activate
-    ActiveWindow.ScrollRow = 1
-    ActiveWindow.ScrollColumn = 1
-    ws.Range("A1").Select
+    If Not ActiveWindow Is Nothing Then
+        ActiveWindow.ScrollRow = 1
+        ActiveWindow.ScrollColumn = 1
+    End If
     
 SafeExit:
 End Sub
