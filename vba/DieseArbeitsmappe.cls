@@ -182,6 +182,8 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
         On Error Resume Next
         Application.Run "'" & ThisWorkbook.Name & "'!PID_LogEFAenderungForSheet", Sh, Target
         On Error GoTo SafeExit
+        
+        PID_RecalculateMonatslohnForChangedRows Sh, Target
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:

@@ -826,6 +826,29 @@ Public Sub PID_MarkKVLohnSheetRefreshed(ByVal sheetName As String)
 End Sub
 
 
+Public Sub PID_RecalculateMonatslohnForChangedRows(ByVal wsMonth As Worksheet, ByVal changedRange As Range)
+    Dim rowsToCheck As Range
+    Dim rowRange As Range
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If changedRange Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    
+    Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:F82"))
+    If rowsToCheck Is Nothing Then Exit Sub
+    
+    For Each rowRange In rowsToCheck.Rows
+        If rowRange.Row >= PID_FIRST_ROW And rowRange.Row <= PID_LAST_ROW Then
+            wsMonth.Cells(rowRange.Row, "G").Calculate
+        End If
+    Next rowRange
+
+SafeExit:
+End Sub
+
+
 Public Sub RefreshKVLohnIfDirty(ByVal wsMonth As Worksheet)
     If wsMonth Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
