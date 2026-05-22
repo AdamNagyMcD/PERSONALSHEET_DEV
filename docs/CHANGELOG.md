@@ -18,7 +18,7 @@
 - mod_KVLohnLookup.bas: `PID_RestoreMonatslohnFormulasSilent` made Public (fixes Modul1 compile error in `FullSystemRefresh`).
 - Modul1.bas + DieseArbeitsmappe.cls + mod_CopyData.bas: auto-restore column `L` Letztes Gehalt formulas on open; CopyData uses canonical L formula (not broken source copy).
 - Personalsheet.xlsm: column `L` `#REF!` year refs replaced with `EINSTELLUNG!$C$35` on all month sheets.
-- mod_ResetAndImportVBAFiles.bas + Modul1.bas: post-import Excel state reset, forced `DieseArbeitsmappe` sync, and `RepairWorkbookAfterVBAImport` (G/E/L restore without breaking other fixes).
+- mod_ResetAndImportVBAFiles.bas + Modul1.bas: post-import Excel state reset, forced `DieseArbeitsmappe` sync, and `RepairWorkbookAfterVBAImport` in import module (avoids compile error before Modul1 sync).
 - mod_KVLohnLookup.bas + DieseArbeitsmappe.cls: removed SheetChange VBA writes to `G` (they destroyed formulas and made lohn refresh appear dead).
 - Modul1.bas: `RefreshDurchrechnungUebersicht` macro alias.
 

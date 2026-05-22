@@ -150,6 +150,46 @@ ImportError:
 End Sub
 
 
+Public Sub RepairWorkbookAfterVBAImport()
+    PID_RepairWorkbookAfterVBAImport
+End Sub
+
+
+Public Sub PID_RepairWorkbookAfterVBAImport()
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldCalculation As XlCalculation
+    Dim wbName As String
+    
+    On Error GoTo CleanFail
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    oldCalculation = Application.Calculation
+    wbName = ThisWorkbook.Name
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    
+    On Error Resume Next
+    Application.Run "'" & wbName & "'!PID_RestoreMonatslohnFormulasSilent"
+    Application.Run "'" & wbName & "'!PID_RestoreLetztesGehaltFormulasSilent"
+    Application.Run "'" & wbName & "'!PID_RestoreKVCodeDropdownValidationSilent"
+    Application.CalculateFull
+    Err.Clear
+    On Error GoTo CleanFail
+    
+    GoTo CleanExit
+
+CleanFail:
+CleanExit:
+    Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+End Sub
+
+
 Public Sub PID_SyncDieseArbeitsmappeFromExport(Optional ByRef syncOk As Boolean = False, Optional ByRef syncDetails As String = "")
     Dim vbComp As Object
 

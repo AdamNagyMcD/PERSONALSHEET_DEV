@@ -573,44 +573,6 @@ Public Sub PID_EnsureLetztesGehaltFormulas()
 End Sub
 
 
-Public Sub PID_RepairWorkbookAfterVBAImport()
-    Dim oldEnableEvents As Boolean
-    Dim oldScreenUpdating As Boolean
-    Dim oldCalculation As XlCalculation
-    
-    On Error GoTo CleanFail
-    
-    oldEnableEvents = Application.EnableEvents
-    oldScreenUpdating = Application.ScreenUpdating
-    oldCalculation = Application.Calculation
-    
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.Calculation = xlCalculationManual
-    
-    PID_RestoreMonatslohnFormulasSilent
-    PID_RestoreLetztesGehaltFormulasSilent
-    PID_RestoreKVCodeDropdownValidationSilent
-    
-    On Error Resume Next
-    Application.CalculateFull
-    On Error GoTo CleanFail
-    
-    GoTo CleanExit
-
-CleanFail:
-CleanExit:
-    Application.Calculation = xlCalculationAutomatic
-    Application.ScreenUpdating = oldScreenUpdating
-    Application.EnableEvents = oldEnableEvents
-End Sub
-
-
-Public Sub RepairWorkbookAfterVBAImport()
-    PID_RepairWorkbookAfterVBAImport
-End Sub
-
-
 Public Sub PID_RestoreLetztesGehaltFormulasSilent()
     Dim monthNames As Variant
     Dim ws As Worksheet
