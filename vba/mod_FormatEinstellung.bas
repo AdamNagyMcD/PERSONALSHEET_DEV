@@ -45,8 +45,7 @@ Public Sub PID_FormatEinstellungSheet()
         PID_StyleApplyTitleBand .Range("N3:O4")
         
         .Rows(5).RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
-        PID_StyleApplyInputGuideHeader .Range("B5")
-        PID_StyleApplyInputGuideHeader .Range("C5:F5")
+        PID_StyleApplyInputGuideHeader .Range("B5:F5")
         PID_StyleApplyInputGuideHeader .Range("H5:I5")
         PID_StyleApplyInputGuideHeader .Range("K5:L5")
         PID_StyleApplyInputGuideHeader .Range("N5:O5")
@@ -72,8 +71,7 @@ Public Sub PID_FormatEinstellungSheet()
         PID_StyleApplyTitleBand .Range("K19:L20")
         
         .Rows(21).RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
-        PID_StyleApplyInputGuideHeader .Range("B21")
-        PID_StyleApplyInputGuideHeader .Range("C21:F21")
+        PID_StyleApplyInputGuideHeader .Range("B21:F21")
         PID_StyleApplyInputGuideHeader .Range("H21:I21")
         PID_StyleApplyInputGuideHeader .Range("K21:L21")
         
@@ -142,26 +140,33 @@ End Sub
 
 
 Private Sub PID_ESApplyEinstellungInputZones(ByVal ws As Worksheet)
-    ' Gelb = Monats-/Label-Spalten (nicht editierbar). Weiss = Eingabe. Hellblau = nur Anzeige.
-    PID_StyleApplyInputGuideLabel ws.Range("B5")
+    ' Gelb = nicht editierbar (Monatsspalten + schreibgeschuetzte Werte). Weiss = Eingabe.
     PID_StyleApplyInputGuideLabel ws.Range("B6:B17")
-    PID_StyleApplyInputGuideLabel ws.Range("B21")
+    PID_StyleApplyInputGuideLabel ws.Range("H6:H17")
+    PID_StyleApplyInputGuideLabel ws.Range("K6:K17")
+    PID_StyleApplyInputGuideLabel ws.Range("N6:N17")
+    
     PID_StyleApplyInputGuideLabel ws.Range("B22:B33")
+    PID_StyleApplyInputGuideLabel ws.Range("H22:H33")
+    PID_StyleApplyInputGuideLabel ws.Range("K22:K33")
+    
+    PID_StyleApplyInputGuideLabel ws.Range("B35")
+    
+    PID_StyleApplyReadOnlyGuideCell ws.Range("E6:E17")
+    PID_StyleApplyReadOnlyGuideCell ws.Range("D22:E33")
     
     PID_StyleApplyInputCell ws.Range("C6:D17")
     PID_StyleApplyInputCell ws.Range("F6:F17")
-    PID_StyleApplyReadOnlyCell ws.Range("E6:E17")
+    PID_StyleApplyInputCell ws.Range("I6:I17")
+    PID_StyleApplyInputCell ws.Range("L6:L17")
+    PID_StyleApplyInputCell ws.Range("O6:O17")
     
     PID_StyleApplyInputCell ws.Range("C22:C33")
     PID_StyleApplyInputCell ws.Range("F22:F33")
-    PID_StyleApplyReadOnlyCell ws.Range("D22:E33")
+    PID_StyleApplyInputCell ws.Range("I22:I33")
+    PID_StyleApplyInputCell ws.Range("L22:L33")
     
-    PID_StyleApplyInputCell ws.Range("H6:I17")
-    PID_StyleApplyInputCell ws.Range("K6:L17")
-    PID_StyleApplyInputCell ws.Range("N6:O17")
-    
-    PID_StyleApplyInputCell ws.Range("H22:I33")
-    PID_StyleApplyInputCell ws.Range("K22:L33")
+    PID_StyleApplyInputCell ws.Range("C35")
 End Sub
 
 
@@ -170,14 +175,14 @@ Private Sub PID_ESApplyEinstellungCellLocks(ByVal ws As Worksheet)
     
     ws.Range("C6:D17").Locked = False
     ws.Range("F6:F17").Locked = False
-    ws.Range("H6:I17").Locked = False
-    ws.Range("K6:L17").Locked = False
-    ws.Range("N6:O17").Locked = False
+    ws.Range("I6:I17").Locked = False
+    ws.Range("L6:L17").Locked = False
+    ws.Range("O6:O17").Locked = False
     
     ws.Range("C22:C33").Locked = False
     ws.Range("F22:F33").Locked = False
-    ws.Range("H22:I33").Locked = False
-    ws.Range("K22:L33").Locked = False
+    ws.Range("I22:I33").Locked = False
+    ws.Range("L22:L33").Locked = False
     
     ws.Range("C35").Locked = False
 End Sub
