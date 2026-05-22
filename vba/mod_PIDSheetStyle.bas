@@ -140,6 +140,15 @@ Public Sub PID_StyleApplyInputGuideLabel(ByVal target As Range)
 End Sub
 
 
+Public Sub PID_StyleApplyReadOnlyCell(ByVal target As Range)
+    With target
+        .Interior.Color = PID_StyleColorHeaderBg()
+        .Font.Color = PID_StyleColorNavy()
+        .Font.Bold = False
+    End With
+End Sub
+
+
 Public Sub PID_StyleApplyCompactHeaderBand(ByVal target As Range)
     With target
         .Interior.Color = PID_StyleColorHeaderBg()

@@ -1,6 +1,9 @@
 Attribute VB_Name = "mod_FormatEinstellung"
 Option Explicit
 
+Private Const PID_ES_ADMIN_FIRST_ROW As Long = 37
+Private Const PID_ES_ADMIN_LAST_ROW As Long = 59
+
 
 Public Sub PID_FormatEinstellungSheet()
     Dim ws As Worksheet
@@ -42,7 +45,7 @@ Public Sub PID_FormatEinstellungSheet()
         PID_StyleApplyTitleBand .Range("N3:O4")
         
         .Rows(5).RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
-        PID_StyleApplyCompactHeaderBand .Range("B5")
+        PID_StyleApplyInputGuideHeader .Range("B5")
         PID_StyleApplyInputGuideHeader .Range("C5:F5")
         PID_StyleApplyInputGuideHeader .Range("H5:I5")
         PID_StyleApplyInputGuideHeader .Range("K5:L5")
@@ -69,7 +72,7 @@ Public Sub PID_FormatEinstellungSheet()
         PID_StyleApplyTitleBand .Range("K19:L20")
         
         .Rows(21).RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
-        PID_StyleApplyCompactHeaderBand .Range("B21")
+        PID_StyleApplyInputGuideHeader .Range("B21")
         PID_StyleApplyInputGuideHeader .Range("C21:F21")
         PID_StyleApplyInputGuideHeader .Range("H21:I21")
         PID_StyleApplyInputGuideHeader .Range("K21:L21")
@@ -90,20 +93,6 @@ Public Sub PID_FormatEinstellungSheet()
         PID_StyleApplyInputCell .Range("C35")
         PID_StyleApplyTableBorders .Range("B35:C35")
         
-        .Rows(37).RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
-        PID_StyleApplyInputGuideHeader .Range("B37")
-        PID_StyleApplyInputGuideHeader .Range("C37")
-        PID_StyleApplyZebraRows .Range("B38:C49")
-        PID_StyleApplyTableBorders .Range("B37:C49")
-        .Range("C38:C49").HorizontalAlignment = xlCenter
-        
-        .Rows(52).RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
-        PID_StyleApplyInputGuideHeader .Range("B52")
-        PID_StyleApplyInputGuideHeader .Range("C52")
-        PID_StyleApplyZebraRows .Range("B53:C59")
-        PID_StyleApplyTableBorders .Range("B52:C59")
-        .Range("C53:C59").HorizontalAlignment = xlCenter
-        
         PID_ApplyEuroNumberFormat .Range("C6:D17")
         PID_ApplyEuroNumberFormat .Range("C22:D33")
         .Range("F6:F17").NumberFormat = "#,##0"
@@ -115,8 +104,6 @@ Public Sub PID_FormatEinstellungSheet()
         .Range("H22:I33").NumberFormat = "0.00"
         .Range("K22:L33").NumberFormat = "0.00"
         .Range("C35").NumberFormat = "0"
-        .Range("C38:C49").NumberFormat = "0.00"
-        .Range("C53:C59").NumberFormat = "0.00"
         
         For r = 6 To 17
             .Rows(r).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
@@ -124,16 +111,12 @@ Public Sub PID_FormatEinstellungSheet()
         For r = 22 To 33
             .Rows(r).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
         Next r
-        For r = 38 To 49
-            .Rows(r).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
-        Next r
-        For r = 53 To 59
-            .Rows(r).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
-        Next r
         
         PID_ESApplyEinstellungInputZones ws
+        PID_ESApplyEinstellungCellLocks ws
+        PID_ESHideAdminRows ws
         
-        .Range("B1:U59").VerticalAlignment = xlCenter
+        .Range("B1:U36").VerticalAlignment = xlCenter
     End With
     
     PID_ESApplyCompactMonthSheetRowHeights
@@ -159,23 +142,49 @@ End Sub
 
 
 Private Sub PID_ESApplyEinstellungInputZones(ByVal ws As Worksheet)
-    ' Gelb = Hinweis (wo eintragen). Weiss = tatsaechliche Eingabe.
+    ' Gelb = Monats-/Label-Spalten (nicht editierbar). Weiss = Eingabe. Hellblau = nur Anzeige.
+    PID_StyleApplyInputGuideLabel ws.Range("B5")
     PID_StyleApplyInputGuideLabel ws.Range("B6:B17")
+    PID_StyleApplyInputGuideLabel ws.Range("B21")
     PID_StyleApplyInputGuideLabel ws.Range("B22:B33")
-    PID_StyleApplyInputGuideLabel ws.Range("B38:B49")
-    PID_StyleApplyInputGuideLabel ws.Range("B53:B59")
     
-    PID_StyleApplyInputCell ws.Range("C6:F17")
+    PID_StyleApplyInputCell ws.Range("C6:D17")
+    PID_StyleApplyInputCell ws.Range("F6:F17")
+    PID_StyleApplyReadOnlyCell ws.Range("E6:E17")
+    
+    PID_StyleApplyInputCell ws.Range("C22:C33")
+    PID_StyleApplyInputCell ws.Range("F22:F33")
+    PID_StyleApplyReadOnlyCell ws.Range("D22:E33")
+    
     PID_StyleApplyInputCell ws.Range("H6:I17")
     PID_StyleApplyInputCell ws.Range("K6:L17")
     PID_StyleApplyInputCell ws.Range("N6:O17")
     
-    PID_StyleApplyInputCell ws.Range("C22:F33")
     PID_StyleApplyInputCell ws.Range("H22:I33")
     PID_StyleApplyInputCell ws.Range("K22:L33")
+End Sub
+
+
+Private Sub PID_ESApplyEinstellungCellLocks(ByVal ws As Worksheet)
+    ws.Cells.Locked = True
     
-    PID_StyleApplyInputCell ws.Range("C38:C49")
-    PID_StyleApplyInputCell ws.Range("C53:C59")
+    ws.Range("C6:D17").Locked = False
+    ws.Range("F6:F17").Locked = False
+    ws.Range("H6:I17").Locked = False
+    ws.Range("K6:L17").Locked = False
+    ws.Range("N6:O17").Locked = False
+    
+    ws.Range("C22:C33").Locked = False
+    ws.Range("F22:F33").Locked = False
+    ws.Range("H22:I33").Locked = False
+    ws.Range("K22:L33").Locked = False
+    
+    ws.Range("C35").Locked = False
+End Sub
+
+
+Private Sub PID_ESHideAdminRows(ByVal ws As Worksheet)
+    ws.Rows(PID_ES_ADMIN_FIRST_ROW & ":" & PID_ES_ADMIN_LAST_ROW).Hidden = True
 End Sub
 
 

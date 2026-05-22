@@ -55,7 +55,7 @@
 
 ### Changed
 - mod_PIDSheetStyle.bas: gemeinsame Styles wieder am Original-UEBERSICHT FINANZIELL (Navy-Titel 13pt, hellblaue fette Header 10pt, Gelb nur Akzent/Summen/Eingaben).
-- mod_FormatEinstellung.bas: Gelb nur als Hinweis (Monats-/Spaltenlabels), weisse Eingabezellen; kompaktere Zeilenhoehen; Monatsblaetter 22px.
+- mod_FormatEinstellung.bas: Zeilen 37-59 ausgeblendet (Admin); E6:E17 und D22:E33 schreibgeschuetzt/hellblau; Monatsspalte B gelb; Eingabe nur weiss.
 - mod_FormatEinstellung.bas: EINSTELLUNG-Blatt im UEBERSICHT-Design (Navy-Titelbaender, Header, Zebra, Rahmen); `FormatEinstellung`-Makro; C35 (Arbeitsjahr) gelb hervorgehoben.
 - mod_BuildFluktuationAnalyse.bas: FLUKTUATION-Blatt im gleichen Design wie UEBERSICHT FINANZIELL (Navy-Titel, hellblaue Header, Zebra-Zeilen, Akzent-Gelb, Tabellenrahmen); Risiko-Farben bleiben erhalten.
 - mod_BuildDurchrechnungUebersicht.bas: Durchrechnung block clearer for managers; new column `AVG Lohn/h` from Schlussmonat `Q42`; Ueberstunden EUR = Std x Lohn/h x 1,5 (removed manual C30 Stundenlohn); only Jaenner plan inputs (E30/G30) stay yellow; full block styling (title/header colors, CF on Differenz/Status/Ueberstunden, `#,##0.00` formats); `FormatDurchrechnungUebersicht` macro; Mac-safe formatting unmerges block first, formats, then re-merges display rows (fixes error 1004).
