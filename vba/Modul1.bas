@@ -14,6 +14,48 @@ Public Const PID_FLUKTUATION_TIME_FIRST_ROW As Long = 53
 Public Const PID_FLUKTUATION_TIME_LAST_ROW As Long = 59
 
 
+Public Sub PID_ConfigureDeferredWorkbookCalculationOnOpen()
+    Dim ws As Worksheet
+    
+    Application.Calculation = xlCalculationManual
+    
+    For Each ws In ThisWorkbook.Worksheets
+        On Error Resume Next
+        ws.EnableCalculation = False
+        Err.Clear
+    Next ws
+    
+    On Error Resume Next
+    If Not ActiveSheet Is Nothing Then
+        If TypeOf ActiveSheet Is Worksheet Then
+            ActiveSheet.EnableCalculation = True
+        End If
+    End If
+    Err.Clear
+End Sub
+
+
+Public Sub PID_EnsureWorksheetCalculationEnabled(ByVal ws As Worksheet)
+    On Error Resume Next
+    
+    If ws Is Nothing Then Exit Sub
+    If ws.EnableCalculation Then Exit Sub
+    
+    ws.EnableCalculation = True
+End Sub
+
+
+Public Sub PID_EnableCalculationForAllSheets()
+    Dim ws As Worksheet
+    
+    For Each ws In ThisWorkbook.Worksheets
+        On Error Resume Next
+        ws.EnableCalculation = True
+        Err.Clear
+    Next ws
+End Sub
+
+
 Public Sub FullSystemRefresh()
     PID_FullSystemRefresh
 End Sub
@@ -51,6 +93,8 @@ Public Sub PID_FullSystemRefresh()
     PID_RecalculateAllMonthMergedFormulas
     
     PID_FormatAllMoneyColumns
+    
+    PID_EnableCalculationForAllSheets
     
     On Error Resume Next
     Application.CalculateFull
@@ -591,31 +635,24 @@ End Sub
 
 
 Private Function PID_AnyMonthNeedsLetztesGehaltRestore() As Boolean
-    Dim monthNames As Variant
     Dim ws As Worksheet
-    Dim i As Long
     
-    monthNames = PID_MonthNames()
+    Set ws = Nothing
     
-    For i = LBound(monthNames) To UBound(monthNames)
-        Set ws = Nothing
-        
-        On Error Resume Next
-        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
-        Err.Clear
-        
-        If Not ws Is Nothing Then
-            If Not PID_MonthSheetHasLetztesGehaltFormula(ws) Then
-                PID_AnyMonthNeedsLetztesGehaltRestore = True
-                Exit Function
-            End If
-            
-            If PID_MonthSheetHasLetztesGehaltRefError(ws) Then
-                PID_AnyMonthNeedsLetztesGehaltRestore = True
-                Exit Function
-            End If
-        End If
-    Next i
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("Januar")
+    Err.Clear
+    
+    If ws Is Nothing Then Exit Function
+    
+    If Not PID_MonthSheetHasLetztesGehaltFormula(ws) Then
+        PID_AnyMonthNeedsLetztesGehaltRestore = True
+        Exit Function
+    End If
+    
+    If PID_MonthSheetHasLetztesGehaltRefError(ws) Then
+        PID_AnyMonthNeedsLetztesGehaltRestore = True
+    End If
 End Function
 
 

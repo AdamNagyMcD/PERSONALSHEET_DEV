@@ -13,13 +13,9 @@ Private mInternalChange As Boolean
 
 
 Private Sub Workbook_Open()
-    Dim oldCalculation As XlCalculation
-    
     On Error GoTo SafeExit
     
     mInternalChange = True
-    
-    oldCalculation = Application.Calculation
     
     Application.ScreenUpdating = False
     Application.EnableEvents = False
@@ -30,8 +26,6 @@ Private Sub Workbook_Open()
     PID_EnsureLetztesGehaltFormulas
     
     PID_SetupSheetProtectionForOpen
-    
-    MarkFinanzSummaryDirty
     
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
@@ -44,7 +38,7 @@ Private Sub Workbook_Open()
     On Error GoTo SafeExit
 
 SafeExit:
-    Application.Calculation = oldCalculation
+    PID_ConfigureDeferredWorkbookCalculationOnOpen
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
@@ -89,6 +83,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     Application.ScreenUpdating = False
     
     PID_EnsureSheetProtectionForMacros Sh
+    PID_EnsureWorksheetCalculationEnabled Sh
     
     ' Fluktuation beim Oeffnen des Analyse-Blatts immer neu aufbauen.
     If Sh.Name = PID_FLUKTUATION_SHEET Then
