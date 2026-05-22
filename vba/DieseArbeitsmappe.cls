@@ -24,7 +24,7 @@ Private Sub Workbook_Open()
     PID_EnsureMonatslohnFormulas
     PID_EnsureLetztesGehaltFormulas
     
-    PID_SetupSheetProtectionForMacros
+    PID_SetupSheetProtectionForOpen
     EnsureAddNewKVPeriodButton
     FixLOHNTABELLE_HeaderTextIfNeeded
     
@@ -83,6 +83,8 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     
     Application.EnableEvents = False
     Application.ScreenUpdating = False
+    
+    PID_EnsureSheetProtectionForMacros Sh
     
     ' Fluktuation beim Oeffnen des Analyse-Blatts immer neu aufbauen.
     If Sh.Name = PID_FLUKTUATION_SHEET Then

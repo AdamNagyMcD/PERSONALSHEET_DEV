@@ -828,7 +828,9 @@ End Sub
 
 Public Sub PID_RecalculateMonatslohnForChangedRows(ByVal wsMonth As Worksheet, ByVal changedRange As Range)
     Dim rowsToCheck As Range
-    Dim rowRange As Range
+    Dim c As Range
+    Dim checkedRows As Collection
+    Dim rowKey As String
     
     On Error GoTo SafeExit
     
@@ -839,11 +841,64 @@ Public Sub PID_RecalculateMonatslohnForChangedRows(ByVal wsMonth As Worksheet, B
     Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:F82"))
     If rowsToCheck Is Nothing Then Exit Sub
     
-    For Each rowRange In rowsToCheck.Rows
-        If rowRange.Row >= PID_FIRST_ROW And rowRange.Row <= PID_LAST_ROW Then
-            wsMonth.Cells(rowRange.Row, "G").Calculate
+    Set checkedRows = New Collection
+    
+    For Each c In rowsToCheck.Cells
+        rowKey = CStr(c.Row)
+        
+        If c.Row >= PID_FIRST_ROW And c.Row <= PID_LAST_ROW Then
+            If Not CollectionHasKey_KVLohn(checkedRows, rowKey) Then
+                checkedRows.Add rowKey, rowKey
+                PID_ForceMonatslohnRecalcForRow wsMonth, c.Row
+            End If
         End If
-    Next rowRange
+    Next c
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_RecalculateMonatslohnForUsedRows(ByVal wsMonth As Worksheet)
+    Dim r As Long
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    
+    For r = PID_FIRST_ROW To PID_LAST_ROW
+        If Len(Trim$(CStr(wsMonth.Cells(r, "E").Value))) > 0 Then
+            If Len(Trim$(CStr(wsMonth.Cells(r, "F").Value))) > 0 Then
+                PID_ForceMonatslohnRecalcForRow wsMonth, r
+            End If
+        End If
+    Next r
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_ForceMonatslohnRecalcForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long)
+    Dim gCell As Range
+    Dim formulaR1C1 As String
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
+    
+    Set gCell = wsMonth.Cells(rowNumber, "G")
+    
+    If Not gCell.HasFormula Then
+        If Not PID_MonthSheetHasMonatslohnFormula(wsMonth) Then
+            PID_RestoreMonatslohnFormulasOnSheet wsMonth, PID_GetMonatslohnFormulaR1C1()
+        End If
+        Exit Sub
+    End If
+    
+    formulaR1C1 = gCell.FormulaR1C1
+    gCell.FormulaR1C1 = ""
+    gCell.FormulaR1C1 = formulaR1C1
 
 SafeExit:
 End Sub
@@ -862,9 +917,32 @@ Public Sub RefreshKVLohnIfDirty(ByVal wsMonth As Worksheet)
             If CollectionHasKey_KVLohn(mKVLohnRefreshedSheets, wsMonth.Name) Then Exit Sub
         End If
         
+        PID_RecalculateMonatslohnForUsedRows wsMonth
         PID_MarkKVLohnSheetRefreshed wsMonth.Name
+        
+        If PID_AllMonthSheetsKVLohnRefreshed() Then
+            ClearAllKVLohnDirty
+        End If
     End If
 End Sub
+
+
+Private Function PID_AllMonthSheetsKVLohnRefreshed() As Boolean
+    Dim monthNames As Variant
+    Dim i As Long
+    
+    If mKVLohnRefreshedSheets Is Nothing Then Exit Function
+    
+    monthNames = PID_MonthNames()
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        If Not CollectionHasKey_KVLohn(mKVLohnRefreshedSheets, CStr(monthNames(i))) Then
+            Exit Function
+        End If
+    Next i
+    
+    PID_AllMonthSheetsKVLohnRefreshed = True
+End Function
 
 
 Public Function CollectionHasKey_KVLohn(ByVal col As Collection, ByVal key As String) As Boolean
