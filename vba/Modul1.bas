@@ -46,7 +46,6 @@ Public Sub PID_FullSystemRefresh()
     PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty
     
-    MarkFinanzSummaryDirty
     RefreshFluktuationAll
     
     PID_RecalculateAllMonthMergedFormulas
@@ -56,8 +55,6 @@ Public Sub PID_FullSystemRefresh()
     On Error Resume Next
     Application.CalculateFull
     On Error GoTo CleanFail
-    
-    PID_SetupSheetProtectionForMacros
     
     MsgBox "Personalsheet wurde vollstaendig aktualisiert.", _
            vbInformation, "System Refresh"

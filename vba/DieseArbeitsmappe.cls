@@ -35,7 +35,7 @@ Private Sub Workbook_Open()
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
     ' Das ermoeglicht schnelleres Oeffnen - aktualisiert wird nur wenn wirklich noetig.
-    gFluktuationDirty = True
+    MarkFluktuationDirty
     
     On Error Resume Next
     ThisWorkbook.Sheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden
@@ -88,7 +88,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     
     ' Fluktuation beim Oeffnen des Analyse-Blatts immer neu aufbauen.
     If Sh.Name = PID_FLUKTUATION_SHEET Then
-        RefreshFluktuationAll
+        RefreshFluktuationIfDirty
         GoTo SafeExit
     End If
     
@@ -107,9 +107,6 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         PID_ResetMonthView Sh
         RefreshKVDropdownsIfDirtyForSheet Sh
         RefreshKVLohnIfDirty Sh
-        Sh.Range("S35").Calculate
-        Sh.Range("S36").Calculate
-        Sh.Range("S37").Calculate
         GoTo SafeExit
     End If
 

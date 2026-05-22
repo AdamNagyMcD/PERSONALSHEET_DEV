@@ -14,6 +14,12 @@ Private mCachedWorkbookYear As Long
 Private mWorkbookYearCached As Boolean
 
 
+Private Sub PID_EnsureLohnTableCacheLoaded()
+    If mLohnTableCacheLoaded Then Exit Sub
+    PID_LoadLohnTableCache
+End Sub
+
+
 Private Sub PID_LoadLohnTableCache()
     Dim wsKV As Worksheet
     Dim lastRow As Long
@@ -566,8 +572,8 @@ Public Function PID_KVLohnLookup(ByVal monthNumber As Variant, _
         Exit Function
     End If
     
-    mLohnTableCacheLoaded = False
-    mWorkbookYearCached = False
+    PID_EnsureLohnTableCacheLoaded
+    PID_EnsureWorkbookYearCached
     
     resultValue = GetKVLohnByPeriod(monthNum, normalizedCode, stundenValue, usedFallback)
     
@@ -787,6 +793,7 @@ End Function
 Public Sub MarkAllKVLohnDirty()
     gKVLohnAllMonthsDirty = True
     Set mKVLohnRefreshedSheets = New Collection
+    PID_ClearLohnTableCache
 End Sub
 
 

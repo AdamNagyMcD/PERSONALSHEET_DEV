@@ -175,10 +175,13 @@ Public Sub PID_SyncFluktuationToUbersicht(ByRef monthFluctuation() As Double, _
     Dim monthRows As Variant
     Dim quarterRows As Variant
     Dim i As Long
+    Dim wasProtected As Boolean
     
     On Error GoTo SafeExit
     
     Set ws = ThisWorkbook.Worksheets("UBERSICHT")
+    
+    wasProtected = ws.ProtectContents
     
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
@@ -206,6 +209,13 @@ Public Sub PID_SyncFluktuationToUbersicht(ByRef monthFluctuation() As Double, _
     ws.Cells(23, 17).ClearContents
     ws.Cells(23, 17).Value2 = ytdFluctuation
     ws.Cells(23, 17).NumberFormat = PID_FLUKTUATION_PERCENT_FORMAT
+    
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                   UserInterfaceOnly:=True, _
+                   AllowFiltering:=True, _
+                   AllowSorting:=True
+    End If
 
 SafeExit:
 End Sub

@@ -17,6 +17,11 @@
 - mod_SumMergedCells.bas + DieseArbeitsmappe.cls: FINANZIELL G/J sofort nach Lohn-/Crew-Labor-Aenderung auf Monatsblaettern (SheetChange).
 - mod_SumMergedCells.bas: FINANZIELL G/J wie Fluktuation Q — direkte Value-Sync via SumMergedCells statt stale Cross-Sheet-Formeln; kurzes Unprotect beim Schreiben.
 - mod_SumMergedCells.bas: gFinanzSummaryDirty + RefreshFinanzSummaryIfDirty; UEBERSICHT-Activate nur bei Bedarf; Batch-Unprotect, VBA-Quartals-/Diff-Berechnung.
+- mod_KVLohnLookup.bas: LOHNTABELLE-Cache in PID_KVLohnLookup UDF (kein Invalidate pro Zelle); Cache-Clear bei MarkAllKVLohnDirty.
+- DieseArbeitsmappe.cls: FLUKTUATION-Activate nur bei gFluktuationDirty; kein S35-S37-Calculate bei Monats-Activate.
+- mod_FluctuationCalculation.bas: UEBERSICHT nach Fluktuation-Sync wieder schuetzen.
+- mod_DataClear.bas: MarkFinanzSummaryDirty nach Monatsdaten-Loeschen.
+- Modul1.bas: FullSystemRefresh ohne doppeltes Protection-Setup am Ende.
 - DieseArbeitsmappe.cls: `Union`-Aufruf in `EnforcePasteValuesOnly` ohne Zeilenfortsetzung (Mac VBA Syntaxfehler behoben).
 - mod_ResetAndImportVBAFiles.bas: ueberarbeiteter Import (Workbook-/Tabellenmodule per Code-Update statt Import); `ReadVBAFileWithoutAttributes` liest nur ab `Option Explicit` (kein VERSION/Attribute-Header mehr im Modul).
 - Modul1.bas: `SyncDieseArbeitsmappeFromExport` macro alias for manual workbook-module sync.
