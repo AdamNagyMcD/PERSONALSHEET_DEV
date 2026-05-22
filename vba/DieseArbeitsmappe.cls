@@ -105,7 +105,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     
     PID_EnsureSheetProtectionForMacros Sh
     
-    ' Fluktuation beim Oeffnen des Analyse-Blatts immer neu aufbauen.
+    ' Fluktuation-Analyse nur bei Bedarf aktualisieren (gFluktuationDirty).
     If Sh.Name = PID_FLUKTUATION_SHEET Then
         RefreshFluktuationIfDirty
         GoTo SafeExit
@@ -249,6 +249,16 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     If Not PID_IsWorkerMonthSheet(Sh) Then Exit Sub
     If Target.CountLarge > 1 Then Exit Sub
     
+    ' Ausserhalb D/E/F: nur O45-Hinweis ggf. loeschen, sonst ohne Overhead beenden.
+    If Intersect(Target, Sh.Range("D3:F82")) Is Nothing Then
+        If Len(Trim$(CStr(Sh.Range("O45").Value))) = 0 Then Exit Sub
+        
+        mInternalChange = True
+        Application.EnableEvents = False
+        Sh.Range("O45").Value = ""
+        GoTo SafeExit
+    End If
+    
     mInternalChange = True
     
     Application.EnableEvents = False
@@ -274,18 +284,11 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
         End If
     End If
     
-    ' Nur Eintrittsdatum Spalte D.
-    If Intersect(Target, Sh.Range("D3:D82")) Is Nothing Then
-        
-        ' Nur loeschen, wenn tatsaechlich etwas drin ist.
-        If Sh.Range("O45").Value <> "" Then
-            Sh.Range("O45").Value = ""
-        End If
-        
-        GoTo SafeExit
+    If Not Intersect(Target, Sh.Range("D3:D82")) Is Nothing Then
+        PID_ShowEmploymentDuration Sh, Target
+    ElseIf Len(Trim$(CStr(Sh.Range("O45").Value))) > 0 Then
+        Sh.Range("O45").Value = ""
     End If
-    
-    PID_ShowEmploymentDuration Sh, Target
 
 SafeExit:
     Application.ScreenUpdating = True
