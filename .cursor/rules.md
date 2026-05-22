@@ -168,3 +168,25 @@
   - break filters,
   - change formatting,
   - click wrong buttons.
+
+  ## Terminal Usage Rules
+
+- The project root is `C:\DEV\PERSONALSHEET_DEV`.
+- Do not use `cd "C:\DEV\PERSONALSHEET_DEV"` in terminal commands when the workspace is already opened from this folder.
+- Do not chain many commands with `&&`.
+- Prefer one command at a time.
+- Read-only diagnostic commands are allowed:
+  - `git status`
+  - `git remote -v`
+  - `git branch -a`
+  - `git log -5 --oneline`
+  - `git diff --stat`
+  - `git diff --name-status`
+- Do not run destructive commands without explicit confirmation:
+  - `git reset`
+  - `git clean`
+  - `git restore`
+  - `rm`
+  - `del`
+  - `rmdir`
+- Do not run `git push`, `git commit`, or `git add .` automatically without user confirmation.

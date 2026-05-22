@@ -1,4 +1,4 @@
-Attribute VB_Name = "mod_BuildDurchrechnungUebersicht"
+Attribute VB_Name = "mod_BuildDurchrechnung"
 Option Explicit
 
 Private Const PID_DR_START_ROW As Long = 28
