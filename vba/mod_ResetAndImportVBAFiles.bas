@@ -120,8 +120,8 @@ Public Sub PID_SyncDieseArbeitsmappeFromExport(Optional ByRef syncOk As Boolean 
     Dim vbaFolder As String
     Dim filePath As String
     Dim fileNum As Integer
-    Dim fileContent As String
-    Dim codeStart As Long
+    Dim lineText As String
+    Dim foundCode As Boolean
     Dim codeText As String
     Dim codeModule As Object
     
@@ -143,18 +143,38 @@ Public Sub PID_SyncDieseArbeitsmappeFromExport(Optional ByRef syncOk As Boolean 
         Exit Sub
     End If
     
+    foundCode = False
+    codeText = ""
+    
     fileNum = FreeFile
     Open filePath For Input As #fileNum
-    fileContent = Input(LOF(fileNum), fileNum)
+    
+    Do While Not EOF(fileNum)
+        Line Input #fileNum, lineText
+        
+        If Not foundCode Then
+            If StrComp(Trim$(lineText), "Option Explicit", vbTextCompare) = 0 Then
+                foundCode = True
+                codeText = lineText
+            End If
+        Else
+            codeText = codeText & vbCrLf & lineText
+        End If
+    Loop
+    
     Close #fileNum
     
-    codeStart = InStr(1, fileContent, "Option Explicit", vbTextCompare)
-    If codeStart = 0 Then
+    If Not foundCode Then
         syncDetails = "Option Explicit nicht gefunden in DieseArbeitsmappe.cls."
         Exit Sub
     End If
     
-    codeText = Mid$(fileContent, codeStart)
+    If InStr(1, codeText, "VERSION 1.0", vbTextCompare) > 0 _
+       Or InStr(1, codeText, "Attribute VB_", vbTextCompare) > 0 Then
+        syncDetails = "Export-Header erkannt. Bitte nur ab Option Explicit synchronisieren."
+        Exit Sub
+    End If
+    
     Set codeModule = ThisWorkbook.VBProject.VBComponents("DieseArbeitsmappe").CodeModule
     
     If codeModule.CountOfLines > 0 Then
