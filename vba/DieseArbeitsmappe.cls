@@ -28,6 +28,8 @@ Private Sub Workbook_Open()
     EnsureAddNewKVPeriodButton
     FixLOHNTABELLE_HeaderTextIfNeeded
     
+    MarkAllKVDropdownsDirty
+    
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
     ' Das ermoeglicht schnelleres Oeffnen - aktualisiert wird nur wenn wirklich noetig.
@@ -197,7 +199,6 @@ End Sub
 
 
 Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Range)
-    Dim hasValidation As Boolean
     
     On Error GoTo SafeExit
     
@@ -220,17 +221,13 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
         End If
     End If
     
-    ' If user selects F and dropdown is missing after CopyData, rebuild only that row.
+    ' If user selects F and dropdown is missing/broken, rebuild only that row.
     If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
-        hasValidation = False
-        
-        On Error Resume Next
-        hasValidation = (Target.Validation.Type <> 0)
-        On Error GoTo SafeExit
-        
-        If Not hasValidation Then
+        If Not PID_RowHasValidFStundenDropdown(Sh, Target.Row) Then
             If Trim$(CStr(Sh.Cells(Target.Row, "E").Value)) <> "" Then
+                On Error Resume Next
                 RefreshKVStundenDropdownForSheet Sh, Sh.Cells(Target.Row, "E")
+                On Error GoTo SafeExit
             End If
         End If
     End If

@@ -139,6 +139,8 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     wsHelper.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
     
+    wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
+    
     If changedRange Is Nothing Then
         
         ClearHelperColumnsForSheet wsHelper, wsMonth.Name
@@ -214,6 +216,8 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
     kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
+    
+    wsMonth.Cells(rowNumber, "F").Locked = False
     
     On Error Resume Next
     wsMonth.Cells(rowNumber, "F").Validation.Delete
@@ -818,6 +822,43 @@ Public Sub PID_RestoreKVCodeDropdownValidationSilent()
 SafeExit:
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
+End Sub
+
+
+Public Function PID_RowHasValidFStundenDropdown(ByVal wsMonth As Worksheet, ByVal rowNumber As Long) As Boolean
+    Dim validationFormula As String
+    Dim validationType As Long
+    
+    If wsMonth Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
+    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Function
+    
+    On Error Resume Next
+    validationType = wsMonth.Cells(rowNumber, "F").Validation.Type
+    If Err.Number <> 0 Then Exit Function
+    
+    If validationType <> xlValidateList Then Exit Function
+    
+    validationFormula = UCase$(CStr(wsMonth.Cells(rowNumber, "F").Validation.Formula1))
+    If Err.Number <> 0 Then Exit Function
+    On Error GoTo 0
+    
+    If InStr(1, validationFormula, "#REF", vbTextCompare) > 0 Then Exit Function
+    If InStr(1, validationFormula, "KV_DD_", vbTextCompare) = 0 Then Exit Function
+    
+    PID_RowHasValidFStundenDropdown = True
+End Function
+
+
+Public Sub PID_RestoreFStundenDropdownOnSheet(ByVal wsMonth As Worksheet)
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    
+    RefreshKVStundenDropdownForSheet wsMonth
+
+SafeExit:
 End Sub
 
 

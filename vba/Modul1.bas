@@ -527,6 +527,16 @@ Public Sub RestoreKVCodeDropdownValidation()
 End Sub
 
 
+Public Sub RestoreKVStundenDropdownValidation()
+    RefreshAllMonthKVStundenDropdowns
+    MarkKVDropdownsClean
+    
+    MsgBox "Stunden-Dropdown (Spalte F) wurde wiederhergestellt." & vbCrLf & vbCrLf & _
+           "Bereich: F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW & " auf allen Monatsblaettern.", _
+           vbInformation, "Spalte F"
+End Sub
+
+
 Public Sub PID_RestoreLetztesGehaltFormulas()
     Dim monthNames As Variant
     Dim ws As Worksheet

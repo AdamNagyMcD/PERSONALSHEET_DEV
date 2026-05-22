@@ -18,6 +18,7 @@ Public Sub PID_SetupSheetProtectionForMacros()
         If PID_IsWorkerMonthSheetSafe(ws) Then
             
             PID_ApplyKVCodeDropdownValidation ws
+            ws.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
             
             ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                        UserInterfaceOnly:=True, _
