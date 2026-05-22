@@ -201,6 +201,11 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
         PID_PreloadKVLohnCaches
         PID_RecalculateMonatslohnForChangedRows Sh, Target
+        PID_RecalculateLetztesGehaltForChangedRows Sh, Target
+    End If
+    
+    If Not Intersect(Target, Sh.Range("D3:D82,I3:I82,K3:K82")) Is Nothing Then
+        PID_RecalculateLetztesGehaltForChangedRows Sh, Target
     End If
     
     If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then

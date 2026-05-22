@@ -792,6 +792,82 @@ Public Function PID_GetLetztesGehaltFormulaR1C1() As String
 End Function
 
 
+Public Sub PID_RecalculateLetztesGehaltForChangedRows(ByVal wsMonth As Worksheet, ByVal changedRange As Range)
+    Dim watchRange As Range
+    Dim rowsToCheck As Range
+    Dim c As Range
+    Dim checkedRows As Collection
+    Dim rowKey As String
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If changedRange Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    
+    Set watchRange = Union(wsMonth.Range("D3:D82"), wsMonth.Range("E3:F82"), wsMonth.Range("G3:G82"), _
+                           wsMonth.Range("I3:I82"), wsMonth.Range("K3:K82"))
+    Set rowsToCheck = Intersect(changedRange, watchRange)
+    If rowsToCheck Is Nothing Then Exit Sub
+    
+    Set checkedRows = New Collection
+    
+    For Each c In rowsToCheck.Cells
+        rowKey = CStr(c.Row)
+        
+        If c.Row >= PID_FIRST_ROW And c.Row <= PID_LAST_ROW Then
+            If Not PID_CollectionHasKeyLetztesGehalt(checkedRows, rowKey) Then
+                checkedRows.Add rowKey, rowKey
+                PID_RecalculateLetztesGehaltForRow wsMonth, c.Row
+            End If
+        End If
+    Next c
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_RecalculateLetztesGehaltForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long)
+    Dim lCell As Range
+    Dim formulaR1C1 As String
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
+    
+    Set lCell = wsMonth.Cells(rowNumber, "L")
+    If Not lCell.HasFormula Then Exit Sub
+    
+    On Error Resume Next
+    lCell.Calculate
+    If Err.Number = 0 Then Exit Sub
+    Err.Clear
+    On Error GoTo SafeExit
+    
+    formulaR1C1 = lCell.FormulaR1C1
+    lCell.FormulaR1C1 = ""
+    lCell.FormulaR1C1 = formulaR1C1
+
+SafeExit:
+End Sub
+
+
+Private Function PID_CollectionHasKeyLetztesGehalt(ByVal col As Collection, ByVal key As String) As Boolean
+    Dim tmp As Variant
+    
+    On Error GoTo NotFound
+    
+    tmp = col.item(key)
+    
+    PID_CollectionHasKeyLetztesGehalt = True
+    Exit Function
+
+NotFound:
+    PID_CollectionHasKeyLetztesGehalt = False
+End Function
+
+
 Private Function PID_IsWorkerMonthSheetName(ByVal sheetName As String) As Boolean
     Select Case sheetName
         Case "Januar", "Februar", "Marz", "April", "Mai", "Juni", _
