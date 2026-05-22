@@ -1,6 +1,9 @@
 Attribute VB_Name = "mod_KVStundenDropdown"
 Option Explicit
 
+Public Const PID_KV_CODE_LIST_NAME As String = "PID_KV_CODE_LIST"
+Private Const PID_KV_CODE_HELPER_COL As Long = 961
+
 Public gKVDropdownsDirty As Boolean
 Private mKVDropdownRefreshedSheets As Collection
 
@@ -527,10 +530,6 @@ Public Function CollectionHasKey_KVDropdown(ByVal col As Collection, ByVal key A
 NotFound:
     CollectionHasKey_KVDropdown = False
 End Function
-
-
-Public Const PID_KV_CODE_LIST_NAME As String = "PID_KV_CODE_LIST"
-Private Const PID_KV_CODE_HELPER_COL As Long = 961
 
 
 Public Function PID_GetStandardKVCodeValidationList() As String
