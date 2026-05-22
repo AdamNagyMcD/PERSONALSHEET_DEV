@@ -13,6 +13,14 @@ Private Const PID_DR_JAEN_MUST_CELL As String = "I30"
 
 Private Const PID_UBERSICHT_SHEET As String = "UBERSICHT"
 
+Private Const PID_FU_TITLE_TOP_ROW As Long = 2
+Private Const PID_FU_TITLE_BOTTOM_ROW As Long = 3
+Private Const PID_FU_HEADER_TOP_ROW As Long = 4
+Private Const PID_FU_HEADER_BOTTOM_ROW As Long = 6
+Private Const PID_FU_DATA_START_ROW As Long = 7
+Private Const PID_FU_DATA_END_ROW As Long = 22
+Private Const PID_FU_TOTAL_ROW As Long = 23
+
 
 ' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Win/Mac Excel 2016).
 Private Function PID_DRTxtVerfuegbar() As String
@@ -51,6 +59,10 @@ Private Function PID_DRGetStatusFormula(ByVal dataRow As Long) As String
     PID_DRGetStatusFormula = "=IF(F" & dataRow & "<0,""ACHTUNG: " & PID_DRTxtUeberstunden() & """,IF(F" & dataRow & ">0,""Reserve " & PID_DRTxtMoeglich() & """,""OK""))"
 End Function
 
+Private Function PID_DRTxtFinanzTitle() As String
+    PID_DRTxtFinanzTitle = "FINANZIELL " & ChrW(220) & "BERSICHT "
+End Function
+
 
 Public Sub PID_BuildDurchrechnungUebersicht()
     PID_BuildDurchrechnungUebersichtInternal True
@@ -72,16 +84,6 @@ Public Sub PID_RefreshDurchrechnungUebersicht()
     
     Set ws = ThisWorkbook.Worksheets(PID_UBERSICHT_SHEET)
     
-    If Not PID_DurchrechnungBlockExists(ws) Then
-        PID_BuildDurchrechnungUebersichtInternal False
-        GoTo CleanExit
-    End If
-    
-    If Not PID_DurchrechnungBlockHasLohnColumn(ws) Then
-        PID_BuildDurchrechnungUebersichtInternal False
-        GoTo CleanExit
-    End If
-    
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
     If Err.Number <> 0 Then
@@ -90,12 +92,28 @@ Public Sub PID_RefreshDurchrechnungUebersicht()
     End If
     On Error GoTo CleanFail
     
+    If PID_FinanzUebersichtBlockExists(ws) Then
+        ws.Calculate
+        PID_ApplyFinanzUebersichtFormats ws
+    End If
+    
+    If Not PID_DurchrechnungBlockExists(ws) Then
+        PID_BuildDurchrechnungUebersichtInternal False
+        GoTo CleanProtect
+    End If
+    
+    If Not PID_DurchrechnungBlockHasLohnColumn(ws) Then
+        PID_BuildDurchrechnungUebersichtInternal False
+        GoTo CleanProtect
+    End If
+    
     ws.Calculate
     PID_UpdateDurchrechnungLohnFormulas ws
     PID_UpdateDurchrechnungEuroFormulas ws
     PID_UnlockDurchrechnungInputs ws
     PID_ApplyDurchrechnungFormats ws
     
+CleanProtect:
     ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                UserInterfaceOnly:=True, _
                AllowFiltering:=True, _
@@ -155,6 +173,10 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     
     PID_UnlockDurchrechnungInputs ws
     PID_ApplyDurchrechnungFormats ws
+    
+    If PID_FinanzUebersichtBlockExists(ws) Then
+        PID_ApplyFinanzUebersichtFormats ws
+    End If
     
     ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                UserInterfaceOnly:=True, _
@@ -951,7 +973,7 @@ Private Sub PID_DRApplyInputBorder(ByVal borders As Borders)
 End Sub
 
 
-Public Sub PID_FormatDurchrechnungUebersicht()
+Public Sub PID_FormatFinanzUebersicht()
     Dim ws As Worksheet
     Dim oldScreenUpdating As Boolean
     
@@ -962,9 +984,8 @@ Public Sub PID_FormatDurchrechnungUebersicht()
     
     Set ws = ThisWorkbook.Worksheets(PID_UBERSICHT_SHEET)
     
-    If Not PID_DurchrechnungBlockExists(ws) Then
-        MsgBox "Kein Durchrechnungsblock auf UEBERSICHT gefunden. Bitte zuerst BuildDurchrechnungUebersicht ausfuehren.", _
-               vbExclamation, "Durchrechnung"
+    If Not PID_FinanzUebersichtBlockExists(ws) Then
+        MsgBox "Kein FINANZIELL-Block auf UEBERSICHT gefunden.", vbExclamation, "UEBERSICHT"
         GoTo CleanExit
     End If
     
@@ -976,9 +997,176 @@ Public Sub PID_FormatDurchrechnungUebersicht()
     End If
     On Error GoTo CleanFail
     
+    PID_ApplyFinanzUebersichtFormats ws
+    
+    ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+               UserInterfaceOnly:=True, _
+               AllowFiltering:=True, _
+               AllowSorting:=True
+    
+    GoTo CleanExit
+
+CleanFail:
+    MsgBox "Fehler bei FormatFinanzUebersicht:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "UEBERSICHT"
+
+CleanExit:
+    Application.ScreenUpdating = oldScreenUpdating
+End Sub
+
+
+Private Function PID_FinanzUebersichtBlockExists(ByVal ws As Worksheet) As Boolean
+    Dim headerText As String
+    
+    On Error GoTo SafeExit
+    
+    headerText = Trim$(CStr(ws.Cells(PID_FU_HEADER_TOP_ROW, 3).Text))
+    
+    If InStr(1, headerText, "SALES", vbTextCompare) > 0 Then
+        PID_FinanzUebersichtBlockExists = True
+        Exit Function
+    End If
+    
+    If Trim$(CStr(ws.Cells(PID_FU_HEADER_BOTTOM_ROW, 3).Value)) = "BUDGET" Then
+        PID_FinanzUebersichtBlockExists = True
+        Exit Function
+    End If
+
+SafeExit:
+    PID_FinanzUebersichtBlockExists = False
+End Function
+
+
+Private Sub PID_FixFinanzUebersichtFormulas(ByVal ws As Worksheet)
+    On Error Resume Next
+    ws.Range("B2").Formula = "= """ & PID_DRTxtFinanzTitle() & """ & EINSTELLUNG!C35"
+    ws.Range("B23").Formula = "= ""GESAMT "" & EINSTELLUNG!C35"
+    On Error GoTo 0
+End Sub
+
+
+Private Sub PID_ApplyFinanzUebersichtFormats(ByVal ws As Worksheet)
+    Dim dataRow As Long
+    Dim qRows As Variant
+    Dim accentBg As Long
+    Dim i As Long
+    Dim tableRange As Range
+    
+    accentBg = RGB(255, 242, 204)
+    qRows = Array(10, 14, 18, 22)
+    
+    PID_FixFinanzUebersichtFormulas ws
+    
+    ws.Rows(PID_FU_TITLE_TOP_ROW).RowHeight = 28
+    ws.Rows(PID_FU_TITLE_BOTTOM_ROW).RowHeight = 18
+    ws.Rows(PID_FU_HEADER_TOP_ROW).RowHeight = 24
+    ws.Rows(PID_FU_HEADER_BOTTOM_ROW).RowHeight = 30
+    
+    For dataRow = PID_FU_DATA_START_ROW To PID_FU_DATA_END_ROW
+        ws.Rows(dataRow).RowHeight = 30
+    Next dataRow
+    ws.Rows(PID_FU_TOTAL_ROW).RowHeight = 32
+    
+    With ws.Range("B" & PID_FU_TITLE_TOP_ROW & ":Q" & PID_FU_TITLE_BOTTOM_ROW)
+        .Interior.Color = RGB(31, 78, 121)
+        .Font.Color = RGB(255, 255, 255)
+        .Font.Bold = True
+        .Font.Size = 13
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+    End With
+    
+    With ws.Range("B" & PID_FU_HEADER_TOP_ROW & ":Q" & PID_FU_HEADER_BOTTOM_ROW)
+        .Interior.Color = RGB(221, 235, 247)
+        .Font.Color = RGB(31, 78, 121)
+        .Font.Bold = True
+        .Font.Size = 10
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = True
+    End With
+    
+    ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Interior.Color = vbWhite
+    ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Color = vbBlack
+    ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_DATA_END_ROW).Font.Bold = False
+    
+    For dataRow = PID_FU_DATA_START_ROW To PID_FU_DATA_END_ROW
+        If ((dataRow - PID_FU_DATA_START_ROW) Mod 2) = 1 Then
+            ws.Range("B" & dataRow & ":Q" & dataRow).Interior.Color = RGB(248, 248, 248)
+        End If
+    Next dataRow
+    
+    For i = LBound(qRows) To UBound(qRows)
+        dataRow = CLng(qRows(i))
+        ws.Range("B" & dataRow & ":Q" & dataRow).Interior.Color = accentBg
+        ws.Range("B" & dataRow & ":Q" & dataRow).Font.Bold = True
+    Next i
+    
+    With ws.Range("B" & PID_FU_TOTAL_ROW & ":Q" & PID_FU_TOTAL_ROW)
+        .Interior.Color = accentBg
+        .Font.Bold = True
+    End With
+    
+    ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_TOTAL_ROW).HorizontalAlignment = xlCenter
+    ws.Range("B" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_TOTAL_ROW).VerticalAlignment = xlCenter
+    
+    PID_ApplyEuroNumberFormat ws.Range("C" & PID_FU_DATA_START_ROW & ":H" & PID_FU_TOTAL_ROW)
+    ws.Range("I" & PID_FU_DATA_START_ROW & ":K" & PID_FU_TOTAL_ROW).NumberFormat = "0.00%"
+    ws.Range("L" & PID_FU_DATA_START_ROW & ":M" & PID_FU_TOTAL_ROW).NumberFormat = "#,##0.00"
+    ws.Range("N" & PID_FU_DATA_START_ROW & ":P" & PID_FU_TOTAL_ROW).NumberFormat = "#,##0.00"
+    ws.Range("Q" & PID_FU_DATA_START_ROW & ":Q" & PID_FU_TOTAL_ROW).NumberFormat = "0.00%"
+    
+    Set tableRange = ws.Range("B" & PID_FU_HEADER_TOP_ROW & ":Q" & PID_FU_TOTAL_ROW)
+    PID_DRApplyOuterBorder tableRange
+    PID_DRApplyTableBorders tableRange
+    
+    PID_FUApplyDiffFormatConditions ws.Range("E" & PID_FU_DATA_START_ROW & ":E" & PID_FU_TOTAL_ROW)
+    PID_FUApplyDiffFormatConditions ws.Range("H" & PID_FU_DATA_START_ROW & ":H" & PID_FU_TOTAL_ROW)
+    PID_FUApplyDiffFormatConditions ws.Range("K" & PID_FU_DATA_START_ROW & ":K" & PID_FU_TOTAL_ROW)
+    PID_FUApplyDiffFormatConditions ws.Range("P" & PID_FU_DATA_START_ROW & ":P" & PID_FU_TOTAL_ROW)
+End Sub
+
+
+Private Sub PID_FUApplyDiffFormatConditions(ByVal diffRange As Range)
+    PID_DRClearFormatConditions diffRange
+    PID_DRAddDiffFormatConditions diffRange
+End Sub
+
+
+Public Sub PID_FormatDurchrechnungUebersicht()
+    Dim ws As Worksheet
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldScreenUpdating = Application.ScreenUpdating
+    Application.ScreenUpdating = False
+    
+    Set ws = ThisWorkbook.Worksheets(PID_UBERSICHT_SHEET)
+    
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    If Err.Number <> 0 Then
+        Err.Clear
+        ws.Unprotect
+    End If
+    On Error GoTo CleanFail
+    
+    If PID_FinanzUebersichtBlockExists(ws) Then
+        PID_ApplyFinanzUebersichtFormats ws
+    End If
+    
+    If Not PID_DurchrechnungBlockExists(ws) Then
+        MsgBox "Kein Durchrechnungsblock auf UEBERSICHT gefunden. Bitte zuerst BuildDurchrechnungUebersicht ausfuehren.", _
+               vbExclamation, "Durchrechnung"
+        GoTo CleanProtect
+    End If
+    
     PID_UnlockDurchrechnungInputs ws
     PID_ApplyDurchrechnungFormats ws
     
+CleanProtect:
     ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                UserInterfaceOnly:=True, _
                AllowFiltering:=True, _

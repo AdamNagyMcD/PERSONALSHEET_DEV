@@ -807,6 +807,11 @@ Public Sub FormatDurchrechnungUebersicht()
 End Sub
 
 
+Public Sub FormatFinanzUebersicht()
+    PID_FormatFinanzUebersicht
+End Sub
+
+
 Public Sub SyncDieseArbeitsmappeFromExport()
     Dim syncOk As Boolean
     Dim syncDetails As String

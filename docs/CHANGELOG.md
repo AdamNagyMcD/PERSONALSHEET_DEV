@@ -10,6 +10,7 @@
 - mod_BuildDurchrechnung.bas: Tabellenzellen zentriert; Eingabezeile 30 bereinigt (G30-Altlast, J:Q-Merge).
 - mod_BuildDurchrechnung.bas: Lohn/h (G) und EUR (I) mit Euro-Zeichen via PID_ApplyEuroNumberFormat.
 - mod_ResetAndImportVBAFiles.bas: VBA-Import Erfolgsmeldung gekuerzt.
+- mod_BuildDurchrechnung.bas: FINANZIELL-Block (B2:Q23) im blau/gelb Design; B2/B23 #BEZUG! -> EINSTELLUNG!C35.
 - DieseArbeitsmappe.cls: `Union`-Aufruf in `EnforcePasteValuesOnly` ohne Zeilenfortsetzung (Mac VBA Syntaxfehler behoben).
 - mod_ResetAndImportVBAFiles.bas: ueberarbeiteter Import (Workbook-/Tabellenmodule per Code-Update statt Import); `ReadVBAFileWithoutAttributes` liest nur ab `Option Explicit` (kein VERSION/Attribute-Header mehr im Modul).
 - Modul1.bas: `SyncDieseArbeitsmappeFromExport` macro alias for manual workbook-module sync.
