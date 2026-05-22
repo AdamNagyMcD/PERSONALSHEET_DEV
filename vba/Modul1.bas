@@ -501,6 +501,157 @@ Private Function PID_GetAktuelleStundenFormulaR1C1() As String
 End Function
 
 
+Public Sub RestoreLetztesGehaltFormulas()
+    PID_RestoreLetztesGehaltFormulas
+End Sub
+
+
+Public Sub PID_RestoreLetztesGehaltFormulas()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim updatedCount As Long
+    Dim formulaR1C1 As String
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    formulaR1C1 = PID_GetLetztesGehaltFormulaR1C1()
+    monthNames = PID_MonthNames()
+    updatedCount = 0
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            If PID_RestoreLetztesGehaltFormulasOnSheet(ws, formulaR1C1) Then
+                updatedCount = updatedCount + 1
+            End If
+        End If
+    Next i
+    
+    MsgBox "Letztes-Gehalt-Formeln (Spalte L) wurden wiederhergestellt." & vbCrLf & vbCrLf & _
+           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           "Bereich: L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW & vbCrLf & _
+           "Jahr aus: " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL & vbCrLf & vbCrLf & _
+           "AVG Bruttolohn (Q42) sollte danach wieder berechnet werden.", _
+           vbInformation, "Spalte L"
+    
+    GoTo CleanExit
+
+CleanExit:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    Exit Sub
+
+CleanFail:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    
+    MsgBox "Fehler bei PID_RestoreLetztesGehaltFormulas:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "Spalte L"
+End Sub
+
+
+Private Function PID_RestoreLetztesGehaltFormulasOnSheet(ByVal ws As Worksheet, _
+                                                         ByVal formulaR1C1 As String) As Boolean
+    Dim wasProtected As Boolean
+    Dim euroSymbol As String
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheetName(ws.Name) Then Exit Function
+    If Not IsNumeric(ws.Range("A1").Value) Then Exit Function
+    
+    wasProtected = ws.ProtectContents
+    
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo SafeExit
+    
+    If Trim$(CStr(ws.Range("L1").Value)) = "" Then
+        ws.Range("L1").Value = "Letztes Gehalt"
+    End If
+    
+    ws.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW).FormulaR1C1 = formulaR1C1
+    
+    euroSymbol = PID_GetEuroSymbol()
+    ws.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW).NumberFormat = euroSymbol & " #,##0.00"
+    
+    PID_RestoreLetztesGehaltFormulasOnSheet = True
+
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                   UserInterfaceOnly:=True, _
+                   AllowFiltering:=True, _
+                   AllowSorting:=True
+    End If
+End Function
+
+
+Private Function PID_GetLetztesGehaltFormulaR1C1() As String
+    Dim yearRef As String
+    
+    yearRef = PID_GetEinstellungYearRefR1C1()
+    
+    ' Spalte L = Letztes Gehalt / Laborcost fuer AVG Bruttolohn (Q42 = Q17/Q8).
+    ' Jahr aus EINSTELLUNG!C35 statt legacy LOHNTABELLE!G3 (#REF!).
+    PID_GetLetztesGehaltFormulaR1C1 = _
+        "=IFERROR(IF(OR(ISBLANK(RC[-8]),ISBLANK(RC[-6]),ISBLANK(RC[-5]),ISBLANK(RC[-1])),0," & _
+        "IF(YEAR(RC[-8])<" & yearRef & "," & _
+        "IF(ISNUMBER(RC[-3]),IF(YEAR(RC[-3])<" & yearRef & ",0," & _
+        "IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
+        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1]))))," & _
+        "RC[-5]+RC[-1])," & _
+        "IF(YEAR(RC[-8])=" & yearRef & "," & _
+        "IF(MONTH(RC[-8])<R1C1,IF(ISNUMBER(RC[-3]),IF(YEAR(RC[-3])<" & yearRef & ",0," & _
+        "IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
+        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1])))),RC[-5])," & _
+        "IF(MONTH(RC[-8])=R1C1,IF(ISNUMBER(RC[-3]),IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
+        "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(RC[-3]-RC[-8]+1)+RC[-1])," & _
+        "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(DAY(EOMONTH(RC[-8],0))-DAY(RC[-8])+1)+RC[-1]),0)),0))),0)"
+End Function
+
+
+Private Function PID_IsWorkerMonthSheetName(ByVal sheetName As String) As Boolean
+    Select Case sheetName
+        Case "Januar", "Februar", "Marz", "April", "Mai", "Juni", _
+             "Juli", "August", "September", "Oktober", "November", "Dezember"
+            PID_IsWorkerMonthSheetName = True
+        Case Else
+            PID_IsWorkerMonthSheetName = False
+    End Select
+End Function
+
+
+Private Function PID_GetEuroSymbol() As String
+    Dim configuredSymbol As String
+    
+    configuredSymbol = Application.International(xlCurrencyCode)
+    
+    If Len(configuredSymbol) = 0 Then
+        PID_GetEuroSymbol = ChrW$(8364)
+    Else
+        PID_GetEuroSymbol = configuredSymbol
+    End If
+End Function
+
+
 Public Sub RestoreAustrittsdatumValidation()
     PID_RestoreAustrittsdatumValidation
 End Sub

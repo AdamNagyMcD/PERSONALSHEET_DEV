@@ -18,6 +18,7 @@
 - Modul1.bas: `BuildDurchrechnungUebersicht` macro alias to rebuild the UEBERSICHT Durchrechnung block safely without touching rows 2-27.
 - docs/Kurzanleitung_Personalsheet_A4.html: printable A4 user guide (German) for restaurant managers.
 - Modul1.bas: `RestoreAktuelleStundenFormulas` / `PID_RestoreAktuelleStundenFormulas` restores column `H` pro-rata hour formulas on all month sheets using `EINSTELLUNG!C35` as workbook year.
+- Modul1.bas: `RestoreLetztesGehaltFormulas` / `PID_RestoreLetztesGehaltFormulas` restores column `L` on all month sheets (fixes `#REF!` year refs → `EINSTELLUNG!C35`; enables `AVG Bruttolohn` / Q42 again).
 - Modul1.bas: `RestoreAustrittsdatumValidation` fixes month-sheet `AB1:AB2` date bounds and column `I` data validation after workbook year moved to `EINSTELLUNG!C35`.
 - mod_AddNewKVPeriodOnTop.bas: `AddCustomKVMonatsstunden` with dialog flow and green sheet button to insert custom Monatsstunden into a selected KV-Code block, sorted ascending by hours.
 - Initial project structure
