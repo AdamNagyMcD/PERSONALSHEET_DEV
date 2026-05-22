@@ -529,10 +529,103 @@ NotFound:
 End Function
 
 
+Public Const PID_KV_CODE_LIST_NAME As String = "PID_KV_CODE_LIST"
+Private Const PID_KV_CODE_HELPER_COL As Long = 961
+
+
 Public Function PID_GetStandardKVCodeValidationList() As String
-    PID_GetStandardKVCodeValidationList = _
-        "BG1,BG1_5,BG1_10,BG1_15,BG2,BG2_5,BG2_10,BG2_15,BG3,BG3_5,BG3_10,BG3_15"
+    Dim sep As String
+    Dim codes As Variant
+    Dim i As Long
+    Dim resultText As String
+    
+    sep = CStr(Application.International(xlListSeparator))
+    If sep = "" Then sep = ","
+    
+    codes = PID_GetStandardKVCodeArray()
+    resultText = CStr(codes(LBound(codes)))
+    
+    For i = LBound(codes) + 1 To UBound(codes)
+        resultText = resultText & sep & CStr(codes(i))
+    Next i
+    
+    PID_GetStandardKVCodeValidationList = resultText
 End Function
+
+
+Public Function PID_GetKVCodeValidationFormula() As String
+    PID_EnsureKVCodeListNamedRange
+    PID_GetKVCodeValidationFormula = "=" & PID_KV_CODE_LIST_NAME
+End Function
+
+
+Public Sub PID_EnsureKVCodeListNamedRange()
+    Dim wsHelper As Worksheet
+    Dim codes As Variant
+    Dim i As Long
+    Dim listRange As Range
+    
+    On Error GoTo SafeExit
+    
+    Set wsHelper = GetOrCreateKVDropdownHelperSheet()
+    
+    On Error Resume Next
+    wsHelper.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo SafeExit
+    
+    codes = PID_GetStandardKVCodeArray()
+    
+    For i = LBound(codes) To UBound(codes)
+        wsHelper.Cells(i - LBound(codes) + 1, PID_KV_CODE_HELPER_COL).Value = CStr(codes(i))
+    Next i
+    
+    Set listRange = wsHelper.Range(wsHelper.Cells(1, PID_KV_CODE_HELPER_COL), _
+                                   wsHelper.Cells(UBound(codes) - LBound(codes) + 1, PID_KV_CODE_HELPER_COL))
+    
+    CreateOrReplaceWorkbookName PID_KV_CODE_LIST_NAME, listRange
+
+SafeExit:
+End Sub
+
+
+Private Function PID_GetStandardKVCodeArray() As Variant
+    PID_GetStandardKVCodeArray = Array( _
+        "BG1", "BG1_5", "BG1_10", "BG1_15", _
+        "BG2", "BG2_5", "BG2_10", "BG2_15", _
+        "BG3", "BG3_5", "BG3_10", "BG3_15")
+End Function
+
+
+Public Sub PID_ApplyKVCodeDropdownValidation(ByVal ws As Worksheet)
+    Dim targetRange As Range
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    PID_EnsureKVCodeListNamedRange
+    
+    Set targetRange = ws.Range("E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW)
+    targetRange.Locked = False
+    
+    On Error Resume Next
+    targetRange.Validation.Delete
+    On Error GoTo SafeExit
+    
+    With targetRange.Validation
+        .Add Type:=xlValidateList, _
+             AlertStyle:=xlValidAlertStop, _
+             Operator:=xlBetween, _
+             Formula1:=PID_GetKVCodeValidationFormula()
+        .IgnoreBlank = True
+        .InCellDropdown = True
+        .ShowInput = True
+        .ShowError = True
+    End With
+
+SafeExit:
+End Sub
 
 
 Public Function PID_MonthSheetHasValidKVCodeDropdown(ByVal wsMonth As Worksheet) As Boolean
@@ -543,11 +636,11 @@ Public Function PID_MonthSheetHasValidKVCodeDropdown(ByVal wsMonth As Worksheet)
     If wsMonth Is Nothing Then Exit Function
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
     
-    validationFormula = CStr(wsMonth.Range("E" & PID_FIRST_ROW).Validation.Formula1)
+    validationFormula = UCase$(CStr(wsMonth.Range("E" & PID_FIRST_ROW).Validation.Formula1))
     
     If wsMonth.Range("E" & PID_FIRST_ROW).Validation.Type <> xlValidateList Then Exit Function
     If InStr(1, validationFormula, "#REF", vbTextCompare) > 0 Then Exit Function
-    If Len(Trim$(validationFormula)) = 0 Then Exit Function
+    If InStr(1, validationFormula, PID_KV_CODE_LIST_NAME, vbTextCompare) = 0 Then Exit Function
     
     PID_MonthSheetHasValidKVCodeDropdown = True
 
@@ -681,7 +774,6 @@ End Sub
 
 
 Public Function PID_RestoreKVCodeDropdownOnSheet(ByVal ws As Worksheet) As Boolean
-    Dim targetRange As Range
     Dim wasProtected As Boolean
     
     On Error GoTo SafeExit
@@ -696,23 +788,7 @@ Public Function PID_RestoreKVCodeDropdownOnSheet(ByVal ws As Worksheet) As Boole
         On Error GoTo SafeExit
     End If
     
-    Set targetRange = ws.Range("E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW)
-    
-    On Error Resume Next
-    targetRange.Validation.Delete
-    On Error GoTo SafeExit
-    
-    With targetRange.Validation
-        .Add Type:=xlValidateList, _
-             AlertStyle:=xlValidAlertStop, _
-             Operator:=xlBetween, _
-             Formula1:=PID_GetStandardKVCodeValidationList()
-        .IgnoreBlank = True
-        .InCellDropdown = True
-        .ShowInput = True
-        .ShowError = True
-    End With
-    
+    PID_ApplyKVCodeDropdownValidation ws
     PID_RestoreKVCodeDropdownOnSheet = True
 
 SafeExit:

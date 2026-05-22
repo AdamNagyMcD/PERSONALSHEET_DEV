@@ -20,11 +20,13 @@ Private Sub Workbook_Open()
     Application.ScreenUpdating = False
     Application.EnableEvents = False
     
+    PID_EnsureKVCodeListNamedRange
+    PID_EnsureMonatslohnFormulas
+    PID_EnsureKVCodeDropdownValidation
+    
     PID_SetupSheetProtectionForMacros
     EnsureAddNewKVPeriodButton
     FixLOHNTABELLE_HeaderTextIfNeeded
-    PID_EnsureMonatslohnFormulas
-    PID_EnsureKVCodeDropdownValidation
     
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
@@ -212,7 +214,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     ' If user selects E and dropdown is broken/missing, rebuild column E validation.
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
         If Not PID_MonthSheetHasValidKVCodeDropdown(Sh) Then
-            PID_EnsureKVCodeDropdownOnSheet Sh
+            PID_RestoreKVCodeDropdownOnSheet Sh
         End If
     End If
     

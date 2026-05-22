@@ -17,6 +17,8 @@ Public Sub PID_SetupSheetProtectionForMacros()
         
         If PID_IsWorkerMonthSheetSafe(ws) Then
             
+            PID_ApplyKVCodeDropdownValidation ws
+            
             ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                        UserInterfaceOnly:=True, _
                        AllowFiltering:=True, _
