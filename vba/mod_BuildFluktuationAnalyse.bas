@@ -414,8 +414,8 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Rows(4).RowHeight = 22
         PID_StyleApplySubsectionTitle .Range("A4:E4"), True
         
-        .Rows(statusRow).RowHeight = 30
-        .Rows(statusRow + 1).RowHeight = 30
+        .Rows(statusRow).RowHeight = 24
+        .Rows(statusRow + 1).RowHeight = 24
         PID_StyleApplyHeaderBand .Range("A" & statusRow & ":A" & statusRow + 1)
         .Range("A" & statusRow).HorizontalAlignment = xlCenter
         .Range("C" & statusRow & ":E" & statusRow + 1).Interior.Color = vbWhite
@@ -427,8 +427,8 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         ApplyRiskFormatting .Range("B" & statusRow), riskLevel
         PID_StyleApplyTableBorders .Range("A" & statusRow & ":E" & statusRow + 1)
         
-        .Rows(kpiLabelRow).RowHeight = 30
-        .Rows(kpiValueRow).RowHeight = 22
+        .Rows(kpiLabelRow).RowHeight = 24
+        .Rows(kpiValueRow).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
         PID_StyleApplyHeaderBand .Range("A" & kpiLabelRow & ":E" & kpiLabelRow)
         .Range("A" & kpiLabelRow & ":E" & kpiLabelRow).WrapText = True
         .Range("A" & kpiValueRow & ":E" & kpiValueRow).Interior.Color = vbWhite
@@ -476,7 +476,7 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Rows(monthlyTitleRow).RowHeight = PID_STYLE_TITLE_ROW_HEIGHT
         PID_StyleApplyTitleBand .Range(.Cells(monthlyTitleRow, 1), .Cells(monthlyTitleRow, tableLastCol))
         
-        .Rows(headerRow).RowHeight = PID_STYLE_HEADER_TOP_ROW_HEIGHT
+        .Rows(headerRow).RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
         PID_StyleApplyHeaderBand .Range(.Cells(headerRow, 1), .Cells(headerRow, tableLastCol))
         
         For dataRow = firstDataRow To outputRow - 1
@@ -528,7 +528,7 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         .Columns("R").ColumnWidth = 2
         .Columns("S").ColumnWidth = 2
         
-        .Rows(firstDataRow & ":" & outputRow - 1).RowHeight = 42
+        .Rows(firstDataRow & ":" & outputRow - 1).RowHeight = 34
         .Rows(chartRow + 1 & ":" & chartRow + 32).RowHeight = 18
         
         PID_AutoFitFluktuationTextRows ws, statusRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, explanationStartRow
@@ -553,7 +553,7 @@ Private Sub PID_AutoFitFluktuationTextRows(ByVal ws As Worksheet, _
     
     ws.Rows(statusRow & ":" & statusRow + 1).AutoFit
     For r = statusRow To statusRow + 1
-        If ws.Rows(r).RowHeight < 30 Then ws.Rows(r).RowHeight = 30
+        If ws.Rows(r).RowHeight < 24 Then ws.Rows(r).RowHeight = 24
     Next r
     
     If alertsEndRow > alertsHeaderRow + 2 Then

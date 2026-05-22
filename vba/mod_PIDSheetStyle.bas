@@ -8,6 +8,10 @@ Public Const PID_STYLE_HEADER_TOP_ROW_HEIGHT As Single = 24
 Public Const PID_STYLE_HEADER_BOTTOM_ROW_HEIGHT As Single = 30
 Public Const PID_STYLE_DATA_ROW_HEIGHT As Single = 30
 Public Const PID_STYLE_TOTAL_ROW_HEIGHT As Single = 32
+Public Const PID_STYLE_COMPACT_BLOCK_TITLE_HEIGHT As Single = 20
+Public Const PID_STYLE_COMPACT_HEADER_ROW_HEIGHT As Single = 18
+Public Const PID_STYLE_COMPACT_DATA_ROW_HEIGHT As Single = 22
+Public Const PID_STYLE_COMPACT_YEAR_ROW_HEIGHT As Single = 24
 
 
 Public Function PID_StyleColorNavy() As Long
@@ -97,6 +101,54 @@ Public Sub PID_StyleApplyEditableCell(ByVal target As Range)
         .Interior.Color = PID_StyleColorAccent()
         .Font.Color = PID_StyleColorNavy()
         .Font.Bold = False
+    End With
+End Sub
+
+
+Public Sub PID_StyleApplyInputCell(ByVal target As Range)
+    With target
+        .Interior.Color = vbWhite
+        .Font.Color = vbBlack
+        .Font.Bold = False
+    End With
+End Sub
+
+
+Public Sub PID_StyleApplyInputGuideHeader(ByVal target As Range)
+    With target
+        .Interior.Color = PID_StyleColorAccent()
+        .Font.Color = PID_StyleColorNavy()
+        .Font.Bold = True
+        .Font.Size = 9
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = True
+    End With
+End Sub
+
+
+Public Sub PID_StyleApplyInputGuideLabel(ByVal target As Range)
+    With target
+        .Interior.Color = PID_StyleColorAccent()
+        .Font.Color = PID_StyleColorNavy()
+        .Font.Bold = True
+        .Font.Size = 9
+        .HorizontalAlignment = xlLeft
+        .VerticalAlignment = xlCenter
+        .IndentLevel = 1
+    End With
+End Sub
+
+
+Public Sub PID_StyleApplyCompactHeaderBand(ByVal target As Range)
+    With target
+        .Interior.Color = PID_StyleColorHeaderBg()
+        .Font.Color = PID_StyleColorNavy()
+        .Font.Bold = True
+        .Font.Size = 9
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = True
     End With
 End Sub
 
