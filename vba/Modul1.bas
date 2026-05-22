@@ -635,6 +635,11 @@ Private Function PID_AnyMonthNeedsLetztesGehaltRestore() As Boolean
     
     If PID_MonthSheetHasLetztesGehaltRefError(ws) Then
         PID_AnyMonthNeedsLetztesGehaltRestore = True
+        Exit Function
+    End If
+    
+    If PID_MonthSheetHasLetztesGehaltStaticValues(ws) Then
+        PID_AnyMonthNeedsLetztesGehaltRestore = True
     End If
 End Function
 
@@ -718,8 +723,10 @@ Private Function PID_RestoreLetztesGehaltFormulasOnSheet(ByVal ws As Worksheet, 
     
     If PID_MonthSheetHasLetztesGehaltFormula(ws) Then
         If Not PID_MonthSheetHasLetztesGehaltRefError(ws) Then
-            PID_RestoreLetztesGehaltFormulasOnSheet = True
-            Exit Function
+            If Not PID_MonthSheetHasLetztesGehaltStaticValues(ws) Then
+                PID_RestoreLetztesGehaltFormulasOnSheet = True
+                Exit Function
+            End If
         End If
     End If
     
@@ -748,6 +755,10 @@ Private Function PID_RestoreLetztesGehaltFormulasOnSheet(ByVal ws As Worksheet, 
         End If
     ElseIf Not PID_MonthSheetHasLetztesGehaltFormula(ws) Then
         targetRange.FormulaR1C1 = formulaR1C1
+    ElseIf PID_MonthSheetHasLetztesGehaltStaticValues(ws) Then
+        If PID_LAST_ROW > PID_FIRST_ROW Then
+            sourceCell.AutoFill Destination:=targetRange
+        End If
     End If
     
     euroSymbol = PID_GetEuroSymbol()
@@ -829,8 +840,6 @@ End Sub
 
 Public Sub PID_RecalculateLetztesGehaltForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long)
     Dim lCell As Range
-    Dim calcResult As Variant
-    Dim formulaText As String
     
     On Error GoTo SafeExit
     
@@ -840,29 +849,37 @@ Public Sub PID_RecalculateLetztesGehaltForRow(ByVal wsMonth As Worksheet, ByVal 
     Set lCell = wsMonth.Cells(rowNumber, "L")
     If Not lCell.HasFormula Then Exit Sub
     
-    formulaText = lCell.Formula
-    If Len(Trim$(formulaText)) = 0 Then Exit Sub
-    
     On Error Resume Next
-    calcResult = Application.Evaluate(formulaText)
-    If Err.Number <> 0 Then
-        Err.Clear
-        Exit Sub
-    End If
-    On Error GoTo SafeExit
-    
-    If IsError(calcResult) Then
-        lCell.Value2 = 0
-    ElseIf IsNumeric(calcResult) Then
-        lCell.Value2 = CDbl(calcResult)
-    ElseIf IsEmpty(calcResult) Then
-        lCell.ClearContents
-    Else
-        lCell.Value2 = calcResult
-    End If
+    lCell.Calculate
+    Err.Clear
 
 SafeExit:
 End Sub
+
+
+Private Function PID_MonthSheetHasLetztesGehaltStaticValues(ByVal wsMonth As Worksheet) As Boolean
+    Dim r As Long
+    Dim cellValue As Variant
+    
+    If wsMonth Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheetName(wsMonth.Name) Then Exit Function
+    
+    For r = PID_FIRST_ROW To PID_LAST_ROW
+        If Not wsMonth.Cells(r, "L").HasFormula Then
+            cellValue = wsMonth.Cells(r, "L").Value2
+            If Not IsEmpty(cellValue) And cellValue <> 0 Then
+                PID_MonthSheetHasLetztesGehaltStaticValues = True
+                Exit Function
+            End If
+            
+            If Len(Trim$(CStr(wsMonth.Cells(r, "D").Value))) > 0 _
+               Or Len(Trim$(CStr(wsMonth.Cells(r, "E").Value))) > 0 Then
+                PID_MonthSheetHasLetztesGehaltStaticValues = True
+                Exit Function
+            End If
+        End If
+    Next r
+End Function
 
 
 Private Function PID_CollectionHasKeyLetztesGehalt(ByVal col As Collection, ByVal key As String) As Boolean
