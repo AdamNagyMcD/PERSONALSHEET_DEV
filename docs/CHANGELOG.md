@@ -5,7 +5,7 @@
 ### Fixed
 - mod_ResetAndImportVBAFiles.bas: `FixLegacyModul11Name` renames legacy `Modul11` to `mod_BuildDurchrechnung` (VBA max 31 chars; old name was 32).
 - mod_BuildDurchrechnung.bas: module/file renamed from `mod_BuildDurchrechnungUebersicht` (name exceeded VBA 31-char limit).
-- mod_BuildDurchrechnung.bas: Durchrechnung block widened to B:Q (matches FINANZIELL table); status spans J:Q; no global column-width overwrite; Jaenner Muster input moved to I30.
+- mod_BuildDurchrechnung.bas: fix Format error 5 (Ueber-Std/EUR CF on text cells); wider B:Q layout with J:Q status merge; shorter headers.
 - DieseArbeitsmappe.cls: `Union`-Aufruf in `EnforcePasteValuesOnly` ohne Zeilenfortsetzung (Mac VBA Syntaxfehler behoben).
 - mod_ResetAndImportVBAFiles.bas: ueberarbeiteter Import (Workbook-/Tabellenmodule per Code-Update statt Import); `ReadVBAFileWithoutAttributes` liest nur ab `Option Explicit` (kein VERSION/Attribute-Header mehr im Modul).
 - Modul1.bas: `SyncDieseArbeitsmappeFromExport` macro alias for manual workbook-module sync.

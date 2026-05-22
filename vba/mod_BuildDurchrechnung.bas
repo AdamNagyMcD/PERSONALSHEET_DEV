@@ -257,12 +257,10 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
     noteRow = headerRow + 5
     
     With ws
-        .Range("B" & titleRow & ":Q" & titleRow).Merge
         .Cells(titleRow, 2).Formula = "= ""DURCHRECHNUNGSSTUNDEN - "" & EINSTELLUNG!C35"
         .Cells(titleRow, 2).Font.Bold = True
         .Cells(titleRow, 2).Font.Size = 12
         
-        .Range("B" & hintRow & ":Q" & hintRow).Merge
         .Cells(hintRow, 2).Value = _
             "Jede Zeile = 3 Monate bis zum Schlussmonat. " & _
             "Differenz rot = zu wenig Stunden (Ueberstunden-Risiko), gelb = Reserve. " & _
@@ -271,20 +269,19 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
         .Cells(hintRow, 2).Font.Size = 9
         .Cells(hintRow, 2).WrapText = True
         
-        .Range("B" & inputRow & ":D" & inputRow).Merge
         .Cells(inputRow, 2).Value = "Jaenner Verfuegbar Plan (naechstes Jahr):"
-        .Range("F" & inputRow & ":H" & inputRow).Merge
         .Cells(inputRow, 6).Value = "Jaenner Muster Plan (naechstes Jahr):"
         
         .Cells(headerRow, 2).Value = "Zeitraum"
         .Cells(headerRow, 3).Value = "Endmonat"
-        .Cells(headerRow, 4).Value = "Verfuegbar Summe"
-        .Cells(headerRow, 5).Value = "Muster Summe"
+        .Cells(headerRow, 4).Value = "Verfuegbar"
+        .Cells(headerRow, 5).Value = "Muster"
         .Cells(headerRow, 6).Value = "Differenz"
-        .Cells(headerRow, 7).Value = "AVG Lohn/h"
-        .Cells(headerRow, 8).Value = "Ueber-Std"
-        .Cells(headerRow, 9).Value = "Ueber-EUR"
+        .Cells(headerRow, 7).Value = "Lohn/h"
+        .Cells(headerRow, 8).Value = "Std"
+        .Cells(headerRow, 9).Value = "EUR"
         .Cells(headerRow, 10).Value = "Status / Hinweis"
+        .Range("K" & headerRow & ":Q" & headerRow).ClearContents
         .Rows(headerRow).Font.Bold = True
         
         dataRow = headerRow + 1
@@ -315,7 +312,6 @@ Private Sub PID_WriteDurchrechnungBlock(ByVal ws As Worksheet)
             "=D" & dataRow & "-E" & dataRow, _
             "=Dezember!Q42"
         
-        .Range("B" & noteRow & ":Q" & noteRow).Merge
         .Cells(noteRow, 2).Value = _
             "Ueberstunden EUR = Ueberstunden Std x AVG Lohn/h x 1,5 (Spalte G aus Schlussmonat Q42). " & _
             "Nur bei negativem Schluss (rote Differenz). Positive Differenz = Reserve ohne EUR-Kosten."
@@ -342,7 +338,7 @@ Private Sub PID_WriteDurchrechnungDataRow(ByVal ws As Worksheet, _
         .Cells(dataRow, 7).Formula = lohnFormula
         .Cells(dataRow, 8).Formula = "=MAX(0,-F" & dataRow & ")"
         .Cells(dataRow, 9).Formula = PID_GetEuroFormula(dataRow)
-        .Cells(dataRow, 10).Formula = "=IF(F" & dataRow & "<0,""ACHTUNG: Ueberstunden-Risiko"",IF(F" & dataRow & ">0,""Hinweis: Reserve / Minus-Stunden moeglich"",""OK""))"
+        .Cells(dataRow, 10).Formula = "=IF(F" & dataRow & "<0,""ACHTUNG: Ueberstunden"",IF(F" & dataRow & ">0,""Reserve moeglich"",""OK""))"
     End With
 End Sub
 
@@ -413,19 +409,21 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     PID_UnmergeDurchrechnungBlock ws
     
     PID_DRMigrateJaennerMusterInput ws
+    PID_DRMigrateJaennerMusterFormula ws
+    PID_DRRefreshBlockLabels ws, headerRow
     
     ws.Rows(titleRow).RowHeight = 28
     ws.Rows(hintRow).RowHeight = 48
     ws.Rows(inputRow).RowHeight = 26
-    ws.Rows(headerRow).RowHeight = 32
+    ws.Rows(headerRow).RowHeight = 30
     ws.Rows(noteRow).RowHeight = 40
     
     For dataRow = dataStartRow To dataEndRow
-        ws.Rows(dataRow).RowHeight = 40
+        ws.Rows(dataRow).RowHeight = 42
     Next dataRow
     
     Set blockRange = ws.Range("B" & titleRow & ":Q" & noteRow)
-    Set tableRange = ws.Range("B" & headerRow & ":Q" & dataEndRow)
+    Set tableRange = ws.Range("B" & headerRow & ":I" & dataEndRow)
     
     With ws.Range("B" & titleRow & ":Q" & titleRow)
         .Interior.Color = RGB(31, 78, 121)
@@ -477,6 +475,9 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .WrapText = False
     End With
     
+    ws.Range("J" & headerRow & ":Q" & headerRow).ClearContents
+    ws.Cells(headerRow, 10).Value = "Status / Hinweis"
+    
     With ws.Range("J" & headerRow & ":Q" & headerRow)
         .Interior.Color = RGB(221, 235, 247)
         .Font.Color = RGB(31, 78, 121)
@@ -489,14 +490,14 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     
     For dataRow = dataStartRow To dataEndRow
         If ((dataRow - dataStartRow) Mod 2) = 1 Then
-            ws.Range("B" & dataRow & ":Q" & dataRow).Interior.Color = RGB(248, 248, 248)
+            ws.Range("B" & dataRow & ":I" & dataRow).Interior.Color = RGB(248, 248, 248)
+            ws.Range("J" & dataRow & ":Q" & dataRow).Interior.Color = RGB(248, 248, 248)
         End If
     Next dataRow
     
     ws.Range("B" & dataStartRow & ":C" & dataEndRow).HorizontalAlignment = xlLeft
     ws.Range("D" & dataStartRow & ":I" & dataEndRow).HorizontalAlignment = xlRight
-    ws.Range("J" & dataStartRow & ":Q" & dataEndRow).HorizontalAlignment = xlLeft
-    ws.Range("B" & dataStartRow & ":Q" & dataEndRow).VerticalAlignment = xlCenter
+    ws.Range("B" & dataStartRow & ":I" & dataEndRow).VerticalAlignment = xlCenter
     
     ws.Range("D" & dataStartRow & ":F" & dataEndRow).NumberFormat = "#,##0.00"
     ws.Range("G" & dataStartRow & ":G" & dataEndRow).NumberFormat = "#,##0.00"
@@ -515,28 +516,10 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
         .WrapText = True
     End With
     
-    With blockRange.Borders(xlEdgeLeft)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    With blockRange.Borders(xlEdgeRight)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    With blockRange.Borders(xlEdgeTop)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
-    With blockRange.Borders(xlEdgeBottom)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(31, 78, 121)
-    End With
+    PID_DRApplyOuterBorder blockRange
     
     PID_DRApplyTableBorders tableRange
+    PID_DRApplyOuterBorder ws.Range("J" & headerRow & ":Q" & dataEndRow)
     
     Set diffRange = ws.Range("F" & dataStartRow & ":F" & dataEndRow)
     PID_DRClearFormatConditions diffRange
@@ -548,14 +531,75 @@ Private Sub PID_ApplyDurchrechnungFormats(ByVal ws As Worksheet)
     
     Set ueberRange = ws.Range("H" & dataStartRow & ":I" & dataEndRow)
     PID_DRClearFormatConditions ueberRange
-    ueberRange.FormatConditions.Add Type:=xlCellValue, Operator:=xlGreater, Formula1:="0"
+    PID_DRAddUeberFormatConditions ueberRange
+    
+    PID_DRMergeDisplayRows ws, headerRow, dataStartRow, dataEndRow
+End Sub
+
+
+Private Sub PID_DRRefreshBlockLabels(ByVal ws As Worksheet, ByVal headerRow As Long)
+    ws.Cells(headerRow, 2).Value = "Zeitraum"
+    ws.Cells(headerRow, 3).Value = "Endmonat"
+    ws.Cells(headerRow, 4).Value = "Verfuegbar"
+    ws.Cells(headerRow, 5).Value = "Muster"
+    ws.Cells(headerRow, 6).Value = "Differenz"
+    ws.Cells(headerRow, 7).Value = "Lohn/h"
+    ws.Cells(headerRow, 8).Value = "Std"
+    ws.Cells(headerRow, 9).Value = "EUR"
+    ws.Cells(headerRow, 10).Value = "Status / Hinweis"
+End Sub
+
+
+Private Sub PID_DRMigrateJaennerMusterFormula(ByVal ws As Worksheet)
+    Dim musterCell As Range
+    Dim headerRow As Long
+    Dim dataRow As Long
+    Dim formulaText As String
+    
+    headerRow = PID_DR_START_ROW + 3
+    dataRow = headerRow + 4
+    Set musterCell = ws.Cells(dataRow, 5)
+    
+    On Error Resume Next
+    formulaText = CStr(musterCell.Formula)
+    If InStr(1, formulaText, "G30", vbTextCompare) > 0 Then
+        musterCell.Formula = Replace(formulaText, "G30", "I30", , , vbTextCompare)
+    End If
+End Sub
+
+
+Private Sub PID_DRAddUeberFormatConditions(ByVal ueberRange As Range)
+    Dim firstCell As String
+    
+    firstCell = ueberRange.Cells(1, 1).Address(False, False)
+    
+    ueberRange.FormatConditions.Add Type:=xlExpression, _
+        Formula1:="=AND(ISNUMBER(" & firstCell & ")," & firstCell & ">0)"
     With ueberRange.FormatConditions(ueberRange.FormatConditions.Count)
         .Interior.Color = RGB(252, 228, 214)
         .Font.Color = RGB(132, 46, 43)
         .Font.Bold = True
     End With
-    
-    PID_DRMergeDisplayRows ws, dataStartRow, dataEndRow
+End Sub
+
+
+Private Sub PID_DRApplyOuterBorder(ByVal target As Range)
+    On Error Resume Next
+    With target
+        .Borders(xlEdgeLeft).LineStyle = xlContinuous
+        .Borders(xlEdgeLeft).Weight = xlMedium
+        .Borders(xlEdgeLeft).Color = RGB(31, 78, 121)
+        .Borders(xlEdgeRight).LineStyle = xlContinuous
+        .Borders(xlEdgeRight).Weight = xlMedium
+        .Borders(xlEdgeRight).Color = RGB(31, 78, 121)
+        .Borders(xlEdgeTop).LineStyle = xlContinuous
+        .Borders(xlEdgeTop).Weight = xlMedium
+        .Borders(xlEdgeTop).Color = RGB(31, 78, 121)
+        .Borders(xlEdgeBottom).LineStyle = xlContinuous
+        .Borders(xlEdgeBottom).Weight = xlMedium
+        .Borders(xlEdgeBottom).Color = RGB(31, 78, 121)
+    End With
+    On Error GoTo 0
 End Sub
 
 
@@ -571,6 +615,7 @@ End Sub
 
 
 Private Sub PID_DRMergeDisplayRows(ByVal ws As Worksheet, _
+                                   ByVal headerRow As Long, _
                                    ByVal dataStartRow As Long, _
                                    ByVal dataEndRow As Long)
     Dim titleRow As Long
@@ -585,70 +630,45 @@ Private Sub PID_DRMergeDisplayRows(ByVal ws As Worksheet, _
     noteRow = PID_DR_START_ROW + 8
     
     On Error Resume Next
+    
     ws.Range("B" & titleRow & ":Q" & titleRow).Merge
     ws.Range("B" & hintRow & ":Q" & hintRow).Merge
     ws.Range("B" & inputRow & ":D" & inputRow).Merge
     ws.Range("F" & inputRow & ":H" & inputRow).Merge
     ws.Range("B" & noteRow & ":Q" & noteRow).Merge
+    ws.Range("J" & headerRow & ":Q" & headerRow).Merge
     
     For dataRow = dataStartRow To dataEndRow
         ws.Range("J" & dataRow & ":Q" & dataRow).Merge
-        ws.Range("J" & dataRow).WrapText = True
-        ws.Range("J" & dataRow).VerticalAlignment = xlCenter
+        With ws.Range("J" & dataRow)
+            .WrapText = True
+            .HorizontalAlignment = xlLeft
+            .VerticalAlignment = xlCenter
+        End With
     Next dataRow
+    
+    With ws.Range("J" & headerRow)
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = False
+    End With
     
     On Error GoTo 0
 End Sub
 
 
 Private Sub PID_DRApplyTableBorders(ByVal tableRange As Range)
-    Dim rowNum As Long
-    Dim colNum As Long
-    Dim edgeColor As Long
-    
-    edgeColor = RGB(180, 180, 180)
-    
-    For rowNum = tableRange.Row To tableRange.Row + tableRange.Rows.Count - 1
-        For colNum = tableRange.Column To tableRange.Column + tableRange.Columns.Count - 1
-            With tableRange.Worksheet.Cells(rowNum, colNum).Borders(xlEdgeLeft)
-                .LineStyle = xlContinuous
-                .Weight = xlThin
-                .Color = edgeColor
-            End With
-            With tableRange.Worksheet.Cells(rowNum, colNum).Borders(xlEdgeTop)
-                .LineStyle = xlContinuous
-                .Weight = xlThin
-                .Color = edgeColor
-            End With
-            With tableRange.Worksheet.Cells(rowNum, colNum).Borders(xlEdgeBottom)
-                .LineStyle = xlContinuous
-                .Weight = xlThin
-                .Color = edgeColor
-            End With
-            With tableRange.Worksheet.Cells(rowNum, colNum).Borders(xlEdgeRight)
-                .LineStyle = xlContinuous
-                .Weight = xlThin
-                .Color = edgeColor
-            End With
-        Next colNum
-    Next rowNum
-    
-    With tableRange.Borders(xlEdgeLeft)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
+    On Error Resume Next
+    With tableRange
+        .Borders(xlInsideHorizontal).LineStyle = xlContinuous
+        .Borders(xlInsideHorizontal).Weight = xlThin
+        .Borders(xlInsideHorizontal).Color = RGB(180, 180, 180)
+        .Borders(xlInsideVertical).LineStyle = xlContinuous
+        .Borders(xlInsideVertical).Weight = xlThin
+        .Borders(xlInsideVertical).Color = RGB(180, 180, 180)
+        .BorderAround LineStyle:=xlContinuous, Weight:=xlMedium, Color:=RGB(31, 78, 121)
     End With
-    With tableRange.Borders(xlEdgeTop)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-    End With
-    With tableRange.Borders(xlEdgeBottom)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-    End With
-    With tableRange.Borders(xlEdgeRight)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-    End With
+    On Error GoTo 0
 End Sub
 
 
@@ -697,7 +717,7 @@ Private Sub PID_DRAddStatusFormatConditions(ByVal statusRange As Range)
     End With
     
     statusRange.FormatConditions.Add Type:=xlExpression, _
-        Formula1:="=ISNUMBER(SEARCH(""Hinweis""," & firstCell & "))"
+        Formula1:="=OR(ISNUMBER(SEARCH(""Reserve""," & firstCell & ")),ISNUMBER(SEARCH(""Hinweis""," & firstCell & ")))"
     With statusRange.FormatConditions(statusRange.FormatConditions.Count)
         .Interior.Color = RGB(255, 235, 156)
         .Font.Color = RGB(156, 101, 0)
