@@ -48,7 +48,10 @@ SafeExit:
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
-End Sub(ByVal SaveAsUI As Boolean, Cancel As Boolean)
+End Sub
+
+
+Private Sub Workbook_BeforeSave(ByVal SaveAsUI As Boolean, Cancel As Boolean)
     On Error GoTo SafeExit
     
     If mInternalChange Then Exit Sub
