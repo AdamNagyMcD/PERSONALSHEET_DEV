@@ -46,7 +46,7 @@ Public Sub PID_FullSystemRefresh()
     PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty
     
-    MarkFluktuationDirty
+    MarkFinanzSummaryDirty
     RefreshFluktuationAll
     
     PID_RecalculateAllMonthMergedFormulas

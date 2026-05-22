@@ -30,8 +30,7 @@ Private Sub Workbook_Open()
     FixLOHNTABELLE_HeaderTextIfNeeded
     
     MarkAllKVDropdownsDirty
-    
-    PID_RecalculateAllMonthMergedFormulas
+    MarkFinanzSummaryDirty
     
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
@@ -99,8 +98,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     End If
     
     If Sh.Name = "UBERSICHT" Then
-        PID_SyncFinanzSummaryToUbersicht
-        PID_RefreshDurchrechnungUebersicht
+        RefreshFinanzSummaryIfDirty
         GoTo SafeExit
     End If
     

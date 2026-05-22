@@ -70,6 +70,16 @@ End Sub
 
 
 Public Sub PID_RefreshDurchrechnungUebersicht()
+    PID_RefreshDurchrechnungUebersichtInternal False
+End Sub
+
+
+Public Sub PID_RefreshDurchrechnungUebersichtLight()
+    PID_RefreshDurchrechnungUebersichtInternal True
+End Sub
+
+
+Private Sub PID_RefreshDurchrechnungUebersichtInternal(ByVal lightRefresh As Boolean)
     Dim ws As Worksheet
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -84,6 +94,13 @@ Public Sub PID_RefreshDurchrechnungUebersicht()
     
     Set ws = ThisWorkbook.Worksheets(PID_UBERSICHT_SHEET)
     
+    If lightRefresh Then
+        If PID_DurchrechnungBlockExists(ws) Then
+            ws.Range("B" & PID_DR_START_ROW & ":Q" & PID_DR_END_ROW).Calculate
+        End If
+        GoTo CleanExit
+    End If
+    
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
     If Err.Number <> 0 Then
@@ -94,7 +111,7 @@ Public Sub PID_RefreshDurchrechnungUebersicht()
     
     If PID_FinanzUebersichtBlockExists(ws) Then
         ws.Calculate
-        PID_ApplyFinanzUebersichtFormats ws
+        PID_ApplyFinanzUebersichtFormats ws, False
     End If
     
     If Not PID_DurchrechnungBlockExists(ws) Then
@@ -175,7 +192,7 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     PID_ApplyDurchrechnungFormats ws
     
     If PID_FinanzUebersichtBlockExists(ws) Then
-        PID_ApplyFinanzUebersichtFormats ws
+        PID_ApplyFinanzUebersichtFormats ws, True
     End If
     
     ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
@@ -997,7 +1014,7 @@ Public Sub PID_FormatFinanzUebersicht()
     End If
     On Error GoTo CleanFail
     
-    PID_ApplyFinanzUebersichtFormats ws
+    PID_ApplyFinanzUebersichtFormats ws, True
     
     ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                UserInterfaceOnly:=True, _
@@ -1046,7 +1063,7 @@ Private Sub PID_FixFinanzUebersichtFormulas(ByVal ws As Worksheet)
 End Sub
 
 
-Private Sub PID_ApplyFinanzUebersichtFormats(ByVal ws As Worksheet)
+Private Sub PID_ApplyFinanzUebersichtFormats(ByVal ws As Worksheet, Optional ByVal syncFinanzValues As Boolean = False)
     Dim dataRow As Long
     Dim qRows As Variant
     Dim accentBg As Long
@@ -1058,7 +1075,9 @@ Private Sub PID_ApplyFinanzUebersichtFormats(ByVal ws As Worksheet)
     
     PID_FixFinanzUebersichtFormulas ws
     
-    PID_SyncFinanzSummaryToUbersicht
+    If syncFinanzValues Then
+        PID_SyncFinanzSummaryToUbersicht
+    End If
     
     ws.Rows(PID_FU_TITLE_TOP_ROW).RowHeight = 28
     ws.Rows(PID_FU_TITLE_BOTTOM_ROW).RowHeight = 18
@@ -1156,7 +1175,7 @@ Public Sub PID_FormatDurchrechnungUebersicht()
     On Error GoTo CleanFail
     
     If PID_FinanzUebersichtBlockExists(ws) Then
-        PID_ApplyFinanzUebersichtFormats ws
+        PID_ApplyFinanzUebersichtFormats ws, True
     End If
     
     If Not PID_DurchrechnungBlockExists(ws) Then
