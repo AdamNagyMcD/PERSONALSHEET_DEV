@@ -1,6 +1,54 @@
 Attribute VB_Name = "mod_BuildFluktuationDaten"
 Option Explicit
 
+
+' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Win/Mac Excel 2016).
+Private Function PID_FlDatTxtAe() As String
+    PID_FlDatTxtAe = ChrW(228)
+End Function
+
+
+Private Function PID_FlDatTxtOe() As String
+    PID_FlDatTxtOe = ChrW(246)
+End Function
+
+
+Private Function PID_FlDatTxtUe() As String
+    PID_FlDatTxtUe = ChrW(252)
+End Function
+
+
+Private Function PID_FlDatTxtAufloesung() As String
+    PID_FlDatTxtAufloesung = "Einvernehmliche Aufl" & PID_FlDatTxtOe() & "sung"
+End Function
+
+
+Private Function PID_FlDatTxtDienstgeberKuendigung() As String
+    PID_FlDatTxtDienstgeberKuendigung = "Dienstgeber K" & PID_FlDatTxtUe() & "ndigung"
+End Function
+
+
+Private Function PID_FlDatTxtDienstnehmerKuendigung() As String
+    PID_FlDatTxtDienstnehmerKuendigung = "Dienstnehmer K" & PID_FlDatTxtUe() & "ndigung"
+End Function
+
+
+Private Function PID_FlDatTxtBefoerderung() As String
+    PID_FlDatTxtBefoerderung = "Bef" & PID_FlDatTxtOe() & "rderung"
+End Function
+
+
+Private Function PID_FlDisplayMonthName(ByVal monthIndex As Long) As String
+    If monthIndex = 3 Then
+        PID_FlDisplayMonthName = "M" & ChrW(228) & "rz"
+    ElseIf monthIndex >= 1 And monthIndex <= 12 Then
+        PID_FlDisplayMonthName = CStr(PID_MonthNames()(monthIndex - 1))
+    Else
+        PID_FlDisplayMonthName = ""
+    End If
+End Function
+
+
 Public Sub BuildFluktuationDaten()
     Dim monthNames As Variant
     Dim ws As Worksheet
@@ -43,7 +91,7 @@ Public Sub BuildFluktuationDaten()
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
     
-    monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
+    monthNames = PID_MonthNames()
     
     Set outWs = ThisWorkbook.Worksheets("FLUKTUATION_DATEN")
     
@@ -110,7 +158,7 @@ Public Sub BuildFluktuationDaten()
                                 
                                 outRow = outRow + 1
                                 
-                                arrOut(outRow, 1) = CStr(monthNames(Month(CDate(exitDate)) - 1))
+                                arrOut(outRow, 1) = PID_FlDisplayMonthName(Month(CDate(exitDate)))
                                 arrOut(outRow, 2) = personalID
                                 arrOut(outRow, 3) = employeeName
                                 arrOut(outRow, 4) = entryDate
@@ -204,13 +252,13 @@ Public Function NormalizeExitReason(ByVal exitReason As String) As String
     
     Select Case k
         Case "einvernehmliche aufloesung"
-            NormalizeExitReason = "Einvernehmliche Aufloesung"
+            NormalizeExitReason = PID_FlDatTxtAufloesung()
         
         Case "dienstgeber kuendigung"
-            NormalizeExitReason = "Dienstgeber Kuendigung"
+            NormalizeExitReason = PID_FlDatTxtDienstgeberKuendigung()
         
         Case "dienstnehmer kuendigung"
-            NormalizeExitReason = "Dienstnehmer Kuendigung"
+            NormalizeExitReason = PID_FlDatTxtDienstnehmerKuendigung()
         
         Case "unberechtigter vorzeitiger austritt"
             NormalizeExitReason = "Unberechtigter vorzeitiger Austritt"
@@ -249,7 +297,7 @@ Public Function NormalizeExitReason(ByVal exitReason As String) As String
             NormalizeExitReason = "Storetransfer"
         
         Case "befoerderung"
-            NormalizeExitReason = "Befoerderung"
+            NormalizeExitReason = PID_FlDatTxtBefoerderung()
         
         Case "nicht eingetreten"
             NormalizeExitReason = "Nicht eingetreten"
@@ -388,7 +436,7 @@ Public Function GetFluctuationCategory(ByVal exitReason As String, ByVal daysInC
             GetFluctuationCategory = "Neutrale Bewegung"
             Exit Function
         
-        Case "Befoerderung"
+        Case PID_FlDatTxtBefoerderung()
             GetFluctuationCategory = "Neutrale Bewegung"
             Exit Function
         

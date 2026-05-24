@@ -1,6 +1,148 @@
 Attribute VB_Name = "mod_BuildFluktuationAnalyse"
 Option Explicit
 
+
+' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Win/Mac Excel 2016).
+Private Function PID_FlTxtAe() As String
+    PID_FlTxtAe = ChrW(228)
+End Function
+
+
+Private Function PID_FlTxtOe() As String
+    PID_FlTxtOe = ChrW(246)
+End Function
+
+
+Private Function PID_FlTxtUe() As String
+    PID_FlTxtUe = ChrW(252)
+End Function
+
+
+Private Function PID_FlTxtUeCap() As String
+    PID_FlTxtUeCap = ChrW(220)
+End Function
+
+
+Private Function PID_FlDisplayMonthNames() As Variant
+    PID_FlDisplayMonthNames = Array("Januar", "Februar", "M" & ChrW(228) & "rz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
+End Function
+
+
+Private Function PID_FlTxtSheetTitle() As String
+    PID_FlTxtSheetTitle = "Fluktuation - " & PID_FlTxtUeCap() & "bersicht f" & PID_FlTxtUe() & "r die Restaurantleitung"
+End Function
+
+
+Private Function PID_FlTxtMonatsuebersicht() As String
+    PID_FlTxtMonatsuebersicht = "Monats" & PID_FlTxtUe() & "bersicht im Detail"
+End Function
+
+
+Private Function PID_FlTxtUnvollstaendig() As String
+    PID_FlTxtUnvollstaendig = "Unvollst" & PID_FlTxtAe() & "ndig"
+End Function
+
+
+Private Function PID_FlTxtAustrittsgruende() As String
+    PID_FlTxtAustrittsgruende = "Austrittsgr" & PID_FlTxtUe() & "nde"
+End Function
+
+
+Private Function PID_FlTxtDatenPruefen() As String
+    PID_FlTxtDatenPruefen = "Daten pr" & PID_FlTxtUe() & "fen"
+End Function
+
+
+Private Function PID_FlTxtGueltig() As String
+    PID_FlTxtGueltig = "g" & PID_FlTxtUe() & "ltig"
+End Function
+
+
+Private Function PID_FlTxtPruefen() As String
+    PID_FlTxtPruefen = "pr" & PID_FlTxtUe() & "fen"
+End Function
+
+
+Private Function PID_FlTxtErhoeht() As String
+    PID_FlTxtErhoeht = "erh" & PID_FlTxtOe() & "ht"
+End Function
+
+
+Private Function PID_FlTxtFuehrung() As String
+    PID_FlTxtFuehrung = "F" & PID_FlTxtUe() & "hrung"
+End Function
+
+
+Private Function PID_FlTxtDienstplaene() As String
+    PID_FlTxtDienstplaene = "Dienstpl" & PID_FlTxtAe() & "ne"
+End Function
+
+
+Private Function PID_FlTxtMassnahmen() As String
+    PID_FlTxtMassnahmen = "Ma" & PID_FlTxtSz() & "nahmen"
+End Function
+
+
+Private Function PID_FlTxtSz() As String
+    PID_FlTxtSz = ChrW(223)
+End Function
+
+
+Private Function PID_FlTxtBefoerderung() As String
+    PID_FlTxtBefoerderung = "Bef" & PID_FlTxtOe() & "rderung"
+End Function
+
+
+Private Function PID_FlTxtNaechsterSchritt() As String
+    PID_FlTxtNaechsterSchritt = "N" & PID_FlTxtAe() & "chster Schritt"
+End Function
+
+
+Private Function PID_FlTxtKurzErklaert() As String
+    PID_FlTxtKurzErklaert = "Kurz erkl" & PID_FlTxtAe() & "rt"
+End Function
+
+
+Private Function PID_FlResolveRowBelow(ByVal ws As Worksheet, ByVal afterRow As Long, ByVal gapPoints As Double) As Long
+    Dim minTop As Double
+    Dim r As Long
+    Dim lastRow As Long
+    
+    If afterRow < 1 Then afterRow = 1
+    
+    minTop = ws.Rows(afterRow).Top + ws.Rows(afterRow).Height + gapPoints
+    lastRow = Application.WorksheetFunction.Min(afterRow + 120, ws.Rows.count)
+    
+    For r = afterRow + 1 To lastRow
+        If ws.Rows(r).Top + 0.5 >= minTop Then
+            PID_FlResolveRowBelow = r
+            Exit Function
+        End If
+    Next r
+    
+    PID_FlResolveRowBelow = afterRow + 2
+End Function
+
+
+Private Function PID_FlResolveRowBelowPoint(ByVal ws As Worksheet, ByVal bottomPoint As Double, ByVal startSearchRow As Long) As Long
+    Dim r As Long
+    Dim lastRow As Long
+    
+    If startSearchRow < 1 Then startSearchRow = 1
+    
+    lastRow = Application.WorksheetFunction.Min(startSearchRow + 120, ws.Rows.count)
+    
+    For r = startSearchRow To lastRow
+        If ws.Rows(r).Top + ws.Rows(r).Height + 0.5 >= bottomPoint Then
+            PID_FlResolveRowBelowPoint = r + 1
+            Exit Function
+        End If
+    Next r
+    
+    PID_FlResolveRowBelowPoint = startSearchRow + 2
+End Function
+
+
 Public Sub BuildFluktuationAnalyse()
     Dim dataWs As Worksheet
     Dim analyseWs As Worksheet
@@ -30,6 +172,7 @@ Public Sub BuildFluktuationAnalyse()
     Dim recHeaderRow As Long
     Dim recEndRow As Long
     Dim chartRow As Long
+    Dim chartBlockEndRow As Long
     Dim currentYear As Long
     
     Dim monthNames As Variant
@@ -82,7 +225,7 @@ Public Sub BuildFluktuationAnalyse()
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
     
-    monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
+    monthNames = PID_FlDisplayMonthNames()
     
     Set dataWs = ThisWorkbook.Worksheets("FLUKTUATION_DATEN")
     Set analyseWs = ThisWorkbook.Worksheets(PID_FLUKTUATION_SHEET)
@@ -184,7 +327,7 @@ Public Sub BuildFluktuationAnalyse()
     With analyseWs
         PID_ClearFluktuationCharts analyseWs
         
-        .Range("A1").Value = "Fluktuation - Uebersicht fuer die Restaurantleitung"
+        .Range("A1").Value = PID_FlTxtSheetTitle()
         .Range("A2").Value = "Jahr"
         .Range("B2").Value = currentYear
         .Range("C2").Value = "Stand"
@@ -217,17 +360,22 @@ Public Sub BuildFluktuationAnalyse()
         alertsHeaderRow = kpiValueRow + 2
         alertsEndRow = WriteFluktuationAlertsSection(analyseWs, dataWs, alertsHeaderRow)
         
-        recHeaderRow = alertsEndRow + 2
+        PID_AutoFitFluktuationTextRows analyseWs, statusRow, alertsHeaderRow, alertsEndRow, 0, 0, 0
+        
+        recHeaderRow = PID_FlResolveRowBelow(analyseWs, alertsEndRow, 12)
         recEndRow = WriteFluktuationRecommendationsSection(analyseWs, recommendationItems, recHeaderRow)
         
-        chartRow = recEndRow + 2
+        PID_AutoFitFluktuationTextRows analyseWs, statusRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, 0
         
-        ' --- Abschnitt 4b: Monatstabelle ---
-        monthlyTitleRow = chartRow + 34
+        chartRow = PID_FlResolveRowBelow(analyseWs, recEndRow, 12)
+        BuildFluktuationCharts analyseWs, dataWs, chartRow, monthNames, monthExit, earlyExits, experiencedLoss, importantExits, neutralExits, normalExits, incompleteExits, chartBlockEndRow
+        
+        ' --- Abschnitt 4b: Monatstabelle (unterhalb der Diagramme) ---
+        monthlyTitleRow = PID_FlResolveRowBelow(analyseWs, chartBlockEndRow, 12)
         headerRow = monthlyTitleRow + 2
         firstDataRow = headerRow + 1
         
-        .Range("A" & monthlyTitleRow).Value = "Monatsuebersicht im Detail"
+        .Range("A" & monthlyTitleRow).Value = PID_FlTxtMonatsuebersicht()
         
         currentCol = 1
         
@@ -267,11 +415,11 @@ Public Sub BuildFluktuationAnalyse()
         End If
         
         If showIncomplete Then
-            .Cells(headerRow, currentCol).Value = "Unvollstaendig"
+            .Cells(headerRow, currentCol).Value = PID_FlTxtUnvollstaendig()
             currentCol = currentCol + 1
         End If
         
-        .Cells(headerRow, currentCol).Value = "Austrittsgruende"
+        .Cells(headerRow, currentCol).Value = PID_FlTxtAustrittsgruende()
         currentCol = currentCol + 1
         
         .Cells(headerRow, currentCol).Value = "Monats-Hinweis"
@@ -349,8 +497,6 @@ Public Sub BuildFluktuationAnalyse()
         PID_WriteFluktuationExplanationRows analyseWs, explanationStartRow
         
         FormatFluktuationSheet analyseWs, statusRow, kpiLabelRow, kpiValueRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, chartRow, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
-        
-        BuildFluktuationCharts analyseWs, dataWs, chartRow, monthNames, monthExit, earlyExits, experiencedLoss, importantExits, neutralExits, normalExits, incompleteExits
         
         PID_SyncFluktuationToDisplaySheets monthFluctuation, quarterFluctuation, ytdFluctuation
         
@@ -612,7 +758,7 @@ Private Sub PID_AutoFitFluktuationTextRows(ByVal ws As Worksheet, _
         ws.Rows(alertsHeaderRow + 1).RowHeight = rowHeight
     End If
     
-    If recEndRow > recHeaderRow Then
+    If recHeaderRow > 0 And recEndRow > recHeaderRow Then
         For r = recHeaderRow + 1 To recEndRow
             rowHeight = PID_EstimateWrappedRowHeightForCell(ws, r, 2, 5)
             If rowHeight > maxHeight Then rowHeight = maxHeight
@@ -620,12 +766,14 @@ Private Sub PID_AutoFitFluktuationTextRows(ByVal ws As Worksheet, _
         Next r
     End If
     
-    For r = explanationStartRow + 1 To explanationStartRow + 8
-        rowHeight = PID_EstimateWrappedRowHeightForCell(ws, r, 2, 5)
-        If rowHeight < 28 Then rowHeight = 28
-        If rowHeight > maxHeight Then rowHeight = maxHeight
-        ws.Rows(r).RowHeight = rowHeight
-    Next r
+    If explanationStartRow > 0 Then
+        For r = explanationStartRow + 1 To explanationStartRow + 8
+            rowHeight = PID_EstimateWrappedRowHeightForCell(ws, r, 2, 5)
+            If rowHeight < 28 Then rowHeight = 28
+            If rowHeight > maxHeight Then rowHeight = maxHeight
+            ws.Rows(r).RowHeight = rowHeight
+        Next r
+    End If
 End Sub
 
 
@@ -862,17 +1010,17 @@ Public Function GetMonthHint(ByVal exitsCount As Long, _
     If exitsCount = 0 Then
         GetMonthHint = "Keine Austritte erfasst."
     ElseIf incompleteCount > 0 Then
-        GetMonthHint = "Mindestens ein Austritt hat keinen gueltigen Austrittsgrund. Bitte Daten pruefen und ergaenzen."
+        GetMonthHint = "Mindestens ein Austritt hat keinen " & PID_FlTxtGueltig() & "en Austrittsgrund. Bitte Daten " & PID_FlTxtPruefen() & " und erg" & PID_FlTxtAe() & "nzen."
     ElseIf neutralCount = exitsCount Then
         GetMonthHint = "Nur neutrale Bewegungen. Kein direkter Handlungsbedarf."
     ElseIf experiencedCount >= 1 Then
-        GetMonthHint = "Erfahrener Mitarbeiter ausgeschieden. Mitarbeiterbindung und Teamstabilitaet pruefen."
+        GetMonthHint = "Erfahrener Mitarbeiter ausgeschieden. Mitarbeiterbindung und Teamstabilit" & PID_FlTxtAe() & "t " & PID_FlTxtPruefen() & "."
     ElseIf earlyCount >= 1 Then
-        GetMonthHint = "Austritt in den ersten 90 Tagen. Onboarding, Training und erste Dienstplaene pruefen."
+        GetMonthHint = "Austritt in den ersten 90 Tagen. Onboarding, Training und erste " & PID_FlTxtDienstplaene() & " " & PID_FlTxtPruefen() & "."
     ElseIf importantCount >= 1 Then
-        GetMonthHint = "Wichtiger Austritt. Arbeitsklima, Fuehrung und Kommunikation pruefen."
+        GetMonthHint = "Wichtiger Austritt. Arbeitsklima, " & PID_FlTxtFuehrung() & " und Kommunikation " & PID_FlTxtPruefen() & "."
     ElseIf lossValue >= 1 Then
-        GetMonthHint = "Verlust-Score erhoeht. Austrittsgrund genauer pruefen."
+        GetMonthHint = "Verlust-Score " & PID_FlTxtErhoeht() & ". Austrittsgrund genauer " & PID_FlTxtPruefen() & "."
     Else
         GetMonthHint = "Austritt vorhanden, aktuell nicht kritisch. Entwicklung beobachten."
     End If
@@ -886,7 +1034,7 @@ Public Function GetFluktuationRiskLevel(ByVal totalLoss As Double, _
                                         ByVal importantExits As Long, _
                                         ByVal incompleteExits As Long) As String
     If incompleteExits > 0 Then
-        GetFluktuationRiskLevel = "Daten pruefen"
+        GetFluktuationRiskLevel = PID_FlTxtDatenPruefen()
     ElseIf totalExits = 0 Then
         GetFluktuationRiskLevel = "Niedrig"
     ElseIf totalLoss >= 5 Or experiencedLoss >= 3 Or importantExits >= 4 Then
@@ -924,7 +1072,7 @@ Public Sub ApplyRiskFormatting(ByVal targetCell As Range, ByVal riskLevel As Str
                 .Interior.Color = RGB(255, 199, 206)
                 .Font.Color = RGB(156, 0, 6)
             
-            Case "Daten pruefen"
+            Case PID_FlTxtDatenPruefen()
                 .Interior.Color = RGB(221, 235, 247)
                 .Font.Color = RGB(31, 78, 121)
             
@@ -944,15 +1092,15 @@ Public Function GetFluktuationManagerSummary(ByVal riskLevel As String, _
                                               ByVal ytdFluctuation As Double, _
                                               ByVal totalLoss As Double) As String
     If incompleteExits > 0 Then
-        GetFluktuationManagerSummary = "Die Auswertung ist noch nicht vollstaendig. " & incompleteExits & " Austritt(e) haben keinen gueltigen Austrittsgrund. Bitte zuerst die markierten Faelle unten in den Monatsblaettern ergaenzen."
+        GetFluktuationManagerSummary = "Die Auswertung ist noch nicht vollst" & PID_FlTxtAe() & "ndig. " & incompleteExits & " Austritt(e) haben keinen " & PID_FlTxtGueltig() & "en Austrittsgrund. Bitte zuerst die markierten F" & PID_FlTxtAe() & "lle unten in den Monatsbl" & PID_FlTxtAe() & "ttern erg" & PID_FlTxtAe() & "nzen."
     ElseIf totalExits = 0 Then
-        GetFluktuationManagerSummary = "Im Jahr " & currentYear & " sind bisher keine Austritte erfasst. Die Fluktuation ist aktuell unauffaellig."
+        GetFluktuationManagerSummary = "Im Jahr " & currentYear & " sind bisher keine Austritte erfasst. Die Fluktuation ist aktuell unauff" & PID_FlTxtAe() & "llig."
     ElseIf riskLevel = "Kritisch" Then
-        GetFluktuationManagerSummary = "Die Fluktuation ist kritisch. Es gibt " & totalExits & " Austritte, davon " & criticalExits & " mit erhoehtem Risiko. Verlust-Score: " & Format(totalLoss, "0.00") & ". Sofort Massnahmen pruefen."
+        GetFluktuationManagerSummary = "Die Fluktuation ist kritisch. Es gibt " & totalExits & " Austritte, davon " & criticalExits & " mit " & PID_FlTxtErhoeht() & "em Risiko. Verlust-Score: " & Format(totalLoss, "0.00") & ". Sofort " & PID_FlTxtMassnahmen() & " " & PID_FlTxtPruefen() & "."
     ElseIf riskLevel = "Hoch" Then
-        GetFluktuationManagerSummary = "Die Fluktuation ist erhoeht (" & Format(ytdFluctuation, "0.0%") & " bisher im Jahr). " & criticalExits & " Austritt(e) sind besonders relevant. Ursachen und Massnahmen unten pruefen."
+        GetFluktuationManagerSummary = "Die Fluktuation ist " & PID_FlTxtErhoeht() & " (" & Format(ytdFluctuation, "0.0%") & " bisher im Jahr). " & criticalExits & " Austritt(e) sind besonders relevant. Ursachen und " & PID_FlTxtMassnahmen() & " unten " & PID_FlTxtPruefen() & "."
     ElseIf riskLevel = "Mittel" Then
-        GetFluktuationManagerSummary = "Es gibt " & totalExits & " Austritte im Jahr " & currentYear & ". Die Lage ist beobachtungswuerdig, aber noch nicht kritisch. Empfehlungen und Monatsdetails unten beachten."
+        GetFluktuationManagerSummary = "Es gibt " & totalExits & " Austritte im Jahr " & currentYear & ". Die Lage ist beobachtungsw" & PID_FlTxtUe() & "rdig, aber noch nicht kritisch. Empfehlungen und Monatsdetails unten beachten."
     Else
         GetFluktuationManagerSummary = "Es gibt " & totalExits & " Austritte, die Gesamtbewertung ist aktuell stabil. Entwicklung weiter beobachten und Daten aktuell halten."
     End If
@@ -975,51 +1123,51 @@ Public Function GetFluktuationRecommendationItems(ByVal totalExits As Long, _
     If incompleteExits > 0 Then
         itemCount = itemCount + 1
         ReDim Preserve items(1 To itemCount)
-        items(itemCount) = "Daten vervollstaendigen: Bei jedem Austritt in Spalte I das Austrittsdatum und in Spalte N den Austrittsgrund aus der Liste eintragen. Ohne diese Angaben kann die Analyse nicht zuverlaessig bewerten."
+        items(itemCount) = "Daten vervollst" & PID_FlTxtAe() & "ndigen: Bei jedem Austritt in Spalte I das Austrittsdatum und in Spalte N den Austrittsgrund aus der Liste eintragen. Ohne diese Angaben kann die Analyse nicht zuverl" & PID_FlTxtAe() & "ssig bewerten."
     End If
     
     If experiencedLoss >= 1 Then
         itemCount = itemCount + 1
         ReDim Preserve items(1 To itemCount)
-        items(itemCount) = "Erfahrene Mitarbeiter halten: Exit-Gespraeche auswerten, Entwicklungsgespraeche planen, Schichtplanung und Fuehrung im Team pruefen."
+        items(itemCount) = "Erfahrene Mitarbeiter halten: Exit-Gespr" & PID_FlTxtAe() & "che auswerten, Entwicklungsgespr" & PID_FlTxtAe() & "che planen, Schichtplanung und " & PID_FlTxtFuehrung() & " im Team " & PID_FlTxtPruefen() & "."
     End If
     
     If earlyExits >= 1 Then
         itemCount = itemCount + 1
         ReDim Preserve items(1 To itemCount)
-        items(itemCount) = "Erste 90 Tage staerken: Recruiting, Einarbeitung, Buddy-System, Training und die ersten Dienstplaene gezielt verbessern."
+        items(itemCount) = "Erste 90 Tage st" & PID_FlTxtAe() & "rken: Recruiting, Einarbeitung, Buddy-System, Training und die ersten " & PID_FlTxtDienstplaene() & " gezielt verbessern."
     End If
     
     If importantExits >= 1 Then
         itemCount = itemCount + 1
         ReDim Preserve items(1 To itemCount)
-        items(itemCount) = "Wichtige Austritte analysieren: Austrittsgrund, Arbeitsklima, Kommunikation und Fuehrung im betroffenen Bereich besprechen."
+        items(itemCount) = "Wichtige Austritte analysieren: Austrittsgrund, Arbeitsklima, Kommunikation und " & PID_FlTxtFuehrung() & " im betroffenen Bereich besprechen."
     End If
     
     If totalLoss >= 3 And incompleteExits = 0 Then
         itemCount = itemCount + 1
         ReDim Preserve items(1 To itemCount)
-        items(itemCount) = "Verlust-Score senken: Haeufige Austrittsgruende sammeln und konkrete Massnahmen zur Mitarbeiterbindung ableiten."
+        items(itemCount) = "Verlust-Score senken: H" & PID_FlTxtAe() & "ufige Austrittsgr" & PID_FlTxtUe() & "nde sammeln und konkrete " & PID_FlTxtMassnahmen() & " zur Mitarbeiterbindung ableiten."
     End If
     
     If ytdFluctuation >= 0.08 And incompleteExits = 0 Then
         itemCount = itemCount + 1
         ReDim Preserve items(1 To itemCount)
-        items(itemCount) = "Fluktuation beobachten: Die bisherige Jahresfluktuation liegt ueber 8 Prozent. Personalplanung und Nachbesetzungen fruehzeitig abstimmen."
+        items(itemCount) = "Fluktuation beobachten: Die bisherige Jahresfluktuation liegt " & PID_FlTxtUe() & "ber 8 Prozent. Personalplanung und Nachbesetzungen fr" & PID_FlTxtUe() & "hzeitig abstimmen."
     End If
     
     If totalExits = 0 Then
         itemCount = itemCount + 1
         ReDim Preserve items(1 To itemCount)
-        items(itemCount) = "Keine Massnahmen noetig: Keine Austritte erfasst. Monatsblaetter weiter aktuell pflegen."
+        items(itemCount) = "Keine " & PID_FlTxtMassnahmen() & " n" & PID_FlTxtOe() & "tig: Keine Austritte erfasst. Monatsbl" & PID_FlTxtAe() & "tter weiter aktuell pflegen."
     ElseIf neutralExits = totalExits Then
         itemCount = itemCount + 1
         ReDim Preserve items(1 To itemCount)
-        items(itemCount) = "Neutrale Bewegungen: Storetransfer, Befoerderung oder Karenz sind kein negatives Fluktuationssignal. Kein unmittelbarer Handlungsbedarf."
+        items(itemCount) = "Neutrale Bewegungen: Storetransfer, " & PID_FlTxtBefoerderung() & " oder Karenz sind kein negatives Fluktuationssignal. Kein unmittelbarer Handlungsbedarf."
     ElseIf itemCount = 0 Then
         itemCount = itemCount + 1
         ReDim Preserve items(1 To itemCount)
-        items(itemCount) = "Entwicklung beobachten: Die Fluktuation ist vorhanden, aber aktuell nicht kritisch. Monatliche Entwicklung und Austrittsgruende im Blick behalten."
+        items(itemCount) = "Entwicklung beobachten: Die Fluktuation ist vorhanden, aber aktuell nicht kritisch. Monatliche Entwicklung und " & PID_FlTxtAustrittsgruende() & " im Blick behalten."
     End If
     
     GetFluktuationRecommendationItems = items
@@ -1035,7 +1183,7 @@ Public Function WriteFluktuationAlertsSection(ByVal ws As Worksheet, _
     Dim alertNum As Long
     Dim hasAlerts As Boolean
     
-    ws.Range("A" & startRow).Value = "Sofort pruefen"
+    ws.Range("A" & startRow).Value = "Sofort " & PID_FlTxtPruefen()
     outRow = startRow + 1
     
     lastRow = dataWs.Cells(dataWs.Rows.count, "A").End(xlUp).Row
@@ -1045,7 +1193,7 @@ Public Function WriteFluktuationAlertsSection(ByVal ws As Worksheet, _
         ws.Cells(outRow, 1).Value = "Nr."
         ws.Cells(outRow, 2).Value = "Problem"
         ws.Cells(outRow, 3).Value = "Wo nachschauen"
-        ws.Cells(outRow, 4).Value = "Naechster Schritt"
+        ws.Cells(outRow, 4).Value = PID_FlTxtNaechsterSchritt()
         ws.Range(ws.Cells(outRow, 4), ws.Cells(outRow, 5)).Merge
         outRow = outRow + 1
     End If
@@ -1070,7 +1218,7 @@ Public Function WriteFluktuationAlertsSection(ByVal ws As Worksheet, _
     
     If Not hasAlerts Then
         ws.Range(ws.Cells(outRow, 1), ws.Cells(outRow, 5)).Merge
-        ws.Cells(outRow, 1).Value = "Keine offenen Datenprobleme oder kritischen Einzelfaelle. Die erfassten Austritte sind vollstaendig und aktuell bewertbar."
+        ws.Cells(outRow, 1).Value = "Keine offenen Datenprobleme oder kritischen Einzelf" & PID_FlTxtAe() & "lle. Die erfassten Austritte sind vollst" & PID_FlTxtAe() & "ndig und aktuell bewertbar."
         ws.Cells(outRow, 1).Interior.Color = RGB(198, 239, 206)
         ws.Cells(outRow, 1).Font.Color = RGB(0, 97, 0)
         outRow = outRow + 1
@@ -1140,22 +1288,22 @@ Private Function WriteFluktuationAlertIfMatch(ByVal ws As Worksheet, _
     Select Case categoryText
         Case "Austrittsgrund fehlt"
             problemText = "Austrittsgrund fehlt"
-            actionText = "Monat oeffnen, Mitarbeiter finden, in Spalte N den Austrittsgrund aus der Liste waehlen."
+            actionText = "Monat " & PID_FlTxtOe() & "ffnen, Mitarbeiter finden, in Spalte N den Austrittsgrund aus der Liste w" & PID_FlTxtAe() & "hlen."
         Case "Austrittsgrund unbekannt"
             problemText = "Austrittsgrund unbekannt"
-            actionText = "Spalte N pruefen und einen gueltigen Grund aus EINSTELLUNG / Dropdown waehlen."
+            actionText = "Spalte N " & PID_FlTxtPruefen() & " und einen " & PID_FlTxtGueltig() & "en Grund aus EINSTELLUNG / Dropdown w" & PID_FlTxtAe() & "hlen."
         Case "Verlust erfahrener Mitarbeiter"
             problemText = "Erfahrener Mitarbeiter ausgeschieden"
-            actionText = "Exit-Gespraech auswerten, Wissensuebergabe und Nachbesetzung planen."
+            actionText = "Exit-Gespr" & PID_FlTxtAe() & "ch auswerten, Wissens" & PID_FlTxtUe() & "bergabe und Nachbesetzung planen."
         Case "Austritt in den ersten 90 Tagen"
             problemText = "Austritt in den ersten 90 Tagen"
-            actionText = "Onboarding, Training und erste Dienstplaene fuer neue Mitarbeiter pruefen."
+            actionText = "Onboarding, Training und erste " & PID_FlTxtDienstplaene() & " f" & PID_FlTxtUe() & "r neue Mitarbeiter " & PID_FlTxtPruefen() & "."
         Case "Wichtiger Austritt"
             problemText = "Wichtiger Austritt"
-            actionText = "Austrittsgrund und Teamsituation mit der Fuehrung besprechen."
+            actionText = "Austrittsgrund und Teamsituation mit der " & PID_FlTxtFuehrung() & " besprechen."
         Case Else
             problemText = categoryText
-            actionText = "Fall im Monatsblatt pruefen."
+            actionText = "Fall im Monatsblatt " & PID_FlTxtPruefen() & "."
     End Select
     
     If employeeName = "" Then employeeName = "Unbekannter Name"
@@ -1228,7 +1376,8 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
                                   ByVal importantExits As Long, _
                                   ByVal neutralExits As Long, _
                                   ByVal normalExits As Long, _
-                                  ByVal incompleteExits As Long)
+                                  ByVal incompleteExits As Long, _
+                                  ByRef chartBlockEndRow As Long)
     Dim monthDataRow As Long
     Dim categoryDataRow As Long
     Dim reasonDataRow As Long
@@ -1249,8 +1398,11 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
     Dim labelRange As Range
     Dim chartWidth As Double
     Dim chartHeight As Double
+    Dim chartBottom As Double
     
     On Error GoTo ChartFail
+    
+    chartBlockEndRow = chartRow
     
     chartWidth = 300
     chartHeight = 210
@@ -1387,9 +1539,20 @@ Public Sub BuildFluktuationCharts(ByVal ws As Worksheet, _
         End With
     End If
     
+    chartBottom = ws.Rows(chartRow).Top + ws.Rows(chartRow).Height
+    If monthCount > 0 Or categoryCount > 0 Then
+        chartBottom = Application.WorksheetFunction.Max(chartBottom, chartTop + chartHeight)
+    End If
+    If reasonCount > 0 Then
+        chartBottom = Application.WorksheetFunction.Max(chartBottom, chartTopRow2 + chartHeight)
+    End If
+    
+    chartBlockEndRow = PID_FlResolveRowBelowPoint(ws, chartBottom, chartRow)
+    
     Exit Sub
 
 ChartFail:
+    chartBlockEndRow = chartRow + 2
 End Sub
 
 
@@ -1462,31 +1625,31 @@ End Function
 Private Sub PID_WriteFluktuationExplanationRows(ByVal ws As Worksheet, ByVal startRow As Long)
     Dim i As Long
     
-    ws.Range("A" & startRow).Value = "Kurz erklaert"
+    ws.Range("A" & startRow).Value = PID_FlTxtKurzErklaert()
     
     ws.Range("A" & startRow + 1).Value = "Aktuelle Jahresfluktuation"
     ws.Range("B" & startRow + 1).Value = "Zeigt die Fluktuation vom Jahresbeginn bis zum aktuellen Auswertungsmonat. Der Wert wird nicht auf das ganze Jahr hochgerechnet."
     
     ws.Range("A" & startRow + 2).Value = "Verlust-Score"
-    ws.Range("B" & startRow + 2).Value = "Der Verlust-Score zeigt, wie schwer ein Austritt fuer das Restaurant bewertet wird. Er besteht aus Austrittsgrund und Dauer der Betriebszugehoerigkeit."
+    ws.Range("B" & startRow + 2).Value = "Der Verlust-Score zeigt, wie schwer ein Austritt f" & PID_FlTxtUe() & "r das Restaurant bewertet wird. Er besteht aus Austrittsgrund und Dauer der Betriebszugeh" & PID_FlTxtOe() & "rigkeit."
     
     ws.Range("A" & startRow + 3).Value = "Durchschnittlicher Verlust-Score"
-    ws.Range("B" & startRow + 3).Value = "Durchschnittlicher Verlust-Score pro Austritt. Je hoeher der Wert, desto schwerer wiegen die Austritte im Durchschnitt."
+    ws.Range("B" & startRow + 3).Value = "Durchschnittlicher Verlust-Score pro Austritt. Je h" & PID_FlTxtOe() & "her der Wert, desto schwerer wiegen die Austritte im Durchschnitt."
     
     ws.Range("A" & startRow + 4).Value = "Austritt in den ersten 90 Tagen"
-    ws.Range("B" & startRow + 4).Value = "Ein Austritt kurz nach Eintritt. Das kann auf Recruiting, Onboarding, Training oder erste Dienstplaene hinweisen."
+    ws.Range("B" & startRow + 4).Value = "Ein Austritt kurz nach Eintritt. Das kann auf Recruiting, Onboarding, Training oder erste " & PID_FlTxtDienstplaene() & " hinweisen."
     
     ws.Range("A" & startRow + 5).Value = "Verlust erfahrener Mitarbeiter"
-    ws.Range("B" & startRow + 5).Value = "Ein erfahrener Mitarbeiter verlaesst das Restaurant. Das bedeutet meist Wissensverlust, Stabilitaetsverlust und hoeheren Nachbesetzungsaufwand."
+    ws.Range("B" & startRow + 5).Value = "Ein erfahrener Mitarbeiter verl" & PID_FlTxtAe() & "sst das Restaurant. Das bedeutet meist Wissensverlust, Stabilit" & PID_FlTxtAe() & "tsverlust und h" & PID_FlTxtOe() & "heren Nachbesetzungsaufwand."
     
     ws.Range("A" & startRow + 6).Value = "Wichtiger Austritt"
-    ws.Range("B" & startRow + 6).Value = "Ein Austritt mit erhoehtem Verlust-Score. Die Bewertung entsteht automatisch aus Austrittsgrund und Betriebszugehoerigkeit."
+    ws.Range("B" & startRow + 6).Value = "Ein Austritt mit " & PID_FlTxtErhoeht() & "em Verlust-Score. Die Bewertung entsteht automatisch aus Austrittsgrund und Betriebszugeh" & PID_FlTxtOe() & "rigkeit."
     
     ws.Range("A" & startRow + 7).Value = "Neutrale Bewegung"
-    ws.Range("B" & startRow + 7).Value = "Storetransfer, Befoerderung, Karenz oder Nicht eingetreten werden nicht negativ bewertet."
+    ws.Range("B" & startRow + 7).Value = "Storetransfer, " & PID_FlTxtBefoerderung() & ", Karenz oder Nicht eingetreten werden nicht negativ bewertet."
     
-    ws.Range("A" & startRow + 8).Value = "Unvollstaendiger Austritt"
-    ws.Range("B" & startRow + 8).Value = "Der Austrittsgrund fehlt oder ist unbekannt. Diese Austritte muessen geprueft und ergaenzt werden."
+    ws.Range("A" & startRow + 8).Value = "Unvollst" & PID_FlTxtAe() & "ndiger Austritt"
+    ws.Range("B" & startRow + 8).Value = "Der Austrittsgrund fehlt oder ist unbekannt. Diese Austritte m" & PID_FlTxtUe() & "ssen gepr" & PID_FlTxtUe() & "ft und erg" & PID_FlTxtAe() & "nzt werden."
     
     For i = startRow + 1 To startRow + 8
         ws.Range("B" & i & ":E" & i).Merge
