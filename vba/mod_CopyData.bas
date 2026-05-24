@@ -858,21 +858,6 @@ NotFound:
 End Function
 
 
-Public Function PID_CollectionHasKey(ByVal col As Collection, ByVal key As String) As Boolean
-    Dim tmp As Variant
-    
-    On Error GoTo NotFound
-    
-    tmp = col.item(key)
-    
-    PID_CollectionHasKey = True
-    Exit Function
-
-NotFound:
-    PID_CollectionHasKey = False
-End Function
-
-
 Public Function PID_ValidateWorkerMonthSheet(ByVal ws As Worksheet, _
                                              ByRef monthIndex As Long, _
                                              ByVal dialogTitle As String) As Boolean
@@ -972,43 +957,6 @@ Public Function PID_IsWorkerMonthSheet(ByVal ws As Worksheet) As Boolean
 
 SafeExit:
     PID_IsWorkerMonthSheet = False
-End Function
-
-
-Public Function PID_GetMonthIndexFromSheetName(ByVal sheetName As String) As Long
-    Select Case Trim$(CStr(sheetName))
-        Case "Januar"
-            PID_GetMonthIndexFromSheetName = 1
-        Case "Februar"
-            PID_GetMonthIndexFromSheetName = 2
-        Case "Marz"
-            PID_GetMonthIndexFromSheetName = 3
-        Case "April"
-            PID_GetMonthIndexFromSheetName = 4
-        Case "Mai"
-            PID_GetMonthIndexFromSheetName = 5
-        Case "Juni"
-            PID_GetMonthIndexFromSheetName = 6
-        Case "Juli"
-            PID_GetMonthIndexFromSheetName = 7
-        Case "August"
-            PID_GetMonthIndexFromSheetName = 8
-        Case "September"
-            PID_GetMonthIndexFromSheetName = 9
-        Case "Oktober"
-            PID_GetMonthIndexFromSheetName = 10
-        Case "November"
-            PID_GetMonthIndexFromSheetName = 11
-        Case "Dezember"
-            PID_GetMonthIndexFromSheetName = 12
-        Case Else
-            PID_GetMonthIndexFromSheetName = 0
-    End Select
-End Function
-
-
-Public Function PID_MonthNames() As Variant
-    PID_MonthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
 End Function
 
 

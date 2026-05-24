@@ -280,27 +280,13 @@ Private Sub PID_UnmergeDurchrechnungBlock(ByVal ws As Worksheet)
         If cell.MergeCells Then
             areaKey = cell.MergeArea.Address(False, False)
             
-            If Not PID_DRCollectionHasKey(mergedAreas, areaKey) Then
+            If Not PID_CollectionHasKey(mergedAreas, areaKey) Then
                 mergedAreas.Add areaKey, areaKey
                 cell.MergeArea.UnMerge
             End If
         End If
     Next cell
 End Sub
-
-
-Private Function PID_DRCollectionHasKey(ByVal col As Collection, ByVal key As String) As Boolean
-    Dim tmp As Variant
-    
-    On Error GoTo NotFound
-    
-    tmp = col.item(key)
-    PID_DRCollectionHasKey = True
-    Exit Function
-
-NotFound:
-    PID_DRCollectionHasKey = False
-End Function
 
 
 Private Sub PID_ClearDurchrechnungBlock(ByVal ws As Worksheet)

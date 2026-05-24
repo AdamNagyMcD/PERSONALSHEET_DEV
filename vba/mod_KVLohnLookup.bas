@@ -982,16 +982,6 @@ End Function
 
 
 Public Function CollectionHasKey_KVLohn(ByVal col As Collection, ByVal key As String) As Boolean
-    Dim tmp As Variant
-    
-    On Error GoTo NotFound
-    
-    tmp = col.item(key)
-    
-    CollectionHasKey_KVLohn = True
-    Exit Function
-
-NotFound:
-    CollectionHasKey_KVLohn = False
+    CollectionHasKey_KVLohn = PID_CollectionHasKey(col, key)
 End Function
 

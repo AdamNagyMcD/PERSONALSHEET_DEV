@@ -678,17 +678,7 @@ End Function
 
 
 Public Function CollectionHasKey_KVDropdown(ByVal col As Collection, ByVal key As String) As Boolean
-    Dim tmp As Variant
-    
-    On Error GoTo NotFound
-    
-    tmp = col.item(key)
-    
-    CollectionHasKey_KVDropdown = True
-    Exit Function
-
-NotFound:
-    CollectionHasKey_KVDropdown = False
+    CollectionHasKey_KVDropdown = PID_CollectionHasKey(col, key)
 End Function
 
 

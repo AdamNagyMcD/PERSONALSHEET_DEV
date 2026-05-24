@@ -694,34 +694,7 @@ End Function
 
 
 Public Function GetMonthIndexFromName(ByVal monthName As String) As Long
-    Select Case UCase$(Trim$(CStr(monthName)))
-        Case "JANUAR"
-            GetMonthIndexFromName = 1
-        Case "FEBRUAR"
-            GetMonthIndexFromName = 2
-        Case "MARZ", "MÄRZ", "MAERZ"
-            GetMonthIndexFromName = 3
-        Case "APRIL"
-            GetMonthIndexFromName = 4
-        Case "MAI"
-            GetMonthIndexFromName = 5
-        Case "JUNI"
-            GetMonthIndexFromName = 6
-        Case "JULI"
-            GetMonthIndexFromName = 7
-        Case "AUGUST"
-            GetMonthIndexFromName = 8
-        Case "SEPTEMBER"
-            GetMonthIndexFromName = 9
-        Case "OKTOBER"
-            GetMonthIndexFromName = 10
-        Case "NOVEMBER"
-            GetMonthIndexFromName = 11
-        Case "DEZEMBER"
-            GetMonthIndexFromName = 12
-        Case Else
-            GetMonthIndexFromName = 0
-    End Select
+    GetMonthIndexFromName = PID_GetMonthIndexFromName(monthName)
 End Function
 
 

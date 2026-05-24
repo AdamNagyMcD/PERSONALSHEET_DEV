@@ -31,7 +31,7 @@ Public Function SumMergedCells(ByVal targetRange As Range) As Double
             
             mergeKey = c.mergeArea.Address(External:=True)
             
-            If Not SumMergedCellsCollectionHasKey(handledMerges, mergeKey) Then
+            If Not PID_CollectionHasKey(handledMerges, mergeKey) Then
                 handledMerges.Add mergeKey, mergeKey
                 
                 valueToAdd = c.mergeArea.Cells(1, 1).Value
@@ -84,7 +84,7 @@ Public Function CountMergedCellsValues(ByVal targetRange As Range) As Long
             
             mergeKey = c.mergeArea.Address(External:=True)
             
-            If Not SumMergedCellsCollectionHasKey(handledMerges, mergeKey) Then
+            If Not PID_CollectionHasKey(handledMerges, mergeKey) Then
                 handledMerges.Add mergeKey, mergeKey
                 
                 valueToCheck = c.mergeArea.Cells(1, 1).Value
@@ -159,7 +159,7 @@ Public Function CountNumericMergedCellsValues(ByVal targetRange As Range) As Lon
             
             mergeKey = c.mergeArea.Address(External:=True)
             
-            If Not SumMergedCellsCollectionHasKey(handledMerges, mergeKey) Then
+            If Not PID_CollectionHasKey(handledMerges, mergeKey) Then
                 handledMerges.Add mergeKey, mergeKey
                 
                 valueToCheck = c.mergeArea.Cells(1, 1).Value
@@ -215,7 +215,7 @@ Public Function SumVisibleMergedCells(ByVal targetRange As Range) As Double
                     
                     mergeKey = c.mergeArea.Address(External:=True)
                     
-                    If Not SumMergedCellsCollectionHasKey(handledMerges, mergeKey) Then
+                    If Not PID_CollectionHasKey(handledMerges, mergeKey) Then
                         handledMerges.Add mergeKey, mergeKey
                         
                         valueToAdd = c.mergeArea.Cells(1, 1).Value
@@ -245,21 +245,6 @@ Public Function SumVisibleMergedCells(ByVal targetRange As Range) As Double
 
 SafeExit:
     SumVisibleMergedCells = 0
-End Function
-
-
-Private Function SumMergedCellsCollectionHasKey(ByVal col As Collection, ByVal key As String) As Boolean
-    Dim tmp As Variant
-    
-    On Error GoTo NotFound
-    
-    tmp = col.item(key)
-    
-    SumMergedCellsCollectionHasKey = True
-    Exit Function
-
-NotFound:
-    SumMergedCellsCollectionHasKey = False
 End Function
 
 

@@ -827,7 +827,7 @@ Public Sub PID_RecalculateLetztesGehaltForChangedRows(ByVal wsMonth As Worksheet
         rowKey = CStr(c.Row)
         
         If c.Row >= PID_FIRST_ROW And c.Row <= PID_LAST_ROW Then
-            If Not PID_CollectionHasKeyLetztesGehalt(checkedRows, rowKey) Then
+            If Not PID_CollectionHasKey(checkedRows, rowKey) Then
                 checkedRows.Add rowKey, rowKey
                 PID_RecalculateLetztesGehaltForRow wsMonth, c.Row
             End If
@@ -879,21 +879,6 @@ Private Function PID_MonthSheetHasLetztesGehaltStaticValues(ByVal wsMonth As Wor
             End If
         End If
     Next r
-End Function
-
-
-Private Function PID_CollectionHasKeyLetztesGehalt(ByVal col As Collection, ByVal key As String) As Boolean
-    Dim tmp As Variant
-    
-    On Error GoTo NotFound
-    
-    tmp = col.item(key)
-    
-    PID_CollectionHasKeyLetztesGehalt = True
-    Exit Function
-
-NotFound:
-    PID_CollectionHasKeyLetztesGehalt = False
 End Function
 
 

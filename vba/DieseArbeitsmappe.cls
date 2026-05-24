@@ -338,7 +338,7 @@ Private Sub EnforcePasteValuesOnly(ByVal Sh As Object, ByVal Target As Range, By
         If c.MergeCells Then
             mergeKey = c.mergeArea.Address
             
-            If Not CollectionHasKeyLocal(handledMerges, mergeKey) Then
+            If Not PID_CollectionHasKey(handledMerges, mergeKey) Then
                 handledMerges.Add mergeKey, mergeKey
                 c.mergeArea.Cells(1, 1).Value = valueToWrite
             End If
@@ -393,20 +393,5 @@ Private Function IsProbablyPaste(ByVal Target As Range) As Boolean
     End If
     
     IsProbablyPaste = False
-End Function
-
-
-Private Function CollectionHasKeyLocal(ByVal col As Collection, ByVal key As String) As Boolean
-    Dim tmp As Variant
-    
-    On Error GoTo NotFound
-    
-    tmp = col.item(key)
-    
-    CollectionHasKeyLocal = True
-    Exit Function
-
-NotFound:
-    CollectionHasKeyLocal = False
 End Function
 

@@ -221,7 +221,7 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     
     For Each c In area.Cells
         rowKey = CStr(c.Row)
-        If Not PID_DataClearCollectionHasKey(selectedRows, rowKey) Then
+        If Not PID_CollectionHasKey(selectedRows, rowKey) Then
             selectedRows.Add c.Row, rowKey
         End If
     Next c
@@ -303,19 +303,4 @@ Private Sub PID_TryProtectMonthSheet(ByVal ws As Worksheet)
     
 SafeExit:
 End Sub
-
-
-Private Function PID_DataClearCollectionHasKey(ByVal col As Collection, ByVal key As String) As Boolean
-    Dim tmp As Variant
-    
-    On Error GoTo NotFound
-    
-    tmp = col.item(key)
-    
-    PID_DataClearCollectionHasKey = True
-    Exit Function
-
-NotFound:
-    PID_DataClearCollectionHasKey = False
-End Function
 
