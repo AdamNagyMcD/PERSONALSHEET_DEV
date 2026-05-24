@@ -71,6 +71,78 @@ Wird in **O20** (oder generell in **O18:Q25**) Text eingegeben, wirkt es so, als
 
 ---
 
+## FP-002 — CopyData: O18:Q25 propagiert nicht in Folgemonate
+
+**Status:** Offen (Bug)  
+**Priorität:** Hoch — SPEC-konformes Verhalten fehlt  
+**Betroffene Bereiche:** `CopyData`, Monatsblätter O18:Q25, Panel / Crew-Labor-Info
+
+### Beobachtetes Verhalten
+
+Beim Ausführen von **CopyData** wird der Bereich **O18:Q25** laut SPEC und User-Erwartung in die **folgenden Monate** mitkopiert — aktuell passiert das **nicht** (Werte/Formeln bleiben in Zielmonaten leer oder veraltet).
+
+### Ist-Zustand (Code-Referenz)
+
+- `mod_CopyData.bas`: Quelle liest `infoOQ = wsSource.Range("O18:Q25").FormulaR1C1` und übergibt an `PID_WriteMonthData` → `PID_RestoreFormulas` setzt `ws.Range("O18:Q25").FormulaR1C1 = infoOQ`.
+- `SPEC.md` verlangt explizit: *„O18:Q25 must always propagate“*.
+- Trotz vorhandener Logik: **Reproduktion bestätigt** — Kopie kommt in Folgemonaten nicht an.
+
+### Geplante Untersuchung / Fix
+
+1. Reproduktion dokumentieren (Quellmonat befüllt → CopyData → Zielmonat O18:Q25 prüfen).
+2. Prüfen: Sheet Protection, Merge-Zellen, `PID_WriteMonthData`-Reihenfolge, ob `infoOQ` leer/fehlerhaft gelesen wird, ob Zielblatt-Schutz/Rewrite überschreibt.
+3. Ggf. Werte **und** Formeln robuster kopieren (analog B3:E82-Propagation).
+4. Regression: TEST CopyData + manuell Panel-Text/Zahlen über Monatsgrenze.
+
+### Akzeptanzkriterien
+
+- [ ] Nach CopyData vom Monat M sind O18:Q25 in M+1 … Dezember **identisch** mit Quellmonat M (Werte/Formeln wie spezifiziert).
+- [ ] `SPEC.md` Copy-Area-Regel erfüllt.
+- [ ] Smoke / manueller CopyData-Test grün.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_CopyData.bas` — `CopyData`, `PID_RestoreFormulas`, `PID_WriteMonthData`
+- `SPEC.md` — Copy Areas
+
+---
+
+## FP-003 — Spalte L: bei Ergebnis 0 Zelle leer lassen (kein €0,00)
+
+**Status:** Offen (Enhancement / Bugfix)  
+**Priorität:** Mittel — UX / Konsistenz mit Spalte G  
+**Betroffene Bereiche:** Monatsblätter Spalte L (Letztes Gehalt / Laborcost), Formel-Restore
+
+### Beobachtetes Verhalten
+
+Spalte **L** zeigt bei unvollständigen oder irrelevanten Zeilen **€0,00**, obwohl fachlich **kein Wert** angezeigt werden soll — die Zelle soll **leer** bleiben (wie bei Spalte G nach Stunden-Fix, wenn F leer ist).
+
+### Ist-Zustand
+
+- Formel in `PID_GetLetztesGehaltFormulaR1C1()` (`Modul1.bas`) liefert in mehreren Zweigen explizit **`0`** (z. B. bei `ISBLANK`-Kombinationen, Exit-Logik, Monatsvergleich).
+- Euro-Format auf L3:L82 → **0 wird als €0,00** gerendert.
+
+### Geplante Verbesserung
+
+- Formel anpassen: Ergebnis **0** → **`""`** (leer), analog G-Spalten-Pattern (`mod_KVLohnLookup.bas` / Monatslohn ohne Stunden).
+- Restore-Pfade prüfen: `PID_RestoreLetztesGehaltFormulasOnSheet`, CopyData `formulaL`, ggf. `PID_RecalculateLetztesGehaltForRow`.
+- Keine Regression für Q42 / AVG Bruttolohn (L-Werte nur informativ laut SPEC — L propagiert nicht).
+
+### Akzeptanzkriterien
+
+- [ ] Leere / irrelevante Mitarbeiterzeilen: L **ohne** €0,00, Zelle optisch leer.
+- [ ] Zeilen mit echtem Laborcost-Wert > 0: weiterhin korrekt formatiert (€).
+- [ ] CopyData überschreibt L in Zielmonaten weiterhin **nicht** (SPEC: L informational only).
+- [ ] Mac + Windows Excel 2016+ kompatibel (kein LET/XLOOKUP).
+
+### Betroffene Dateien (Referenz)
+
+- `vba/Modul1.bas` — `PID_GetLetztesGehaltFormulaR1C1`, `PID_RestoreLetztesGehaltFormulasOnSheet`
+- `vba/mod_CopyData.bas` — `formulaL` / Restore
+- `vba/mod_KVLohnLookup.bas` — Referenz für „leer statt 0“-Pattern (Spalte G)
+
+---
+
 ## Weitere Einträge
 
 Neue Backlog-Punkte unten anfügen mit ID `FP-00N`, Status, Ursache, geplantem Ansatz und Akzeptanzkriterien.
