@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+- Repo: OOXML probe mappak (_xlsm_*, _einstellung_probe) kivetele git trackingbol; .gitignore bovitve.
+- README.md + docs/RELEASE.md hozzaadva (workflow, release checklist, admin makro figyelmeztetes).
+
 ### Fixed
 - mod_ResetAndImportVBAFiles.bas: `FixLegacyModul11Name` renames legacy `Modul11` to `mod_BuildDurchrechnung` (VBA max 31 chars; old name was 32).
 - mod_BuildDurchrechnung.bas: module/file renamed from `mod_BuildDurchrechnungUebersicht` (name exceeded VBA 31-char limit).

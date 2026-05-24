@@ -3,3 +3,7 @@
 *.tmp
 *.bak
 Thumbs.db
+_xlsm_read/
+_xlsm_tmp/
+_xlsm_tmp.zip
+_einstellung_probe/
