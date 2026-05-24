@@ -56,16 +56,18 @@ Public Sub PID_CopyDataToFollowingMonths()
     
     On Error GoTo CleanFail
     
-    If TypeName(ActiveSheet) <> "Worksheet" Then Exit Sub
+    If TypeName(ActiveSheet) <> "Worksheet" Then
+        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen (z.B. Januar, Juli).", _
+               vbExclamation, "Daten kopieren"
+        Exit Sub
+    End If
     
     Set wsSource = ActiveSheet
     sourceSheetName = wsSource.Name
     
-    If Not PID_IsWorkerMonthSheet(wsSource) Then Exit Sub
-    If Not IsNumeric(wsSource.Range("A1").Value) Then Exit Sub
+    If Not PID_ValidateWorkerMonthSheet(wsSource, sourceMonthIndex, "Daten kopieren") Then Exit Sub
     
-    sourceMonthIndex = CLng(wsSource.Range("A1").Value)
-    If sourceMonthIndex < 1 Or sourceMonthIndex > 12 Then Exit Sub
+    If Not PID_ConfirmCopyDataAction(wsSource, sourceMonthIndex) Then Exit Sub
     
     workbookYear = PID_GetWorkbookYear()
     monthNames = PID_MonthNames()
@@ -868,6 +870,77 @@ Public Function PID_CollectionHasKey(ByVal col As Collection, ByVal key As Strin
 
 NotFound:
     PID_CollectionHasKey = False
+End Function
+
+
+Public Function PID_ValidateWorkerMonthSheet(ByVal ws As Worksheet, _
+                                             ByRef monthIndex As Long, _
+                                             ByVal dialogTitle As String) As Boolean
+    Dim sheetLabel As String
+    
+    monthIndex = 0
+    PID_ValidateWorkerMonthSheet = False
+    
+    If ws Is Nothing Then
+        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen (z.B. Januar, Juli).", _
+               vbExclamation, dialogTitle
+        Exit Function
+    End If
+    
+    sheetLabel = "'" & ws.Name & "'"
+    
+    If Not PID_IsWorkerMonthSheet(ws) Then
+        MsgBox "Das aktive Blatt " & sheetLabel & " ist kein gueltiges Monatsblatt." & vbCrLf & vbCrLf & _
+               "Bitte zuerst ein Monatsblatt auswaehlen (Januar bis Dezember).", _
+               vbExclamation, dialogTitle
+        Exit Function
+    End If
+    
+    If Not IsNumeric(ws.Range("A1").Value2) Then
+        MsgBox "Monatsblatt " & sheetLabel & " hat keinen gueltigen Monatsindex in A1.", _
+               vbExclamation, dialogTitle
+        Exit Function
+    End If
+    
+    monthIndex = CLng(ws.Range("A1").Value2)
+    
+    If monthIndex < 1 Or monthIndex > 12 Then
+        MsgBox "Monatsindex in A1 auf " & sheetLabel & " ist ungueltig (" & monthIndex & ").", _
+               vbExclamation, dialogTitle
+        Exit Function
+    End If
+    
+    PID_ValidateWorkerMonthSheet = True
+End Function
+
+
+Private Function PID_ConfirmCopyDataAction(ByVal wsSource As Worksheet, ByVal sourceMonthIndex As Long) As Boolean
+    Dim monthNames As Variant
+    Dim targetText As String
+    Dim answer As VbMsgBoxResult
+    Dim i As Long
+    
+    monthNames = PID_MonthNames()
+    
+    If sourceMonthIndex >= 12 Then
+        targetText = "Keine Folgemonate nach " & wsSource.Name & "."
+    Else
+        targetText = "Zielmonate: "
+        For i = sourceMonthIndex + 1 To 12
+            If i > sourceMonthIndex + 1 Then targetText = targetText & ", "
+            targetText = targetText & CStr(monthNames(i - 1))
+        Next i
+    End If
+    
+    answer = MsgBox( _
+        "Daten von '" & wsSource.Name & "' (Monat " & sourceMonthIndex & ") in folgende Monate kopieren?" & vbCrLf & vbCrLf & _
+        targetText & vbCrLf & vbCrLf & _
+        "Hinweis: Zielmonate werden ueberschrieben. Manuelle Planungsaenderungen in kuenftigen Monaten bleiben erhalten." & vbCrLf & vbCrLf & _
+        "Fortfahren?", _
+        vbQuestion + vbYesNo, _
+        "Daten kopieren")
+    
+    PID_ConfirmCopyDataAction = (answer = vbYes)
 End Function
 
 

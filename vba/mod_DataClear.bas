@@ -20,6 +20,8 @@ End Sub
 Public Sub PID_ClearCurrentMonthData()
     Dim ws As Worksheet
     Dim answer As VbMsgBoxResult
+    Dim monthIndex As Long
+    Dim monthHint As String
     
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -30,18 +32,20 @@ Public Sub PID_ClearCurrentMonthData()
     
     On Error GoTo CleanFail
     
-    If TypeName(ActiveSheet) <> "Worksheet" Then Exit Sub
-    
-    Set ws = ActiveSheet
-    
-    If Not PID_IsWorkerMonthSheet(ws) Then
-        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen.", _
+    If TypeName(ActiveSheet) <> "Worksheet" Then
+        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen (z.B. Januar, Juli).", _
                vbExclamation, "Daten loeschen"
         Exit Sub
     End If
     
+    Set ws = ActiveSheet
+    
+    If Not PID_ValidateWorkerMonthSheet(ws, monthIndex, "Daten loeschen") Then Exit Sub
+    
+    monthHint = " (Monat " & monthIndex & ")"
+    
     answer = MsgBox( _
-        "Alle Eingabedaten auf dem Monatsblatt '" & ws.Name & "' werden geloescht." & vbCrLf & vbCrLf & _
+        "Alle Eingabedaten auf dem Monatsblatt '" & ws.Name & "'" & monthHint & " werden geloescht." & vbCrLf & vbCrLf & _
         "Geloescht werden:" & vbCrLf & _
         "- Mitarbeiterdaten B:N" & vbCrLf & _
         "- Monatsinfo O18:Q25" & vbCrLf & _
@@ -174,6 +178,8 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     Dim rowKey As String
     Dim rowNumber As Variant
     Dim answer As VbMsgBoxResult
+    Dim monthIndex As Long
+    Dim monthHint As String
     
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -183,15 +189,17 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     
     On Error GoTo CleanFail
     
-    If TypeName(ActiveSheet) <> "Worksheet" Then Exit Sub
-    
-    Set ws = ActiveSheet
-    
-    If Not PID_IsWorkerMonthSheet(ws) Then
-        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen.", _
+    If TypeName(ActiveSheet) <> "Worksheet" Then
+        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen (z.B. Januar, Juli).", _
                vbExclamation, "Zeilen loeschen"
         Exit Sub
     End If
+    
+    Set ws = ActiveSheet
+    
+    If Not PID_ValidateWorkerMonthSheet(ws, monthIndex, "Zeilen loeschen") Then Exit Sub
+    
+    monthHint = " (Monat " & monthIndex & ")"
     
     If Selection Is Nothing Then Exit Sub
     
@@ -221,7 +229,7 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     If selectedRows.count = 0 Then Exit Sub
     
     answer = MsgBox( _
-        "Es werden " & selectedRows.count & " Mitarbeiterzeile(n) auf '" & ws.Name & "' geloescht." & vbCrLf & vbCrLf & _
+        "Es werden " & selectedRows.count & " Mitarbeiterzeile(n) auf '" & ws.Name & "'" & monthHint & " geloescht." & vbCrLf & vbCrLf & _
         "Fortfahren?", _
         vbQuestion + vbYesNo, _
         "Ausgewaehlte Zeilen loeschen" _
