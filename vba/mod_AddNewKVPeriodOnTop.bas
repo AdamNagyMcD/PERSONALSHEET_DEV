@@ -5,6 +5,48 @@ Private Const PID_ADD_CUSTOM_HOURS_BUTTON_NAME As String = "btn_AddCustomKVMonat
 Private Const PID_DELETE_PERIODS_BUTTON_NAME As String = "btn_DeleteKVPeriods"
 Private Const PID_HELP_BUTTON_NAME As String = "btn_LOHNTABELLEHelp"
 Private Const PID_KV_CODE_COUNT As Long = 12
+Private Const PID_LOHNTABELLE_BUTTON_HEIGHT As Double = 17
+Private Const PID_LOHNTABELLE_BUTTON_GAP As Double = 5
+
+
+Private Function PID_KVTxtAe() As String
+    PID_KVTxtAe = ChrW(228)
+End Function
+
+
+Private Function PID_KVTxtOe() As String
+    PID_KVTxtOe = ChrW(246)
+End Function
+
+
+Private Function PID_KVTxtUe() As String
+    PID_KVTxtUe = ChrW(252)
+End Function
+
+
+Private Function PID_KVTxtLoeschen() As String
+    PID_KVTxtLoeschen = "l" & PID_KVTxtOe() & "schen"
+End Function
+
+
+Private Function PID_KVTxtGueltig() As String
+    PID_KVTxtGueltig = "G" & PID_KVTxtUe() & "ltig"
+End Function
+
+
+Private Function PID_KVTxtBeschaeftigungsdauer() As String
+    PID_KVTxtBeschaeftigungsdauer = "Besch" & PID_KVTxtAe() & "ftigungsdauer"
+End Function
+
+
+Private Function PID_KVTxtPruefung() As String
+    PID_KVTxtPruefung = "Pr" & PID_KVTxtUe() & "fung"
+End Function
+
+
+Private Function PID_KVBtnDeletePeriod() As String
+    PID_KVBtnDeletePeriod = "3) Alte Periode " & PID_KVTxtLoeschen()
+End Function
 
 
 Private Function PID_GetLOHNTABELLETeamHelpText() As String
@@ -15,16 +57,16 @@ Private Function PID_GetLOHNTABELLETeamHelpText() As String
     helpText = helpText & "   Wenn ab Mai neue KV-Werte gelten." & vbCrLf
     helpText = helpText & "   Jahr eingeben (z.B. 2026) und OK." & vbCrLf & vbCrLf
     helpText = helpText & "2) Eigene Stunden" & vbCrLf
-    helpText = helpText & "   Fuer Sondervertraege ausserhalb KV." & vbCrLf
-    helpText = helpText & "   Immer nur Nummern aus den Listen waehlen." & vbCrLf & vbCrLf
-    helpText = helpText & "3) Alte Periode loeschen" & vbCrLf
+    helpText = helpText & "   F" & PID_KVTxtUe() & "r Sondervertr" & PID_KVTxtAe() & "ge au" & PID_KVTxtUe() & "erhalb KV." & vbCrLf
+    helpText = helpText & "   Immer nur Nummern aus den Listen w" & PID_KVTxtAe() & "hlen." & vbCrLf & vbCrLf
+    helpText = helpText & PID_KVBtnDeletePeriod() & vbCrLf
     helpText = helpText & "   Nur sehr alte Perioden entfernen." & vbCrLf
-    helpText = helpText & "   Im Zweifel NICHT loeschen." & vbCrLf & vbCrLf
+    helpText = helpText & "   Im Zweifel NICHT " & PID_KVTxtLoeschen() & "." & vbCrLf & vbCrLf
     helpText = helpText & "WICHTIG:" & vbCrLf
-    helpText = helpText & "- Nie Zeilen von Hand loeschen." & vbCrLf
+    helpText = helpText & "- Nie Zeilen von Hand " & PID_KVTxtLoeschen() & "." & vbCrLf
     helpText = helpText & "- Abbrechen ist immer sicher." & vbCrLf
-    helpText = helpText & "- Nach Aenderungen einmal Monatsblaetter oeffnen" & vbCrLf
-    helpText = helpText & "  oder System-Refresh ausfuehren lassen."
+    helpText = helpText & "- Nach " & PID_KVTxtAe() & "nderungen einmal Monatsbl" & PID_KVTxtAe() & "tter " & PID_KVTxtOe() & "ffnen" & vbCrLf
+    helpText = helpText & "  oder System-Refresh ausf" & PID_KVTxtUe() & "hren lassen."
     
     PID_GetLOHNTABELLETeamHelpText = helpText
 End Function
@@ -223,6 +265,139 @@ Private Function PID_LOHNTABELLEButtonsExist(ByVal wsKV As Worksheet) As Boolean
 
 Missing:
     PID_LOHNTABELLEButtonsExist = False
+End Function
+
+
+Private Function PID_LOHNTABELLEButtonsNeedRefresh(ByVal wsKV As Worksheet) As Boolean
+    Dim shp As Shape
+    
+    On Error GoTo NeedRefresh
+    
+    If wsKV.Shapes(PID_HELP_BUTTON_NAME).Height < (PID_LOHNTABELLE_BUTTON_HEIGHT - 1#) Then
+        PID_LOHNTABELLEButtonsNeedRefresh = True
+        Exit Function
+    End If
+    
+    If wsKV.Shapes(PID_ADD_CUSTOM_HOURS_BUTTON_NAME).Top > _
+       wsKV.Shapes(PID_ADD_PERIOD_BUTTON_NAME).Top + 2# Then
+        PID_LOHNTABELLEButtonsNeedRefresh = True
+        Exit Function
+    End If
+    
+    If PID_CountLOHNTABELLEToolbarShapes(wsKV) <> 4 Then
+        PID_LOHNTABELLEButtonsNeedRefresh = True
+        Exit Function
+    End If
+    
+    For Each shp In wsKV.Shapes
+        If PID_IsLOHNTABELLEToolbarShape(shp) Then
+            If PID_LOHNTABELLEToolbarShapeIsStale(wsKV, shp) Then
+                PID_LOHNTABELLEButtonsNeedRefresh = True
+                Exit Function
+            End If
+        End If
+    Next shp
+    
+    Exit Function
+
+NeedRefresh:
+    PID_LOHNTABELLEButtonsNeedRefresh = True
+End Function
+
+
+Private Function PID_IsLOHNTABELLEToolbarShape(ByVal shp As Shape) As Boolean
+    Dim actionText As String
+    Dim labelText As String
+    
+    On Error GoTo SafeExit
+    
+    If shp Is Nothing Then Exit Function
+    
+    Select Case shp.Name
+        Case PID_ADD_PERIOD_BUTTON_NAME, PID_ADD_CUSTOM_HOURS_BUTTON_NAME, _
+             PID_DELETE_PERIODS_BUTTON_NAME, PID_HELP_BUTTON_NAME
+            PID_IsLOHNTABELLEToolbarShape = True
+            Exit Function
+    End Select
+    
+    actionText = LCase$(Trim$(Replace$(shp.OnAction, "'", "")))
+    
+    If InStr(1, actionText, "addnewkvperiodontop", vbTextCompare) > 0 Then
+        PID_IsLOHNTABELLEToolbarShape = True
+        Exit Function
+    End If
+    If InStr(1, actionText, "addcustomkvmonatsstunden", vbTextCompare) > 0 Then
+        PID_IsLOHNTABELLEToolbarShape = True
+        Exit Function
+    End If
+    If InStr(1, actionText, "deleteselectedkvperiods", vbTextCompare) > 0 Then
+        PID_IsLOHNTABELLEToolbarShape = True
+        Exit Function
+    End If
+    If InStr(1, actionText, "showlohntabellebuttonhelp", vbTextCompare) > 0 Then
+        PID_IsLOHNTABELLEToolbarShape = True
+        Exit Function
+    End If
+    
+    If shp.Type <> msoAutoShape Then Exit Function
+    
+    labelText = Trim$(shp.TextFrame.Characters.Text)
+    
+    If labelText = "Hilfe" Then
+        PID_IsLOHNTABELLEToolbarShape = True
+        Exit Function
+    End If
+    
+    If Left$(labelText, 2) = "1)" Or Left$(labelText, 2) = "2)" Or Left$(labelText, 2) = "3)" Then
+        PID_IsLOHNTABELLEToolbarShape = True
+    End If
+    
+SafeExit:
+End Function
+
+
+Private Sub PID_DeleteAllLOHNTABELLEToolbarShapes(ByVal wsKV As Worksheet)
+    Dim shp As Shape
+    Dim i As Long
+    
+    If wsKV Is Nothing Then Exit Sub
+    
+    For i = wsKV.Shapes.Count To 1 Step -1
+        Set shp = wsKV.Shapes(i)
+        If PID_IsLOHNTABELLEToolbarShape(shp) Then
+            shp.Delete
+        End If
+    Next i
+End Sub
+
+
+Private Function PID_LOHNTABELLEToolbarShapeIsStale(ByVal wsKV As Worksheet, ByVal shp As Shape) As Boolean
+    Dim row2Bottom As Double
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Or shp Is Nothing Then Exit Function
+    
+    row2Bottom = wsKV.Range("A2").Top + wsKV.Rows(2).RowHeight
+    
+    If shp.Top > row2Bottom + 1# Then
+        PID_LOHNTABELLEToolbarShapeIsStale = True
+    End If
+    
+SafeExit:
+End Function
+
+
+Private Function PID_CountLOHNTABELLEToolbarShapes(ByVal wsKV As Worksheet) As Long
+    Dim shp As Shape
+    
+    If wsKV Is Nothing Then Exit Function
+    
+    For Each shp In wsKV.Shapes
+        If PID_IsLOHNTABELLEToolbarShape(shp) Then
+            PID_CountLOHNTABELLEToolbarShapes = PID_CountLOHNTABELLEToolbarShapes + 1
+        End If
+    Next shp
 End Function
 
 
@@ -488,13 +663,16 @@ Private Sub PID_EnsureLOHNTABELLEButtons(Optional ByVal forceRecreate As Boolean
     Dim wsKV As Worksheet
     Dim btn As Shape
     Dim wasProtected As Boolean
+    Dim areaLeft As Double
+    Dim areaTop As Double
+    Dim areaWidth As Double
+    Dim areaHeight As Double
     Dim buttonLeft As Double
     Dim buttonWidth As Double
     Dim buttonTop As Double
     Dim buttonHeight As Double
     Dim buttonGap As Double
-    Dim rowHeight As Double
-    Dim totalButtonsHeight As Double
+    Dim i As Long
     
     On Error GoTo SafeExit
     
@@ -502,78 +680,62 @@ Private Sub PID_EnsureLOHNTABELLEButtons(Optional ByVal forceRecreate As Boolean
     If wsKV Is Nothing Then Exit Sub
     
     If Not forceRecreate Then
-        If PID_LOHNTABELLEButtonsExist(wsKV) Then Exit Sub
+        If PID_LOHNTABELLEButtonsExist(wsKV) Then
+            If Not PID_LOHNTABELLEButtonsNeedRefresh(wsKV) Then Exit Sub
+        End If
     End If
     
     wasProtected = wsKV.ProtectContents
     
     On Error Resume Next
     wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
-    wsKV.Shapes(PID_ADD_PERIOD_BUTTON_NAME).Delete
-    wsKV.Shapes(PID_ADD_CUSTOM_HOURS_BUTTON_NAME).Delete
-    wsKV.Shapes(PID_DELETE_PERIODS_BUTTON_NAME).Delete
-    wsKV.Shapes(PID_HELP_BUTTON_NAME).Delete
+    PID_DeleteAllLOHNTABELLEToolbarShapes wsKV
     On Error GoTo SafeExit
     
     PID_ConfigureLOHNTABELLEHeaderLayout wsKV
+    PID_NormalizeKVTableHeader wsKV
     
-    buttonLeft = wsKV.Range("I2").Left + 1
-    buttonWidth = wsKV.Range("I2:J2").Width - 2
-    buttonHeight = 15
-    buttonGap = 2
-    totalButtonsHeight = (4 * buttonHeight) + (3 * buttonGap)
-    rowHeight = wsKV.Rows(2).RowHeight
+    areaLeft = wsKV.Range("A2").Left
+    areaTop = wsKV.Range("A2").Top
+    areaWidth = wsKV.Range("A2:J2").Width
+    areaHeight = wsKV.Rows(2).RowHeight
     
-    If rowHeight < totalButtonsHeight + 6 Then
-        wsKV.Rows(2).RowHeight = totalButtonsHeight + 6
-        rowHeight = wsKV.Rows(2).RowHeight
-    End If
+    buttonGap = PID_LOHNTABELLE_BUTTON_GAP
+    buttonHeight = PID_LOHNTABELLE_BUTTON_HEIGHT
+    buttonWidth = (areaWidth - (5# * buttonGap)) / 4#
+    buttonTop = areaTop + ((areaHeight - buttonHeight) / 2#)
+    buttonLeft = areaLeft + buttonGap
     
-    buttonTop = wsKV.Range("I2").Top + ((rowHeight - totalButtonsHeight) / 2)
-    
-    Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
-                                   Left:=buttonLeft, _
-                                   Top:=buttonTop, _
-                                   Width:=buttonWidth, _
-                                   Height:=buttonHeight)
-    
-    btn.Name = PID_ADD_PERIOD_BUTTON_NAME
-    btn.TextFrame.Characters.Text = "1) Neue Periode"
-    btn.OnAction = "AddNewKVPeriodOnTop"
-    PID_ApplyLOHNTABELLEButtonStyle btn, RGB(54, 96, 146), RGB(33, 64, 99)
-    
-    Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
-                                   Left:=buttonLeft, _
-                                   Top:=buttonTop + (buttonHeight + buttonGap), _
-                                   Width:=buttonWidth, _
-                                   Height:=buttonHeight)
-    
-    btn.Name = PID_ADD_CUSTOM_HOURS_BUTTON_NAME
-    btn.TextFrame.Characters.Text = "2) Eigene Stunden"
-    btn.OnAction = "AddCustomKVMonatsstunden"
-    PID_ApplyLOHNTABELLEButtonStyle btn, RGB(84, 130, 53), RGB(56, 87, 35)
-    
-    Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
-                                   Left:=buttonLeft, _
-                                   Top:=buttonTop + (2 * (buttonHeight + buttonGap)), _
-                                   Width:=buttonWidth, _
-                                   Height:=buttonHeight)
-    
-    btn.Name = PID_DELETE_PERIODS_BUTTON_NAME
-    btn.TextFrame.Characters.Text = "3) Alte Periode loeschen"
-    btn.OnAction = "DeleteSelectedKVPeriods"
-    PID_ApplyLOHNTABELLEButtonStyle btn, RGB(192, 80, 77), RGB(132, 46, 43)
-    
-    Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
-                                   Left:=buttonLeft, _
-                                   Top:=buttonTop + (3 * (buttonHeight + buttonGap)), _
-                                   Width:=buttonWidth, _
-                                   Height:=buttonHeight)
-    
-    btn.Name = PID_HELP_BUTTON_NAME
-    btn.TextFrame.Characters.Text = "Hilfe"
-    btn.OnAction = "ShowLOHNTABELLEButtonHelp"
-    PID_ApplyLOHNTABELLEButtonStyle btn, RGB(120, 120, 120), RGB(80, 80, 80)
+    For i = 0 To 3
+        Set btn = wsKV.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                       Left:=buttonLeft + (i * (buttonWidth + buttonGap)), _
+                                       Top:=buttonTop, _
+                                       Width:=buttonWidth, _
+                                       Height:=buttonHeight)
+        
+        Select Case i
+            Case 0
+                btn.Name = PID_ADD_PERIOD_BUTTON_NAME
+                btn.TextFrame.Characters.Text = "1) Neue Periode"
+                btn.OnAction = "AddNewKVPeriodOnTop"
+                PID_ApplyLOHNTABELLEButtonStyle btn, RGB(0, 120, 212), RGB(0, 90, 158)
+            Case 1
+                btn.Name = PID_ADD_CUSTOM_HOURS_BUTTON_NAME
+                btn.TextFrame.Characters.Text = "2) Eigene Stunden"
+                btn.OnAction = "AddCustomKVMonatsstunden"
+                PID_ApplyLOHNTABELLEButtonStyle btn, RGB(16, 124, 16), RGB(10, 92, 10)
+            Case 2
+                btn.Name = PID_DELETE_PERIODS_BUTTON_NAME
+                btn.TextFrame.Characters.Text = PID_KVBtnDeletePeriod()
+                btn.OnAction = "DeleteSelectedKVPeriods"
+                PID_ApplyLOHNTABELLEButtonStyle btn, RGB(209, 52, 56), RGB(164, 38, 44)
+            Case 3
+                btn.Name = PID_HELP_BUTTON_NAME
+                btn.TextFrame.Characters.Text = "Hilfe"
+                btn.OnAction = "ShowLOHNTABELLEButtonHelp"
+                PID_ApplyLOHNTABELLEButtonStyle btn, RGB(96, 94, 92), RGB(72, 70, 68)
+        End Select
+    Next i
     
 SafeExit:
     On Error Resume Next
@@ -591,12 +753,28 @@ Private Sub PID_ApplyLOHNTABELLEButtonStyle(ByVal btn As Shape, _
     If btn Is Nothing Then Exit Sub
     
     btn.Fill.ForeColor.RGB = fillColor
+    btn.Fill.Visible = msoTrue
     btn.Line.ForeColor.RGB = lineColor
+    btn.Line.Weight = 0.75
+    btn.Line.Visible = msoTrue
+    
+    On Error Resume Next
+    btn.Adjustments(1) = 0.18
+    btn.Shadow.Type = msoShadow21
+    btn.Shadow.Visible = msoTrue
+    btn.Shadow.Transparency = 0.55
+    btn.Shadow.Blur = 3
+    btn.TextFrame.MarginLeft = 4
+    btn.TextFrame.MarginRight = 4
+    btn.TextFrame.MarginTop = 1
+    btn.TextFrame.MarginBottom = 1
+    On Error GoTo SafeExit
+    
+    btn.TextFrame.Characters.Font.Name = "Calibri"
     btn.TextFrame.Characters.Font.Color = RGB(255, 255, 255)
     btn.TextFrame.Characters.Font.Bold = True
     btn.TextFrame.Characters.Font.Size = 8
     
-    ' Placement/Anchor: auf Mac per Late Binding, damit das Projekt kompiliert.
     PID_ApplyShapeMacSafeOptions btn
     
 SafeExit:
@@ -609,6 +787,10 @@ Private Sub PID_ApplyShapeMacSafeOptions(ByVal btn As Shape)
     On Error Resume Next
     
     If btn Is Nothing Then Exit Sub
+    
+    btn.TextFrame.WordWrap = msoTrue
+    btn.TextFrame.VerticalAlignment = xlVAlignCenter
+    btn.TextFrame.HorizontalAlignment = xlHAlignCenter
     
     Set shapeRef = btn
     
@@ -634,16 +816,11 @@ Private Sub PID_ConfigureLOHNTABELLEHeaderLayout(ByVal wsKV As Worksheet)
     wsKV.Range("A1").HorizontalAlignment = xlCenter
     wsKV.Range("A1").VerticalAlignment = xlCenter
     
-    wsKV.Range("A2:H2").Merge
-    wsKV.Range("A2").WrapText = True
-    wsKV.Range("A2").VerticalAlignment = xlCenter
-    wsKV.Range("A2").HorizontalAlignment = xlLeft
+    wsKV.Range("A2:J2").UnMerge
+    wsKV.Range("A2:J2").ClearContents
+    wsKV.Range("A2:J2").Interior.Pattern = xlNone
     
-    wsKV.Range("I2:J2").ClearContents
-    wsKV.Range("I2:J2").Interior.Pattern = xlNone
-    
-    wsKV.Rows(2).AutoFit
-    If wsKV.Rows(2).RowHeight < 74 Then wsKV.Rows(2).RowHeight = 74
+    wsKV.Rows(2).RowHeight = 24
     
 SafeExit:
 End Sub
@@ -1497,12 +1674,6 @@ End Function
 Private Sub PID_NormalizeKVWarningText(ByVal wsKV As Worksheet)
     If wsKV Is Nothing Then Exit Sub
     
-    wsKV.Range("A2").Value = _
-        "Wichtig: Alte Perioden nicht von Hand loeschen. Dafuer Button ""3) Alte Periode loeschen"" nutzen. " & _
-        "Neue Werte ab Mai = Button ""1) Neue Periode"". " & _
-        "Sondervertrag-Stunden = Button ""2) Eigene Stunden"". " & _
-        "Bei Unsicherheit: Button ""Hilfe"". Nur Zeilen mit Status OK verwenden."
-    
     PID_ConfigureLOHNTABELLEHeaderLayout wsKV
 End Sub
 
@@ -1511,15 +1682,15 @@ Private Sub PID_NormalizeKVTableHeader(ByVal wsKV As Worksheet)
     If wsKV Is Nothing Then Exit Sub
     
     wsKV.Range("A3").Value = "KV-Periode"
-    wsKV.Range("B3").Value = "Gueltig ab"
-    wsKV.Range("C3").Value = "Gueltig bis"
+    wsKV.Range("B3").Value = PID_KVTxtGueltig() & " ab"
+    wsKV.Range("C3").Value = PID_KVTxtGueltig() & " bis"
     wsKV.Range("D3").Value = "KV-Code"
     wsKV.Range("E3").Value = "KV-Gruppe"
-    wsKV.Range("F3").Value = "Beschaeftigungsdauer"
+    wsKV.Range("F3").Value = PID_KVTxtBeschaeftigungsdauer()
     wsKV.Range("G3").Value = "Monatsstunden"
     wsKV.Range("H3").Value = "Monatslohn"
     wsKV.Range("I3").Value = "Status"
-    wsKV.Range("J3").Value = "Pruefung"
+    wsKV.Range("J3").Value = PID_KVTxtPruefung()
 End Sub
 
 
@@ -1691,7 +1862,7 @@ Private Sub PID_WriteKVPeriodTitleRow(ByVal wsKV As Worksheet, _
     titleText = periodName
     
     If IsDate(validFrom) And IsDate(validTo) Then
-        titleText = titleText & "   |   gueltig von " & Format$(CDate(validFrom), "dd.mm.yyyy") & _
+        titleText = titleText & "   |   " & LCase$(PID_KVTxtGueltig()) & " von " & Format$(CDate(validFrom), "dd.mm.yyyy") & _
                     " bis " & Format$(CDate(validTo), "dd.mm.yyyy")
     End If
     

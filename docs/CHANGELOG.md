@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Changed
+- mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE Zeile 2 nur Buttons nebeneinander (kein A2-Text); verwaiste Toolbar-Shapes (z.B. altes Hilfe) werden entfernt.
 - mod_PIDAdmin.bas: Admin-/Release-Makros (FullSystemRefresh, QuickSystemCheck) und PID_ConfirmAdminAction; Bestaetigung vor ResetAndImportVBAFiles und UnprotectEverything.
 - mod_PIDUtils.bas: gemeinsame Helper (PID_CollectionHasKey, PID_MonthNames, PID_GetMonthIndexFromName/SheetName); Duplikate in CopyData, DataClear, SumMergedCells, Durchrechnung, Modul1, DieseArbeitsmappe, KV-Module entfernt.
 - mod_CopyData.bas / mod_DataClear.bas: CopyData/DataClear nur auf gueltigem Monatsblatt; Bestaetigung mit Blattname und Zielmonaten vor CopyData.
