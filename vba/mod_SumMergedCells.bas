@@ -293,11 +293,6 @@ Public Sub PID_RecalculateAllMonthMergedFormulas()
 End Sub
 
 
-Public Sub PID_RecalculateFinanzSummaryChain()
-    PID_SyncFinanzSummaryToUbersicht
-End Sub
-
-
 Public Sub PID_SyncFinanzSummaryToUbersicht()
     Dim monthNames As Variant
     Dim wsMonth As Worksheet

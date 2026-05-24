@@ -44,16 +44,6 @@ Public Sub PID_RecalculateAllMonthFluctuation()
 End Sub
 
 
-Public Sub RecalculateFinanzSummaryChain()
-    PID_SyncFinanzSummaryToUbersicht
-End Sub
-
-
-Public Sub SyncFinanzSummaryToUbersicht()
-    PID_SyncFinanzSummaryToUbersicht
-End Sub
-
-
 Public Sub PID_FormatAllMoneyColumns()
     Dim monthNames As Variant
     Dim ws As Worksheet
@@ -132,14 +122,6 @@ CleanFail:
 End Sub
 
 
-Public Sub FormatAllLohnColumns()
-    PID_FormatAllMoneyColumns
-    
-    MsgBox "Lohn- und Geldspalten wurden formatiert.", _
-           vbInformation, "Formatierung"
-End Sub
-
-
 Public Sub PID_ResetExcelState()
     On Error Resume Next
     
@@ -154,19 +136,6 @@ Public Sub PID_ResetExcelState()
     
     MsgBox "Excel wurde zurueckgesetzt.", _
            vbInformation, "Excel Reset"
-End Sub
-
-
-Public Sub PID_EventReset()
-    On Error Resume Next
-    
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayAlerts = True
-    Application.StatusBar = False
-    Application.CutCopyMode = False
-    
-    On Error GoTo 0
 End Sub
 
 
@@ -283,34 +252,6 @@ TryEnglishFormat:
     targetRange.NumberFormat = euroSymbol & " #,##0.00"
 
 SafeExit:
-End Sub
-
-
-Public Sub PID_ForceRefreshActiveRowLohn()
-    Dim ws As Worksheet
-    Dim rowNumber As Long
-    Dim monthNumber As Long
-    
-    On Error GoTo SafeExit
-    
-    If TypeName(ActiveSheet) <> "Worksheet" Then Exit Sub
-    Set ws = ActiveSheet
-    
-    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
-    If Not IsNumeric(ws.Range("A1").Value) Then Exit Sub
-    
-    rowNumber = ActiveCell.Row
-    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
-    
-    monthNumber = CLng(ws.Range("A1").Value)
-    RefreshKVLohnForRow ws, rowNumber, monthNumber
-    
-SafeExit:
-End Sub
-
-
-Public Sub RestoreAktuelleStundenFormulas()
-    PID_RestoreAktuelleStundenFormulas
 End Sub
 
 
@@ -480,21 +421,6 @@ Private Function PID_GetAktuelleStundenFormulaR1C1() As String
 End Function
 
 
-Public Sub RestoreLetztesGehaltFormulas()
-    PID_RestoreLetztesGehaltFormulas
-End Sub
-
-
-Public Sub RestoreMonatslohnFormulas()
-    PID_RestoreMonatslohnFormulas
-End Sub
-
-
-Public Sub RestoreKVCodeDropdownValidation()
-    PID_RestoreKVCodeDropdownValidation
-End Sub
-
-
 Public Sub RestoreKVStundenDropdownValidation()
     RefreshAllMonthKVStundenDropdowns
     MarkKVDropdownsClean
@@ -502,11 +428,6 @@ Public Sub RestoreKVStundenDropdownValidation()
     MsgBox "Stunden-Dropdown (Spalte F) wurde wiederhergestellt." & vbCrLf & vbCrLf & _
            "Bereich: F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW & " auf allen Monatsblaettern.", _
            vbInformation, "Spalte F"
-End Sub
-
-
-Public Sub RestoreMonthSheetDropdownsAfterFormat()
-    PID_RestoreMonthSheetDropdownsAfterFormat
 End Sub
 
 
@@ -848,50 +769,6 @@ Private Function PID_GetEuroSymbol() As String
         PID_GetEuroSymbol = configuredSymbol
     End If
 End Function
-
-
-Public Sub RestoreAustrittsdatumValidation()
-    PID_RestoreAustrittsdatumValidation
-End Sub
-
-
-Public Sub BuildDurchrechnungUebersicht()
-    PID_BuildDurchrechnungUebersicht
-End Sub
-
-
-Public Sub RefreshDurchrechnungUebersicht()
-    PID_RefreshDurchrechnungUebersicht
-End Sub
-
-
-Public Sub FormatDurchrechnungUebersicht()
-    PID_FormatDurchrechnungUebersicht
-End Sub
-
-
-Public Sub FormatFinanzUebersicht()
-    PID_FormatFinanzUebersicht
-End Sub
-
-
-Public Sub FormatEinstellung()
-    PID_FormatEinstellungSheet
-End Sub
-
-
-Public Sub SyncDieseArbeitsmappeFromExport()
-    Dim syncOk As Boolean
-    Dim syncDetails As String
-    
-    PID_SyncDieseArbeitsmappeFromExport syncOk, syncDetails
-    
-    If syncOk Then
-        MsgBox "DieseArbeitsmappe wurde aus vba/DieseArbeitsmappe.cls synchronisiert.", vbInformation, "VBA Sync"
-    Else
-        MsgBox "Synchronisation fehlgeschlagen:" & vbCrLf & syncDetails, vbExclamation, "VBA Sync"
-    End If
-End Sub
 
 
 Public Sub PID_RestoreAustrittsdatumValidation()

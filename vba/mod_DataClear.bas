@@ -7,16 +7,6 @@ Public Sub DataClear()
 End Sub
 
 
-Public Sub ClearData()
-    PID_ClearCurrentMonthData
-End Sub
-
-
-Public Sub DatenLoeschen()
-    PID_ClearCurrentMonthData
-End Sub
-
-
 Public Sub PID_ClearCurrentMonthData()
     Dim ws As Worksheet
     Dim answer As VbMsgBoxResult
@@ -82,7 +72,7 @@ Public Sub PID_ClearCurrentMonthData()
 
     MarkFluktuationDirty
     MarkFinanzSummaryDirtyForMonth ws
-    MarkKVDropdownsDirty
+    MarkAllKVDropdownsDirty
     
     PID_TryProtectMonthSheet ws
     
@@ -256,7 +246,7 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
 
     MarkFluktuationDirty
     MarkFinanzSummaryDirtyForMonth ws
-    MarkKVDropdownsDirty
+    MarkAllKVDropdownsDirty
     
     PID_TryProtectMonthSheet ws
     

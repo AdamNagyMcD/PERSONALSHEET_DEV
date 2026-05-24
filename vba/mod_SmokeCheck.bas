@@ -136,11 +136,6 @@ CleanFail:
 End Sub
 
 
-Public Sub PID_SystemSmokeCheck()
-    PID_RunSystemSmokeCheck
-End Sub
-
-
 Public Sub PID_FilterSmokeReviewOnly()
     Dim ws As Worksheet
     Dim lastRow As Long

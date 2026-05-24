@@ -21,11 +21,6 @@ Public Sub CopyData()
 End Sub
 
 
-Public Sub DatenInFolgendeMonateKopieren()
-    PID_CopyDataToFollowingMonths
-End Sub
-
-
 Public Sub PID_CopyDataToFollowingMonths()
     Dim wsSource As Worksheet
     Dim sourceSheetName As String

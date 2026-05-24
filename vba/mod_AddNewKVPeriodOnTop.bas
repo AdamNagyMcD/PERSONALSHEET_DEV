@@ -244,11 +244,6 @@ Public Sub EnsureAddNewKVPeriodButton()
 End Sub
 
 
-Public Sub PID_RefreshKVButtons()
-    PID_EnsureLOHNTABELLEButtons True
-End Sub
-
-
 Private Function PID_LOHNTABELLEButtonsExist(ByVal wsKV As Worksheet) As Boolean
     On Error GoTo Missing
     
@@ -965,8 +960,8 @@ Public Sub RebuildLOHNTABELLE()
     PID_NormalizeKVTableHeader wsKV
     FormatKVPeriodArea wsKV
     PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount + 1, cleanupLastRow
-    MarkKVDropdownsDirty
-    MarkKVLohnDirty
+    MarkAllKVDropdownsDirty
+    MarkAllKVLohnDirty
     
     On Error Resume Next
     PID_ResetHourOverrideLog
@@ -1078,7 +1073,7 @@ Public Sub RestoreLOHNTABELLEBase2025_2026()
     FormatKVPeriodArea wsKV
     PID_ClearTrailingKVArea wsKV, firstDataRow + periodRowCount + 1, cleanupLastRow
     EnsureAddNewKVPeriodButton
-    MarkKVLohnDirty
+    MarkAllKVLohnDirty
     
     On Error Resume Next
     PID_ResetHourOverrideLog
@@ -2270,35 +2265,6 @@ SafeExit:
 End Sub
 
 
-Public Sub ApplyKVVisualGrouping()
-    Dim wsKV As Worksheet
-    Dim lastRow As Long
-    Dim wasProtected As Boolean
-    
-    On Error GoTo SafeExit
-    
-    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
-    If wsKV Is Nothing Then Exit Sub
-    
-    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
-    If lastRow < 4 Then Exit Sub
-    
-    wasProtected = wsKV.ProtectContents
-    
-    On Error Resume Next
-    wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
-    On Error GoTo SafeExit
-    
-    PID_ApplyKVVisualGrouping wsKV, 4, lastRow
-    
-SafeExit:
-    On Error Resume Next
-    If wasProtected Then
-        wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
-    End If
-End Sub
-
-
 Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
     Dim r As Long
     Dim currentPeriod As String
@@ -2904,33 +2870,3 @@ End Function
 Private Function PID_FormatHoursText(ByVal hoursValue As Double) As String
     PID_FormatHoursText = Format$(hoursValue, "0.00")
 End Function
-
-
-' Backward-compatible aliases for legacy macro and button names.
-Public Sub ShowLOHNTABELLE_TESTButtonHelp()
-    ShowLOHNTABELLEButtonHelp
-End Sub
-
-Public Sub FixLOHNTABELLE_TEST_HeaderText()
-    FixLOHNTABELLE_HeaderText
-End Sub
-
-Public Sub FixLOHNTABELLE_TEST_HeaderTextIfNeeded(Optional ByVal forceFormulaRepair As Boolean = False)
-    FixLOHNTABELLE_HeaderTextIfNeeded forceFormulaRepair
-End Sub
-
-Public Sub FixLOHNTABELLE_TEST_StatusFormulas()
-    FixLOHNTABELLE_StatusFormulas
-End Sub
-
-Public Sub RebuildLOHNTABELLE_TEST()
-    RebuildLOHNTABELLE
-End Sub
-
-Public Sub RestoreLOHNTABELLE_TESTBase2025_2026()
-    RestoreLOHNTABELLEBase2025_2026
-End Sub
-
-Public Sub CleanupLOHNTABELLE_TESTTrailingArea()
-    CleanupLOHNTABELLETrailingArea
-End Sub

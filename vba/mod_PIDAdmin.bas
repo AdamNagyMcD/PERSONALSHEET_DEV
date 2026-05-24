@@ -25,7 +25,6 @@ Public Sub PID_ShowAdminMacroInfo()
     msg = msg & "- PID_QuickSystemCheck" & vbCrLf
     msg = msg & "- PID_RunSystemSmokeCheck" & vbCrLf
     msg = msg & "- RebuildLOHNTABELLE" & vbCrLf
-    msg = msg & "- BuildLohntabelleTest" & vbCrLf
     msg = msg & "- UnprotectEverything" & vbCrLf & vbCrLf
     msg = msg & "Siehe docs/RELEASE.md"
     

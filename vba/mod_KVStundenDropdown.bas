@@ -10,11 +10,6 @@ Private mKVDropdownRefreshedSheets As Collection
 Private mStundenValuesCache As Collection
 
 
-Public Sub MarkKVDropdownsDirty()
-    MarkAllKVDropdownsDirty
-End Sub
-
-
 Public Sub MarkAllKVDropdownsDirty()
     gKVDropdownsDirty = True
     Set mKVDropdownRefreshedSheets = New Collection

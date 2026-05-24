@@ -59,16 +59,6 @@ CleanFail:
 End Sub
 
 
-Public Sub PID_UnprotectWorkbookSheets()
-    UnprotectEverything
-End Sub
-
-
-Public Sub UnlockEverything()
-    UnprotectEverything
-End Sub
-
-
 Public Sub ShowAllSheets()
     Dim ws As Worksheet
     
@@ -103,26 +93,3 @@ CleanFail:
            Err.Number & " - " & Err.Description, _
            vbExclamation, "Blaetter sichtbar"
 End Sub
-
-
-Public Sub ResetExcelApplicationState()
-    On Error Resume Next
-    
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayAlerts = True
-    Application.StatusBar = False
-    Application.CutCopyMode = False
-    Application.Calculation = xlCalculationAutomatic
-    
-    On Error GoTo 0
-    
-    MsgBox "Excel wurde zurueckgesetzt:" & vbCrLf & _
-           "- Events aktiv" & vbCrLf & _
-           "- ScreenUpdating aktiv" & vbCrLf & _
-           "- DisplayAlerts aktiv" & vbCrLf & _
-           "- StatusBar zurueckgesetzt" & vbCrLf & _
-           "- Calculation automatisch", _
-           vbInformation, "Excel Reset"
-End Sub
-

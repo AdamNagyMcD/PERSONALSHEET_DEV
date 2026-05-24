@@ -1,42 +1,6 @@
 Attribute VB_Name = "mod_ResetAndImportVBAFiles"
 Option Explicit
 
-Public Sub FixLegacyModul11Name()
-    Dim vbProj As Object
-    Dim renamed As Boolean
-    
-    On Error GoTo VBProjectBlocked
-    Set vbProj = ThisWorkbook.VBProject
-    On Error GoTo FixError
-    
-    renamed = PID_FixLegacyModul11Name(vbProj)
-    
-    If renamed Then
-        MsgBox "Modul11 wurde in mod_BuildDurchrechnung umbenannt." & vbCrLf & vbCrLf & _
-               "Bitte Datei > Speichern.", _
-               vbInformation, "VBA Modulname"
-    Else
-        MsgBox "Keine Aenderung noetig (Modul11 nicht gefunden oder Zielmodul existiert bereits).", _
-               vbInformation, "VBA Modulname"
-    End If
-    Exit Sub
-    
-VBProjectBlocked:
-    MsgBox "Zugriff auf VBProject ist blockiert (Fehler " & Err.Number & ")." & vbCrLf & vbCrLf & _
-           "Unter Windows muss in Excel aktiviert werden:" & vbCrLf & _
-           "Datei > Optionen > Trust Center > Trust Center-Einstellungen > " & _
-           "Makroeinstellungen > ""Zugriff auf das VBA-Projektobjektmodell vertrauen""" & vbCrLf & vbCrLf & _
-           "Excel danach neu starten und dieses Makro erneut ausfuehren.", _
-           vbExclamation, "VBA Modulname"
-    Exit Sub
-    
-FixError:
-    MsgBox "Fehler beim Umbenennen:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
-           vbExclamation, "VBA Modulname"
-End Sub
-
-
 Public Sub ResetAndImportVBAFiles()
 
     Dim vbProj As Object
@@ -184,11 +148,6 @@ ImportError:
 End Sub
 
 
-Public Sub RepairWorkbookAfterVBAImport()
-    PID_RepairWorkbookAfterVBAImport
-End Sub
-
-
 Public Sub PID_RepairWorkbookAfterVBAImport()
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -251,6 +210,20 @@ Public Sub PID_SyncDieseArbeitsmappeFromExport(Optional ByRef syncOk As Boolean 
 
 SyncFail:
     syncDetails = Err.Number & " - " & Err.Description
+End Sub
+
+
+Public Sub SyncDieseArbeitsmappeFromExport()
+    Dim syncOk As Boolean
+    Dim syncDetails As String
+    
+    PID_SyncDieseArbeitsmappeFromExport syncOk, syncDetails
+    
+    If syncOk Then
+        MsgBox "DieseArbeitsmappe wurde aus vba/DieseArbeitsmappe.cls synchronisiert.", vbInformation, "VBA Sync"
+    Else
+        MsgBox "Synchronisation fehlgeschlagen:" & vbCrLf & syncDetails, vbExclamation, "VBA Sync"
+    End If
 End Sub
 
 

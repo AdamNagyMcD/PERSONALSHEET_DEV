@@ -52,5 +52,4 @@ Lsd. [TEST_CASES.md](../TEST_CASES.md):
 
 - `ResetAndImportVBAFiles`
 - `RebuildLOHNTABELLE` / `RestoreLOHNTABELLEBase2025_2026`
-- `BuildLohntabelleTest`
 - `UnprotectEverything`

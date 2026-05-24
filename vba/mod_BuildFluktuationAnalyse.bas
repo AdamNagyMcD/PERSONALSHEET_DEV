@@ -112,7 +112,7 @@ Public Sub BuildFluktuationAnalyse()
             totalExits = totalExits + 1
             
             monthName = Trim$(CStr(dataWs.Cells(r, "A").Value))
-            monthIndex = GetMonthIndexFromName(monthName)
+            monthIndex = PID_GetMonthIndexFromName(monthName)
             
             If IsNumeric(dataWs.Cells(r, "J").Value) Then
                 lossValue = CDbl(dataWs.Cells(r, "J").Value)
@@ -690,11 +690,6 @@ Private Function incompleteExitsCellNeedsHighlight(ByVal ws As Worksheet, ByVal 
     Else
         incompleteExitsCellNeedsHighlight = False
     End If
-End Function
-
-
-Public Function GetMonthIndexFromName(ByVal monthName As String) As Long
-    GetMonthIndexFromName = PID_GetMonthIndexFromName(monthName)
 End Function
 
 

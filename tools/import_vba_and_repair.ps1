@@ -73,17 +73,17 @@ try {
     Write-Host "VBA saved."
 
     try {
-        $xl.Run("RestoreMonthSheetDropdownsAfterFormat")
-        Write-Host "RestoreMonthSheetDropdownsAfterFormat OK"
+        $xl.Run("PID_RestoreMonthSheetDropdownsAfterFormatSilent")
+        Write-Host "PID_RestoreMonthSheetDropdownsAfterFormatSilent OK"
     } catch {
-        Write-Warning "RestoreMonthSheetDropdownsAfterFormat failed: $($_.Exception.Message)"
+        Write-Warning "PID_RestoreMonthSheetDropdownsAfterFormatSilent failed: $($_.Exception.Message)"
     }
 
     try {
-        $xl.Run("RestoreAktuelleStundenFormulas")
-        Write-Host "RestoreAktuelleStundenFormulas OK"
+        $xl.Run("PID_RestoreAktuelleStundenFormulasSilent")
+        Write-Host "PID_RestoreAktuelleStundenFormulasSilent OK"
     } catch {
-        Write-Warning "RestoreAktuelleStundenFormulas failed: $($_.Exception.Message)"
+        Write-Warning "PID_RestoreAktuelleStundenFormulasSilent failed: $($_.Exception.Message)"
     }
 
     $ws = $wb.Worksheets.Item("Februar")

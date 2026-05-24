@@ -9,6 +9,7 @@ Excel-alapu szemelyzeti es labor-planning rendszer ettermek szamara.
 - **Valtozasok:** [docs/CHANGELOG.md](docs/CHANGELOG.md)
 - **Felhasznaloi rovid utmutato:** [docs/Kurzanleitung_Personalsheet_A4.html](docs/Kurzanleitung_Personalsheet_A4.html)
 - **Release checklist:** [docs/RELEASE.md](docs/RELEASE.md)
+- **Geplante Verbesserungen (Backlog):** [docs/FUTURE_PLANS.md](docs/FUTURE_PLANS.md)
 
 ## Kompatibilitas
 
@@ -59,7 +60,6 @@ Modul: `mod_PIDAdmin.bas` — `PID_ShowAdminMacroInfo` listazza.
 | `ResetAndImportVBAFiles` | Minden VBA modul ujraimport (Bestaetigung) |
 | `FullSystemRefresh` | Teljes workbook refresh |
 | `RebuildLOHNTABELLE` | KV tabla ujraepites |
-| `BuildLohntabelleTest` | LOHNTABELLE teljes torles |
 | `UnprotectEverything` | Minden lap feloldasa (Bestaetigung) |
 
 ## Git

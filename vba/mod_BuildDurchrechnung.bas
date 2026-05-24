@@ -74,11 +74,6 @@ Public Sub PID_RefreshDurchrechnungUebersicht()
 End Sub
 
 
-Public Sub PID_RefreshDurchrechnungUebersichtLight()
-    PID_RefreshDurchrechnungUebersichtInternal True
-End Sub
-
-
 Private Sub PID_RefreshDurchrechnungUebersichtInternal(ByVal lightRefresh As Boolean)
     Dim ws As Worksheet
     Dim oldEnableEvents As Boolean
@@ -1064,7 +1059,7 @@ Public Sub PID_FormatDurchrechnungUebersicht()
     End If
     
     If Not PID_DurchrechnungBlockExists(ws) Then
-        MsgBox "Kein Durchrechnungsblock auf UEBERSICHT gefunden. Bitte zuerst BuildDurchrechnungUebersicht ausfuehren.", _
+        MsgBox "Kein Durchrechnungsblock auf UEBERSICHT gefunden. Bitte zuerst PID_BuildDurchrechnungUebersicht ausfuehren.", _
                vbExclamation, "Durchrechnung"
         GoTo CleanProtect
     End If

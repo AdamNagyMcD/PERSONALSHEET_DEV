@@ -75,23 +75,3 @@ CleanFail:
     Resume CleanExit
 End Sub
 
-
-Public Sub ResetExcelEvents()
-    On Error Resume Next
-    
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayAlerts = True
-    Application.StatusBar = False
-    Application.CutCopyMode = False
-    
-    On Error GoTo 0
-    
-    MsgBox "Excel wurde zurueckgesetzt:" & vbCrLf & _
-           "- Events aktiv" & vbCrLf & _
-           "- ScreenUpdating aktiv" & vbCrLf & _
-           "- DisplayAlerts aktiv" & vbCrLf & _
-           "- StatusBar zurueckgesetzt", _
-           vbInformation, "Reset abgeschlossen"
-End Sub
-

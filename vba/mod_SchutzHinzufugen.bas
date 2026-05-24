@@ -140,28 +140,6 @@ Private Sub PID_MarkSheetProtectionReady(ByVal sheetName As String)
 End Sub
 
 
-Public Sub SchutzHinzufugen()
-    PID_SetupSheetProtectionForMacros
-    
-    MsgBox "Blattschutz wurde eingerichtet." & vbCrLf & _
-           "Makros duerfen geschuetzte Blaetter bearbeiten.", _
-           vbInformation, "Blattschutz"
-End Sub
-
-
-Public Sub ProtectEverything()
-    PID_SetupSheetProtectionForMacros
-    
-    MsgBox "Alle Blaetter wurden geschuetzt.", _
-           vbInformation, "Blattschutz"
-End Sub
-
-
-Public Sub PID_ProtectWorkbookSheets()
-    PID_SetupSheetProtectionForMacros
-End Sub
-
-
 Private Function PID_IsWorkerMonthSheetSafe(ByVal ws As Worksheet) As Boolean
     Dim monthName As String
     

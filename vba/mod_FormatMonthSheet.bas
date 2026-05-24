@@ -12,15 +12,53 @@ Private Const PID_MS_STYLE_READONLY As Long = 2
 Private Const PID_MS_STYLE_LABEL As Long = 3
 Private Const PID_MS_STYLE_HEADER As Long = 4
 Private Const PID_MS_STYLE_MESSAGE As Long = 5
+Private Const PID_MS_COPYDATA_BUTTON_NAME As String = "btn_CopyDataMonth"
+Private Const PID_MS_COPYDATA_BUTTON_TEXT As String = "Aktualisierung des restlichen Jahres"
+Private Const PID_MS_COPYDATA_BUTTON_WIDTH As Double = 275
+Private Const PID_MS_COPYDATA_BUTTON_HEIGHT As Double = 24
+Private Const PID_MS_COPYDATA_BUTTON_OFFSET_LEFT As Double = 6
+Private Const PID_MS_COPYDATA_BUTTON_OFFSET_TOP As Double = 4
+
+
+Public Sub EnsureMonthSheetCopyDataButtons()
+    Dim monthName As Variant
+    Dim ws As Worksheet
+    Dim countDone As Long
+    
+    On Error GoTo CleanFail
+    
+    For Each monthName In PID_MonthNames()
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthName))
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            If PID_IsWorkerMonthSheet(ws) Then
+                If PID_MSEnsureAktualisierungButtonOnSheet(ws) Then
+                    countDone = countDone + 1
+                End If
+            End If
+        End If
+    Next monthName
+    
+    MsgBox countDone & " Monatsblaetter: CopyData-Button im LOHNTABELLE-Stil.", _
+           vbInformation, "Monatsblatt Button"
+    Exit Sub
+
+CleanFail:
+    MsgBox "Fehler bei EnsureMonthSheetCopyDataButtons:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, vbExclamation, "Monatsblatt Button"
+End Sub
+
+
+Public Function PID_EnsureMonthSheetCopyDataButton(ByVal ws As Worksheet) As Boolean
+    PID_EnsureMonthSheetCopyDataButton = PID_MSEnsureAktualisierungButtonOnSheet(ws)
+End Function
 
 
 Public Sub FormatJanuarMonthSheet()
     PID_FormatMonthSheetByName PID_MS_PILOT_SHEET
-End Sub
-
-
-Public Sub FormatMonthSheet()
-    FormatJanuarMonthSheet
 End Sub
 
 
@@ -50,6 +88,7 @@ Public Sub FormatAllMonthSheets()
             If Not ws Is Nothing Then
                 If PID_IsWorkerMonthSheet(ws) Then
                     PID_MSCopyMonthFormatsFromReference wsRef, ws
+                    PID_MSEnsureAktualisierungButtonOnSheet ws
                     countDone = countDone + 1
                 End If
             End If
@@ -105,9 +144,8 @@ Private Sub PID_FormatMonthSheetByName(ByVal sheetName As String)
     On Error GoTo CleanFail
     
     PID_MSApplyReferenceLayout ws
-    If StrComp(sheetName, PID_MS_PILOT_SHEET, vbTextCompare) = 0 Then
-        PID_MSRemoveLegacyPanelShapes ws
-    End If
+    PID_MSEnsureAktualisierungButtonOnSheet ws
+    PID_MSRemoveLegacyPanelShapes ws
     
     Application.DisplayAlerts = oldDisplayAlerts
     MsgBox "Monatsblatt '" & sheetName & "' formatiert.", vbInformation, "Monatsblatt Format"
@@ -155,6 +193,7 @@ Private Sub PID_MSCopyMonthFormatsFromReference(ByVal wsRef As Worksheet, ByVal 
     PID_MSCopyRangeFormats wsRef.Range("O3:V50"), wsTarget.Range("O3:V50")
     PID_MSCopyPanelTailFormatsFromReference wsRef, wsTarget
     PID_MSRestoreMonthSheetDropdowns wsTarget
+    PID_MSEnsureAktualisierungButtonOnSheet wsTarget
     
     On Error Resume Next
     If refProtected Then
@@ -433,15 +472,11 @@ End Sub
 Private Sub PID_MSRemoveLegacyPanelShapes(ByVal ws As Worksheet)
     Dim shapeIndex As Long
     Dim shp As Shape
-    Dim shpText As String
     
     For shapeIndex = ws.Shapes.Count To 1 Step -1
         Set shp = ws.Shapes(shapeIndex)
-        shpText = PID_MSGetShapeText(shp)
         
-        If InStr(1, shpText, "Aktualisierung", vbTextCompare) > 0 Then
-            PID_MSRestyleAktualisierungButton shp
-        ElseIf InStr(1, shp.Name, "Klammer", vbTextCompare) > 0 _
+        If InStr(1, shp.Name, "Klammer", vbTextCompare) > 0 _
                Or InStr(1, shp.Name, "Brace", vbTextCompare) > 0 _
                Or InStr(1, shp.Name, "Geschweifte", vbTextCompare) > 0 Then
             shp.Delete
@@ -450,22 +485,133 @@ Private Sub PID_MSRemoveLegacyPanelShapes(ByVal ws As Worksheet)
 End Sub
 
 
-Private Sub PID_MSRestyleAktualisierungButton(ByVal btn As Shape)
+Private Function PID_MSEnsureAktualisierungButtonOnSheet(ByVal ws As Worksheet) As Boolean
+    Dim btn As Shape
+    Dim wasProtected As Boolean
+    Dim btnLeft As Double
+    Dim btnTop As Double
+    Dim btnWidth As Double
+    Dim btnHeight As Double
+    Dim shapeIndex As Long
+    Dim shp As Shape
+    
     On Error GoTo SafeExit
-    If btn Is Nothing Then Exit Sub
     
-    btn.Visible = msoTrue
-    btn.Fill.ForeColor.RGB = PID_StyleColorNavy()
-    btn.Line.ForeColor.RGB = PID_StyleColorBtnPrimaryLine()
-    btn.Line.Weight = 1
-    btn.Shadow.Visible = msoFalse
-    btn.TextFrame.Characters.Font.Name = "Calibri"
-    btn.TextFrame.Characters.Font.Color = vbWhite
-    btn.TextFrame.Characters.Font.Bold = True
-    btn.TextFrame.Characters.Font.Size = 9
+    If ws Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
     
+    wasProtected = ws.ProtectContents
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo SafeExit
+    
+    PID_MSGetCopyDataButtonTargetGeometry ws, btnLeft, btnTop, btnWidth, btnHeight
+    
+    Set btn = Nothing
+    On Error Resume Next
+    Set btn = ws.Shapes(PID_MS_COPYDATA_BUTTON_NAME)
+    On Error GoTo SafeExit
+    
+    If Not btn Is Nothing Then
+        If btn.Type = msoAutoShape Then
+            If btn.Fill.ForeColor.RGB = PID_StyleColorNavy() Then
+                If PID_MSCopyDataButtonGeometryMatches(btn, btnLeft, btnTop, btnWidth, btnHeight) Then
+                    PID_MSEnsureAktualisierungButtonOnSheet = True
+                    GoTo ReprotectSheet
+                End If
+            End If
+        End If
+        btn.Delete
+    End If
+    
+    For shapeIndex = ws.Shapes.Count To 1 Step -1
+        Set shp = ws.Shapes(shapeIndex)
+        If PID_MSIsLegacyCopyDataButton(shp) Then shp.Delete
+    Next shapeIndex
+    
+    Set btn = ws.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                 Left:=btnLeft, _
+                                 Top:=btnTop, _
+                                 Width:=btnWidth, _
+                                 Height:=btnHeight)
+    btn.Name = PID_MS_COPYDATA_BUTTON_NAME
+    btn.TextFrame.Characters.Text = PID_MS_COPYDATA_BUTTON_TEXT
+    btn.OnAction = "CopyData"
+    btn.Placement = xlFreeFloating
+    PID_StyleApplyToolbarButton btn, PID_StyleColorNavy(), PID_StyleColorBtnPrimaryLine(), RGB(255, 255, 255)
+    
+    PID_MSEnsureAktualisierungButtonOnSheet = True
+
+ReprotectSheet:
+    On Error Resume Next
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                   UserInterfaceOnly:=True, _
+                   AllowFiltering:=True, _
+                   AllowSorting:=True
+    End If
+    Exit Function
+
 SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                   UserInterfaceOnly:=True, _
+                   AllowFiltering:=True, _
+                   AllowSorting:=True
+    End If
+End Function
+
+
+Private Sub PID_MSGetCopyDataButtonTargetGeometry(ByVal ws As Worksheet, _
+                                                  ByRef btnLeft As Double, _
+                                                  ByRef btnTop As Double, _
+                                                  ByRef btnWidth As Double, _
+                                                  ByRef btnHeight As Double)
+    btnLeft = ws.Range("O1").Left + PID_MS_COPYDATA_BUTTON_OFFSET_LEFT
+    btnTop = ws.Range("O1").Top + PID_MS_COPYDATA_BUTTON_OFFSET_TOP
+    btnWidth = PID_MS_COPYDATA_BUTTON_WIDTH
+    btnHeight = PID_MS_COPYDATA_BUTTON_HEIGHT
 End Sub
+
+
+Private Function PID_MSCopyDataButtonGeometryMatches(ByVal btn As Shape, _
+                                                     ByVal expectedLeft As Double, _
+                                                     ByVal expectedTop As Double, _
+                                                     ByVal expectedWidth As Double, _
+                                                     ByVal expectedHeight As Double) As Boolean
+    If btn Is Nothing Then Exit Function
+    
+    PID_MSCopyDataButtonGeometryMatches = _
+        (Abs(btn.Left - expectedLeft) <= 1.5) And _
+        (Abs(btn.Top - expectedTop) <= 1.5) And _
+        (Abs(btn.Width - expectedWidth) <= 1.5) And _
+        (Abs(btn.Height - expectedHeight) <= 1.5)
+End Function
+
+
+Private Function PID_MSIsLegacyCopyDataButton(ByVal shp As Shape) As Boolean
+    Dim actionText As String
+    Dim shpText As String
+    
+    On Error GoTo SafeExit
+    
+    If shp Is Nothing Then Exit Function
+    If shp.Name = PID_MS_COPYDATA_BUTTON_NAME Then Exit Function
+    
+    actionText = LCase$(Trim$(Replace$(shp.OnAction, "'", "")))
+    If InStr(1, actionText, "copydata", vbTextCompare) > 0 Then
+        PID_MSIsLegacyCopyDataButton = True
+        Exit Function
+    End If
+    
+    shpText = PID_MSGetShapeText(shp)
+    If InStr(1, shpText, "Aktualisierung", vbTextCompare) > 0 Then
+        PID_MSIsLegacyCopyDataButton = True
+    End If
+
+SafeExit:
+End Function
 
 
 Private Sub PID_MSClearAllBorders(ByVal target As Range)
@@ -494,7 +640,13 @@ End Sub
 Private Function PID_MSGetShapeText(ByVal shp As Shape) As String
     On Error GoTo SafeExit
     If shp Is Nothing Then Exit Function
+    
     PID_MSGetShapeText = shp.TextFrame.Characters.Text
+    If Len(Trim$(PID_MSGetShapeText)) > 0 Then Exit Function
+    
+    On Error Resume Next
+    PID_MSGetShapeText = shp.AlternativeText
+    Err.Clear
 SafeExit:
 End Function
 

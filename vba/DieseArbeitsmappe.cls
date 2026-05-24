@@ -126,6 +126,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     ' Dropdown/Lohn nur bei Bedarf (nach KV-Tabelle-Aenderung), pro Monat einmal.
     If PID_IsWorkerMonthSheet(Sh) Then
         PID_EnsureWorkerSheetRuntimeReady
+        PID_EnsureMonthSheetCopyDataButton Sh
         RefreshKVDropdownsIfDirtyForSheet Sh
         RefreshKVLohnIfDirty Sh
         GoTo SafeExit

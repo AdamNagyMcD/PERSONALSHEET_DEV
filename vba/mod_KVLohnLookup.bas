@@ -129,7 +129,7 @@ Public Sub RefreshKVLohnForSheet(ByVal wsMonth As Worksheet, _
         For Each c In rowsToCheck.Cells
             rowKey = CStr(c.Row)
             
-            If Not CollectionHasKey_KVLohn(checkedRows, rowKey) Then
+            If Not PID_CollectionHasKey(checkedRows, rowKey) Then
                 checkedRows.Add rowKey, rowKey
                 RefreshKVLohnForRow wsMonth, c.Row, monthNumber, preserveGOnMiss
             End If
@@ -270,11 +270,6 @@ Private Function PID_TryGetDouble(ByVal valueToParse As Variant, ByRef resultVal
 ParseFail:
     PID_TryGetDouble = False
 End Function
-
-
-Public Sub RefreshAllMonthKVLohn()
-    PID_RestoreMonatslohnFormulasSilent
-End Sub
 
 
 Public Function GetKVLohnByPeriod(ByVal monthNumber As Long, _
@@ -804,19 +799,9 @@ Public Sub MarkAllKVLohnDirty()
 End Sub
 
 
-Public Sub MarkKVLohnDirty()
-    MarkAllKVLohnDirty
-End Sub
-
-
 Public Sub ClearAllKVLohnDirty()
     gKVLohnAllMonthsDirty = False
     Set mKVLohnRefreshedSheets = New Collection
-End Sub
-
-
-Public Sub ClearKVLohnDirty()
-    ClearAllKVLohnDirty
 End Sub
 
 
@@ -854,7 +839,7 @@ Public Sub PID_RecalculateMonatslohnForChangedRows(ByVal wsMonth As Worksheet, B
         rowKey = CStr(c.Row)
         
         If c.Row >= PID_FIRST_ROW And c.Row <= PID_LAST_ROW Then
-            If Not CollectionHasKey_KVLohn(checkedRows, rowKey) Then
+            If Not PID_CollectionHasKey(checkedRows, rowKey) Then
                 checkedRows.Add rowKey, rowKey
                 PID_ForceMonatslohnRecalcForRow wsMonth, c.Row
             End If
@@ -954,7 +939,7 @@ Public Sub RefreshKVLohnIfDirty(ByVal wsMonth As Worksheet)
     
     If gKVLohnAllMonthsDirty Then
         If Not mKVLohnRefreshedSheets Is Nothing Then
-            If CollectionHasKey_KVLohn(mKVLohnRefreshedSheets, wsMonth.Name) Then Exit Sub
+            If PID_CollectionHasKey(mKVLohnRefreshedSheets, wsMonth.Name) Then Exit Sub
         End If
         
         PID_RecalculateMonatslohnForUsedRows wsMonth
@@ -976,16 +961,11 @@ Private Function PID_AllMonthSheetsKVLohnRefreshed() As Boolean
     monthNames = PID_MonthNames()
     
     For i = LBound(monthNames) To UBound(monthNames)
-        If Not CollectionHasKey_KVLohn(mKVLohnRefreshedSheets, CStr(monthNames(i))) Then
+        If Not PID_CollectionHasKey(mKVLohnRefreshedSheets, CStr(monthNames(i))) Then
             Exit Function
         End If
     Next i
     
     PID_AllMonthSheetsKVLohnRefreshed = True
-End Function
-
-
-Public Function CollectionHasKey_KVLohn(ByVal col As Collection, ByVal key As String) As Boolean
-    CollectionHasKey_KVLohn = PID_CollectionHasKey(col, key)
 End Function
 
