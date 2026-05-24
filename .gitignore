@@ -3,9 +3,10 @@
 *.tmp
 *.bak
 Thumbs.db
-_xlsm_read/
-_xlsm_tmp/
-_xlsm_tmp.zip
-_xlsm_user_ref/
-_xlsm_user_ref.zip
+_xlsm_*/
+_xlsm_*.zip
 _einstellung_probe/
+
+# Lokale Test-/Backup-Kopien (nicht committen)
+Kopie von Personalsheet.xlsm
+Personalsheet_import_test*.xlsm
