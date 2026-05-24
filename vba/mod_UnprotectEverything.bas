@@ -7,6 +7,12 @@ Public Sub UnprotectEverything()
     
     On Error GoTo CleanFail
     
+    If Not PID_ConfirmAdminAction( _
+        "Alle Blatt-Schutz und Workbook-Schutz werden aufgehoben. Alle versteckten Blaetter werden sichtbar.", _
+        "Schutz aufheben") Then
+        Exit Sub
+    End If
+    
     Application.ScreenUpdating = False
     Application.EnableEvents = False
     Application.DisplayAlerts = False

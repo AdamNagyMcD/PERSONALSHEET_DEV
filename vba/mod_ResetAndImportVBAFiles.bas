@@ -71,6 +71,12 @@ Public Sub ResetAndImportVBAFiles()
         Exit Sub
     End If
 
+    If Not PID_ConfirmAdminAction( _
+        "Alle Standard-VBA-Module werden geloescht und aus dem Ordner ""vba"" neu importiert.", _
+        "VBA Import") Then
+        Exit Sub
+    End If
+
     On Error GoTo VBProjectBlocked
     Set vbProj = ThisWorkbook.VBProject
     On Error GoTo ImportError

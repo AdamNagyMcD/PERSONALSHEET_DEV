@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Changed
+- mod_PIDAdmin.bas: Admin-/Release-Makros (FullSystemRefresh, QuickSystemCheck) und PID_ConfirmAdminAction; Bestaetigung vor ResetAndImportVBAFiles und UnprotectEverything.
 - mod_PIDUtils.bas: gemeinsame Helper (PID_CollectionHasKey, PID_MonthNames, PID_GetMonthIndexFromName/SheetName); Duplikate in CopyData, DataClear, SumMergedCells, Durchrechnung, Modul1, DieseArbeitsmappe, KV-Module entfernt.
 - mod_CopyData.bas / mod_DataClear.bas: CopyData/DataClear nur auf gueltigem Monatsblatt; Bestaetigung mit Blattname und Zielmonaten vor CopyData.
 - mod_SmokeCheck.bas: TEST 9-16 (Jahr, A1-Index, UEBERSICHT, Durchrechnung E30/I30, LOHNTABELLE, KV_CODE_LIST, Monatslohn, VBProject); TEST 8 Mac-Pfad fix.

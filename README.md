@@ -52,12 +52,15 @@ Reszletek: Kurzanleitung HTML.
 
 ## Admin / fejlesztoi makrok (🔴 — ne ettermi usernek)
 
+Modul: `mod_PIDAdmin.bas` — `PID_ShowAdminMacroInfo` listazza.
+
 | Makro | Veszely |
 |-------|---------|
-| `ResetAndImportVBAFiles` | Minden VBA modul ujraimport |
+| `ResetAndImportVBAFiles` | Minden VBA modul ujraimport (Bestaetigung) |
+| `FullSystemRefresh` | Teljes workbook refresh |
 | `RebuildLOHNTABELLE` | KV tabla ujraepites |
 | `BuildLohntabelleTest` | LOHNTABELLE teljes torles |
-| `UnprotectEverything` | Minden lap feloldasa |
+| `UnprotectEverything` | Minden lap feloldasa (Bestaetigung) |
 
 ## Git
 
