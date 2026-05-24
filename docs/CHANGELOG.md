@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Changed
+- mod_SmokeCheck.bas: TEST 9-16 (Jahr, A1-Index, UEBERSICHT, Durchrechnung E30/I30, LOHNTABELLE, KV_CODE_LIST, Monatslohn, VBProject); TEST 8 Mac-Pfad fix.
 - Repo: OOXML probe mappak (_xlsm_*, _einstellung_probe) kivetele git trackingbol; .gitignore bovitve.
 - README.md + docs/RELEASE.md hozzaadva (workflow, release checklist, admin makro figyelmeztetes).
 

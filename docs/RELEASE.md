@@ -17,7 +17,8 @@ Hasznalat minden etterembe kikerulo verzio elott.
 5. **Alt+F8** → `FullSystemRefresh`
 6. **Alt+F8** → `PID_RunSystemSmokeCheck`
    - TEST 7 = **PASS** kotelezo
-   - TEST 1–6, 8 = REVIEW OK, de manualis teszt kell
+   - TEST 9-16 = strukturális **PASS** ahol automatikus (Jahr, A1, UEBERSICHT, KV, Monatslohn)
+   - TEST 1–6, 8, 16 = REVIEW OK, de manualis teszt kell
 
 ## Manualis kritikus tesztek
 

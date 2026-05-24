@@ -71,6 +71,54 @@ Public Sub PID_RunSystemSmokeCheck()
     PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
     nextRow = nextRow + 1
     
+    statusText = PID_EvaluateTest9(details)
+    manualSteps = PID_GetManualStepsForTest(9, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 9 - Workbook Year (EINSTELLUNG C35)", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
+    statusText = PID_EvaluateTest10(details)
+    manualSteps = PID_GetManualStepsForTest(10, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 10 - Month Sheet A1 Index", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
+    statusText = PID_EvaluateTest11(details)
+    manualSteps = PID_GetManualStepsForTest(11, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 11 - UEBERSICHT FINANZIELL Block", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
+    statusText = PID_EvaluateTest12(details)
+    manualSteps = PID_GetManualStepsForTest(12, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 12 - Durchrechnung Inputs E30/I30", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
+    statusText = PID_EvaluateTest13(details)
+    manualSteps = PID_GetManualStepsForTest(13, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 13 - LOHNTABELLE KV Data", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
+    statusText = PID_EvaluateTest14(details)
+    manualSteps = PID_GetManualStepsForTest(14, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 14 - KV_CODE_LIST Named Range", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
+    statusText = PID_EvaluateTest15(details)
+    manualSteps = PID_GetManualStepsForTest(15, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 15 - Monatslohn Formula", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
+    statusText = PID_EvaluateTest16(details)
+    manualSteps = PID_GetManualStepsForTest(16, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 16 - VBA Project Access", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
     PID_FinalizeSmokeSheet ws, nextRow - 1
     
     MsgBox "System Smoke Check abgeschlossen." & vbCrLf & vbCrLf & _
@@ -259,6 +307,311 @@ Private Function PID_EvaluateTest8(ByRef details As String) As String
 End Function
 
 
+Private Function PID_EvaluateTest9(ByRef details As String) As String
+    Dim wsConfig As Worksheet
+    Dim yearCell As Variant
+    Dim yearFromFn As Long
+    
+    On Error GoTo Fail
+    
+    If Not PID_WorksheetExists(PID_EINSTELLUNG_SHEET) Then
+        details = "Blatt " & PID_EINSTELLUNG_SHEET & " fehlt."
+        PID_EvaluateTest9 = "FAIL"
+        Exit Function
+    End If
+    
+    Set wsConfig = ThisWorkbook.Worksheets(PID_EINSTELLUNG_SHEET)
+    yearCell = wsConfig.Range(PID_WORKBOOK_YEAR_CELL).Value2
+    
+    If Not IsNumeric(yearCell) Then
+        details = PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL & " ist nicht numerisch."
+        PID_EvaluateTest9 = "FAIL"
+        Exit Function
+    End If
+    
+    If CLng(yearCell) < 2000 Or CLng(yearCell) > 2100 Then
+        details = PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL & " ausserhalb 2000-2100 (" & yearCell & ")."
+        PID_EvaluateTest9 = "FAIL"
+        Exit Function
+    End If
+    
+    yearFromFn = PID_GetWorkbookYear()
+    If yearFromFn <> CLng(yearCell) Then
+        details = "PID_GetWorkbookYear=" & yearFromFn & ", Zelle=" & yearCell & " — Abweichung."
+        PID_EvaluateTest9 = "FAIL"
+        Exit Function
+    End If
+    
+    details = "Arbeitsjahr " & yearCell & " in " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL & " konsistent."
+    PID_EvaluateTest9 = "PASS"
+    Exit Function
+
+Fail:
+    details = "Fehler beim Lesen von " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL & "."
+    PID_EvaluateTest9 = "FAIL"
+End Function
+
+
+Private Function PID_EvaluateTest10(ByRef details As String) As String
+    Dim monthNames As Variant
+    Dim i As Long
+    Dim ws As Worksheet
+    Dim monthIndex As Long
+    Dim a1Value As Variant
+    Dim badSheets As String
+    
+    monthNames = PID_MonthNames()
+    badSheets = ""
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        monthIndex = PID_GetMonthIndexFromSheetName(CStr(monthNames(i)))
+        If monthIndex < 1 Then
+            badSheets = badSheets & CStr(monthNames(i)) & " (unbekannter Name); "
+            GoTo NextMonth
+        End If
+        
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo 0
+        
+        If ws Is Nothing Then
+            badSheets = badSheets & CStr(monthNames(i)) & " (fehlt); "
+            GoTo NextMonth
+        End If
+        
+        a1Value = ws.Range("A1").Value2
+        If Not IsNumeric(a1Value) Then
+            badSheets = badSheets & ws.Name & " (A1 nicht numerisch); "
+        ElseIf CLng(a1Value) <> monthIndex Then
+            badSheets = badSheets & ws.Name & " (A1=" & a1Value & ", erwartet " & monthIndex & "); "
+        End If
+NextMonth:
+    Next i
+    
+    If Len(badSheets) > 0 Then
+        details = "Monatsindex A1 fehlerhaft: " & badSheets
+        PID_EvaluateTest10 = "FAIL"
+        Exit Function
+    End If
+    
+    details = "Alle 12 Monatsblaetter: A1 = 1..12 passend zum Blattnamen."
+    PID_EvaluateTest10 = "PASS"
+End Function
+
+
+Private Function PID_EvaluateTest11(ByRef details As String) As String
+    Dim ws As Worksheet
+    Dim headerText As String
+    
+    On Error GoTo Fail
+    
+    If Not PID_WorksheetExists("UBERSICHT") Then
+        details = "Blatt UEBERSICHT fehlt."
+        PID_EvaluateTest11 = "FAIL"
+        Exit Function
+    End If
+    
+    Set ws = ThisWorkbook.Worksheets("UBERSICHT")
+    headerText = Trim$(CStr(ws.Cells(4, 3).Text))
+    
+    If InStr(1, headerText, "SALES", vbTextCompare) > 0 Then
+        details = "FINANZIELL-Block erkannt (Header SALES in C4)."
+        PID_EvaluateTest11 = "PASS"
+        Exit Function
+    End If
+    
+    If Trim$(CStr(ws.Cells(6, 3).Value)) = "BUDGET" Then
+        details = "FINANZIELL-Block erkannt (BUDGET in C6)."
+        PID_EvaluateTest11 = "PASS"
+        Exit Function
+    End If
+    
+    details = "Kein FINANZIELL-Block auf UEBERSICHT (C4/C6 Pruefung)."
+    PID_EvaluateTest11 = "FAIL"
+    Exit Function
+
+Fail:
+    details = "Fehler beim Pruefen des FINANZIELL-Blocks auf UEBERSICHT."
+    PID_EvaluateTest11 = "FAIL"
+End Function
+
+
+Private Function PID_EvaluateTest12(ByRef details As String) As String
+    Dim ws As Worksheet
+    Dim titleText As String
+    
+    On Error GoTo Fail
+    
+    If Not PID_WorksheetExists("UBERSICHT") Then
+        details = "Blatt UEBERSICHT fehlt."
+        PID_EvaluateTest12 = "FAIL"
+        Exit Function
+    End If
+    
+    Set ws = ThisWorkbook.Worksheets("UBERSICHT")
+    titleText = CStr(ws.Cells(28, 2).Text)
+    
+    If InStr(1, titleText, "DURCHRECHNUNGSSTUNDEN", vbTextCompare) = 0 Then
+        If Trim$(CStr(ws.Cells(31, 2).Value)) <> "Zeitraum" Then
+            details = "Durchrechnungsblock auf UEBERSICHT nicht gefunden (Zeile 28/31)."
+            PID_EvaluateTest12 = "FAIL"
+            Exit Function
+        End If
+    End If
+    
+    If ws.Range("E30").Locked Then
+        details = "E30 (Jaenner Verfuegbar Plan) ist gesperrt — soll editierbar sein."
+        PID_EvaluateTest12 = "FAIL"
+        Exit Function
+    End If
+    
+    If ws.Range("I30").Locked Then
+        details = "I30 (Jaenner Muster Plan) ist gesperrt — soll editierbar sein."
+        PID_EvaluateTest12 = "FAIL"
+        Exit Function
+    End If
+    
+    details = "Durchrechnungsblock vorhanden; E30 und I30 sind entsperrt (editierbar)."
+    PID_EvaluateTest12 = "PASS"
+    Exit Function
+
+Fail:
+    details = "Fehler beim Pruefen des Durchrechnungsblocks."
+    PID_EvaluateTest12 = "FAIL"
+End Function
+
+
+Private Function PID_EvaluateTest13(ByRef details As String) As String
+    Dim wsKV As Worksheet
+    Dim lastRow As Long
+    
+    On Error GoTo Fail
+    
+    If Not PID_WorksheetExists(PID_LOHNTABELLE_SHEET) Then
+        details = "Blatt " & PID_LOHNTABELLE_SHEET & " fehlt."
+        PID_EvaluateTest13 = "FAIL"
+        Exit Function
+    End If
+    
+    Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "D").End(xlUp).Row
+    
+    If lastRow < 4 Then
+        details = "LOHNTABELLE: keine KV-Daten in Spalte D (lastRow=" & lastRow & ")."
+        PID_EvaluateTest13 = "FAIL"
+        Exit Function
+    End If
+    
+    If Len(Trim$(CStr(wsKV.Cells(4, 4).Value2))) = 0 And lastRow = 4 Then
+        details = "LOHNTABELLE: Spalte D ab Zeile 4 leer."
+        PID_EvaluateTest13 = "FAIL"
+        Exit Function
+    End If
+    
+    details = "LOHNTABELLE enthaelt KV-Daten (Spalte D bis Zeile " & lastRow & ")."
+    PID_EvaluateTest13 = "PASS"
+    Exit Function
+
+Fail:
+    details = "Fehler beim Pruefen der LOHNTABELLE."
+    PID_EvaluateTest13 = "FAIL"
+End Function
+
+
+Private Function PID_EvaluateTest14(ByRef details As String) As String
+    Dim listRange As Range
+    
+    On Error GoTo Fail
+    
+    Set listRange = Nothing
+    On Error Resume Next
+    Set listRange = ThisWorkbook.Names(PID_KV_CODE_LIST_NAME).RefersToRange
+    On Error GoTo Fail
+    
+    If listRange Is Nothing Then
+        details = "Named Range '" & PID_KV_CODE_LIST_NAME & "' fehlt oder ungueltig."
+        PID_EvaluateTest14 = "FAIL"
+        Exit Function
+    End If
+    
+    If listRange.Cells.Count < 1 Then
+        details = "Named Range '" & PID_KV_CODE_LIST_NAME & "' ist leer."
+        PID_EvaluateTest14 = "FAIL"
+        Exit Function
+    End If
+    
+    details = "Named Range '" & PID_KV_CODE_LIST_NAME & "' vorhanden (" & listRange.Address(False, False) & ")."
+    PID_EvaluateTest14 = "PASS"
+    Exit Function
+
+Fail:
+    details = "Named Range '" & PID_KV_CODE_LIST_NAME & "' nicht lesbar. FullSystemRefresh ausfuehren."
+    PID_EvaluateTest14 = "FAIL"
+End Function
+
+
+Private Function PID_EvaluateTest15(ByRef details As String) As String
+    Dim ws As Worksheet
+    Dim monthNames As Variant
+    Dim i As Long
+    Dim missingSheets As String
+    Dim checkedCount As Long
+    
+    monthNames = PID_MonthNames()
+    missingSheets = ""
+    checkedCount = 0
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo 0
+        
+        If Not ws Is Nothing Then
+            checkedCount = checkedCount + 1
+            If Not PID_MonthSheetHasMonatslohnFormula(ws) Then
+                If Len(missingSheets) > 0 Then missingSheets = missingSheets & ", "
+                missingSheets = missingSheets & ws.Name
+            End If
+        End If
+    Next i
+    
+    If checkedCount = 0 Then
+        details = "Kein Monatsblatt zum Pruefen der Monatslohn-Formel gefunden."
+        PID_EvaluateTest15 = "FAIL"
+        Exit Function
+    End If
+    
+    If Len(missingSheets) > 0 Then
+        details = "Monatslohn-Formel (PID_KVLohnLookup) fehlt auf: " & missingSheets & ". FullSystemRefresh empfohlen."
+        PID_EvaluateTest15 = "FAIL"
+        Exit Function
+    End If
+    
+    details = "Monatslohn-Formel auf allen " & checkedCount & " Monatsblaettern in Spalte G vorhanden."
+    PID_EvaluateTest15 = "PASS"
+End Function
+
+
+Private Function PID_EvaluateTest16(ByRef details As String) As String
+    Dim vbProj As Object
+    
+    On Error GoTo NoAccess
+    
+    Set vbProj = ThisWorkbook.VBProject
+    If vbProj Is Nothing Then GoTo NoAccess
+    
+    details = "VBProject zugaenglich (Trust access to VBA project object model aktiv)."
+    PID_EvaluateTest16 = "PASS"
+    Set vbProj = Nothing
+    Exit Function
+
+NoAccess:
+    details = "VBProject nicht zugaenglich. Fuer Dev-Import: Excel-Optionen -> Vertrauensstellung -> VBA-Projektobjektmodell."
+    PID_EvaluateTest16 = "REVIEW"
+    Set vbProj = Nothing
+End Function
+
+
 Private Function PID_BasicMonthStructureOk() As Boolean
     If PID_CountMonthSheets() <> 12 Then Exit Function
     If Not PID_AllMonthSheetsHaveRange("A1") Then Exit Function
@@ -334,6 +687,7 @@ End Function
 
 Private Function PID_HasWindowsOnlyApiDeclarations() As Boolean
     Dim folderPath As String
+    Dim vbaFolder As String
     Dim fileName As String
     Dim fullPath As String
     Dim lineText As String
@@ -347,13 +701,14 @@ Private Function PID_HasWindowsOnlyApiDeclarations() As Boolean
     If folderPath = "" Then Exit Function
     
     filePatterns = Array("*.bas", "*.cls")
+    vbaFolder = folderPath & Application.PathSeparator & "vba" & Application.PathSeparator
     
     For patternIndex = LBound(filePatterns) To UBound(filePatterns)
-        fileName = Dir(folderPath & "\vba\" & CStr(filePatterns(patternIndex)))
+        fileName = Dir(vbaFolder & CStr(filePatterns(patternIndex)))
         
         Do While fileName <> ""
             If Not PID_IsSmokeCheckExportFile(fileName) Then
-                fullPath = folderPath & "\vba\" & fileName
+                fullPath = vbaFolder & fileName
                 
                 fileNumber = FreeFile
                 Open fullPath For Input As #fileNumber
@@ -499,6 +854,8 @@ Private Function PID_GetManualStepsForTest(ByVal testNumber As Long, ByVal statu
             PID_GetManualStepsForTest = "1) Workbook in Excel 2016 oeffnen. 2) PID_QuickSystemCheck und PID_FullSystemRefresh ausfuehren. 3) Pruefen: keine Compile- oder Formel-Fehler."
         Case 8
             PID_GetManualStepsForTest = "1) Workbook in Excel fuer Mac oeffnen. 2) PID_QuickSystemCheck, CopyData und PID_RunSystemSmokeCheck ausfuehren. 3) Pruefen: keine plattformspezifischen Fehler."
+        Case 16
+            PID_GetManualStepsForTest = "1) Excel-Optionen -> Vertrauensstellungscenter -> Makroeinstellungen. 2) 'Zugriff auf das VBA-Projektobjektmodell' aktivieren. 3) Nur fuer Dev/Import noetig."
         Case Else
             PID_GetManualStepsForTest = "-"
     End Select
