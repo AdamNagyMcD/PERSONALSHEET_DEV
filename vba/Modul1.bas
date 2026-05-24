@@ -315,12 +315,23 @@ End Sub
 
 
 Public Sub PID_RestoreAktuelleStundenFormulas()
+    Dim updatedCount As Long
+    
+    updatedCount = PID_RestoreAktuelleStundenFormulasSilent
+    
+    MsgBox "Aktuelle-Stunden-Formeln wurden wiederhergestellt." & vbCrLf & vbCrLf & _
+           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           "Bereich: H" & PID_FIRST_ROW & ":H" & PID_LAST_ROW & vbCrLf & _
+           "Jahr aus: " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL, _
+           vbInformation, "Aktuelle Stunden"
+End Sub
+
+
+Public Function PID_RestoreAktuelleStundenFormulasSilent() As Long
     Dim monthNames As Variant
     Dim ws As Worksheet
     Dim i As Long
-    Dim updatedCount As Long
     Dim formulaR1C1 As String
-    
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
     
@@ -334,7 +345,7 @@ Public Sub PID_RestoreAktuelleStundenFormulas()
     
     formulaR1C1 = PID_GetAktuelleStundenFormulaR1C1()
     monthNames = PID_MonthNames()
-    updatedCount = 0
+    PID_RestoreAktuelleStundenFormulasSilent = 0
     
     For i = LBound(monthNames) To UBound(monthNames)
         Set ws = Nothing
@@ -344,29 +355,51 @@ Public Sub PID_RestoreAktuelleStundenFormulas()
         
         If Not ws Is Nothing Then
             If PID_RestoreAktuelleStundenFormulasOnSheet(ws, formulaR1C1) Then
-                updatedCount = updatedCount + 1
+                PID_RestoreAktuelleStundenFormulasSilent = PID_RestoreAktuelleStundenFormulasSilent + 1
             End If
         End If
     Next i
     
-    MsgBox "Aktuelle-Stunden-Formeln wurden wiederhergestellt." & vbCrLf & vbCrLf & _
-           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
-           "Bereich: H" & PID_FIRST_ROW & ":H" & PID_LAST_ROW & vbCrLf & _
-           "Jahr aus: " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL, _
-           vbInformation, "Aktuelle Stunden"
+    GoTo CleanExit
+
+CleanFail:
+    PID_RestoreAktuelleStundenFormulasSilent = 0
 
 CleanExit:
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
-    Exit Sub
+End Function
 
-CleanFail:
-    Application.ScreenUpdating = oldScreenUpdating
-    Application.EnableEvents = oldEnableEvents
+
+Public Sub PID_RecalculateAktuelleStundenForChangedRows(ByVal wsMonth As Worksheet, ByVal changedRange As Range)
+    Dim rowsToCheck As Range
+    Dim c As Range
+    Dim checkedRows As Collection
+    Dim rowKey As String
     
-    MsgBox "Fehler bei PID_RestoreAktuelleStundenFormulas:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
-           vbExclamation, "Aktuelle Stunden"
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If changedRange Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    
+    Set rowsToCheck = Intersect(changedRange, wsMonth.Range("D3:F82,I3:I82"))
+    If rowsToCheck Is Nothing Then Exit Sub
+    
+    Set checkedRows = New Collection
+    
+    For Each c In rowsToCheck.Cells
+        If c.Row >= PID_FIRST_ROW And c.Row <= PID_LAST_ROW Then
+            rowKey = CStr(c.Row)
+            
+            If Not PID_CollectionHasKey(checkedRows, rowKey) Then
+                checkedRows.Add rowKey, rowKey
+                wsMonth.Cells(c.Row, "H").Calculate
+            End If
+        End If
+    Next c
+
+SafeExit:
 End Sub
 
 
@@ -469,6 +502,11 @@ Public Sub RestoreKVStundenDropdownValidation()
     MsgBox "Stunden-Dropdown (Spalte F) wurde wiederhergestellt." & vbCrLf & vbCrLf & _
            "Bereich: F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW & " auf allen Monatsblaettern.", _
            vbInformation, "Spalte F"
+End Sub
+
+
+Public Sub RestoreMonthSheetDropdownsAfterFormat()
+    PID_RestoreMonthSheetDropdownsAfterFormat
 End Sub
 
 

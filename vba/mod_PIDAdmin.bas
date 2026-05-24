@@ -61,6 +61,7 @@ Public Sub PID_FullSystemRefresh()
     
     RefreshAllMonthKVStundenDropdowns
     PID_RestoreMonatslohnFormulasSilent
+    PID_RestoreAktuelleStundenFormulasSilent
     PID_RestoreLetztesGehaltFormulasSilent
     PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty

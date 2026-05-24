@@ -209,7 +209,8 @@ Public Sub PID_RepairWorkbookAfterVBAImport()
     On Error Resume Next
     Application.Run "'" & wbName & "'!PID_RestoreMonatslohnFormulasSilent"
     Application.Run "'" & wbName & "'!PID_RestoreLetztesGehaltFormulasSilent"
-    Application.Run "'" & wbName & "'!PID_RestoreKVCodeDropdownValidationSilent"
+    Application.Run "'" & wbName & "'!PID_RestoreMonthSheetDropdownsAfterFormatSilent"
+    Application.Run "'" & wbName & "'!PID_RestoreAktuelleStundenFormulasSilent"
     Application.CalculateFull
     Err.Clear
     On Error GoTo CleanFail

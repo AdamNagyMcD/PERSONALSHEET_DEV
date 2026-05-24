@@ -3,6 +3,7 @@ Option Explicit
 
 Public Const PID_KV_CODE_LIST_NAME As String = "PID_KV_CODE_LIST"
 Private Const PID_KV_CODE_HELPER_COL As Long = 961
+Private Const PID_KV_TEMPLATE_KV_CODE As String = "BG2"
 
 Public gKVDropdownsDirty As Boolean
 Private mKVDropdownRefreshedSheets As Collection
@@ -194,9 +195,11 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
         ClearHelperColumnsForSheet wsHelper, wsMonth.Name
         
         For r = PID_FIRST_ROW To PID_LAST_ROW
-            If Len(Trim$(CStr(wsMonth.Cells(r, "E").Value))) > 0 Then
-                RefreshKVStundenDropdownForRow wsMonth, wsHelper, r, monthNumber
-            End If
+            On Error Resume Next
+            wsMonth.Cells(r, "F").Validation.Delete
+            Err.Clear
+            On Error GoTo CleanFail
+            RefreshKVStundenDropdownForRow wsMonth, wsHelper, r, monthNumber
         Next r
         
     Else
@@ -253,11 +256,17 @@ CleanFail:
 End Sub
 
 
+Public Function PID_GetTemplateKVCodeForStundenDropdown() As String
+    PID_GetTemplateKVCodeForStundenDropdown = PID_KV_TEMPLATE_KV_CODE
+End Function
+
+
 Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
                                           ByVal wsHelper As Worksheet, _
                                           ByVal rowNumber As Long, _
                                           ByVal monthNumber As Long)
     Dim kvCode As String
+    Dim useTemplateKV As Boolean
     Dim values As Collection
     Dim helperCol As Long
     Dim helperLastRow As Long
@@ -272,23 +281,17 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
     kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
+    useTemplateKV = (kvCode = "")
+    If useTemplateKV Then kvCode = PID_GetTemplateKVCodeForStundenDropdown()
     
     wsMonth.Cells(rowNumber, "F").Locked = False
-    
-    If kvCode = "" Then
-        On Error Resume Next
-        wsMonth.Cells(rowNumber, "F").Validation.Delete
-        wsMonth.Cells(rowNumber, "F").ClearContents
-        Err.Clear
-        Exit Sub
-    End If
     
     Set values = GetKVMonatsstundenValues(monthNumber, kvCode)
     
     If values.count = 0 Then
         On Error Resume Next
         wsMonth.Cells(rowNumber, "F").Validation.Delete
-        wsMonth.Cells(rowNumber, "F").ClearContents
+        If Not useTemplateKV Then wsMonth.Cells(rowNumber, "F").ClearContents
         Err.Clear
         Exit Sub
     End If
@@ -312,13 +315,31 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     On Error Resume Next
     wsMonth.Cells(rowNumber, "F").Validation.Delete
     Err.Clear
+    
+    On Error GoTo ApplyFailed
+    With wsMonth.Cells(rowNumber, "F").Validation
+        .Add Type:=xlValidateList, _
+             AlertStyle:=xlValidAlertStop, _
+             Operator:=xlBetween, _
+             Formula1:="=" & listName
+        .IgnoreBlank = True
+        .InCellDropdown = True
+        .ShowInput = True
+        .ShowError = True
+    End With
+    Exit Sub
+
+ApplyFailed:
+    On Error Resume Next
+    wsMonth.Cells(rowNumber, "F").Validation.Delete
+    Err.Clear
     On Error GoTo SafeExit
     
     With wsMonth.Cells(rowNumber, "F").Validation
         .Add Type:=xlValidateList, _
              AlertStyle:=xlValidAlertStop, _
              Operator:=xlBetween, _
-             Formula1:="=" & listName
+             Formula1:="=" & listRange.Address(External:=True)
         .IgnoreBlank = True
         .InCellDropdown = True
         .ShowInput = True
@@ -1034,6 +1055,7 @@ Public Function PID_RestoreKVCodeDropdownOnSheet(ByVal ws As Worksheet) As Boole
     End If
     
     PID_ApplyKVCodeDropdownValidation ws
+    ws.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
     PID_RestoreKVCodeDropdownOnSheet = True
 
 SafeExit:
@@ -1045,4 +1067,57 @@ SafeExit:
                    AllowSorting:=True
     End If
 End Function
+
+
+Public Sub PID_RestoreMonthSheetDropdownsAfterFormat()
+    PID_RestoreMonthSheetDropdownsAfterFormatSilent
+    
+    MsgBox "Monatsblatt-Dropdowns (E/F) wiederhergestellt." & vbCrLf & vbCrLf & _
+           "E = KV-Code, F = Stunden (auch leere Zeilen)." & vbCrLf & _
+           "Nach E-Aenderung aktualisiert sich F automatisch.", _
+           vbInformation, "Dropdowns"
+End Sub
+
+
+Public Sub PID_RestoreMonthSheetDropdownsAfterFormatSilent()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    monthNames = PID_MonthNames()
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            If PID_IsWorkerMonthSheet(ws) Then
+                PID_RestoreKVCodeDropdownOnSheet ws
+                RefreshKVStundenDropdownForSheet ws
+            End If
+        End If
+    Next i
+    
+    MarkKVDropdownsClean
+    GoTo CleanExit
+
+CleanFail:
+    Err.Raise Err.Number, "PID_RestoreMonthSheetDropdownsAfterFormatSilent", Err.Description
+
+CleanExit:
+    PID_RestoreAktuelleStundenFormulasSilent
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+End Sub
 

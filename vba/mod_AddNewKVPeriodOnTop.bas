@@ -284,6 +284,11 @@ Private Function PID_LOHNTABELLEButtonsNeedRefresh(ByVal wsKV As Worksheet) As B
         Exit Function
     End If
     
+    If wsKV.Shapes(PID_ADD_PERIOD_BUTTON_NAME).Fill.ForeColor.RGB <> PID_StyleColorNavy() Then
+        PID_LOHNTABELLEButtonsNeedRefresh = True
+        Exit Function
+    End If
+    
     If PID_CountLOHNTABELLEToolbarShapes(wsKV) <> 4 Then
         PID_LOHNTABELLEButtonsNeedRefresh = True
         Exit Function
@@ -718,22 +723,22 @@ Private Sub PID_EnsureLOHNTABELLEButtons(Optional ByVal forceRecreate As Boolean
                 btn.Name = PID_ADD_PERIOD_BUTTON_NAME
                 btn.TextFrame.Characters.Text = "1) Neue Periode"
                 btn.OnAction = "AddNewKVPeriodOnTop"
-                PID_ApplyLOHNTABELLEButtonStyle btn, RGB(0, 120, 212), RGB(0, 90, 158)
+                PID_StyleApplyToolbarButton btn, PID_StyleColorNavy(), PID_StyleColorBtnPrimaryLine(), RGB(255, 255, 255)
             Case 1
                 btn.Name = PID_ADD_CUSTOM_HOURS_BUTTON_NAME
                 btn.TextFrame.Characters.Text = "2) Eigene Stunden"
                 btn.OnAction = "AddCustomKVMonatsstunden"
-                PID_ApplyLOHNTABELLEButtonStyle btn, RGB(16, 124, 16), RGB(10, 92, 10)
+                PID_StyleApplyToolbarButton btn, PID_StyleColorHeaderBg(), PID_StyleColorNavy(), PID_StyleColorNavy()
             Case 2
                 btn.Name = PID_DELETE_PERIODS_BUTTON_NAME
                 btn.TextFrame.Characters.Text = PID_KVBtnDeletePeriod()
                 btn.OnAction = "DeleteSelectedKVPeriods"
-                PID_ApplyLOHNTABELLEButtonStyle btn, RGB(209, 52, 56), RGB(164, 38, 44)
+                PID_StyleApplyToolbarButton btn, PID_StyleColorAccent(), PID_StyleColorNavy(), PID_StyleColorNavy()
             Case 3
                 btn.Name = PID_HELP_BUTTON_NAME
                 btn.TextFrame.Characters.Text = "Hilfe"
                 btn.OnAction = "ShowLOHNTABELLEButtonHelp"
-                PID_ApplyLOHNTABELLEButtonStyle btn, RGB(96, 94, 92), RGB(72, 70, 68)
+                PID_StyleApplyToolbarButton btn, PID_StyleColorZebra(), PID_StyleColorNavy(), PID_StyleColorNavy()
         End Select
     Next i
     
@@ -742,64 +747,6 @@ SafeExit:
     If wasProtected Then
         wsKV.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
     End If
-End Sub
-
-
-Private Sub PID_ApplyLOHNTABELLEButtonStyle(ByVal btn As Shape, _
-                                                 ByVal fillColor As Long, _
-                                                 ByVal lineColor As Long)
-    On Error GoTo SafeExit
-    
-    If btn Is Nothing Then Exit Sub
-    
-    btn.Fill.ForeColor.RGB = fillColor
-    btn.Fill.Visible = msoTrue
-    btn.Line.ForeColor.RGB = lineColor
-    btn.Line.Weight = 0.75
-    btn.Line.Visible = msoTrue
-    
-    On Error Resume Next
-    btn.Adjustments(1) = 0.18
-    btn.Shadow.Type = msoShadow21
-    btn.Shadow.Visible = msoTrue
-    btn.Shadow.Transparency = 0.55
-    btn.Shadow.Blur = 3
-    btn.TextFrame.MarginLeft = 4
-    btn.TextFrame.MarginRight = 4
-    btn.TextFrame.MarginTop = 1
-    btn.TextFrame.MarginBottom = 1
-    On Error GoTo SafeExit
-    
-    btn.TextFrame.Characters.Font.Name = "Calibri"
-    btn.TextFrame.Characters.Font.Color = RGB(255, 255, 255)
-    btn.TextFrame.Characters.Font.Bold = True
-    btn.TextFrame.Characters.Font.Size = 8
-    
-    PID_ApplyShapeMacSafeOptions btn
-    
-SafeExit:
-End Sub
-
-
-Private Sub PID_ApplyShapeMacSafeOptions(ByVal btn As Shape)
-    Dim shapeRef As Object
-    
-    On Error Resume Next
-    
-    If btn Is Nothing Then Exit Sub
-    
-    btn.TextFrame.WordWrap = msoTrue
-    btn.TextFrame.VerticalAlignment = xlVAlignCenter
-    btn.TextFrame.HorizontalAlignment = xlHAlignCenter
-    
-    Set shapeRef = btn
-    
-    shapeRef.TextFrame.WordWrap = msoTrue
-    shapeRef.TextFrame.VerticalAnchor = msoAnchorMiddle
-    shapeRef.TextFrame.HorizontalAnchor = msoAnchorCenter
-    shapeRef.Placement = xlFreeFloating
-    
-    Set shapeRef = Nothing
 End Sub
 
 
@@ -813,8 +760,8 @@ Private Sub PID_ConfigureLOHNTABELLEHeaderLayout(ByVal wsKV As Worksheet)
     On Error GoTo SafeExit
     
     wsKV.Range("A1:J1").Merge
-    wsKV.Range("A1").HorizontalAlignment = xlCenter
-    wsKV.Range("A1").VerticalAlignment = xlCenter
+    PID_StyleApplyTitleBand wsKV.Range("A1")
+    wsKV.Rows(1).RowHeight = PID_STYLE_COMPACT_BLOCK_TITLE_HEIGHT
     
     wsKV.Range("A2:J2").UnMerge
     wsKV.Range("A2:J2").ClearContents
@@ -851,6 +798,11 @@ Public Sub FixLOHNTABELLE_HeaderTextIfNeeded(Optional ByVal forceFormulaRepair A
     
     If forceFormulaRepair Or PID_KVStatusFormulasNeedRepair(wsKV) Then
         PID_EnsureKVStatusFormulas wsKV
+    End If
+    
+    If wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row >= 4 Then
+        PID_RefreshKVPeriodTitleRowStyles wsKV, 4, wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+        PID_ApplyKVVisualGrouping wsKV, 4, wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
     End If
     
 SafeExit:
@@ -1691,6 +1643,9 @@ Private Sub PID_NormalizeKVTableHeader(ByVal wsKV As Worksheet)
     wsKV.Range("H3").Value = "Monatslohn"
     wsKV.Range("I3").Value = "Status"
     wsKV.Range("J3").Value = PID_KVTxtPruefung()
+    
+    PID_StyleApplyCompactHeaderBand wsKV.Range("A3:J3")
+    wsKV.Rows(3).RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
 End Sub
 
 
@@ -1872,17 +1827,39 @@ Private Sub PID_WriteKVPeriodTitleRow(ByVal wsKV As Worksheet, _
     
     wsKV.Cells(rowNumber, "A").Value = titleText
     
+    PID_StyleApplySubsectionTitle wsKV.Range("A" & rowNumber & ":J" & rowNumber), False
+    
     With wsKV.Range("A" & rowNumber & ":J" & rowNumber)
-        .Font.Bold = True
-        .Font.Size = 11
-        .HorizontalAlignment = xlCenter
-        .VerticalAlignment = xlCenter
-        .Interior.Color = RGB(235, 235, 235)
         .Borders(xlEdgeTop).LineStyle = xlContinuous
         .Borders(xlEdgeTop).Weight = xlMedium
+        .Borders(xlEdgeTop).Color = PID_StyleColorNavy()
         .Borders(xlEdgeBottom).LineStyle = xlContinuous
         .Borders(xlEdgeBottom).Weight = xlThin
+        .Borders(xlEdgeBottom).Color = RGB(180, 180, 180)
     End With
+End Sub
+
+
+Private Sub PID_RefreshKVPeriodTitleRowStyles(ByVal wsKV As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
+    Dim r As Long
+    
+    If wsKV Is Nothing Then Exit Sub
+    If firstRow > lastRow Then Exit Sub
+    
+    For r = firstRow To lastRow
+        If wsKV.Range("A" & r).MergeCells Then
+            PID_StyleApplySubsectionTitle wsKV.Range("A" & r & ":J" & r), False
+            
+            With wsKV.Range("A" & r & ":J" & r)
+                .Borders(xlEdgeTop).LineStyle = xlContinuous
+                .Borders(xlEdgeTop).Weight = xlMedium
+                .Borders(xlEdgeTop).Color = PID_StyleColorNavy()
+                .Borders(xlEdgeBottom).LineStyle = xlContinuous
+                .Borders(xlEdgeBottom).Weight = xlThin
+                .Borders(xlEdgeBottom).Color = RGB(180, 180, 180)
+            End With
+        End If
+    Next r
 End Sub
 
 
@@ -2141,7 +2118,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         ' Gesamte Datenflaeche einheitlich mit duennem Raster versehen.
         .Range("A" & firstDataRow & ":J" & lastRow).Borders.LineStyle = xlContinuous
         .Range("A" & firstDataRow & ":J" & lastRow).Borders.Weight = xlThin
-        .Range("A" & firstDataRow & ":J" & lastRow).Borders.Color = RGB(150, 150, 150)
+        .Range("A" & firstDataRow & ":J" & lastRow).Borders.Color = RGB(180, 180, 180)
         
         .Range("A" & firstDataRow & ":A" & lastRow).NumberFormat = "@"
         .Range("G" & firstDataRow & ":G" & lastRow).NumberFormatLocal = "0,00"
@@ -2357,14 +2334,14 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
         rowRange.Borders(xlEdgeTop).Weight = xlThin
         rowRange.Borders(xlEdgeTop).Color = RGB(180, 180, 180)
         
-        ' Soft BG color blocks.
+        ' Soft BG color blocks (UEBERSICHT-Palette).
         Select Case True
             Case InStr(1, groupText, "BG1", vbTextCompare) > 0
-                rowRange.Interior.Color = RGB(242, 248, 255)
+                rowRange.Interior.Color = PID_StyleColorHeaderBg()
             Case InStr(1, groupText, "BG2", vbTextCompare) > 0
-                rowRange.Interior.Color = RGB(241, 250, 241)
+                rowRange.Interior.Color = vbWhite
             Case InStr(1, groupText, "BG3", vbTextCompare) > 0
-                rowRange.Interior.Color = RGB(255, 246, 237)
+                rowRange.Interior.Color = PID_StyleColorAccent()
         End Select
         
         ' Strong separator when a new KV period starts.
@@ -2372,7 +2349,7 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
             If currentPeriod <> prevPeriod Then
                 rowRange.Borders(xlEdgeTop).LineStyle = xlContinuous
                 rowRange.Borders(xlEdgeTop).Weight = xlMedium
-                rowRange.Borders(xlEdgeTop).Color = RGB(90, 90, 90)
+                rowRange.Borders(xlEdgeTop).Color = PID_StyleColorNavy()
                 
                 ' Bei neuem Zeitraum die KV-Code-Referenz zuruecksetzen.
                 prevCode = ""
@@ -2385,7 +2362,7 @@ Private Sub PID_ApplyKVVisualGrouping(ByVal wsKV As Worksheet, ByVal firstRow As
             If prevCode <> "" And currentCode <> prevCode Then
                 rowRange.Borders(xlEdgeTop).LineStyle = xlContinuous
                 rowRange.Borders(xlEdgeTop).Weight = xlMedium
-                rowRange.Borders(xlEdgeTop).Color = RGB(120, 120, 120)
+                rowRange.Borders(xlEdgeTop).Color = PID_StyleColorNavy()
             End If
             prevCode = currentCode
         End If
@@ -2397,15 +2374,15 @@ NextRow:
     With wsKV.Range("A" & firstRow & ":J" & lastRow)
         .Borders(xlEdgeLeft).LineStyle = xlContinuous
         .Borders(xlEdgeLeft).Weight = xlMedium
-        .Borders(xlEdgeLeft).Color = RGB(90, 90, 90)
+        .Borders(xlEdgeLeft).Color = PID_StyleColorNavy()
         
         .Borders(xlEdgeRight).LineStyle = xlContinuous
         .Borders(xlEdgeRight).Weight = xlMedium
-        .Borders(xlEdgeRight).Color = RGB(90, 90, 90)
+        .Borders(xlEdgeRight).Color = PID_StyleColorNavy()
         
         .Borders(xlEdgeBottom).LineStyle = xlContinuous
         .Borders(xlEdgeBottom).Weight = xlMedium
-        .Borders(xlEdgeBottom).Color = RGB(90, 90, 90)
+        .Borders(xlEdgeBottom).Color = PID_StyleColorNavy()
     End With
     
 SafeExit:

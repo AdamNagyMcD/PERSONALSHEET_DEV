@@ -917,7 +917,11 @@ Public Sub PID_ForceMonatslohnRecalcForRow(ByVal wsMonth As Worksheet, _
     
     kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
     If kvCode = "" Or Not PID_TryGetDouble(wsMonth.Cells(rowNumber, "F").Value, stunden) Then
-        gCell.Value2 = 0
+        gCell.FormulaR1C1 = PID_GetMonatslohnFormulaR1C1()
+        On Error Resume Next
+        gCell.Calculate
+        Err.Clear
+        On Error GoTo SafeExit
         If Not skipLetztesGehaltRecalc Then
             PID_RecalculateLetztesGehaltForRow wsMonth, rowNumber
         End If

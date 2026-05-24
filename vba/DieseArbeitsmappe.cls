@@ -207,6 +207,10 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
         PID_RecalculateMonatslohnForChangedRows Sh, Target
     End If
     
+    If Not Intersect(Target, Sh.Range("D3:F82,I3:I82")) Is Nothing Then
+        PID_RecalculateAktuelleStundenForChangedRows Sh, Target
+    End If
+    
     If Not Intersect(Target, Sh.Range("D3:D82,I3:I82,K3:K82")) Is Nothing Then
         PID_RecalculateLetztesGehaltForChangedRows Sh, Target
     End If
@@ -276,11 +280,9 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     ' If user selects F and dropdown is missing/broken, rebuild only that row.
     If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
         If Not PID_RowHasValidFStundenDropdown(Sh, Target.Row) Then
-            If Trim$(CStr(Sh.Cells(Target.Row, "E").Value)) <> "" Then
-                On Error Resume Next
-                RefreshKVStundenDropdownForSingleRow Sh, Target.Row
-                On Error GoTo SafeExit
-            End If
+            On Error Resume Next
+            RefreshKVStundenDropdownForSingleRow Sh, Target.Row
+            On Error GoTo SafeExit
         End If
     End If
     

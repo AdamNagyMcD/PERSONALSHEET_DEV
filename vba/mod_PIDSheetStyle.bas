@@ -34,6 +34,60 @@ Public Function PID_StyleColorZebra() As Long
 End Function
 
 
+Public Function PID_StyleColorBtnPrimaryLine() As Long
+    PID_StyleColorBtnPrimaryLine = RGB(24, 58, 90)
+End Function
+
+
+Public Sub PID_StyleApplyToolbarButton(ByVal btn As Shape, _
+                                       ByVal fillColor As Long, _
+                                       ByVal lineColor As Long, _
+                                       ByVal fontColor As Long)
+    Dim shapeRef As Object
+    
+    On Error GoTo SafeExit
+    
+    If btn Is Nothing Then Exit Sub
+    
+    btn.Fill.ForeColor.RGB = fillColor
+    btn.Fill.Visible = msoTrue
+    btn.Line.ForeColor.RGB = lineColor
+    btn.Line.Weight = 0.75
+    btn.Line.Visible = msoTrue
+    
+    On Error Resume Next
+    btn.Adjustments(1) = 0.16
+    btn.Shadow.Type = msoShadow21
+    btn.Shadow.Visible = msoTrue
+    btn.Shadow.Transparency = 0.6
+    btn.Shadow.Blur = 2
+    btn.TextFrame.MarginLeft = 3
+    btn.TextFrame.MarginRight = 3
+    btn.TextFrame.MarginTop = 1
+    btn.TextFrame.MarginBottom = 1
+    On Error GoTo SafeExit
+    
+    btn.TextFrame.Characters.Font.Name = "Calibri"
+    btn.TextFrame.Characters.Font.Color = fontColor
+    btn.TextFrame.Characters.Font.Bold = True
+    btn.TextFrame.Characters.Font.Size = 8
+    
+    On Error Resume Next
+    btn.TextFrame.WordWrap = msoTrue
+    btn.TextFrame.VerticalAlignment = xlVAlignCenter
+    btn.TextFrame.HorizontalAlignment = xlHAlignCenter
+    
+    Set shapeRef = btn
+    shapeRef.TextFrame.WordWrap = msoTrue
+    shapeRef.TextFrame.VerticalAnchor = msoAnchorMiddle
+    shapeRef.TextFrame.HorizontalAnchor = msoAnchorCenter
+    shapeRef.Placement = xlFreeFloating
+    Set shapeRef = Nothing
+    
+SafeExit:
+End Sub
+
+
 Public Sub PID_StyleApplyTitleBand(ByVal target As Range)
     With target
         .Interior.Color = PID_StyleColorNavy()

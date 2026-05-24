@@ -1,0 +1,560 @@
+Attribute VB_Name = "mod_FormatMonthSheet"
+Option Explicit
+
+' Design reference: manually formatted sheet "Januar" in Personalsheet.xlsm (2026-05-24).
+Private Const PID_MS_PILOT_SHEET As String = "Januar"
+Private Const PID_MS_PANEL_FIRST_ROW As Long = 3
+Private Const PID_MS_PANEL_LAST_ROW As Long = 50
+Private Const PID_MS_PANEL_TAIL_RANGE As String = "W3:Y50"
+
+Private Const PID_MS_STYLE_INPUT As Long = 1
+Private Const PID_MS_STYLE_READONLY As Long = 2
+Private Const PID_MS_STYLE_LABEL As Long = 3
+Private Const PID_MS_STYLE_HEADER As Long = 4
+Private Const PID_MS_STYLE_MESSAGE As Long = 5
+
+
+Public Sub FormatJanuarMonthSheet()
+    PID_FormatMonthSheetByName PID_MS_PILOT_SHEET
+End Sub
+
+
+Public Sub FormatMonthSheet()
+    FormatJanuarMonthSheet
+End Sub
+
+
+Public Sub FormatAllMonthSheets()
+    Dim wsRef As Worksheet
+    Dim monthName As Variant
+    Dim ws As Worksheet
+    Dim countDone As Long
+    
+    On Error GoTo CleanFail
+    
+    Set wsRef = ThisWorkbook.Worksheets(PID_MS_PILOT_SHEET)
+    
+    If Not PID_IsWorkerMonthSheet(wsRef) Then
+        MsgBox "Referenzblatt '" & PID_MS_PILOT_SHEET & "' ist kein gueltiges Monatsblatt.", _
+               vbExclamation, "Monatsblatt Format"
+        Exit Sub
+    End If
+    
+    For Each monthName In PID_MonthNames()
+        If StrComp(CStr(monthName), PID_MS_PILOT_SHEET, vbTextCompare) <> 0 Then
+            Set ws = Nothing
+            On Error Resume Next
+            Set ws = ThisWorkbook.Worksheets(CStr(monthName))
+            On Error GoTo CleanFail
+            
+            If Not ws Is Nothing Then
+                If PID_IsWorkerMonthSheet(ws) Then
+                    PID_MSCopyMonthFormatsFromReference wsRef, ws
+                    countDone = countDone + 1
+                End If
+            End If
+        End If
+    Next monthName
+    
+    MsgBox countDone & " Monatsblaetter von '" & PID_MS_PILOT_SHEET & "' formatiert.", _
+           vbInformation, "Monatsblatt Format"
+    Exit Sub
+
+CleanFail:
+    MsgBox "Fehler bei FormatAllMonthSheets:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, vbExclamation, "Monatsblatt Format"
+End Sub
+
+
+Private Sub PID_FormatMonthSheetByName(ByVal sheetName As String)
+    Dim ws As Worksheet
+    Dim wasProtected As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldDisplayAlerts As Boolean
+    Dim oldEnableEvents As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldScreenUpdating = Application.ScreenUpdating
+    oldDisplayAlerts = Application.DisplayAlerts
+    oldEnableEvents = Application.EnableEvents
+    
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.EnableEvents = False
+    
+    Set ws = Nothing
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets(sheetName)
+    On Error GoTo CleanFail
+    
+    If ws Is Nothing Then
+        MsgBox "Monatsblatt '" & sheetName & "' wurde nicht gefunden.", vbExclamation, "Monatsblatt Format"
+        GoTo CleanExit
+    End If
+    
+    If Not PID_IsWorkerMonthSheet(ws) Then
+        MsgBox "'" & sheetName & "' ist kein gueltiges Monatsblatt.", vbExclamation, "Monatsblatt Format"
+        GoTo CleanExit
+    End If
+    
+    wasProtected = ws.ProtectContents
+    
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
+    PID_MSApplyReferenceLayout ws
+    If StrComp(sheetName, PID_MS_PILOT_SHEET, vbTextCompare) = 0 Then
+        PID_MSRemoveLegacyPanelShapes ws
+    End If
+    
+    Application.DisplayAlerts = oldDisplayAlerts
+    MsgBox "Monatsblatt '" & sheetName & "' formatiert.", vbInformation, "Monatsblatt Format"
+    
+    GoTo CleanExit
+
+CleanFail:
+    Application.DisplayAlerts = oldDisplayAlerts
+    MsgBox "Fehler bei Monatsblatt-Format (" & sheetName & "):" & vbCrLf & _
+           Err.Number & " - " & Err.Description, vbExclamation, "Monatsblatt Format"
+
+CleanExit:
+    On Error Resume Next
+    If Not ws Is Nothing Then
+        If wasProtected Then
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+                       UserInterfaceOnly:=True, _
+                       AllowFiltering:=True, _
+                       AllowSorting:=True
+        End If
+    End If
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+End Sub
+
+
+Private Sub PID_MSCopyMonthFormatsFromReference(ByVal wsRef As Worksheet, ByVal wsTarget As Worksheet)
+    Dim refProtected As Boolean
+    Dim tgtProtected As Boolean
+    
+    If wsRef Is Nothing Then Exit Sub
+    If wsTarget Is Nothing Then Exit Sub
+    
+    refProtected = wsRef.ProtectContents
+    tgtProtected = wsTarget.ProtectContents
+    
+    On Error Resume Next
+    wsRef.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    wsTarget.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo 0
+    
+    ' E/F auslassen: xlPasteFormats kopiert Locked und loescht Data Validation.
+    PID_MSCopyRangeFormats wsRef.Range("B1:D82"), wsTarget.Range("B1:D82")
+    PID_MSCopyRangeFormats wsRef.Range("G1:N82"), wsTarget.Range("G1:N82")
+    PID_MSCopyRangeFormats wsRef.Range("O3:V50"), wsTarget.Range("O3:V50")
+    PID_MSCopyPanelTailFormatsFromReference wsRef, wsTarget
+    PID_MSRestoreMonthSheetDropdowns wsTarget
+    
+    On Error Resume Next
+    If refProtected Then
+        wsRef.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, _
+                     AllowFiltering:=True, AllowSorting:=True
+    End If
+    If tgtProtected Then
+        wsTarget.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, _
+                       AllowFiltering:=True, AllowSorting:=True
+    End If
+    On Error GoTo 0
+End Sub
+
+
+Private Sub PID_MSCopyRangeFormats(ByVal sourceRange As Range, ByVal targetRange As Range)
+    If sourceRange Is Nothing Then Exit Sub
+    If targetRange Is Nothing Then Exit Sub
+    
+    sourceRange.Copy
+    targetRange.PasteSpecial Paste:=xlPasteFormats
+    Application.CutCopyMode = False
+End Sub
+
+
+Private Sub PID_MSCopyPanelTailFormatsFromReference(ByVal wsRef As Worksheet, ByVal wsTarget As Worksheet)
+    Dim tailRef As Range
+    Dim tailTarget As Range
+    
+    Set tailRef = wsRef.Range(PID_MS_PANEL_TAIL_RANGE)
+    Set tailTarget = wsTarget.Range(PID_MS_PANEL_TAIL_RANGE)
+    
+    tailTarget.ClearFormats
+    PID_MSCopyRangeFormats tailRef, tailTarget
+End Sub
+
+
+Private Sub PID_MSRestoreMonthSheetDropdowns(ByVal wsTarget As Worksheet)
+    ' E/F werden beim Format-Kopieren nicht mehr ueberschrieben; falls noetig trotzdem
+    ' entsperren und Dropdowns neu aufbauen (inkl. Template-Stunden fuer leere Zeilen).
+    If wsTarget Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsTarget) Then Exit Sub
+    
+    wsTarget.Range("E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW).Locked = False
+    wsTarget.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
+    
+    PID_ApplyKVCodeDropdownValidation wsTarget
+    RefreshKVStundenDropdownForSheet wsTarget
+End Sub
+
+
+Private Sub PID_MSApplyReferenceLayout(ByVal ws As Worksheet)
+    If ws Is Nothing Then Exit Sub
+    
+    PID_MSApplyEmployeeBlockStyles ws
+    PID_MSApplyRightPanelReferenceStyles ws
+End Sub
+
+
+Private Sub PID_MSApplyEmployeeBlockStyles(ByVal ws As Worksheet)
+    Dim r As Long
+    Dim col As Long
+    Dim headerCell As Range
+    
+    ws.Rows("1:2").RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
+    
+    For col = 2 To 14
+        Set headerCell = ws.Cells(1, col)
+        If headerCell.MergeCells Then
+            PID_StyleApplyCompactHeaderBand headerCell.MergeArea
+        Else
+            PID_StyleApplyCompactHeaderBand ws.Range(ws.Cells(1, col), ws.Cells(2, col))
+        End If
+    Next col
+    
+    ws.Range("B3:N82").Interior.Pattern = xlSolid
+    PID_StyleApplyInputCell ws.Range("B3:F82")
+    PID_StyleApplyInputCell ws.Range("I3:J82")
+    PID_StyleApplyInputCell ws.Range("M3:N82")
+    PID_StyleApplyReadOnlyGuideCell ws.Range("G3:G82")
+    PID_StyleApplyReadOnlyGuideCell ws.Range("H3:H82")
+    PID_StyleApplyReadOnlyGuideCell ws.Range("K3:K82")
+    PID_StyleApplyReadOnlyGuideCell ws.Range("L3:L82")
+    
+    For r = PID_FIRST_ROW To PID_LAST_ROW Step 2
+        ws.Range("B" & r & ":F" & r).Interior.Color = PID_StyleColorZebra()
+        ws.Range("I" & r & ":J" & r).Interior.Color = PID_StyleColorZebra()
+        ws.Range("M" & r & ":N" & r).Interior.Color = PID_StyleColorZebra()
+    Next r
+    
+    ws.Range("B3:N82").HorizontalAlignment = xlCenter
+    ws.Range("B3:C82").HorizontalAlignment = xlLeft
+    ws.Range("M3:N82").HorizontalAlignment = xlLeft
+    
+    PID_MSApplyBlockBorders ws.Range("B1:N2")
+    PID_MSApplyBlockBorders ws.Range("B3:N82")
+End Sub
+
+
+Private Sub PID_MSApplyRightPanelReferenceStyles(ByVal ws As Worksheet)
+    Dim r As Long
+    Dim panelRange As Range
+    
+    Set panelRange = ws.Range("O" & PID_MS_PANEL_FIRST_ROW & ":V" & PID_MS_PANEL_LAST_ROW)
+    
+    PID_MSResetPanelRange panelRange
+    PID_MSApplyTopSummaryHeader ws
+    
+    For r = 3 To 5
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("O" & r & ":R" & r), PID_MS_STYLE_HEADER
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("S" & r & ":V" & r), PID_MS_STYLE_INPUT
+    Next r
+    
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("O7:V7"), PID_MS_STYLE_INPUT
+    
+    For r = 8 To 15
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("O" & r & ":R" & r), PID_MS_STYLE_READONLY
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("S" & r & ":V" & r), PID_MS_STYLE_INPUT
+    Next r
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("Q12:R12"), PID_MS_STYLE_INPUT
+    
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("O16:V16"), PID_MS_STYLE_MESSAGE
+    
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("O17:R17"), PID_MS_STYLE_READONLY
+    
+    For r = 18 To 28
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("O" & r & ":P" & r), PID_MS_STYLE_LABEL
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("Q" & r & ":R" & r), PID_MS_STYLE_INPUT
+    Next r
+    
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("O29:R29"), PID_MS_STYLE_READONLY
+    
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("O30:V30"), PID_MS_STYLE_INPUT
+    
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("O31:R31"), PID_MS_STYLE_READONLY
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("S31:V31"), PID_MS_STYLE_INPUT
+    
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("O32:V32"), PID_MS_STYLE_INPUT
+    
+    For r = 33 To 34
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("O" & r & ":P" & r), PID_MS_STYLE_INPUT
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("Q" & r & ":V" & r), PID_MS_STYLE_HEADER
+    Next r
+    
+    For r = 35 To 42
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("O" & r & ":V" & r), PID_MS_STYLE_READONLY
+    Next r
+    
+    PID_MSApplyEintrittsdatumSection ws
+    
+    For r = 46 To PID_MS_PANEL_LAST_ROW
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("O" & r & ":V" & r), PID_MS_STYLE_INPUT
+    Next r
+    
+    PID_MSApplyBlockBorders ws.Range("O8:R16")
+    PID_MSApplyBlockBorders ws.Range("O17:R29")
+    PID_MSApplyBlockBorders ws.Range("O31:R31")
+    PID_MSApplyBlockBorders ws.Range("O33:V42")
+    
+    PID_MSReinforceEdgeBorder ws.Range("R17:R29"), xlEdgeRight
+    PID_MSClearAllBorders ws.Range("O43:V50")
+    PID_MSClearAllBorders ws.Range("S16")
+End Sub
+
+
+Private Sub PID_MSApplyBlockBorders(ByVal target As Range)
+    If target Is Nothing Then Exit Sub
+    PID_StyleApplyOuterBorder target
+    PID_StyleApplyTableBorders target
+End Sub
+
+
+Private Sub PID_MSResetPanelRange(ByVal target As Range)
+    Dim c As Range
+    Dim handled As Collection
+    Dim areaKey As String
+    Dim resetTarget As Range
+    
+    If target Is Nothing Then Exit Sub
+    
+    Set handled = New Collection
+    
+    For Each c In target.Cells
+        If c.MergeCells Then
+            areaKey = c.MergeArea.Address(False, False)
+        Else
+            areaKey = c.Address(False, False)
+        End If
+        
+        If PID_CollectionHasKey(handled, areaKey) Then GoTo NextCell
+        
+        handled.Add areaKey, areaKey
+        
+        If c.MergeCells Then
+            Set resetTarget = c.MergeArea
+        Else
+            Set resetTarget = c
+        End If
+        
+        With resetTarget
+            .Interior.Pattern = xlSolid
+            .Interior.Color = vbWhite
+            .Font.Color = vbBlack
+            .Font.Bold = False
+        End With
+        
+NextCell:
+    Next c
+End Sub
+
+
+Private Sub PID_MSApplyTopSummaryHeader(ByVal ws As Worksheet)
+    Dim col As Long
+    Dim headerCell As Range
+    
+    For col = 15 To 17
+        Set headerCell = ws.Cells(1, col)
+        If headerCell.MergeCells Then
+            If Len(PID_MSGetRangeText(headerCell)) > 0 Then
+                PID_StyleApplyCompactHeaderBand headerCell.MergeArea
+            End If
+        ElseIf Len(PID_MSGetRangeText(headerCell)) > 0 Then
+            PID_StyleApplyCompactHeaderBand ws.Range(ws.Cells(1, col), ws.Cells(2, col))
+        End If
+    Next col
+End Sub
+
+
+Private Sub PID_MSApplyEintrittsdatumSection(ByVal ws As Worksheet)
+    Dim r As Long
+    Dim c As Range
+    Dim hintRange As Range
+    Dim cellText As String
+    
+    PID_MSClearAllBorders ws.Range("O43:V50")
+    
+    Set hintRange = Nothing
+    
+    For r = 43 To 46
+        For Each c In ws.Range("O" & r & ":Q" & r).Cells
+            cellText = UCase$(PID_MSGetRangeText(c))
+            If InStr(1, cellText, "WAHL", vbTextCompare) > 0 _
+               And InStr(1, cellText, "EINTRITT", vbTextCompare) > 0 Then
+                If c.MergeCells Then
+                    Set hintRange = c.MergeArea
+                Else
+                    Set hintRange = ws.Range("O" & r & ":Q" & r)
+                End If
+                Exit For
+            End If
+        Next c
+        If Not hintRange Is Nothing Then Exit For
+    Next r
+    
+    If Not hintRange Is Nothing Then
+        With hintRange
+            .Interior.Color = vbWhite
+            .Font.Color = PID_StyleColorNavy()
+            .Font.Bold = False
+            .HorizontalAlignment = xlLeft
+            .VerticalAlignment = xlTop
+            .WrapText = True
+        End With
+        PID_StyleApplyOuterBorder hintRange
+    End If
+    
+    With ws.Range("O45:Q45")
+        .Interior.Color = vbWhite
+        .Font.Color = PID_StyleColorNavy()
+        .Font.Bold = True
+        .HorizontalAlignment = xlLeft
+        .WrapText = True
+    End With
+End Sub
+
+
+Private Sub PID_MSRemoveLegacyPanelShapes(ByVal ws As Worksheet)
+    Dim shapeIndex As Long
+    Dim shp As Shape
+    Dim shpText As String
+    
+    For shapeIndex = ws.Shapes.Count To 1 Step -1
+        Set shp = ws.Shapes(shapeIndex)
+        shpText = PID_MSGetShapeText(shp)
+        
+        If InStr(1, shpText, "Aktualisierung", vbTextCompare) > 0 Then
+            PID_MSRestyleAktualisierungButton shp
+        ElseIf InStr(1, shp.Name, "Klammer", vbTextCompare) > 0 _
+               Or InStr(1, shp.Name, "Brace", vbTextCompare) > 0 _
+               Or InStr(1, shp.Name, "Geschweifte", vbTextCompare) > 0 Then
+            shp.Delete
+        End If
+    Next shapeIndex
+End Sub
+
+
+Private Sub PID_MSRestyleAktualisierungButton(ByVal btn As Shape)
+    On Error GoTo SafeExit
+    If btn Is Nothing Then Exit Sub
+    
+    btn.Visible = msoTrue
+    btn.Fill.ForeColor.RGB = PID_StyleColorNavy()
+    btn.Line.ForeColor.RGB = PID_StyleColorBtnPrimaryLine()
+    btn.Line.Weight = 1
+    btn.Shadow.Visible = msoFalse
+    btn.TextFrame.Characters.Font.Name = "Calibri"
+    btn.TextFrame.Characters.Font.Color = vbWhite
+    btn.TextFrame.Characters.Font.Bold = True
+    btn.TextFrame.Characters.Font.Size = 9
+    
+SafeExit:
+End Sub
+
+
+Private Sub PID_MSClearAllBorders(ByVal target As Range)
+    Dim edgeIndex As Long
+    If target Is Nothing Then Exit Sub
+    On Error Resume Next
+    For edgeIndex = 7 To 12
+        target.Borders(edgeIndex).LineStyle = xlLineStyleNone
+    Next edgeIndex
+    On Error GoTo 0
+End Sub
+
+
+Private Sub PID_MSReinforceEdgeBorder(ByVal target As Range, ByVal edgeIndex As Long)
+    If target Is Nothing Then Exit Sub
+    On Error Resume Next
+    With target.Borders(edgeIndex)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = PID_StyleColorNavy()
+    End With
+    On Error GoTo 0
+End Sub
+
+
+Private Function PID_MSGetShapeText(ByVal shp As Shape) As String
+    On Error GoTo SafeExit
+    If shp Is Nothing Then Exit Function
+    PID_MSGetShapeText = shp.TextFrame.Characters.Text
+SafeExit:
+End Function
+
+
+Private Function PID_MSGetRangeText(ByVal targetCell As Range) As String
+    If targetCell Is Nothing Then Exit Function
+    If targetCell.MergeCells Then
+        PID_MSGetRangeText = Trim$(CStr(targetCell.MergeArea.Cells(1, 1).Value2))
+    Else
+        PID_MSGetRangeText = Trim$(CStr(targetCell.Value2))
+    End If
+End Function
+
+
+Private Sub PID_MSApplyStyleToRangeMergedOnce(ByVal targetRange As Range, ByVal styleMode As Long)
+    Dim c As Range
+    Dim handled As Collection
+    Dim areaKey As String
+    Dim styleTarget As Range
+    
+    If targetRange Is Nothing Then Exit Sub
+    
+    Set handled = New Collection
+    
+    For Each c In targetRange.Cells
+        If c.MergeCells Then
+            areaKey = c.MergeArea.Address(False, False)
+        Else
+            areaKey = c.Address(False, False)
+        End If
+        
+        If PID_CollectionHasKey(handled, areaKey) Then GoTo NextCell
+        
+        handled.Add areaKey, areaKey
+        
+        If c.MergeCells Then
+            Set styleTarget = c.MergeArea
+        Else
+            Set styleTarget = c
+        End If
+        
+        Select Case styleMode
+            Case PID_MS_STYLE_INPUT
+                PID_StyleApplyInputCell styleTarget
+            Case PID_MS_STYLE_READONLY
+                PID_StyleApplyReadOnlyGuideCell styleTarget
+            Case PID_MS_STYLE_LABEL
+                PID_StyleApplyInputGuideLabel styleTarget
+            Case PID_MS_STYLE_HEADER
+                PID_StyleApplyCompactHeaderBand styleTarget
+            Case PID_MS_STYLE_MESSAGE
+                With styleTarget
+                    .Interior.Color = vbWhite
+                    .Font.Color = PID_StyleColorNavy()
+                    .Font.Bold = True
+                    .HorizontalAlignment = xlLeft
+                    .WrapText = True
+                End With
+        End Select
+        
+NextCell:
+    Next c
+End Sub
