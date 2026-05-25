@@ -253,7 +253,6 @@ End Sub
 
 
 Private Sub PID_MSApplyEmployeeBlockStyles(ByVal ws As Worksheet)
-    Dim r As Long
     Dim col As Long
     Dim headerCell As Range
     
@@ -267,6 +266,24 @@ Private Sub PID_MSApplyEmployeeBlockStyles(ByVal ws As Worksheet)
             PID_StyleApplyCompactHeaderBand ws.Range(ws.Cells(1, col), ws.Cells(2, col))
         End If
     Next col
+    
+    PID_ApplyMonthEmployeeZebraRows ws
+    
+    ws.Range("B3:N82").HorizontalAlignment = xlCenter
+    ws.Range("B3:C82").HorizontalAlignment = xlLeft
+    ws.Range("M3:N82").HorizontalAlignment = xlLeft
+    
+    PID_MSApplyBlockBorders ws.Range("B1:N2")
+    PID_MSApplyBlockBorders ws.Range("B3:N82")
+End Sub
+
+
+' Zebra-Hintergrund fuer Mitarbeiterblock (Zeile 3=grau, 4=weiss, ...).
+' Nach CopyData/Sort erneut aufrufen, weil Sort Formatierung mit verschiebt.
+Public Sub PID_ApplyMonthEmployeeZebraRows(ByVal ws As Worksheet)
+    Dim r As Long
+    
+    If ws Is Nothing Then Exit Sub
     
     ws.Range("B3:N82").Interior.Pattern = xlSolid
     PID_StyleApplyInputCell ws.Range("B3:F82")
@@ -282,13 +299,6 @@ Private Sub PID_MSApplyEmployeeBlockStyles(ByVal ws As Worksheet)
         ws.Range("I" & r & ":J" & r).Interior.Color = PID_StyleColorZebra()
         ws.Range("M" & r & ":N" & r).Interior.Color = PID_StyleColorZebra()
     Next r
-    
-    ws.Range("B3:N82").HorizontalAlignment = xlCenter
-    ws.Range("B3:C82").HorizontalAlignment = xlLeft
-    ws.Range("M3:N82").HorizontalAlignment = xlLeft
-    
-    PID_MSApplyBlockBorders ws.Range("B1:N2")
-    PID_MSApplyBlockBorders ws.Range("B3:N82")
 End Sub
 
 

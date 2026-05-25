@@ -670,6 +670,7 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     ws.Range("M3:N82").Value = arrMN
     
     PID_SortMonthSheet ws
+    PID_ApplyMonthEmployeeZebraRows ws
     
     ' Panel vor Formel-Restore: RestoreFormulas darf den Panel-Block nicht blockieren.
     PID_WriteMonthPanelSnapshot ws, panelBlock, panelO, panelQ, panelOIsFormula, panelQIsFormula, panelOFormats, panelQFormats
