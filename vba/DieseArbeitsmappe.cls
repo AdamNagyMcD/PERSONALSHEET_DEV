@@ -114,6 +114,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     If Sh.Name = PID_LOHNTABELLE_SHEET Then
         EnsureAddNewKVPeriodButton
         FixLOHNTABELLE_HeaderTextIfNeeded
+        PID_RecalculateKVStatusColumns Sh
         PID_ConfigureLohntabelleView
         GoTo SafeExit
     End If
@@ -181,6 +182,11 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
             If Not Intersect(Target, Sh.Range("D4:G500")) Is Nothing Then
                 MarkAllKVDropdownsDirty
             End If
+        End If
+        
+        ' Status/Pruefung (I/J) bei Manual Calculation explizit neu berechnen.
+        If Not Intersect(Target, Sh.Range("A4:H500")) Is Nothing Then
+            PID_RecalculateKVStatusColumns Sh
         End If
         Exit Sub
     End If

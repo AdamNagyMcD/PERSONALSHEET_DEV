@@ -72,17 +72,17 @@ Public Sub PID_StyleApplyToolbarButton(ByVal btn As Shape, _
     btn.TextFrame.Characters.Font.Bold = True
     btn.TextFrame.Characters.Font.Size = 8
     
+    ' TextFrame.WordWrap/Anchor per Early Binding auf Mac nicht verfuegbar (Compile-Fehler).
     On Error Resume Next
-    btn.TextFrame.WordWrap = msoTrue
-    btn.TextFrame.VerticalAlignment = xlVAlignCenter
-    btn.TextFrame.HorizontalAlignment = xlHAlignCenter
-    
     Set shapeRef = btn
     shapeRef.TextFrame.WordWrap = msoTrue
     shapeRef.TextFrame.VerticalAnchor = msoAnchorMiddle
     shapeRef.TextFrame.HorizontalAnchor = msoAnchorCenter
+    shapeRef.TextFrame.VerticalAlignment = xlVAlignCenter
+    shapeRef.TextFrame.HorizontalAlignment = xlHAlignCenter
     shapeRef.Placement = xlFreeFloating
     Set shapeRef = Nothing
+    On Error GoTo SafeExit
     
 SafeExit:
 End Sub

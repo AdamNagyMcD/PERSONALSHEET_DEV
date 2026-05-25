@@ -2208,6 +2208,26 @@ SafeExit:
 End Sub
 
 
+Public Sub PID_RecalculateKVStatusColumns(Optional ByVal wsKV As Worksheet)
+    Dim lastRow As Long
+    Dim calcRange As Range
+    
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
+    If wsKV Is Nothing Then Exit Sub
+    
+    lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+    If lastRow < 4 Then Exit Sub
+    
+    ' COUNTIFS in Spalte J kann mehrere Zeilen betreffen -> immer gesamten Statusblock berechnen.
+    Set calcRange = wsKV.Range("I4:J" & lastRow)
+    calcRange.Calculate
+    
+SafeExit:
+End Sub
+
+
 Private Sub PID_ApplyKVStatusFormulas(ByVal wsKV As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
     Dim r As Long
     Dim hasKeyData As Boolean
@@ -2239,6 +2259,8 @@ Private Sub PID_ApplyKVStatusFormulas(ByVal wsKV As Worksheet, ByVal firstRow As
         
         On Error GoTo 0
     Next r
+    
+    PID_RecalculateKVStatusColumns wsKV
 End Sub
 
 

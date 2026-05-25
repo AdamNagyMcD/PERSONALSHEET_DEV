@@ -15,6 +15,8 @@
 - README.md + docs/RELEASE.md hozzaadva (workflow, release checklist, admin makro figyelmeztetes).
 
 ### Fixed
+- mod_PIDSheetStyle.bas: Toolbar-Button-TextFrame per Late Binding (Mac: kein Compile-Fehler auf WordWrap).
+- mod_AddNewKVPeriodOnTop.bas + DieseArbeitsmappe.cls: LOHNTABELLE Status/Pruefung (I/J) explizit berechnen bei Manual Calculation.
 - mod_ResetAndImportVBAFiles.bas: `FixLegacyModul11Name` renames legacy `Modul11` to `mod_BuildDurchrechnung` (VBA max 31 chars; old name was 32).
 - mod_BuildDurchrechnung.bas: module/file renamed from `mod_BuildDurchrechnungUebersicht` (name exceeded VBA 31-char limit).
 - mod_BuildDurchrechnung.bas: fix error 5 — merge before CF, safe borders, ISNUMBER-based diff/ueber CF.
