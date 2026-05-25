@@ -494,51 +494,45 @@ Private Function PID_MSEnsureAktualisierungButtonOnSheet(ByVal ws As Worksheet) 
     Dim btnHeight As Double
     Dim shapeIndex As Long
     Dim shp As Shape
+    Dim oldScreenUpdating As Boolean
     
     On Error GoTo SafeExit
     
     If ws Is Nothing Then Exit Function
     If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
     
+    oldScreenUpdating = Application.ScreenUpdating
+    
     wasProtected = ws.ProtectContents
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo SafeExit
     
+    ' Position von O1: bei ScreenUpdating=False auf Mac sonst falsche Left/Top-Werte.
+    Application.ScreenUpdating = True
     PID_MSGetCopyDataButtonTargetGeometry ws, btnLeft, btnTop, btnWidth, btnHeight
-    
-    Set btn = Nothing
-    On Error Resume Next
-    Set btn = ws.Shapes(PID_MS_COPYDATA_BUTTON_NAME)
-    On Error GoTo SafeExit
-    
-    If Not btn Is Nothing Then
-        If btn.Type = msoAutoShape Then
-            If btn.Fill.ForeColor.RGB = PID_StyleColorNavy() Then
-                If PID_MSCopyDataButtonGeometryMatches(btn, btnLeft, btnTop, btnWidth, btnHeight) Then
-                    PID_MSEnsureAktualisierungButtonOnSheet = True
-                    GoTo ReprotectSheet
-                End If
-            End If
-        End If
-        btn.Delete
-    End If
+    Application.ScreenUpdating = oldScreenUpdating
     
     For shapeIndex = ws.Shapes.Count To 1 Step -1
         Set shp = ws.Shapes(shapeIndex)
         If PID_MSIsLegacyCopyDataButton(shp) Then shp.Delete
     Next shapeIndex
     
-    Set btn = ws.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
-                                 Left:=btnLeft, _
-                                 Top:=btnTop, _
-                                 Width:=btnWidth, _
-                                 Height:=btnHeight)
-    btn.Name = PID_MS_COPYDATA_BUTTON_NAME
-    btn.TextFrame.Characters.Text = PID_MS_COPYDATA_BUTTON_TEXT
-    btn.OnAction = "CopyData"
-    btn.Placement = xlFreeFloating
-    PID_StyleApplyToolbarButton btn, PID_StyleColorNavy(), PID_StyleColorBtnPrimaryLine(), RGB(255, 255, 255)
+    Set btn = Nothing
+    On Error Resume Next
+    Set btn = ws.Shapes(PID_MS_COPYDATA_BUTTON_NAME)
+    On Error GoTo SafeExit
+    
+    If btn Is Nothing Then
+        Set btn = ws.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                     Left:=btnLeft, _
+                                     Top:=btnTop, _
+                                     Width:=btnWidth, _
+                                     Height:=btnHeight)
+        btn.Name = PID_MS_COPYDATA_BUTTON_NAME
+    End If
+    
+    PID_MSApplyCopyDataButtonRuntimeState btn, btnLeft, btnTop, btnWidth, btnHeight
     
     PID_MSEnsureAktualisierungButtonOnSheet = True
 
@@ -554,6 +548,7 @@ ReprotectSheet:
 
 SafeExit:
     On Error Resume Next
+    Application.ScreenUpdating = oldScreenUpdating
     If wasProtected Then
         ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                    UserInterfaceOnly:=True, _
@@ -561,6 +556,31 @@ SafeExit:
                    AllowSorting:=True
     End If
 End Function
+
+
+Private Sub PID_MSApplyCopyDataButtonRuntimeState(ByVal btn As Shape, _
+                                                  ByVal btnLeft As Double, _
+                                                  ByVal btnTop As Double, _
+                                                  ByVal btnWidth As Double, _
+                                                  ByVal btnHeight As Double)
+    If btn Is Nothing Then Exit Sub
+    
+    On Error Resume Next
+    btn.Placement = xlFreeFloating
+    btn.Left = btnLeft
+    btn.Top = btnTop
+    btn.Width = btnWidth
+    btn.Height = btnHeight
+    btn.Visible = msoTrue
+    btn.TextFrame.Characters.Text = PID_MS_COPYDATA_BUTTON_TEXT
+    btn.OnAction = "CopyData"
+    btn.ZOrder msoBringToFront
+    On Error GoTo 0
+    
+    On Error Resume Next
+    PID_StyleApplyToolbarButton btn, PID_StyleColorNavy(), PID_StyleColorBtnPrimaryLine(), RGB(255, 255, 255)
+    On Error GoTo 0
+End Sub
 
 
 Private Sub PID_MSGetCopyDataButtonTargetGeometry(ByVal ws As Worksheet, _

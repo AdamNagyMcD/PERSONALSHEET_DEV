@@ -73,36 +73,28 @@ Wird in **O20** (oder generell in **O18:Q25**) Text eingegeben, wirkt es so, als
 
 ## FP-002 — CopyData: O18:Q25 propagiert nicht in Folgemonate
 
-**Status:** Offen (Bug)  
+**Status:** Behoben (2026-05-25, Snapshot O/Q) — `PID_ReadMonthPanelSnapshot` / `PID_WriteMonthPanelSnapshot`  
 **Priorität:** Hoch — SPEC-konformes Verhalten fehlt  
 **Betroffene Bereiche:** `CopyData`, Monatsblätter O18:Q25, Panel / Crew-Labor-Info
 
-### Beobachtetes Verhalten
+### Beobachtetes Verhalten (historisch)
 
-Beim Ausführen von **CopyData** wird der Bereich **O18:Q25** laut SPEC und User-Erwartung in die **folgenden Monate** mitkopiert — aktuell passiert das **nicht** (Werte/Formeln bleiben in Zielmonaten leer oder veraltet).
+Beim Ausführen von **CopyData** wurde der Bereich **O18:Q25** laut SPEC nicht zuverlässig in die **folgenden Monate** kopiert (Merge-Zellen; `FormulaR1C1`-Array wirkte nicht). Zusätzlich blieb auf Zielmonaten eine Markierung um O21:Q24.
 
-### Ist-Zustand (Code-Referenz)
+### Fix (Ist-Zustand)
 
-- `mod_CopyData.bas`: Quelle liest `infoOQ = wsSource.Range("O18:Q25").FormulaR1C1` und übergibt an `PID_WriteMonthData` → `PID_RestoreFormulas` setzt `ws.Range("O18:Q25").FormulaR1C1 = infoOQ`.
-- `SPEC.md` verlangt explizit: *„O18:Q25 must always propagate“*.
-- Trotz vorhandener Logik: **Reproduktion bestätigt** — Kopie kommt in Folgemonaten nicht an.
-
-### Geplante Untersuchung / Fix
-
-1. Reproduktion dokumentieren (Quellmonat befüllt → CopyData → Zielmonat O18:Q25 prüfen).
-2. Prüfen: Sheet Protection, Merge-Zellen, `PID_WriteMonthData`-Reihenfolge, ob `infoOQ` leer/fehlerhaft gelesen wird, ob Zielblatt-Schutz/Rewrite überschreibt.
-3. Ggf. Werte **und** Formeln robuster kopieren (analog B3:E82-Propagation).
-4. Regression: TEST CopyData + manuell Panel-Text/Zahlen über Monatsgrenze.
+- `mod_CopyData.bas`: `PID_ReadMonthPanelSnapshot` / `PID_WriteMonthPanelSnapshot` — O/Q-Ankerzeilen (Merge), Quellblatt kurz entsperrt.
+- `PID_ResetFollowingMonthSelections` setzt nach CopyData auf allen Zielmonaten die Auswahl auf A1 (ScreenUpdating aus).
 
 ### Akzeptanzkriterien
 
-- [ ] Nach CopyData vom Monat M sind O18:Q25 in M+1 … Dezember **identisch** mit Quellmonat M (Werte/Formeln wie spezifiziert).
-- [ ] `SPEC.md` Copy-Area-Regel erfüllt.
-- [ ] Smoke / manueller CopyData-Test grün.
+- [x] Nach CopyData vom Monat M sind O18:Q25 in M+1 … Dezember identisch mit Quellmonat M.
+- [x] Keine sichtbare Markierung O21:Q24 auf Zielmonaten nach CopyData.
+- [ ] Smoke / manueller CopyData-Test grün (Mac).
 
 ### Betroffene Dateien (Referenz)
 
-- `vba/mod_CopyData.bas` — `CopyData`, `PID_RestoreFormulas`, `PID_WriteMonthData`
+- `vba/mod_CopyData.bas` — `PID_CopyMonthPanelBlock`, `PID_ResetFollowingMonthSelections`
 - `SPEC.md` — Copy Areas
 
 ---

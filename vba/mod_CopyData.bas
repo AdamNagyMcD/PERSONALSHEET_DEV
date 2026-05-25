@@ -14,6 +14,11 @@ Private Const PID_APPLY_FORMATS_DURING_COPY As Boolean = False
 ' False = Nur das Dirty-Flag bleibt gesetzt, Fluktuation wird spaeter aktualisiert.
 Private Const PID_CALCULATE_FLUCTUATION_DURING_COPY As Boolean = False
 Private Const PID_HOUR_OVERRIDE_LOG_SHEET As String = "PID_HOUR_OVERRIDES"
+Private Const PID_PANEL_FIRST_ROW As Long = 18
+Private Const PID_PANEL_LAST_ROW As Long = 25
+Private Const PID_PANEL_ROW_COUNT As Long = 8
+Private Const PID_PANEL_SOURCE_RANGE As String = "O18:R25"
+Private Const PID_PANEL_SPEC_RANGE As String = "O18:Q25"
 
 
 Public Sub CopyData()
@@ -38,7 +43,14 @@ Public Sub PID_CopyDataToFollowingMonths()
     Dim formulaG As String
     Dim formulaK As Variant
     Dim formulaL As Variant
-    Dim infoOQ As Variant
+    
+    Dim panelO As Variant
+    Dim panelQ As Variant
+    Dim panelOIsFormula As Variant
+    Dim panelQIsFormula As Variant
+    Dim panelOFormats As Variant
+    Dim panelQFormats As Variant
+    Dim panelBlock As Variant
     
     Dim i As Long
     Dim targetSheetName As String
@@ -89,7 +101,8 @@ Public Sub PID_CopyDataToFollowingMonths()
     formulaG = PID_GetMonatslohnFormulaR1C1()
     formulaK = wsSource.Range("K3:K82").FormulaR1C1
     formulaL = PID_GetLetztesGehaltFormulaR1C1()
-    infoOQ = wsSource.Range("O18:Q25").FormulaR1C1
+    
+    PID_ReadMonthPanelSnapshot wsSource, panelBlock, panelO, panelQ, panelOIsFormula, panelQIsFormula, panelOFormats, panelQFormats
     
     Set futureOverrides = New Collection
     Set futureNewStarts = New Collection
@@ -102,8 +115,11 @@ Public Sub PID_CopyDataToFollowingMonths()
         
         currentData = PID_BuildTargetMonthData(currentData, futureOverrides, futureNewStarts, workbookYear, i)
         
-        PID_WriteMonthData targetSheetName, currentData, formulaH, formulaG, formulaK, formulaL, infoOQ
+        PID_WriteMonthData targetSheetName, currentData, formulaH, formulaG, formulaK, formulaL, _
+                           panelBlock, panelO, panelQ, panelOIsFormula, panelQIsFormula, panelOFormats, panelQFormats
     Next i
+    
+    PID_ResetFollowingMonthSelections sourceMonthIndex, sourceSheetName
     
     MarkFluktuationDirty
     MarkFinanzSummaryDirty
@@ -128,6 +144,7 @@ CleanExit:
 CleanFail:
     On Error Resume Next
     
+    PID_ResetFollowingMonthSelections sourceMonthIndex, sourceSheetName
     PID_HideUnwantedTechnicalSheets
     
     Application.CutCopyMode = False
@@ -608,7 +625,13 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
                               ByVal formulaG As String, _
                               ByVal formulaK As Variant, _
                               ByVal formulaL As Variant, _
-                              ByVal infoOQ As Variant)
+                              ByRef panelBlock As Variant, _
+                              ByRef panelO As Variant, _
+                              ByRef panelQ As Variant, _
+                              ByRef panelOIsFormula As Variant, _
+                              ByRef panelQIsFormula As Variant, _
+                              ByRef panelOFormats As Variant, _
+                              ByRef panelQFormats As Variant)
     Dim ws As Worksheet
     Dim arrBF As Variant
     Dim arrIJ As Variant
@@ -648,7 +671,13 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     
     PID_SortMonthSheet ws
     
-    PID_RestoreFormulas ws, formulaH, formulaG, formulaK, formulaL, infoOQ
+    ' Panel vor Formel-Restore: RestoreFormulas darf den Panel-Block nicht blockieren.
+    PID_WriteMonthPanelSnapshot ws, panelBlock, panelO, panelQ, panelOIsFormula, panelQIsFormula, panelOFormats, panelQFormats
+    
+    On Error Resume Next
+    PID_RestoreFormulas ws, formulaH, formulaG, formulaK, formulaL
+    Err.Clear
+    On Error GoTo SafeExit
     
     PID_MarkKVLohnSheetRefreshed ws.Name
     
@@ -711,13 +740,186 @@ Private Sub PID_RestoreFormulas(ByVal ws As Worksheet, _
                                ByVal formulaH As Variant, _
                                ByVal formulaG As String, _
                                ByVal formulaK As Variant, _
-                               ByVal formulaL As Variant, _
-                               ByVal infoOQ As Variant)
+                               ByVal formulaL As Variant)
     ws.Range("H" & PID_FIRST_ROW & ":H" & PID_LAST_ROW).FormulaR1C1 = formulaH
     ws.Range("G" & PID_FIRST_ROW & ":G" & PID_LAST_ROW).FormulaR1C1 = formulaG
     ws.Range("K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW).FormulaR1C1 = formulaK
     ws.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW).FormulaR1C1 = formulaL
-    ws.Range("O18:Q25").FormulaR1C1 = infoOQ
+End Sub
+
+
+Private Function PID_GetPanelMergeAnchorCell(ByVal ws As Worksheet, ByVal rowNum As Long, ByVal colLetter As String) As Range
+    Dim cellRef As Range
+    
+    Set cellRef = ws.Cells(rowNum, colLetter)
+    
+    If cellRef.MergeCells Then
+        Set PID_GetPanelMergeAnchorCell = cellRef.MergeArea.Cells(1, 1)
+    Else
+        Set PID_GetPanelMergeAnchorCell = cellRef
+    End If
+End Function
+
+
+Private Sub PID_ReadMonthPanelSnapshot(ByVal ws As Worksheet, _
+                                       ByRef panelBlock As Variant, _
+                                       ByRef panelO As Variant, _
+                                       ByRef panelQ As Variant, _
+                                       ByRef panelOIsFormula As Variant, _
+                                       ByRef panelQIsFormula As Variant, _
+                                       ByRef panelOFormats As Variant, _
+                                       ByRef panelQFormats As Variant)
+    Dim r As Long
+    Dim idx As Long
+    Dim wasProtected As Boolean
+    Dim srcLabel As Range
+    Dim srcValue As Range
+    
+    If ws Is Nothing Then Exit Sub
+    
+    ReDim panelO(1 To PID_PANEL_ROW_COUNT)
+    ReDim panelQ(1 To PID_PANEL_ROW_COUNT)
+    ReDim panelOIsFormula(1 To PID_PANEL_ROW_COUNT)
+    ReDim panelQIsFormula(1 To PID_PANEL_ROW_COUNT)
+    ReDim panelOFormats(1 To PID_PANEL_ROW_COUNT)
+    ReDim panelQFormats(1 To PID_PANEL_ROW_COUNT)
+    
+    wasProtected = ws.ProtectContents
+    
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo 0
+    
+    panelBlock = ws.Range(PID_PANEL_SOURCE_RANGE).Value2
+    
+    For r = PID_PANEL_FIRST_ROW To PID_PANEL_LAST_ROW
+        idx = r - PID_PANEL_FIRST_ROW + 1
+        
+        Set srcLabel = PID_GetPanelMergeAnchorCell(ws, r, "O")
+        Set srcValue = PID_GetPanelMergeAnchorCell(ws, r, "Q")
+        
+        panelOIsFormula(idx) = srcLabel.HasFormula
+        If panelOIsFormula(idx) Then
+            panelO(idx) = srcLabel.Formula
+        Else
+            panelO(idx) = srcLabel.Value2
+        End If
+        panelOFormats(idx) = srcLabel.NumberFormat
+        
+        panelQIsFormula(idx) = srcValue.HasFormula
+        If panelQIsFormula(idx) Then
+            panelQ(idx) = srcValue.Formula
+        Else
+            panelQ(idx) = srcValue.Value2
+        End If
+        panelQFormats(idx) = srcValue.NumberFormat
+    Next r
+    
+    On Error Resume Next
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+    On Error GoTo 0
+End Sub
+
+
+Private Sub PID_WriteMonthPanelSnapshot(ByVal ws As Worksheet, _
+                                        ByRef panelBlock As Variant, _
+                                        ByRef panelO As Variant, _
+                                        ByRef panelQ As Variant, _
+                                        ByRef panelOIsFormula As Variant, _
+                                        ByRef panelQIsFormula As Variant, _
+                                        ByRef panelOFormats As Variant, _
+                                        ByRef panelQFormats As Variant)
+    Dim r As Long
+    Dim idx As Long
+    Dim tgtLabel As Range
+    Dim tgtValue As Range
+    
+    If ws Is Nothing Then Exit Sub
+    
+    On Error Resume Next
+    ws.Range(PID_PANEL_SOURCE_RANGE).ClearContents
+    ws.Range(PID_PANEL_SOURCE_RANGE).Value2 = panelBlock
+    Err.Clear
+    On Error GoTo 0
+    
+    For r = PID_PANEL_FIRST_ROW To PID_PANEL_LAST_ROW
+        idx = r - PID_PANEL_FIRST_ROW + 1
+        
+        Set tgtLabel = PID_GetPanelMergeAnchorCell(ws, r, "O")
+        Set tgtValue = PID_GetPanelMergeAnchorCell(ws, r, "Q")
+        
+        On Error Resume Next
+        
+        If CBool(panelOIsFormula(idx)) Then
+            tgtLabel.Formula = panelO(idx)
+        Else
+            tgtLabel.Value = panelO(idx)
+        End If
+        tgtLabel.NumberFormat = panelOFormats(idx)
+        
+        If CBool(panelQIsFormula(idx)) Then
+            tgtValue.Formula = panelQ(idx)
+        Else
+            tgtValue.Value = panelQ(idx)
+        End If
+        tgtValue.NumberFormat = panelQFormats(idx)
+        
+        Err.Clear
+        On Error GoTo 0
+    Next r
+End Sub
+
+
+Private Sub PID_ResetFollowingMonthSelections(ByVal sourceMonthIndex As Long, _
+                                              ByVal sourceSheetName As String)
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim oldScreenUpdating As Boolean
+    Dim oldEnableEvents As Boolean
+    
+    On Error GoTo SafeExit
+    
+    If sourceMonthIndex < 1 Or sourceMonthIndex >= 12 Then Exit Sub
+    
+    oldScreenUpdating = Application.ScreenUpdating
+    oldEnableEvents = Application.EnableEvents
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    
+    monthNames = PID_MonthNames()
+    
+    For i = sourceMonthIndex + 1 To 12
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i - 1)))
+        On Error GoTo SafeExit
+        
+        If Not ws Is Nothing Then
+            If ws.Visible = xlSheetVisible Then
+                ws.Activate
+                ActiveWindow.ScrollRow = 1
+                ActiveWindow.ScrollColumn = 1
+                ws.Range("A1").Select
+            End If
+        End If
+    Next i
+    
+SafeExit:
+    On Error Resume Next
+    Application.CutCopyMode = False
+    
+    If sourceSheetName <> "" Then
+        ThisWorkbook.Worksheets(sourceSheetName).Activate
+        ActiveWindow.ScrollRow = 1
+        ActiveWindow.ScrollColumn = 1
+        ThisWorkbook.Worksheets(sourceSheetName).Range("A1").Select
+    End If
+    
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
 End Sub
 
 

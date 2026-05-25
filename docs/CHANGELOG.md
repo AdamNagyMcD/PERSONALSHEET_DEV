@@ -15,6 +15,9 @@
 - README.md + docs/RELEASE.md hozzaadva (workflow, release checklist, admin makro figyelmeztetes).
 
 ### Fixed
+- mod_CopyData.bas: fehlende Konstante `PID_HOUR_OVERRIDE_LOG_SHEET` wiederhergestellt (Compile-Fehler vor CopyData).
+- mod_CopyData.bas: O18:Q25 Panel-Kopie merge-anker (O/Q) + O18:R25 Block; Panel vor RestoreFormulas.
+- mod_FormatMonthSheet.bas: CopyData-Button bei jedem Monats-Tab neu positionieren statt loeschen/neu anlegen (Mac/Februar-Fix).
 - mod_PIDSheetStyle.bas: Toolbar-Button-TextFrame per Late Binding (Mac: kein Compile-Fehler auf WordWrap).
 - mod_AddNewKVPeriodOnTop.bas + DieseArbeitsmappe.cls: LOHNTABELLE Status/Pruefung (I/J) explizit berechnen bei Manual Calculation.
 - mod_ResetAndImportVBAFiles.bas: `FixLegacyModul11Name` renames legacy `Modul11` to `mod_BuildDurchrechnung` (VBA max 31 chars; old name was 32).
