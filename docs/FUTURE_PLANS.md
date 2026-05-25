@@ -143,6 +143,61 @@ Spalte **L** zeigt bei unvollständigen oder irrelevanten Zeilen **€0,00**, ob
 
 ---
 
+## FP-004 — LOHNTABELLE „Eigene Stunden“: F-Dropdown auf Monatsblatt erst nach erneuter E-Auswahl
+
+**Status:** Offen (bekanntes UX-Problem, bewusst zurückgestellt)  
+**Priorität:** Mittel — Workaround existiert; Fix erst nach Performance-Abwägung  
+**Betroffene Bereiche:** `LOHNTABELLE`, Monatsblätter Spalte E/F, KV-Stunden-Dropdown
+
+### Beobachtetes Verhalten
+
+Nach **„2) Eigene Stunden“** auf **LOHNTABELLE** und Wechsel zu einem Monatsblatt (z. B. **Januar**) erscheint die **neue Stundenzahl nicht** im **F-Spalten-Dropdown**, solange in **Spalte E** der KV-Code **nicht erneut ausgewählt** wird.
+
+**Workaround (manuell):** In betroffenen Zeilen E erneut wählen → danach zeigt F die neue Stunde in der Liste.
+
+**Folge:** Fühlt sich wie ein **großer manueller Refresh** an (viele Zeilen / viele Mitarbeiter).
+
+### Vermutete Ursache (Ist-Zustand)
+
+- F-Dropdown wird **lazy** bzw. **dirty-flag-gesteuert** aktualisiert (`mod_KVStundenDropdown.bas`, `MarkAllKVDropdownsDirty`, `RefreshKVDropdownsIfDirtyForSheet` in `DieseArbeitsmappe.cls`).
+- Nach LOHNTABELLE-Änderung werden Dropdowns markiert, aber die **Validation-Liste in F** scheint an **bestehende E-Werte** gebunden zu bleiben, bis E **neu gesetzt** wird (Re-Trigger der Zeilen-Logik).
+- Performance-Optimierungen (kein F-Rebuild bei jedem Tab-Wechsel, kein E-Rebuild bei Open) können dieses Verhalten begünstigen.
+
+### Geplante Verbesserung (später)
+
+**Ziel:** Neue LOHNTABELLE-Stunden **automatisch** in F verfügbar machen — **ohne** E erneut wählen zu müssen — bei **Beibehaltung** der aktuellen Öffnungs-/Tab-Wechsel-Geschwindigkeit.
+
+**Mögliche Ansätze (noch nicht entschieden):**
+
+| Ansatz | Idee | Pro | Contra |
+|--------|------|-----|--------|
+| A — Zielgerichteter F-Refresh nach KV-Insert | Nach `AddCustomKVMonatsstunden` / `FormatKVPeriodArea` nur F-Validierungen für Zeilen mit passendem KV-Code (E) neu aufbauen | Präzise | Muss Schutz/Performance pro Zeile abwägen |
+| B — Tab-Activate: Dirty-Refresh vollständig | Beim ersten Monats-Tab nach `MarkAllKVDropdownsDirty` alle F-Listen wirklich neu binden (nicht nur Helper) | Einfacher für User | Risiko langsamer Tab-Wechsel |
+| C — E „weicher“ Re-Trigger | Intern E-Wert kurz leeren/setzen oder Validation invalidieren ohne User-Aktion | Kein manuelles Klicken | Hacky; Events/Overrides beachten |
+| D — F bei Fokus/Klick | Beim Öffnen des F-Dropdowns immer aktuelle Stundenliste aus LOHNTABELLE (bereits teilweise lazy) | Schnell im Alltag | Erst beim F-Klick sichtbar |
+
+**Empfohlene Reihenfolge bei Umsetzung:**
+
+1. Reproduktion: Eigene Stunden einfügen → Januar → Zeile mit gleichem KV-Code wie neue Stunde → F-Liste prüfen.
+2. Code-Pfad: `AddCustomKVMonatsstunden` → `MarkAllKVDropdownsDirty` → `RefreshKVDropdownsIfDirtyForSheet` / `RefreshKVStundenDropdownForSingleRow` nachvollziehen.
+3. Fix mit Messung: Tab-Wechsel-Zeit vor/nach Änderung (Mac + Windows).
+4. Regression: SMOKE, bestehende lazy F-Logik, kein 12× Voll-Rebuild bei Open.
+
+### Akzeptanzkriterien (wenn umgesetzt)
+
+- [ ] Nach neuer **Eigene Stunden**-Zeile in LOHNTABELLE erscheint die Stunde in **F** auf Monatsblättern **ohne** erneute E-Auswahl (für passenden KV-Code).
+- [ ] Workbook-Open und erster Monats-Tab bleiben **spürbar schnell** (kein spürbarer Voll-Refresh aller Zeilen).
+- [ ] Bestehende F-Overrides / Zukunftsplanung unverändert korrekt.
+- [ ] Mac + Excel 2016+ kompatibel.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_AddNewKVPeriodOnTop.bas` — `AddCustomKVMonatsstunden`, `MarkAllKVDropdownsDirty`
+- `vba/mod_KVStundenDropdown.bas` — F-Validation, Helper, Row-Refresh
+- `vba/DieseArbeitsmappe.cls` — `RefreshKVDropdownsIfDirtyForSheet`, SheetActivate
+
+---
+
 ## Weitere Einträge
 
 Neue Backlog-Punkte unten anfügen mit ID `FP-00N`, Status, Ursache, geplantem Ansatz und Akzeptanzkriterien.
