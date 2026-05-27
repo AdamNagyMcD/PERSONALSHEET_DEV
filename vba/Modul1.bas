@@ -80,10 +80,12 @@ Public Sub PID_FormatAllMoneyColumns()
             PID_ApplyEuroNumberFormat ws.Range("G3:G82")
             PID_ApplyEuroNumberFormat ws.Range("J3:J82")
             PID_ApplyEuroNumberFormat ws.Range("K3:K82")
+            PID_ApplyLetztesGehaltNumberFormat ws.Range("L3:L82")
             
             ws.Columns("G").ColumnWidth = 13
             ws.Columns("J").ColumnWidth = 13
             ws.Columns("K").ColumnWidth = 14
+            ws.Columns("L").ColumnWidth = 14
             
             ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
         End If
@@ -250,6 +252,28 @@ TryEnglishFormat:
     On Error GoTo SafeExit
     
     targetRange.NumberFormat = euroSymbol & " #,##0.00"
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_ApplyLetztesGehaltNumberFormat(ByVal targetRange As Range)
+    Dim euroSymbol As String
+    
+    If targetRange Is Nothing Then Exit Sub
+    
+    euroSymbol = ChrW(8364)
+    
+    On Error GoTo TryEnglishFormat
+    
+    ' Positiv;Negativ;Null (leer);Text — 0 wird nicht als €0,00 angezeigt.
+    targetRange.NumberFormatLocal = euroSymbol & " #.##0,00;-" & euroSymbol & " #.##0,00;;@"
+    Exit Sub
+
+TryEnglishFormat:
+    On Error GoTo SafeExit
+    
+    targetRange.NumberFormat = euroSymbol & " #,##0.00;-" & euroSymbol & " #,##0.00;;@"
 
 SafeExit:
 End Sub
@@ -461,6 +485,7 @@ Public Sub PID_RestoreLetztesGehaltFormulas()
            "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
            "Bereich: L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW & vbCrLf & _
            "Jahr aus: " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL & vbCrLf & vbCrLf & _
+           PID_GetLetztesGehaltRestoreStatusText() & vbCrLf & vbCrLf & _
            "AVG Bruttolohn (Q42) sollte danach wieder berechnet werden.", _
            vbInformation, "Spalte L"
     
@@ -505,6 +530,11 @@ Private Function PID_AnyMonthNeedsLetztesGehaltRestore() As Boolean
     
     If PID_MonthSheetHasLetztesGehaltStaticValues(ws) Then
         PID_AnyMonthNeedsLetztesGehaltRestore = True
+        Exit Function
+    End If
+    
+    If Not PID_MonthSheetHasLetztesGehaltEmptyZeroFix(ws) Then
+        PID_AnyMonthNeedsLetztesGehaltRestore = True
     End If
 End Function
 
@@ -541,6 +571,10 @@ Public Sub PID_RestoreLetztesGehaltFormulasSilent()
             Err.Clear
         End If
     Next i
+    
+    On Error Resume Next
+    Application.CalculateFull
+    Err.Clear
 
 SafeExit:
     Application.ScreenUpdating = oldScreenUpdating
@@ -573,12 +607,7 @@ End Function
 Private Function PID_RestoreLetztesGehaltFormulasOnSheet(ByVal ws As Worksheet, _
                                                          ByVal formulaR1C1 As String) As Boolean
     Dim wasProtected As Boolean
-    Dim euroSymbol As String
-    Dim sampleFormula As String
-    Dim fixedFormula As String
-    Dim sourceCell As Range
     Dim targetRange As Range
-    Dim yearRefA1 As String
     
     On Error GoTo SafeExit
     
@@ -586,48 +615,23 @@ Private Function PID_RestoreLetztesGehaltFormulasOnSheet(ByVal ws As Worksheet, 
     If Not PID_IsWorkerMonthSheetName(ws.Name) Then Exit Function
     If Not IsNumeric(ws.Range("A1").Value) Then Exit Function
     
-    If PID_MonthSheetHasLetztesGehaltFormula(ws) Then
-        If Not PID_MonthSheetHasLetztesGehaltRefError(ws) Then
-            If Not PID_MonthSheetHasLetztesGehaltStaticValues(ws) Then
-                PID_RestoreLetztesGehaltFormulasOnSheet = True
-                Exit Function
-            End If
-        End If
-    End If
-    
     wasProtected = ws.ProtectContents
     
-    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
-    If ws.ProtectContents Then Exit Function
+    If Not PID_TryUnprotectMonthSheetForMacro(ws) Then Exit Function
     
     If Trim$(CStr(ws.Range("L1").Value)) = "" Then
         ws.Range("L1").Value = "Letztes Gehalt"
     End If
     
-    Set sourceCell = ws.Range("L" & PID_FIRST_ROW)
     Set targetRange = ws.Range("L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW)
-    yearRefA1 = PID_GetEinstellungYearRefA1()
+    PID_ApplyLetztesGehaltFormulaToSheet ws, targetRange, formulaR1C1
+    PID_ApplyLetztesGehaltNumberFormat targetRange
+    PID_RestoreMonthSheetEmployeeBlockStyles ws
     
-    sampleFormula = CStr(sourceCell.Formula)
-    
-    If InStr(1, sampleFormula, "#REF", vbTextCompare) > 0 Then
-        fixedFormula = Replace(sampleFormula, "#REF!", yearRefA1)
-        fixedFormula = Replace(fixedFormula, "#REF", yearRefA1)
-        sourceCell.Formula = fixedFormula
-        
-        If PID_LAST_ROW > PID_FIRST_ROW Then
-            sourceCell.AutoFill Destination:=targetRange
-        End If
-    ElseIf Not PID_MonthSheetHasLetztesGehaltFormula(ws) Then
-        targetRange.FormulaR1C1 = formulaR1C1
-    ElseIf PID_MonthSheetHasLetztesGehaltStaticValues(ws) Then
-        If PID_LAST_ROW > PID_FIRST_ROW Then
-            sourceCell.AutoFill Destination:=targetRange
-        End If
-    End If
-    
-    euroSymbol = PID_GetEuroSymbol()
-    targetRange.NumberFormat = euroSymbol & " #,##0.00"
+    On Error Resume Next
+    targetRange.Calculate
+    Err.Clear
+    On Error GoTo SafeExit
     
     PID_RestoreLetztesGehaltFormulasOnSheet = Not PID_MonthSheetHasLetztesGehaltRefError(ws)
 
@@ -644,15 +648,110 @@ SafeExit:
 End Function
 
 
+Private Function PID_TryUnprotectMonthSheetForMacro(ByVal ws As Worksheet) As Boolean
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    If ws.ProtectContents Then ws.Unprotect
+    PID_TryUnprotectMonthSheetForMacro = Not ws.ProtectContents
+End Function
+
+
+Private Sub PID_ApplyLetztesGehaltFormulaToSheet(ByVal ws As Worksheet, _
+                                                 ByVal targetRange As Range, _
+                                                 ByVal formulaR1C1 As String)
+    Dim firstCell As Range
+    Dim existingFormula As String
+    Dim wrappedFormula As String
+    Dim rowNum As Long
+    
+    If ws Is Nothing Then Exit Sub
+    If targetRange Is Nothing Then Exit Sub
+    
+    rowNum = targetRange.Row
+    Set firstCell = targetRange.Cells(1, 1)
+    existingFormula = Trim$(CStr(firstCell.Formula))
+    
+    If PID_FormulaHasLetztesGehaltEmployeeGuard(existingFormula) Then
+        firstCell.FormulaR1C1 = formulaR1C1
+    ElseIf Len(existingFormula) > 3 And InStr(1, existingFormula, "#REF", vbTextCompare) = 0 Then
+        If Left$(existingFormula, 1) = "=" Then existingFormula = Mid$(existingFormula, 2)
+        wrappedFormula = "=IF(OR($B" & CStr(rowNum) & "="",$C" & CStr(rowNum) & "=""),""""," & _
+            "IF(" & existingFormula & "=0,""""," & existingFormula & "))"
+        firstCell.Formula = wrappedFormula
+    Else
+        firstCell.FormulaR1C1 = formulaR1C1
+    End If
+    
+    If targetRange.Rows.Count > 1 Then
+        PID_FillFormulaDownWithoutFormats firstCell, targetRange
+    End If
+End Sub
+
+
+Private Sub PID_FillFormulaDownWithoutFormats(ByVal firstCell As Range, ByVal targetRange As Range)
+    Dim fillRange As Range
+    
+    If firstCell Is Nothing Then Exit Sub
+    If targetRange Is Nothing Then Exit Sub
+    If targetRange.Rows.Count <= 1 Then Exit Sub
+    
+    Set fillRange = targetRange.Offset(1, 0).Resize(targetRange.Rows.Count - 1, 1)
+    
+    On Error Resume Next
+    firstCell.Copy
+    fillRange.PasteSpecial Paste:=xlPasteFormulas
+    Application.CutCopyMode = False
+    Err.Clear
+End Sub
+
+
+Private Function PID_FormulaHasLetztesGehaltEmployeeGuard(ByVal formulaText As String) As Boolean
+    Dim compactFormula As String
+    
+    compactFormula = UCase$(Replace(Replace(Replace(formulaText, " ", ""), vbLf, ""), vbTab, ""))
+    
+    If InStr(1, compactFormula, "RC[-10]", vbTextCompare) > 0 Then
+        PID_FormulaHasLetztesGehaltEmployeeGuard = True
+        Exit Function
+    End If
+    
+    PID_FormulaHasLetztesGehaltEmployeeGuard = _
+        (InStr(1, compactFormula, "$B", vbTextCompare) > 0) And _
+        (InStr(1, compactFormula, "$C", vbTextCompare) > 0) And _
+        (InStr(1, compactFormula, "=""", vbTextCompare) > 0 Or InStr(1, compactFormula, "="";", vbTextCompare) > 0)
+End Function
+
+
+Private Function PID_GetLetztesGehaltRestoreStatusText() As String
+    Dim ws As Worksheet
+    Dim probeFormula As String
+    
+    On Error GoTo SafeExit
+    
+    Set ws = ThisWorkbook.Worksheets("Februar")
+    probeFormula = Left$(Trim$(CStr(ws.Range("L" & PID_FIRST_ROW).Formula)), 72)
+    
+    If PID_FormulaHasLetztesGehaltEmployeeGuard(CStr(ws.Range("L" & PID_FIRST_ROW).Formula)) Then
+        PID_GetLetztesGehaltRestoreStatusText = "Pruefung Februar L" & PID_FIRST_ROW & ": B/C-Schutz aktiv."
+    Else
+        PID_GetLetztesGehaltRestoreStatusText = "WARNUNG: Februar L" & PID_FIRST_ROW & " noch alt:" & vbCrLf & probeFormula
+    End If
+    Exit Function
+
+SafeExit:
+    PID_GetLetztesGehaltRestoreStatusText = "Pruefung Februar L" & PID_FIRST_ROW & " nicht moeglich."
+End Function
+
+
 Public Function PID_GetLetztesGehaltFormulaR1C1() As String
     Dim yearRef As String
+    Dim coreFormula As String
     
     yearRef = PID_GetEinstellungYearRefR1C1()
     
     ' Spalte L = Letztes Gehalt / Laborcost fuer AVG Bruttolohn (Q42 = Q17/Q8).
     ' Jahr aus EINSTELLUNG!C35 statt legacy LOHNTABELLE!G3 (#REF!).
-    PID_GetLetztesGehaltFormulaR1C1 = _
-        "=IFERROR(IF(OR(ISBLANK(RC[-8]),ISBLANK(RC[-6]),ISBLANK(RC[-5]),ISBLANK(RC[-1])),0," & _
+    coreFormula = "IFERROR(IF(OR(ISBLANK(RC[-8]),ISBLANK(RC[-6]),ISBLANK(RC[-5]),ISBLANK(RC[-1])),0," & _
         "IF(YEAR(RC[-8])<" & yearRef & "," & _
         "IF(ISNUMBER(RC[-3]),IF(YEAR(RC[-3])<" & yearRef & ",0," & _
         "IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
@@ -665,6 +764,24 @@ Public Function PID_GetLetztesGehaltFormulaR1C1() As String
         "IF(MONTH(RC[-8])=R1C1,IF(ISNUMBER(RC[-3]),IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
         "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(RC[-3]-RC[-8]+1)+RC[-1])," & _
         "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(DAY(EOMONTH(RC[-8],0))-DAY(RC[-8])+1)+RC[-1]),0)),0))),0)"
+    
+    ' Kein Mitarbeiter (B/C leer) oder Ergebnis 0 -> leer, analog Spalte G ohne KV/Stunden.
+    PID_GetLetztesGehaltFormulaR1C1 = _
+        "=IF(OR(RC[-10]="""",RC[-9]=""""),""""," & _
+        "IF(" & coreFormula & "=0,""""," & coreFormula & "))"
+End Function
+
+
+Private Function PID_MonthSheetHasLetztesGehaltEmptyZeroFix(ByVal wsMonth As Worksheet) As Boolean
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Function
+    If Not PID_MonthSheetHasLetztesGehaltFormula(wsMonth) Then Exit Function
+    
+    PID_MonthSheetHasLetztesGehaltEmptyZeroFix = _
+        PID_FormulaHasLetztesGehaltEmployeeGuard(CStr(wsMonth.Range("L" & PID_FIRST_ROW).Formula))
+
+SafeExit:
 End Function
 
 

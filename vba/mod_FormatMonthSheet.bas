@@ -302,6 +302,16 @@ Public Sub PID_ApplyMonthEmployeeZebraRows(ByVal ws As Worksheet)
 End Sub
 
 
+' Hintergrund + Rahmen fuer B3:N82 nach Formel-Aenderungen in Spalte L (AutoFill-Kollateralschaden).
+Public Sub PID_RestoreMonthSheetEmployeeBlockStyles(ByVal ws As Worksheet)
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    PID_ApplyMonthEmployeeZebraRows ws
+    PID_MSApplyBlockBorders ws.Range("B3:N82")
+End Sub
+
+
 Private Sub PID_MSApplyRightPanelReferenceStyles(ByVal ws As Worksheet)
     Dim r As Long
     Dim panelRange As Range

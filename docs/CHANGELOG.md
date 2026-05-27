@@ -15,6 +15,7 @@
 - README.md + docs/RELEASE.md hozzaadva (workflow, release checklist, admin makro figyelmeztetes).
 
 ### Fixed
+- Modul1.bas + mod_FormatMonthSheet.bas: Spalte L Restore ohne Format-Kopie (PasteSpecial Formeln); Mitarbeiterblock-Rahmen danach wiederherstellen.
 - mod_FormatMonthSheet.bas + mod_CopyData.bas: Zebra-Hintergrund nach CopyData/Sort auf Zielmonaten wiederherstellen.
 - mod_CopyData.bas: fehlende Konstante `PID_HOUR_OVERRIDE_LOG_SHEET` wiederhergestellt (Compile-Fehler vor CopyData).
 - mod_CopyData.bas: O18:Q25 Panel-Kopie merge-anker (O/Q) + O18:R25 Block; Panel vor RestoreFormulas.

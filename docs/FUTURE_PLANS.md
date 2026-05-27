@@ -101,37 +101,25 @@ Beim Ausführen von **CopyData** wurde der Bereich **O18:Q25** laut SPEC nicht z
 
 ## FP-003 — Spalte L: bei Ergebnis 0 Zelle leer lassen (kein €0,00)
 
-**Status:** Offen (Enhancement / Bugfix)  
+**Status:** Behoben (2026-05-25 v2) — B/C-Guard + 0→leer; Restore per `RC[-10]`-Marker  
 **Priorität:** Mittel — UX / Konsistenz mit Spalte G  
 **Betroffene Bereiche:** Monatsblätter Spalte L (Letztes Gehalt / Laborcost), Formel-Restore
 
-### Beobachtetes Verhalten
+### Fix (Ist-Zustand)
 
-Spalte **L** zeigt bei unvollständigen oder irrelevanten Zeilen **€0,00**, obwohl fachlich **kein Wert** angezeigt werden soll — die Zelle soll **leer** bleiben (wie bei Spalte G nach Stunden-Fix, wenn F leer ist).
-
-### Ist-Zustand
-
-- Formel in `PID_GetLetztesGehaltFormulaR1C1()` (`Modul1.bas`) liefert in mehreren Zweigen explizit **`0`** (z. B. bei `ISBLANK`-Kombinationen, Exit-Logik, Monatsvergleich).
-- Euro-Format auf L3:L82 → **0 wird als €0,00** gerendert.
-
-### Geplante Verbesserung
-
-- Formel anpassen: Ergebnis **0** → **`""`** (leer), analog G-Spalten-Pattern (`mod_KVLohnLookup.bas` / Monatslohn ohne Stunden).
-- Restore-Pfade prüfen: `PID_RestoreLetztesGehaltFormulasOnSheet`, CopyData `formulaL`, ggf. `PID_RecalculateLetztesGehaltForRow`.
-- Keine Regression für Q42 / AVG Bruttolohn (L-Werte nur informativ laut SPEC — L propagiert nicht).
+- `Modul1.bas`: L-Formel liefert bei Ergebnis 0 `""` statt sichtbarem €0,00.
+- `PID_MonthSheetNeedsLetztesGehaltFormulaUpdate`: alte L-Formeln werden beim Open/Restore aktualisiert.
 
 ### Akzeptanzkriterien
 
-- [ ] Leere / irrelevante Mitarbeiterzeilen: L **ohne** €0,00, Zelle optisch leer.
-- [ ] Zeilen mit echtem Laborcost-Wert > 0: weiterhin korrekt formatiert (€).
-- [ ] CopyData überschreibt L in Zielmonaten weiterhin **nicht** (SPEC: L informational only).
-- [ ] Mac + Windows Excel 2016+ kompatibel (kein LET/XLOOKUP).
+- [x] Leere / irrelevante Mitarbeiterzeilen: L ohne €0,00, Zelle optisch leer.
+- [ ] Zeilen mit echtem Laborcost-Wert > 0: weiterhin korrekt formatiert (€) — manuell pruefen.
+- [x] CopyData ueberschreibt L in Zielmonaten weiterhin nicht (SPEC: L informational only).
+- [ ] Mac + Windows Excel 2016+ kompatibel — manuell pruefen.
 
 ### Betroffene Dateien (Referenz)
 
-- `vba/Modul1.bas` — `PID_GetLetztesGehaltFormulaR1C1`, `PID_RestoreLetztesGehaltFormulasOnSheet`
-- `vba/mod_CopyData.bas` — `formulaL` / Restore
-- `vba/mod_KVLohnLookup.bas` — Referenz für „leer statt 0“-Pattern (Spalte G)
+- `vba/Modul1.bas` — `PID_GetLetztesGehaltFormulaR1C1`, Restore-Pfade
 
 ---
 

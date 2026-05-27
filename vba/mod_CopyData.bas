@@ -977,7 +977,7 @@ Private Sub PID_ApplyMonthSheetFormats(ByVal ws As Worksheet)
     
     ws.Range("G3:G82").NumberFormatLocal = euroSymbol & " #.##0,00"
     ws.Range("K3:K82").NumberFormatLocal = euroSymbol & " #.##0,00"
-    ws.Range("L3:L82").NumberFormatLocal = euroSymbol & " #.##0,00"
+    PID_ApplyLetztesGehaltNumberFormat ws.Range("L3:L82")
     
     GoTo SafeExit
 
@@ -990,7 +990,7 @@ TryEnglishFormat:
     
     ws.Range("G3:G82").NumberFormat = euroSymbol & " #,##0.00"
     ws.Range("K3:K82").NumberFormat = euroSymbol & " #,##0.00"
-    ws.Range("L3:L82").NumberFormat = euroSymbol & " #,##0.00"
+    PID_ApplyLetztesGehaltNumberFormat ws.Range("L3:L82")
 
 SafeExit:
 End Sub

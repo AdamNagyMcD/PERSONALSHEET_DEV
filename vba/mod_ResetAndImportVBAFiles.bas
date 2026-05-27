@@ -128,6 +128,10 @@ Public Sub ResetAndImportVBAFiles()
            updatedCodeModules & " aktualisiert." & vbCrLf & vbCrLf & _
            "Danach: Kompilieren > Speichern > Excel neu starten > FullSystemRefresh", _
            vbInformation, "VBA Import"
+    
+    On Error Resume Next
+    PID_RestoreLetztesGehaltFormulasSilent
+    Err.Clear
 
     Exit Sub
 
