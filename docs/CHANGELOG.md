@@ -15,6 +15,7 @@
 - README.md + docs/RELEASE.md hozzaadva (workflow, release checklist, admin makro figyelmeztetes).
 
 ### Fixed
+- mod_SumMergedCells.bas: FINANZIELL-Sofort-Sync nur noch bei Q17:R29 und S35; O18:Q25-Freitext loest kein Panel-Flackern mehr aus (FP-001).
 - Modul1.bas + mod_FormatMonthSheet.bas: Spalte L Restore ohne Format-Kopie (PasteSpecial Formeln); Mitarbeiterblock-Rahmen danach wiederherstellen.
 - mod_FormatMonthSheet.bas + mod_CopyData.bas: Zebra-Hintergrund nach CopyData/Sort auf Zielmonaten wiederherstellen.
 - mod_CopyData.bas: fehlende Konstante `PID_HOUR_OVERRIDE_LOG_SHEET` wiederhergestellt (Compile-Fehler vor CopyData).

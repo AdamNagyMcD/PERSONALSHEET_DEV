@@ -482,7 +482,9 @@ Public Function PID_MonthChangeNeedsImmediateFinanzSync(ByVal ws As Worksheet, B
     If changedRange Is Nothing Then Exit Function
     If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
     
-    Set watchRange = Union(ws.Range("Q17:R29"), ws.Range("S35"), ws.Range("O18:Q25"))
+    ' O18:Q25 = Personal-/Info-Panel (Freitext, CopyData-Propagation). Keine Formeln in
+    ' Q17:R29/S35 haengen davon ab -> kein sofortiger FINANZIELL-Sync (FP-001, kein Flackern).
+    Set watchRange = Union(ws.Range("Q17:R29"), ws.Range("S35"))
     
     If Not Intersect(changedRange, watchRange) Is Nothing Then
         PID_MonthChangeNeedsImmediateFinanzSync = True
