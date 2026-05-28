@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Changed
+- docs/Kurzanleitung_Personalsheet_A4.html: vereinfachte Anleitung für Einsteiger (Umlaute ä/ö/ü/ß), drei Grundregeln, Schritt-für-Schritt CopyData/Austritt, kein Ziehen in E/F, FormatAllMonthSheets-Hinweis.
 - docs/FUTURE_PLANS.md: Schutz-Paket (Amateur-Vermeidung) — Übersicht + FP-011–FP-016 (Fill Handle, Sort off, Lock-all/Whitelist, EnableSelection, Endanwender-Doku, Schutz-Smoke).
 - docs/FUTURE_PLANS.md: Performance-Backlog FP-005–FP-010 (Windows-Referenzmessung, F-Dropdown/Names/SheetChange/Fluktuation).
 - mod_FormatMonthSheet.bas: Referenz-Layout aus manuell formatiertem Januar (OOXML-Analyse); FormatAllMonthSheets kopiert Formate von Januar.

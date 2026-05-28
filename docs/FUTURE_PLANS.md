@@ -477,9 +477,12 @@ Restaurant-Manager ohne Excel-Wissen: **was tun / was nicht** + **was tun bei ka
 - Bei kaputtem Zebra/Rahmen: Button **`FormatAllMonthSheets`** (oder Admin-Hinweis).
 - Wichtige Aktionen nur über **Toolbar-Buttons** (CopyData, Aktualisierung, …).
 
+**Ist (2026-05):** Ausgearbeitet in `docs/Kurzanleitung_Personalsheet_A4.html` (A4-Druck, einfache Sprache, Umlaute).
+
 ### Akzeptanzkriterien
 
-- [ ] Hinweis für Endnutzer sichtbar (Zelle oder README-Abschnitt „Für Restaurants“).
+- [x] Hinweis für Endnutzer in Kurzanleitung HTML (druckbar A4).
+- [ ] Optional: gleicher Kurztext als Hinweiszelle auf Monatsblättern.
 - [ ] Keine technischen Begriffe (kein „Named Range“, „SheetChange“).
 - [ ] Recovery-Pfad zu `FormatAllMonthSheets` dokumentiert.
 

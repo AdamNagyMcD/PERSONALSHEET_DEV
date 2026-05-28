@@ -15,8 +15,8 @@
 
     body {
       font-family: "Helvetica Neue", Arial, sans-serif;
-      font-size: 10.5pt;
-      line-height: 1.35;
+      font-size: 11pt;
+      line-height: 1.45;
       color: #1a1a1a;
       max-width: 180mm;
       margin: 0 auto;
@@ -24,8 +24,8 @@
     }
 
     h1 {
-      font-size: 17pt;
-      margin: 0 0 4mm;
+      font-size: 18pt;
+      margin: 0 0 3mm;
       line-height: 1.2;
     }
 
@@ -36,11 +36,17 @@
     }
 
     h2 {
-      font-size: 11pt;
-      margin: 5mm 0 2mm;
+      font-size: 12pt;
+      margin: 6mm 0 2mm;
       padding-bottom: 1mm;
       border-bottom: 1px solid #ccc;
       page-break-after: avoid;
+    }
+
+    h3 {
+      font-size: 10.5pt;
+      margin: 3mm 0 1.5mm;
+      color: #333;
     }
 
     p {
@@ -49,23 +55,23 @@
 
     ul, ol {
       margin: 1mm 0 3mm;
-      padding-left: 5mm;
+      padding-left: 5.5mm;
     }
 
     li {
-      margin-bottom: 1.5mm;
+      margin-bottom: 2mm;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       margin: 2mm 0 4mm;
-      font-size: 9.5pt;
+      font-size: 10pt;
     }
 
     th, td {
       border: 1px solid #bbb;
-      padding: 2mm 2.5mm;
+      padding: 2.5mm 3mm;
       vertical-align: top;
       text-align: left;
     }
@@ -78,13 +84,14 @@
     .box {
       border: 1px solid #888;
       background: #fafafa;
-      padding: 3mm 4mm;
+      padding: 3.5mm 4mm;
       margin: 3mm 0;
     }
 
-    .box strong {
+    .box strong.title {
       display: block;
-      margin-bottom: 1mm;
+      margin-bottom: 2mm;
+      font-size: 11pt;
     }
 
     .warn {
@@ -95,6 +102,17 @@
     .ok {
       border-color: #2d6a2d;
       background: #f4faf4;
+    }
+
+    .rules {
+      border-color: #1a4d8c;
+      background: #f0f6fc;
+      font-size: 10.5pt;
+    }
+
+    .step {
+      margin-left: 0;
+      padding-left: 5mm;
     }
 
     .small {
@@ -128,152 +146,222 @@
 <body>
 
   <h1>Personalsheet – Kurzanleitung</h1>
-  <p class="subtitle">Fuer Restaurantleitung · Stand: Mai 2026 · Blatt „EINSTELLUNG“ = Jahr und zentrale Einstellungen</p>
+  <p class="subtitle">Für Restaurantleitung · Stand: Mai 2026 · Einfach erklärt – auch wenn Sie mit Excel gerade erst anfangen</p>
 
-  <h2>1. Wofuer ist die Datei?</h2>
-  <p>Das Personalsheet verwaltet <strong>Mitarbeiter pro Monat</strong>, Lohn-Stunden (KV), Austritte und eine <strong>Fluktuations-Auswertung</strong> fuer das Restaurant. Die wichtigsten Blaetter:</p>
-  <ul>
-    <li><strong>Januar … Dezember</strong> – Monatsdaten der Mitarbeiter</li>
-    <li><strong>FLUKTUATION</strong> – Uebersicht: Status, Risiko, Empfehlungen, Diagramme</li>
-    <li><strong>LOHNTABELLE</strong> – KV-Tabelle (nur Admin / bei KV-Aenderungen)</li>
-    <li><strong>EINSTELLUNG</strong> – Arbeitsjahr (Zelle <strong>C35</strong>) – nur Admin aendern</li>
-  </ul>
+  <div class="box rules">
+    <strong class="title">Die drei wichtigsten Regeln (bitte merken)</strong>
+    <ol>
+      <li><strong>Stunden und Vertragstyp</strong> ändern Sie fast nur in den Spalten <strong>E</strong> und <strong>F</strong> (weiße Felder mit Liste).</li>
+      <li><strong>Nicht ziehen:</strong> Zelle in E oder F anklicken und <strong>nicht</strong> mit der Maus nach unten oder zur Seite ziehen. Das zerstört oft die Farben im Blatt.</li>
+      <li><strong>Am Monatsende:</strong> Daten mit dem Knopf bzw. Makro <strong>CopyData</strong> in die nächsten Monate kopieren (Anleitung unten).</li>
+    </ol>
+  </div>
 
-  <h2>2. Monatsblatt – das Wichtigste</h2>
+  <h2>1. Wofür ist diese Excel-Datei?</h2>
+  <p>Sie führen hier Ihr <strong>Personal pro Monat</strong>: Wer arbeitet, welche Stunden laut Vertrag (KV), wer ausscheidet. Excel rechnet den <strong>Monatslohn</strong> und zeigt auf dem Blatt <strong>FLUKTUATION</strong>, ob viele Leute gehen.</p>
+  <p><strong>Sie müssen nicht rechnen.</strong> Sie tragen Daten ein – Formeln macht die Datei.</p>
+
+  <h3>Welches Blatt wofür?</h3>
+  <table>
+    <tr>
+      <th>Blatt-Name</th>
+      <th>Das machen Sie dort</th>
+    </tr>
+    <tr>
+      <td><strong>Januar … Dezember</strong></td>
+      <td>Jeden Monat: Mitarbeiter, Stunden (E/F), Austritt (I + N)</td>
+    </tr>
+    <tr>
+      <td><strong>FLUKTUATION</strong></td>
+      <td>Nur <strong>lesen</strong>: Ampel-Status, „Sofort prüfen“, Diagramme</td>
+    </tr>
+    <tr>
+      <td><strong>LOHNTABELLE</strong></td>
+      <td><strong>Nicht</strong> selbst ändern – nur Admin bei neuem KV</td>
+    </tr>
+    <tr>
+      <td><strong>EINSTELLUNG</strong></td>
+      <td>Arbeitsjahr – <strong>nur Admin</strong> (Zelle C35)</td>
+    </tr>
+  </table>
+
+  <h2>2. Monatsblatt – wo trage ich was ein?</h2>
+  <p>Unten die Tabelle ab Zeile 3. Die <strong>Buchstaben oben</strong> sind die Spalten (A, B, C … wie in der Schule).</p>
+
   <table>
     <tr>
       <th>Spalte</th>
-      <th>Inhalt</th>
+      <th>In einfachen Worten</th>
+      <th>Wer pflegt das?</th>
     </tr>
     <tr>
-      <td><strong>B / C</strong></td>
-      <td>Personal-ID und Name</td>
+      <td><strong>B und C</strong></td>
+      <td>Nummer und <strong>Name</strong> des Mitarbeiters</td>
+      <td>Sie – wenn jemand <strong>neu</strong> kommt</td>
     </tr>
     <tr>
       <td><strong>D</strong></td>
-      <td>Eintrittsdatum</td>
+      <td>Datum: <strong>Eintritt</strong> ins Unternehmen</td>
+      <td>Sie – bei neuen Leuten</td>
     </tr>
     <tr>
-      <td><strong>E / F</strong></td>
-      <td>KV-Code und Monatsstunden (Dropdown in F nach Auswahl in E)</td>
+      <td><strong>E</strong></td>
+      <td><strong>Vertragstyp</strong> (KV-Code) – aus der Liste wählen</td>
+      <td>Sie – bei Änderung oder neu</td>
+    </tr>
+    <tr>
+      <td><strong>F</strong></td>
+      <td><strong>Stunden pro Monat</strong> – Liste erscheint nach E</td>
+      <td>Sie – oft jede Woche / bei Änderung</td>
     </tr>
     <tr>
       <td><strong>G</strong></td>
-      <td>Monatslohn (wird automatisch berechnet)</td>
+      <td><strong>Monatslohn</strong> – wird von Excel berechnet</td>
+      <td><strong>Nicht</strong> von Hand überschreiben</td>
     </tr>
     <tr>
       <td><strong>H</strong></td>
-      <td>Aktuelle Stunden (Formel – nicht manuell ueberschreiben)</td>
+      <td><strong>Aktuelle Stunden</strong> – Formel</td>
+      <td><strong>Nicht</strong> von Hand überschreiben</td>
     </tr>
     <tr>
       <td><strong>I</strong></td>
-      <td><strong>Austrittsdatum</strong> – nur wenn Mitarbeiter ausscheidet</td>
+      <td><strong>Austrittsdatum</strong> – nur wenn jemand geht</td>
+      <td>Sie – beim Austritt</td>
     </tr>
     <tr>
       <td><strong>N</strong></td>
-      <td><strong>Austrittsgrund</strong> – Pflicht bei Austritt (Liste / Dropdown)</td>
+      <td><strong>Warum</strong> die Person geht (Grund aus Liste)</td>
+      <td>Sie – <strong>immer</strong> zusammen mit I</td>
     </tr>
   </table>
 
   <div class="box warn">
-    <strong>Wichtig bei Austritt</strong>
-    Immer <strong>beides</strong> ausfuellen: Spalte <strong>I</strong> (Datum) und Spalte <strong>N</strong> (Grund). Ohne N bleibt die FLUKTUATION-Auswertung unvollstaendig (Status „Daten pruefen“).
+    <strong class="title">Austritt – beides ausfüllen!</strong>
+    <p>Wenn jemand das Team verlässt:</p>
+    <ol class="step">
+      <li>In Spalte <strong>I</strong> das <strong>Datum</strong> eintragen (wann ausscheidet).</li>
+      <li>In Spalte <strong>N</strong> den <strong>Grund</strong> aus der Liste wählen.</li>
+    </ol>
+    <p>Nur I ohne N reicht <strong>nicht</strong>. Dann steht auf FLUKTUATION oft „Daten prüfen“ und die Auswertung ist unvollständig.</p>
   </div>
 
-  <h2>3. Monatliche Routine (empfohlen)</h2>
+  <h2>3. Normaler Alltag (ohne Austritt)</h2>
   <ol>
-    <li>Im aktuellen Monatsblatt alle Aenderungen eintragen (Eintritte, Stunden, Austritte).</li>
-    <li>Bei Austritt sofort <strong>I + N</strong> ergaenzen.</li>
-    <li>Am Monatsende (oder zu Beginn des neuen Monats): Daten in die folgenden Monate kopieren (siehe Punkt 4).</li>
-    <li>Blatt <strong>FLUKTUATION</strong> oeffnen und Kurzfassung + „Sofort pruefen“ lesen.</li>
+    <li>Blatt des <strong>aktuellen Monats</strong> öffnen (z.&nbsp;B. <strong>Mai</strong>).</li>
+    <li>Zeile des Mitarbeiters finden (Name in Spalte C).</li>
+    <li>In <strong>E</strong> den richtigen Vertragstyp wählen (Dropdown-Pfeil).</li>
+    <li>In <strong>F</strong> die Stunden wählen – die Liste kommt, wenn E schon passt.</li>
+    <li>Datei <strong>speichern</strong> (Strg+S bzw. Cmd+S auf Mac).</li>
+  </ol>
+  <p class="small">Wenn in F keine Liste erscheint: E noch einmal anklicken und wählen, Blatt wechseln und zurück – oder Admin fragen.</p>
+
+  <h2>4. Neuer Mitarbeiter</h2>
+  <ol>
+    <li>Erste <strong>freie Zeile</strong> in der Tabelle suchen (B und C leer).</li>
+    <li><strong>B</strong> = Personal-Nummer, <strong>C</strong> = Name eintragen.</li>
+    <li><strong>D</strong> = Eintrittsdatum.</li>
+    <li><strong>E</strong> und <strong>F</strong> wie oben setzen.</li>
+    <li>Speichern.</li>
   </ol>
 
-  <h2>4. Daten in folgende Monate kopieren</h2>
-  <p>So werden die Mitarbeiterdaten ab dem <strong>aktiven Monatsblatt</strong> in die spaeteren Monate uebernommen (ohne alte Planungsdaten zu zerstoeren).</p>
-  <ol>
-    <li>Monatsblatt oeffnen, ab dem kopiert werden soll (z.&nbsp;B. <strong>Mai</strong>).</li>
-    <li><strong>Alt + F8</strong> (Mac: <strong>Fn + Alt + F8</strong>) oder Menue <strong>Entwicklertools → Makros</strong>.</li>
-    <li>Makro <strong>CopyData</strong> auswaehlen und <strong>Ausfuehren</strong>.</li>
-    <li>Dialog bestaetigen und warten, bis die Meldung erscheint.</li>
-  </ol>
-  <p class="small">Gleiche Funktion: <em>DatenInFolgendeMonateKopieren</em> – nur ein Name, gleicher Ablauf.</p>
+  <h2>5. Monatsende: Daten in die nächsten Monate kopieren</h2>
+  <p>So bleiben die Mitarbeiter auch in <strong>Juni, Juli, …</strong> eingetragen. Sie kopieren ab dem Monat, den Sie gerade bearbeitet haben.</p>
 
-  <h2>5. FLUKTUATION verstehen (30 Sekunden)</h2>
-  <p>Blatt <strong>FLUKTUATION</strong> oeffnen – die Auswertung wird automatisch neu erstellt.</p>
-  <table>
-    <tr>
-      <th>Bereich</th>
-      <th>Was Sie sehen</th>
-    </tr>
-    <tr>
-      <td><strong>Status</strong></td>
-      <td>Niedrig / Mittel / Hoch / Kritisch / Daten pruefen</td>
-    </tr>
-    <tr>
-      <td><strong>Sofort pruefen</strong></td>
-      <td>Konkrete Faelle: Monat, Name, naechster Schritt</td>
-    </tr>
-    <tr>
-      <td><strong>Empfehlungen</strong></td>
-      <td>Was das Team tun sollte (Onboarding, Bindung, …)</td>
-    </tr>
-    <tr>
-      <td><strong>Diagramme</strong></td>
-      <td>Austritte pro Monat, nach Kategorie und Austrittsgrund</td>
-    </tr>
-  </table>
   <div class="box ok">
-    <strong>Kein Handlungsbedarf?</strong>
-    Status gruen oder „Niedrig“, „Sofort pruefen“ leer oder nur Hinweise – weiter beobachten und Daten aktuell halten.
+    <strong class="title">CopyData – Schritt für Schritt</strong>
+    <ol class="step">
+      <li>Monatsblatt öffnen, <strong>ab dem</strong> kopiert werden soll (z.&nbsp;B. <strong>Mai</strong>).</li>
+      <li><strong>Windows:</strong> Taste <strong>Alt</strong> gedrückt halten, dann <strong>F8</strong>.<br>
+          <strong>Mac:</strong> oft <strong>fn + Alt + F8</strong>, oder Menü <strong>Entwicklertools → Makros</strong>.</li>
+      <li>In der Liste <strong>CopyData</strong> anklicken.</li>
+      <li><strong>Ausführen</strong> klicken.</li>
+      <li>Den Hinweis im Fenster <strong>lesen</strong> und mit <strong>Ja</strong> bestätigen.</li>
+      <li>Warten, bis eine Meldung kommt, dass es fertig ist.</li>
+      <li>Datei speichern.</li>
+    </ol>
+    <p class="small">Gleiche Funktion, anderer Name in der Liste: <em>DatenInFolgendeMonateKopieren</em> – dasselbe Programm.</p>
   </div>
 
-  <h2>6. Monat leeren (Vorsicht)</h2>
-  <p>Nur wenn der <strong>aktuelle Monat komplett neu</strong> beginnen soll:</p>
-  <ol>
-    <li>Monatsblatt aktivieren.</li>
-    <li>Makro <strong>DataClear</strong> (Alt+F8) – Sicherheitsabfrage genau lesen und bestaetigen.</li>
-  </ol>
-  <p class="small">Loeschen betrifft u.&nbsp;a. Mitarbeiterzeilen und Fluktuation (Q31) in diesem Monat.</p>
+  <p><strong>Was passiert dabei?</strong> Alle Monate <strong>nach</strong> Ihrem aktiven Blatt bekommen die Mitarbeiterdaten. Alte Planungen in der Zukunft bleiben laut System erhalten – trotzdem den Dialog ernst nehmen.</p>
 
-  <h2>7. Wenn etwas „haengt“ oder falsch wirkt</h2>
+  <h2>6. Blatt FLUKTUATION – kurz lesen</h2>
+  <ol>
+    <li>Unten auf das Blatt <strong>FLUKTUATION</strong> klicken.</li>
+    <li>Oben den <strong>Status</strong> ansehen (z.&nbsp;B. Niedrig, Mittel, Hoch).</li>
+    <li>Liste <strong>„Sofort prüfen“</strong> lesen – dort steht <strong>wer</strong> und <strong>was fehlt</strong> (oft fehlender Austrittsgrund in N).</li>
+  </ol>
+  <div class="box ok">
+    <strong class="title">Alles in Ordnung?</strong>
+    Status <strong>Niedrig</strong> oder grün, und „Sofort prüfen“ ist leer oder nur harmlose Hinweise → weiter normal pflegen, nichts Dramatisches.
+  </div>
+
+  <h2>7. Wenn das Blatt „komisch“ aussieht (Farben, Streifen)</h2>
+  <p>Oft passiert das durch <strong>Ziehen</strong> von E oder F oder durch versehentliches Einfügen mit Format.</p>
+  <ol>
+    <li><strong>Stoppen</strong> – nicht weiter klicken und ziehen.</li>
+    <li>Datei speichern.</li>
+    <li><strong>Admin</strong> bitten, das Makro <strong>FormatAllMonthSheets</strong> auszuführen (stellt das Layout der Monatsblätter wieder her).</li>
+    <li>Wenn es danach noch falsch ist: Admin / IT.</li>
+  </ol>
+
+  <h2>8. Monat komplett leeren (nur in Ausnahmen!)</h2>
+  <p>Nur wenn der Monat <strong>von vorne</strong> neu beginnen soll – alte Zeilen weg.</p>
+  <ol>
+    <li>Monatsblatt öffnen.</li>
+    <li>Alt+F8 (Mac: fn+Alt+F8) → Makro <strong>DataClear</strong> → Ausführen.</li>
+    <li>Den Warn-Text <strong>genau lesen</strong> – erst dann bestätigen.</li>
+  </ol>
+  <p class="small">Löscht u.&nbsp;a. Mitarbeiterzeilen in diesem Monat. Nicht ausprobieren „zum Spaß“.</p>
+
+  <h2>9. Häufige Probleme – erste Hilfe</h2>
   <table>
     <tr>
-      <th>Problem</th>
-      <th>Erste Hilfe</th>
+      <th>So fühlt es sich an</th>
+      <th>Was Sie tun können</th>
     </tr>
     <tr>
-      <td>Dropdown Stunden (F) fehlt</td>
-      <td>Spalte E pruefen, Blatt verlassen und wieder oeffnen</td>
+      <td>In <strong>F</strong> gibt es keine Liste</td>
+      <td><strong>E</strong> zuerst wählen; Blatt schließen und wieder öffnen; sonst Admin</td>
     </tr>
     <tr>
-      <td>Lohn (G) falsch</td>
-      <td>E und F pruefen; LOHNTABELLE durch Admin pruefen lassen</td>
+      <td><strong>G</strong> (Lohn) sieht falsch aus</td>
+      <td><strong>E</strong> und <strong>F</strong> prüfen; LOHNTABELLE nur durch Admin prüfen lassen</td>
     </tr>
     <tr>
-      <td>FLUKTUATION veraltet / „Daten pruefen“</td>
-      <td>Fehlende Austrittsgruende (Spalte N) ergaenzen, FLUKTUATION erneut oeffnen</td>
+      <td>FLUKTUATION: „Daten prüfen“</td>
+      <td>Bei allen Austritten: <strong>I</strong> und <strong>N</strong> vollständig? Dann FLUKTUATION nochmal öffnen</td>
     </tr>
     <tr>
-      <td>Excel reagiert nicht / alles langsam</td>
-      <td>Datei speichern, Excel neu starten</td>
+      <td>Excel hängt oder ist sehr langsam</td>
+      <td>Speichern, Excel <strong>komplett schließen</strong>, neu starten</td>
     </tr>
     <tr>
       <td>Gar nichts stimmt mehr</td>
-      <td><strong>Admin</strong> ruft <strong>PID_FullSystemRefresh</strong> auf (Vollrefresh)</td>
+      <td><strong>Nicht</strong> selbst herumprobieren – <strong>Admin</strong> (Vollrefresh: PID_FullSystemRefresh)</td>
     </tr>
   </table>
 
-  <h2>8. Bitte nicht tun</h2>
+  <h2>10. Bitte auf keinen Fall</h2>
   <ul>
-    <li>Versteckte Blaetter loeschen oder umbenennen (Januar–Dezember, FLUKTUATION, EINSTELLUNG, LOHNTABELLE).</li>
-    <li>Arbeitsjahr in <strong>EINSTELLUNG!C35</strong> ohne Absprache aendern.</li>
-    <li>Spalte <strong>H</strong> oder Formeln in <strong>G</strong> manuell ueberschreiben.</li>
-    <li>Austritt nur in <strong>I</strong> eintragen und <strong>N</strong> leer lassen.</li>
-    <li>LOHNTABELLE aendern – nur durch befugte Personen (KV-Periode, Buttons auf dem Blatt).</li>
+    <li>Spalten <strong>G</strong> oder <strong>H</strong> mit der Tastatur überschreiben (dort rechnet Excel).</li>
+    <li>Von <strong>E</strong> oder <strong>F</strong> mit der Maus <strong>nach unten oder zur Seite ziehen</strong> (Fill-Handle).</li>
+    <li>Große Bereiche markieren und <strong>Löschen</strong> oder <strong>Einfügen</strong> – außer Sie wissen genau, was passiert.</li>
+    <li>Blätter <strong>umbenennen</strong> oder <strong>löschen</strong> (Januar–Dezember, FLUKTUATION, EINSTELLUNG, LOHNTABELLE).</li>
+    <li>Arbeitsjahr in <strong>EINSTELLUNG</strong>, Zelle <strong>C35</strong>, ohne Admin ändern.</li>
+    <li>Austritt nur in <strong>I</strong>, aber <strong>N</strong> leer lassen.</li>
+    <li><strong>LOHNTABELLE</strong> selbst bearbeiten (KV-Änderungen nur durch befugte Personen).</li>
+    <li>Versteckte Blätter sichtbar machen und löschen.</li>
   </ul>
 
+  <div class="box warn">
+    <strong class="title">Kurz gesagt</strong>
+    <p>Die Datei ist wie ein Formular: <strong>E, F, B, C, D, I, N</strong> ausfüllen – den Rest rechnet Excel. Bei Unsicherheit lieber <strong>einmal fragen</strong> als viel kaputt machen.</p>
+  </div>
+
   <div class="footer">
-    Personalsheet · Kurzanleitung fuer Restaurantleitung · Bei Fragen: Admin / IT · Makros finden: Alt+F8 → CopyData, DataClear, RefreshFluktuationNow
+    Personalsheet · Kurzanleitung für Restaurantleitung · Fragen: Admin / IT ·
+    Makros: Alt+F8 (Mac oft fn+Alt+F8) → CopyData, DataClear, FormatAllMonthSheets, RefreshFluktuationNow
   </div>
 
 </body>
