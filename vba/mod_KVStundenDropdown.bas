@@ -303,9 +303,12 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     
     listName = GetDropdownNameForMonthRow(wsMonth.Name, rowNumber)
     
-    PID_EnsureWorkbookNameRefersTo listName, listRange
+    ' Nach LOHNTABELLE-Aenderung: Named Range + Validation neu (Excel/Mac cached sonst alte F-Liste).
+    PID_EnsureWorkbookNameRefersTo listName, listRange, gKVDropdownsDirty
     
-    If PID_RowHasValidFStundenDropdown(wsMonth, rowNumber) Then Exit Sub
+    If Not gKVDropdownsDirty Then
+        If PID_RowHasValidFStundenDropdown(wsMonth, rowNumber) Then Exit Sub
+    End If
     
     On Error Resume Next
     wsMonth.Cells(rowNumber, "F").Validation.Delete
