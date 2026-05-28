@@ -124,6 +124,172 @@ Nach **„Eigene Stunden“** auf **LOHNTABELLE** und Wechsel zum Monatsblatt er
 
 ---
 
+## Performance-Backlog (geplant: Windows, leistungsstarker Rechner)
+
+Analyse 2026-05-25. Bestehende Optimierungen (lazy Open, dirty Flags, deferred FINANZIELL) **nicht** zurueckbauen.  
+Umsetzung und Messung bewusst **spaeter auf Windows** — Mac-Regressionen weiterhin mitdenken, aber Primaer-Testplattform Windows + grosses Workbook.
+
+---
+
+## FP-005 — Performance: F-Dropdown dirty-Refresh nur betroffene Zeilen
+
+**Status:** Offen  
+**Priorität:** Hoch (beste ROI nach FP-004)  
+**Plattform-Ziel:** Windows (Referenz-Messung), Mac smoke  
+**Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, `DieseArbeitsmappe.cls`
+
+### Ist-Zustand
+
+Nach `MarkAllKVDropdownsDirty` baut `RefreshKVStundenDropdownForSheet` beim ersten Monats-Tab **alle 80 F-Zeilen** neu (Validation + `KV_DD_*` Named Range). FP-004 korrekt, aber spuerbar langsam.
+
+### Geplante Verbesserung
+
+- Nur Zeilen mit gesetztem **E (KV-Code)** und passendem LOHNTABELLE-Zeitraum refreshen, **oder**
+- Nur Zeilen, deren KV-Code von der letzten LOHNTABELLE-Aenderung betroffen ist (Zielgerichtet nach `AddCustomKVMonatsstunden`), **oder**
+- Lazy: F-Liste erst bei Fokus/Klick auf F (Approach D aus alter FP-004-Analyse).
+
+### Akzeptanzkriterien
+
+- [ ] Nach Eigene Stunden + Monats-Tab: neue Stunde in F ohne E-Re-Select (Regression FP-004).
+- [ ] Erster Monats-Tab nach dirty spuerbar schneller als Voll-80-Zeilen-Refresh (Zeit messen vor/nach).
+- [ ] Workbook-Open weiterhin ohne 12× F-Rebuild.
+- [ ] Mac + Windows Excel 2016+.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_KVStundenDropdown.bas` — `RefreshKVStundenDropdownForSheet`, `RefreshKVStundenDropdownForRow`
+- `vba/mod_AddNewKVPeriodOnTop.bas` — optional KV-Code/Periode an dirty-Refresh uebergeben
+
+---
+
+## FP-006 — Performance: weniger Workbook Named Ranges (`KV_DD_*`)
+
+**Status:** Offen  
+**Priorität:** Mittel — grosser Refactor, langfristig Open/Save  
+**Plattform-Ziel:** Windows (viele Names = spuerbar bei Open/Save)  
+**Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, Workbook-Names
+
+### Ist-Zustand
+
+Pro Monatszeile ein Name `KV_DD_<Sheet>_<Row>` (ca. 80 × 12 ≈ 960 Names). Belastet Excel Open, Save, Validation.
+
+### Geplante Verbesserung
+
+- Weniger Names: z. B. eine Helper-Spalte pro KV-Code/Monat statt 80 Zeilen-Namen, **oder**
+- Validation `Formula1` mit direkter Bereichsadresse ohne Workbook-Name (Mac-Merge-Fall testen).
+
+### Akzeptanzkriterien
+
+- [ ] F-Dropdown funktioniert auf allen Monatsblaettern (inkl. Merge in Panel-Naehe irrelevant fuer F).
+- [ ] Anzahl `KV_DD_*` Names deutlich reduziert oder ersetzt.
+- [ ] Open/Save-Zeit verbessert (vor/nach messen auf Windows).
+- [ ] Keine Regression CopyData / E-F-Overrides.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_KVStundenDropdown.bas` — `GetDropdownNameForMonthRow`, `PID_EnsureWorkbookNameRefersTo`
+
+---
+
+## FP-007 — Performance: SheetChange — weniger doppelte Recalc pro Zeile
+
+**Status:** Offen  
+**Priorität:** Mittel — Alltags-UX beim Tippen  
+**Plattform-Ziel:** Windows + Mac  
+**Betroffene Bereiche:** `DieseArbeitsmappe.cls`, `mod_KVLohnLookup.bas`, `Modul1.bas`
+
+### Ist-Zustand
+
+Eine Aenderung in E/F kann nacheinander ausloesen: Monatslohn-VBA, Aktuelle Stunden, Letztes Gehalt, F-Invalidate, Fluktuation dirty, FINANZ deferred — mehrfaches Unprotect/Calculate pro Zeile.
+
+### Geplante Verbesserung
+
+- Paste/Bulk: ein Handler fuer den geaenderten Bereich, pro Zeile einmal recalculieren.
+- `PID_PreloadKVLohnCaches` nur wenn LOHNTABELLE-Cache wirklich invalid (nicht bei jedem Einzelcell-Event doppelt).
+
+### Akzeptanzkriterien
+
+- [ ] E/F-Aenderung: G und abhaengige Spalten korrekt.
+- [ ] Grosser Paste in B:F blockweise ohne Timeout.
+- [ ] Keine stale UEBERSICHT/FINANZIELL-Werte.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/DieseArbeitsmappe.cls` — `Workbook_SheetChange`
+- `vba/mod_KVLohnLookup.bas` — `PID_RecalculateMonatslohnForChangedRows`
+- `vba/Modul1.bas` — `PID_RecalculateLetztesGehaltForChangedRows`, Aktuelle Stunden
+
+---
+
+## FP-008 — Performance: SheetSelectionChange entlasten
+
+**Status:** Offen  
+**Priorität:** Niedrig  
+**Plattform-Ziel:** Windows  
+**Betroffene Bereiche:** `DieseArbeitsmappe.cls`
+
+### Ist-Zustand
+
+Jede Auswahl in D3:F82 setzt `ScreenUpdating = False` und prueft E/F-Dropdown-Validierung; D-Zelle zeigt Beschaeftigungsdauer (O45).
+
+### Geplante Verbesserung
+
+- F/E-Rebuild nur wenn Validation wirklich fehlt/invalid (bereits teilweise — pruefen ob redundant).
+- O45/D-Hinweis ohne globales ScreenUpdating-Off bei harmlosen Spruengen.
+
+### Akzeptanzkriterien
+
+- [ ] Navigation E/F weiterhin fluessig.
+- [ ] Kaputte Dropdowns werden weiterhin lazy repariert.
+
+---
+
+## FP-009 — Performance: Fluktuation inkrementell (optional)
+
+**Status:** Offen — nur wenn FLUKTUATION-Tab/Save zu langsam  
+**Priorität:** Niedrig (grosser Aufwand)  
+**Plattform-Ziel:** Windows (grosses Workbook)  
+**Betroffene Bereiche:** `mod_RefreshFluktuationAll.bas`, `mod_BuildFluktuationDaten.bas`, `mod_BuildFluktuationAnalyse.bas`
+
+### Ist-Zustand
+
+`RefreshFluktuationAll` baut Daten + Analyse komplett neu (dirty, vor Save). Bewusst deferred — kann trotzdem mehrere Sekunden dauern.
+
+### Geplante Verbesserung
+
+- Inkrementelle Aktualisierung nur geaenderte Mitarbeiter/Monate, **oder**
+- Schwere Analyse nur beim Oeffnen des FLUKTUATION-Tabs (strenger als heute).
+
+### Akzeptanzkriterien
+
+- [ ] FLUKTUATION-Inhalt fachlich identisch nach D/I/N-Aenderung.
+- [ ] Save mit dirty spuerbar schneller oder gleichwertig akzeptabel dokumentiert.
+
+---
+
+## FP-010 — Performance: Mess-Protokoll Windows
+
+**Status:** Offen (Voraussetzung fuer FP-005–009 Priorisierung)  
+**Priorität:** Hoch — vor Implementierung  
+**Plattform-Ziel:** Windows, leistungsstarker PC, Produktionsnahes Workbook
+
+### Checkliste Messung (Stopuhr / StatusBar)
+
+1. Cold Open (Manual Calc) bis erster Monats-Tab nutzbar.
+2. LOHNTABELLE → Eigene Stunden → erster Monats-Tab (F-Dropdown oeffnen).
+3. Eine Zelle E/F aendern (Reaktionszeit bis G stabil).
+4. CopyData Januar → Dezember (Dauer).
+5. UEBERSICHT-Tab nach FINANZIELL-Aenderung.
+6. Save mit `gFluktuationDirty = True`.
+7. Optional: `FullSystemRefresh` als Admin-Referenz (nicht Alltags-KPI).
+
+### Ergebnis
+
+- [ ] Baseline-Zeiten in diesem Eintrag oder `docs/RELEASE.md` Notiz festhalten.
+- [ ] Nach jedem FP-00x-Fix: gleiche Schritte wiederholen.
+
+---
+
 ## Weitere Einträge
 
 Neue Backlog-Punkte unten anfügen mit ID `FP-00N`, Status, Ursache, geplantem Ansatz und Akzeptanzkriterien.
