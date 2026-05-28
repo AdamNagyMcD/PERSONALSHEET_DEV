@@ -290,6 +290,229 @@ Jede Auswahl in D3:F82 setzt `ScreenUpdating = False` und prueft E/F-Dropdown-Va
 
 ---
 
+## Schutz-Paket — Amateur-Vermeidung (Übersicht)
+
+Ziel: Monatsblätter und kritische Bereiche **so weit wie möglich** gegen versehentliche Excel-Gesten absichern, ohne SPEC/TEST-konforme manuelle Eingaben zu blockieren (B/C Neuer MA, H/I Exit, D/E Override, O18:Q25 Panel, E/F KV).
+
+| ID | Thema | Aufwand | Priorität |
+|----|--------|---------|-----------|
+| FP-011 | Fill Handle / Drag-Format | Klein (A) / Mittel (B) | Hoch |
+| FP-012 | Sortieren auf Monatsblättern verbieten | Klein | Hoch |
+| FP-013 | Lock-all + Whitelist-Unlock (Monatsblätter) | Mittel | Hoch |
+| FP-014 | Nur entsperrte Zellen auswählbar (`EnableSelection`) | Klein–mittel | Mittel |
+| FP-015 | Endanwender-Hinweise + Recovery-Doku | Klein (Doku) | Mittel |
+| FP-016 | Schutz-Smoke / Regression nach Paket | Klein | Nach Umsetzung |
+
+**Umsetzungsreihenfolge (empfohlen):** FP-011 A → FP-012 → FP-013 → FP-011 B (falls nötig) → FP-014 (Mac+Win testen) → FP-015 → FP-016.
+
+**Bereits vorhanden (nicht neu):** Lapvédelem + Jelszó, Paste nur Werte (`EnforcePasteValuesOnly`), rejtett helper lapok, `FormatAllMonthSheets` als Layout-Reparatur.
+
+---
+
+## FP-011 — Véletlen cellahúzás (Fill Handle) tönkreteszi a formázást
+
+**Status:** Offen — Teil des **Schutz-Pakets** (s. Übersicht oben)  
+**Priorität:** Hoch — UX / védelem nem technikai szakértőknek  
+**Aufwand:** **Klein bis mittel** (siehe unten)  
+**Betroffene Bereiche:** Monatsblätter B3:N82, `mod_SchutzHinzufugen.bas`, `mod_FormatMonthSheet.bas`, optional `DieseArbeitsmappe.cls`
+
+### Beobachtetes Verhalten
+
+Nutzer hält **E** oder **F** (entsperrt) gedrückt und **zieht** auf **gesperrte** Zellen (**G, H, K, L**, B–D mit Zebra/Input-Look). Excel blockiert oft Werte, kopiert aber **Format** (Hintergrund, Rahmen) → Zebra/Guide-Stil „kaputt“, ähnlich wie früher AutoFill auf Spalte L (VBA), hier **User-Geste**.
+
+### Ursache
+
+- Schutz entsperrt nur **E:F**; `Locked` verhindert nicht zuverlässig **Format-Drag** (v. a. Mac).
+- Kein `EnableFillHandle`-Disable, kein Auto-Restore nach Format-Schaden.
+
+### Geplante Verbesserung (Aufwand)
+
+| Stufe | Ansatz | Aufwand | Risiko |
+|-------|--------|---------|--------|
+| **A (empfohlen)** | Beim Schutz/Tab: `EnableFillHandle = False` auf Monatsblättern (und ggf. `CellDragAndDrop = False`) | **Klein** (~1 Modul, wenige Zeilen) | Gering — Nutzer nutzen F/E per Dropdown, selten Fill |
+| **B** | `Workbook_SheetChange`: Format-Änderung auf Guide/Locked-Bereich → `PID_ApplyMonthEmployeeZebraRows` + Rahmen | **Mittel** | Mittel — Events, Performance bei Paste |
+| **C** | Nur Doku + `FormatAllMonthSheets` als Reparatur-Makro | **Minimal** | Löst Unfall nicht, nur Recovery |
+
+**Nicht** nötig: großer Schutz-Refactor, Named Ranges, 12-Blatt-Rebuild.
+
+### Akzeptanzkriterien
+
+- [ ] Fill-Handle-Zug von F/E nach G/L/B–D zerstört Zebra/Guide-Format **nicht** (oder wird sofort unsichtbar durch A).
+- [ ] E/F-Dropdown und normales Tippen unverändert.
+- [ ] Nach Unfall (falls B): `FormatAllMonthSheets` oder ein Zeilen-Restore stellt Layout wieder her.
+- [ ] Mac + Windows Excel 2016+.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_SchutzHinzufugen.bas` — `PID_ApplySheetProtectionForMacros`
+- `vba/mod_FormatMonthSheet.bas` — `PID_ApplyMonthEmployeeZebraRows`, `FormatAllMonthSheets`
+- `vba/DieseArbeitsmappe.cls` — optional `SheetChange`-Restore (Stufe B)
+
+---
+
+## FP-012 — Sortieren auf Monatsblättern deaktivieren
+
+**Status:** Offen — Teil des **Schutz-Pakets**  
+**Priorität:** Hoch — verhindert schwere Daten-/Zeilenvermischung  
+**Aufwand:** **Klein**  
+**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, alle Re-`Protect`-Stellen (CopyData, Modul1, FormatMonthSheet, …)
+
+### Beobachtetes Verhalten
+
+Nutzer löst versehentlich **Sort** aus (Menü oder Kontext). Zeilen 3–82 werden neu geordnet → Mitarbeiterzeilen, Formeln, KV-Zuordnung und Zebra passen nicht mehr zusammen.
+
+### Ursache
+
+`PID_ApplySheetProtectionForMacros` setzt für Monatsblätter `AllowSorting:=True` (analog andere Blätter).
+
+### Geplante Verbesserung
+
+- Monatsblätter (Januar–Dezember): `AllowSorting:=False` beim `Protect`.
+- `AllowFiltering` nur beibehalten, wenn fachlich nötig; sonst ebenfalls `False` prüfen (optional, separates Mini-Ticket).
+- Alle Stellen, die Monatsblätter erneut schützen, konsistent anpassen (grep `AllowSorting`).
+
+### Akzeptanzkriterien
+
+- [ ] Auf Monatsblatt ist Sortieren im geschützten Zustand nicht möglich (Win + Mac Excel 2016+).
+- [ ] E/F-Dropdown, Tippen, CopyData, FormatAllMonthSheets unverändert funktionsfähig.
+- [ ] Kein Regression bei UEBERSICHT / LOHNTABELLE (dort ggf. weiter Sort erlaubt, falls gewünscht).
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_SchutzHinzufugen.bas`
+- `vba/mod_CopyData.bas`, `vba/Modul1.bas`, `vba/mod_FormatMonthSheet.bas` (Re-Protect-Parameter)
+
+---
+
+## FP-013 — Monatsblätter: Lock-all + Whitelist-Unlock
+
+**Status:** Offen — Teil des **Schutz-Pakets** (Kern: „fast alles gesperrt“)  
+**Priorität:** Hoch  
+**Aufwand:** **Mittel**  
+**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, `mod_FormatMonthSheet.bas`, `DieseArbeitsmappe.cls` (Paste-Bereiche), SPEC/TEST_CASES
+
+### Beobachtetes Verhalten
+
+Viele Zellen sehen durch **Input-Styling** editierbar aus (B:F, I:J, M:N), sind aber fachlich Formel-/Guide-Bereiche (G, K, L, …). Wenn `Locked` im Template/Format-Kopie `False` bleibt, können Nutzer **in geschützte Formeln tippen** oder Werte überschreiben.
+
+### Ursache
+
+Schutz setzt nur explizit **E:F** auf `Locked = False`, ohne vorher `Cells.Locked = True` für das ganze Blatt (Muster **EINSTELLUNG** in `mod_FormatEinstellung.bas` fehlt auf Monatsblättern).
+
+### Geplante Verbesserung
+
+1. Vor `Protect`: `ws.Cells.Locked = True` (ganzes Monatsblatt).
+2. **Whitelist** entsperren (SPEC + TEST_CASES):
+   - `E3:F82` — KV-Code / Stunden (täglich)
+   - `B3:C82` — Neuer Mitarbeiter / Schlüssel (TEST 3)
+   - `D3:D82` — Stunden-Override (TEST 4; E bleibt separat)
+   - `I3:J82` — Exit-Daten (TEST 2)
+   - `M3:N82` — falls weiter manuell genutzt (CopyData-Bereich)
+   - `O18:Q25` — Panel-Freitext (SPEC)
+3. **Gesperrt bleiben:** G, H (wenn nicht in Whitelist), K, L, Q17:R29, S35, Summen, Guide-Zebra außerhalb Whitelist.
+4. `PID_MSRestoreMonthSheetDropdowns` / Format-Kopie: `xlPasteFormats` darf **Locked** auf E/F nicht wieder kaputt machen (bereits Kommentar in Code — nach Lock-all erneut validieren).
+5. Nach Schutz: `PID_ApplySheetProtectionForMacros` erneut aufrufen oder zentral eine `PID_ApplyMonthSheetLockPolicy(ws)`.
+
+### Akzeptanzkriterien
+
+- [ ] Nutzer kann nur Whitelist-Bereiche bearbeiten; G/K/L/Q-Formelbereiche nicht.
+- [ ] TEST 2 (Exit I/J), TEST 3 (B/C), TEST 4 (D/E-Override), Panel O18:Q25 weiterhin möglich.
+- [ ] CopyData, KV-Dropdown, L-Restore, FINANZIELL-Sync ohne Regression.
+- [ ] `FormatAllMonthSheets` setzt Lock-Policy nicht zurück (oder ruft Policy am Ende auf).
+- [ ] Mac + Windows Excel 2016+.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_SchutzHinzufugen.bas` — zentrale Policy
+- `vba/mod_FormatMonthSheet.bas` — nach Format-Kopie
+- `vba/mod_FormatEinstellung.bas` — Referenzmuster Lock-all/Whitelist
+- `SPEC.md`, `TEST_CASES.md`
+
+---
+
+## FP-014 — Auswahl nur auf entsperrte Zellen (`EnableSelection`)
+
+**Status:** Offen — Teil des **Schutz-Pakets**  
+**Priorität:** Mittel  
+**Aufwand:** **Klein–mittel** (Mac-Verhalten testen)  
+**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, Monatsblätter
+
+### Beobachtetes Verhalten
+
+Nutzer markieren große Bereiche inkl. **gesperrter** Formelzellen → Löschen, Format-Paste oder Drag mit höherer Fehlerwahrscheinlichkeit.
+
+### Geplante Verbesserung
+
+- Nach `Protect` auf Monatsblättern: `EnableSelection = xlUnlockedCell` (nur entsperrte Zellen auswählbar).
+- Optional: `xlNoRestrictions` auf Admin-Makro-Pfad kurzzeitig (wie bestehendes Unprotect für Makros).
+
+### Akzeptanzkriterien
+
+- [ ] Normale Arbeit in E/F und Whitelist (FP-013) unverändert.
+- [ ] Makros (CopyData, Format, L-Restore) funktionieren mit `UserInterfaceOnly:=True`.
+- [ ] Mac Excel 2016: keine blockierenden UX-Regressionen (Panel, Dropdowns).
+- [ ] Windows gleicher Smoke wie Mac.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_SchutzHinzufugen.bas`
+
+---
+
+## FP-015 — Endanwender-Hinweise und Recovery (Deutsch, kurz)
+
+**Status:** Offen — Teil des **Schutz-Pakets**  
+**Priorität:** Mittel  
+**Aufwand:** **Klein** (Doku + optional feste Hinweiszelle)  
+**Betroffene Bereiche:** Monatsblätter (z. B. feste Zelle), `README.md` oder `docs/`, Toolbar-Texte
+
+### Ziel
+
+Restaurant-Manager ohne Excel-Wissen: **was tun / was nicht** + **was tun bei kaputtem Layout**.
+
+### Geplante Inhalte (Deutsch, kurz)
+
+- Nur **E und F** täglich ändern; **nicht ziehen** (Fill Handle).
+- Kein Sortieren, kein großflächiges Löschen.
+- Bei kaputtem Zebra/Rahmen: Button **`FormatAllMonthSheets`** (oder Admin-Hinweis).
+- Wichtige Aktionen nur über **Toolbar-Buttons** (CopyData, Aktualisierung, …).
+
+### Akzeptanzkriterien
+
+- [ ] Hinweis für Endnutzer sichtbar (Zelle oder README-Abschnitt „Für Restaurants“).
+- [ ] Keine technischen Begriffe (kein „Named Range“, „SheetChange“).
+- [ ] Recovery-Pfad zu `FormatAllMonthSheets` dokumentiert.
+
+### Betroffene Dateien (Referenz)
+
+- `docs/FUTURE_PLANS.md` (dieser Eintrag)
+- Optional: `vba/mod_FormatMonthSheet.bas` (Hinweiszelle), `README.md`
+
+---
+
+## FP-016 — Schutz-Paket: Smoke / Regression
+
+**Status:** Offen — nach FP-011–FP-015  
+**Priorität:** Pflicht vor Release mit Schutz-Paket  
+**Aufwand:** **Klein**  
+**Betroffene Bereiche:** `mod_SmokeCheck.bas`, `docs/RELEASE.md`, manuelle Mac/Win-Checkliste
+
+### Geplante Prüfungen
+
+- [ ] Monatsblatt: E/F editierbar, G/L nicht editierbar (nach FP-013).
+- [ ] Sort auf Monatsblatt blockiert (FP-012).
+- [ ] Fill-Handle-Zug von E/F zerstört Layout nicht (FP-011 A) oder Restore (FP-011 B).
+- [ ] Paste in E/F nur Werte (bestehend + Whitelist).
+- [ ] TEST 1–6 aus `TEST_CASES.md` grün.
+- [ ] `FormatAllMonthSheets` stellt Zebra nach absichtlichem Format-Schaden wieder her.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_SmokeCheck.bas` (optional neue Tests)
+- `docs/RELEASE.md`
+
+---
+
 ## Weitere Einträge
 
 Neue Backlog-Punkte unten anfügen mit ID `FP-00N`, Status, Ursache, geplantem Ansatz und Akzeptanzkriterien.
