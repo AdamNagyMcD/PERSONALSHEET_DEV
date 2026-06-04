@@ -688,12 +688,12 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
         PID_ApplyMonthSheetFormats ws
     End If
     
-    ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    PID_ReprotectWorksheet ws
 
 SafeExit:
     On Error Resume Next
     If Not ws Is Nothing Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        PID_ReprotectWorksheet ws
     End If
 End Sub
 
@@ -816,7 +816,7 @@ Private Sub PID_ReadMonthPanelSnapshot(ByVal ws As Worksheet, _
     
     On Error Resume Next
     If wasProtected Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        PID_ReprotectWorksheet ws
     End If
     On Error GoTo 0
 End Sub

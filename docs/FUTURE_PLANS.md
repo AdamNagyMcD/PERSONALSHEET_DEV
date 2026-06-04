@@ -518,7 +518,7 @@ Restaurant-Manager ohne Excel-Wissen: **was tun / was nicht** + **was tun bei ka
 
 ## FP-017 — Monatsblätter: Spalte D und I breiter / datenabhängig
 
-**Status:** Offen — aus Excel-16-Manualtest (2026-05)  
+**Status:** Behoben (2026-05-26) — `PID_ApplyMonthSheetDateColumnWidths`, Breite 13 (wie G/J)  
 **Priorität:** Mittel — UX, Daten sichtbar  
 **Aufwand:** **Klein**  
 **Betroffene Bereiche:** Monatsblätter (Januar–Dezember), `mod_FormatMonthSheet.bas` oder `FormatAllMonthSheets`
@@ -535,6 +535,7 @@ Spalten **D** (Eintritt) und **I** (Austrittsdatum) sind zu schmal; Datumswerte 
 
 ### Akzeptanzkriterien
 
+- [x] Feste Mindestbreite 13 für D und I (Code).
 - [ ] Typische Datumsformate (dd.mm.yyyy) in D und I auf Monatsblatt voll sichtbar (Win Excel 2016, manuell bestätigt).
 - [ ] Kein Layout-Bruch im Mitarbeiterblock B:N.
 - [ ] Mac + Windows.
@@ -607,7 +608,7 @@ Nach **neuer KV-Periode** auf LOHNTABELLE dauert das **erste Öffnen** eines Mon
 
 ## FP-020 — Monatsblatt Q12 (Vormonat +/-) entsperren
 
-**Status:** Offen — aus Excel-16-Manualtest (2026-05)  
+**Status:** Behoben (2026-05-26) — `Q12:R12` in `PID_UnlockSheetEditRanges`  
 **Priorität:** Mittel — fachlich nötige Eingabe  
 **Aufwand:** **Klein** (Teil von FP-013 Whitelist)  
 **Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, Panel rechts, `mod_FormatMonthSheet.bas`
@@ -623,20 +624,19 @@ Nach **neuer KV-Periode** auf LOHNTABELLE dauert das **erste Öffnen** eines Mon
 
 ### Akzeptanzkriterien
 
-- [ ] Q12 auf geschütztem Monatsblatt editierbar (Win Excel 2016).
+- [x] Q12:R12 auf geschütztem Monatsblatt editierbar (Code-Pfad).
 - [ ] Q17:R29 / FINANZIELL-Formeln weiterhin nicht versehentlich überschreibbar (Ziel FP-013).
-- [ ] CopyData / Panel-Snapshot unverändert.
+- [ ] CopyData / Panel-Snapshot unverändert — manuell prüfen.
 
 ### Betroffene Dateien (Referenz)
 
-- `vba/mod_SchutzHinzufugen.bas`
-- `vba/mod_FormatMonthSheet.bas`
+- `vba/mod_SchutzHinzufugen.bas` — `PID_UnlockSheetEditRanges`, `PID_ReprotectWorksheet`
 
 ---
 
 ## FP-021 — UEBERSICHT: E30 und I30 entsperren (Durchrechnung Plan)
 
-**Status:** Offen — aus Excel-16-Manualtest (2026-05); Smoke TEST 12 erwartet bereits Unlock  
+**Status:** Behoben (2026-05-26) — E30/I30 in `PID_UnlockSheetEditRanges`, UEBERSICHT-Schutz-Zweig  
 **Priorität:** Mittel — fachlich nötige Eingabe  
 **Aufwand:** **Klein**  
 **Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, `mod_BuildDurchrechnung.bas`
@@ -654,14 +654,13 @@ Auf **UBERSICHT** sind **E30** (Jänner Verfügbar Plan) und **I30** (Jänner Mu
 
 ### Akzeptanzkriterien
 
-- [ ] E30 und I30 auf geschütztem UEBERSICHT editierbar.
-- [ ] Durchrechnungs-Formeln in anderen Zellen unverändert.
-- [ ] TEST 12 PASS nach Fix.
+- [x] E30 und I30 auf geschütztem UEBERSICHT editierbar (Code-Pfad).
+- [ ] Durchrechnungs-Formeln in anderen Zellen unverändert — manuell prüfen.
+- [ ] TEST 12 PASS nach Import.
 
 ### Betroffene Dateien (Referenz)
 
-- `vba/mod_SchutzHinzufugen.bas`
-- `vba/mod_BuildDurchrechnung.bas` — `PID_UnlockDurchrechnungInputs`
+- `vba/mod_SchutzHinzufugen.bas` — `PID_UnlockSheetEditRanges`, `PID_ReprotectWorksheet`
 
 ---
 
@@ -754,6 +753,35 @@ Optional zusätzlich **eine Zeile** nur in zentralen Entry-Makros (`CopyData`, `
 - Neu oder `vba/mod_PIDSheetStyle.bas`
 - `vba/mod_FormatMonthSheet.bas`, `vba/DieseArbeitsmappe.cls` (Open)
 - `docs/RELEASE.md` (vor v1.0 optional mit umsetzen)
+
+---
+
+## FP-024 — Berechnung: Automatisch statt dauerhaft Manuell (H/K/L-Formeln)
+
+**Status:** Behoben (2026-05-26)  
+**Priorität:** Hoch — Endanwender / falsche Anzeige in H, K, L  
+**Betroffene Bereiche:** `Modul1.bas`, `DieseArbeitsmappe.cls`
+
+### Beobachtetes Verhalten
+
+Nach jedem Öffnen stand Excel auf **Manuelle Berechnung**; Spalten **H, K, L** (Formeln) blieben oft leer oder veraltet, bis der Nutzer manuell auf Automatisch schaltete.
+
+### Ursache
+
+`Workbook_Open` und `PID_ConfigureDeferredWorkbookCalculationOnOpen` setzten `xlCalculationManual` ohne Rückstellung auf Automatisch.
+
+### Fix (Ist-Zustand)
+
+- Open-Ende: `PID_EnableCalculationForAllSheets` + `xlCalculationAutomatic`.
+- `PID_RecalculateMonthFormulaColumns` bei Open (aktives Monatsblatt) und `SheetActivate` (H/K/L `.Calculate`).
+- `Workbook_BeforeClose`: Automatisch für die Excel-Sitzung.
+- Kurz **Manual** nur während der Open-Initialisierung (Performance), danach Automatisch.
+
+### Akzeptanzkriterien
+
+- [x] Nach Öffnen: Excel-Status „Automatische Berechnung“ (ohne manuelles Umstellen).
+- [ ] H/K/L auf Monatsblatt zeigen Werte nach Tab-Wechsel (manuell Excel 2016).
+- [ ] Open-Zeit akzeptabel (ggf. FP-018 separat).
 
 ---
 

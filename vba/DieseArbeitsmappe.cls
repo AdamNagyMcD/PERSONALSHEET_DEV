@@ -25,6 +25,8 @@ End Sub
 
 
 Private Sub Workbook_Open()
+    Dim wsUbersicht As Worksheet
+    
     On Error GoTo SafeExit
     
     mInternalChange = True
@@ -54,15 +56,27 @@ Private Sub Workbook_Open()
 SafeExit:
     PID_ConfigureDeferredWorkbookCalculationOnOpen
     
+    Set wsUbersicht = PID_GetUbersichtWorksheet()
+    If Not wsUbersicht Is Nothing Then
+        PID_ApplyUbersichtSheetProtection wsUbersicht
+    End If
+    
     If Not ActiveSheet Is Nothing Then
         If PID_IsWorkerMonthSheet(ActiveSheet) Then
             PID_EnsureWorkerSheetRuntimeReady
+            PID_RecalculateMonthFormulaColumns ActiveSheet
         End If
     End If
     
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
+End Sub
+
+
+Private Sub Workbook_BeforeClose(Cancel As Boolean)
+    On Error Resume Next
+    Application.Calculation = xlCalculationAutomatic
 End Sub
 
 
@@ -103,15 +117,15 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
-    PID_EnsureSheetProtectionForMacros Sh
-    
     ' Fluktuation-Analyse nur bei Bedarf aktualisieren (gFluktuationDirty).
     If Sh.Name = PID_FLUKTUATION_SHEET Then
+        PID_EnsureSheetProtectionForMacros Sh
         RefreshFluktuationIfDirty
         GoTo SafeExit
     End If
     
     If Sh.Name = PID_LOHNTABELLE_SHEET Then
+        PID_EnsureSheetProtectionForMacros Sh
         EnsureAddNewKVPeriodButton
         FixLOHNTABELLE_HeaderTextIfNeeded
         PID_RecalculateKVStatusColumns Sh
@@ -119,10 +133,13 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         GoTo SafeExit
     End If
     
-    If Sh.Name = "UBERSICHT" Then
+    If PID_IsUbersichtWorksheet(Sh) Then
+        PID_ApplyUbersichtSheetProtection Sh
         RefreshFinanzSummaryIfDirty
         GoTo SafeExit
     End If
+    
+    PID_EnsureSheetProtectionForMacros Sh
     
     ' Dropdown/Lohn nur bei Bedarf (nach KV-Tabelle-Aenderung), pro Monat einmal.
     If PID_IsWorkerMonthSheet(Sh) Then
@@ -130,6 +147,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         PID_EnsureMonthSheetCopyDataButton Sh
         RefreshKVDropdownsIfDirtyForSheet Sh
         RefreshKVLohnIfDirty Sh
+        PID_RecalculateMonthFormulaColumns Sh
         GoTo SafeExit
     End If
 

@@ -126,10 +126,7 @@ Private Sub PID_RefreshDurchrechnungUebersichtInternal(ByVal lightRefresh As Boo
     PID_ApplyDurchrechnungFormats ws
     
 CleanProtect:
-    ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-               UserInterfaceOnly:=True, _
-               AllowFiltering:=True, _
-               AllowSorting:=True
+    PID_ApplyUbersichtSheetProtection ws
     
     GoTo CleanExit
 
@@ -195,10 +192,7 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
         PID_ApplyDurchrechnungFormats ws
     End If
     
-    ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-               UserInterfaceOnly:=True, _
-               AllowFiltering:=True, _
-               AllowSorting:=True
+    PID_ApplyUbersichtSheetProtection ws
     
     If showMessage Then
         MsgBox "Durchrechnungsblock auf UEBERSICHT wurde erstellt." & vbCrLf & vbCrLf & _
@@ -225,7 +219,7 @@ CleanExit:
 End Sub
 
 
-Private Function PID_DurchrechnungBlockExists(ByVal ws As Worksheet) As Boolean
+Public Function PID_DurchrechnungBlockExists(ByVal ws As Worksheet) As Boolean
     Dim titleText As String
     
     On Error GoTo SafeExit
@@ -435,6 +429,11 @@ Private Sub PID_UpdateDurchrechnungEuroFormulas(ByVal ws As Worksheet)
     For dataRow = headerRow + 1 To headerRow + 4
         ws.Cells(dataRow, 9).Formula = PID_GetEuroFormula(dataRow)
     Next dataRow
+End Sub
+
+
+Public Sub PID_EnsureUbersichtDurchrechnungInputsEditable(ByVal ws As Worksheet)
+    PID_UnlockDurchrechnungInputs ws
 End Sub
 
 
@@ -918,10 +917,7 @@ Public Sub PID_FormatFinanzUebersicht()
     
     PID_ApplyFinanzUebersichtFormats ws, True
     
-    ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-               UserInterfaceOnly:=True, _
-               AllowFiltering:=True, _
-               AllowSorting:=True
+    PID_ApplyUbersichtSheetProtection ws
     
     GoTo CleanExit
 
@@ -1068,10 +1064,7 @@ Public Sub PID_FormatDurchrechnungUebersicht()
     PID_ApplyDurchrechnungFormats ws
     
 CleanProtect:
-    ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-               UserInterfaceOnly:=True, _
-               AllowFiltering:=True, _
-               AllowSorting:=True
+    PID_ApplyUbersichtSheetProtection ws
     
     GoTo CleanExit
 

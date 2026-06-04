@@ -18,6 +18,8 @@ Private Const PID_MS_COPYDATA_BUTTON_WIDTH As Double = 275
 Private Const PID_MS_COPYDATA_BUTTON_HEIGHT As Double = 24
 Private Const PID_MS_COPYDATA_BUTTON_OFFSET_LEFT As Double = 6
 Private Const PID_MS_COPYDATA_BUTTON_OFFSET_TOP As Double = 4
+' FP-017: dd.mm.yyyy in D (Eintritt) und I (Austritt) — breiter als Default (~11).
+Private Const PID_MS_DATE_COLUMN_WIDTH As Double = 13
 
 
 Public Sub EnsureMonthSheetCopyDataButtons()
@@ -55,6 +57,16 @@ End Sub
 Public Function PID_EnsureMonthSheetCopyDataButton(ByVal ws As Worksheet) As Boolean
     PID_EnsureMonthSheetCopyDataButton = PID_MSEnsureAktualisierungButtonOnSheet(ws)
 End Function
+
+
+' FP-017: Spalten D und I auf allen Monatsblaettern (FullSystemRefresh, Format-Lauf).
+Public Sub PID_ApplyMonthSheetDateColumnWidths(ByVal ws As Worksheet)
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    ws.Columns("D").ColumnWidth = PID_MS_DATE_COLUMN_WIDTH
+    ws.Columns("I").ColumnWidth = PID_MS_DATE_COLUMN_WIDTH
+End Sub
 
 
 Public Sub FormatJanuarMonthSheet()
@@ -161,10 +173,7 @@ CleanExit:
     On Error Resume Next
     If Not ws Is Nothing Then
         If wasProtected Then
-            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                       UserInterfaceOnly:=True, _
-                       AllowFiltering:=True, _
-                       AllowSorting:=True
+            PID_ReprotectWorksheet ws
         End If
     End If
     Application.ScreenUpdating = oldScreenUpdating
@@ -194,15 +203,19 @@ Private Sub PID_MSCopyMonthFormatsFromReference(ByVal wsRef As Worksheet, ByVal 
     PID_MSCopyPanelTailFormatsFromReference wsRef, wsTarget
     PID_MSRestoreMonthSheetDropdowns wsTarget
     PID_MSEnsureAktualisierungButtonOnSheet wsTarget
+    PID_ApplyMonthSheetDateColumnWidths wsTarget
     
     On Error Resume Next
     If refProtected Then
-        wsRef.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, _
-                     AllowFiltering:=True, AllowSorting:=True
+        If PID_IsWorkerMonthSheet(wsRef) Then
+            PID_ReprotectWorksheet wsRef
+        Else
+            wsRef.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, _
+                         AllowFiltering:=True, AllowSorting:=True
+        End If
     End If
     If tgtProtected Then
-        wsTarget.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, _
-                       AllowFiltering:=True, AllowSorting:=True
+        PID_ReprotectWorksheet wsTarget
     End If
     On Error GoTo 0
 End Sub
@@ -249,6 +262,7 @@ Private Sub PID_MSApplyReferenceLayout(ByVal ws As Worksheet)
     
     PID_MSApplyEmployeeBlockStyles ws
     PID_MSApplyRightPanelReferenceStyles ws
+    PID_ApplyMonthSheetDateColumnWidths ws
 End Sub
 
 
@@ -559,10 +573,7 @@ Private Function PID_MSEnsureAktualisierungButtonOnSheet(ByVal ws As Worksheet) 
 ReprotectSheet:
     On Error Resume Next
     If wasProtected Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                   UserInterfaceOnly:=True, _
-                   AllowFiltering:=True, _
-                   AllowSorting:=True
+        PID_ReprotectWorksheet ws
     End If
     Exit Function
 
@@ -570,10 +581,7 @@ SafeExit:
     On Error Resume Next
     Application.ScreenUpdating = oldScreenUpdating
     If wasProtected Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                   UserInterfaceOnly:=True, _
-                   AllowFiltering:=True, _
-                   AllowSorting:=True
+        PID_ReprotectWorksheet ws
     End If
 End Function
 

@@ -14,11 +14,27 @@ Public Const PID_FLUKTUATION_TIME_FIRST_ROW As Long = 53
 Public Const PID_FLUKTUATION_TIME_LAST_ROW As Long = 59
 
 
+' Frueher: Manual fuer schnelles Oeffnen — Endanwender sahen leere H/K/L-Formeln.
+' Jetzt: Automatisch + EnableCalculation; Open bleibt kurz Manual nur in Workbook_Open.
 Public Sub PID_ConfigureDeferredWorkbookCalculationOnOpen()
     On Error Resume Next
     Application.FormatStaleValues = False
     Err.Clear
-    Application.Calculation = xlCalculationManual
+    PID_EnableCalculationForAllSheets
+    Application.Calculation = xlCalculationAutomatic
+End Sub
+
+
+Public Sub PID_RecalculateMonthFormulaColumns(ByVal wsMonth As Worksheet)
+    On Error Resume Next
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    
+    wsMonth.Range("H3:H82").Calculate
+    wsMonth.Range("K3:K82").Calculate
+    wsMonth.Range("L3:L82").Calculate
+    Err.Clear
 End Sub
 
 
@@ -86,6 +102,7 @@ Public Sub PID_FormatAllMoneyColumns()
             ws.Columns("J").ColumnWidth = 13
             ws.Columns("K").ColumnWidth = 14
             ws.Columns("L").ColumnWidth = 14
+            PID_ApplyMonthSheetDateColumnWidths ws
             
             ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
         End If
@@ -396,10 +413,7 @@ Private Function PID_RestoreAktuelleStundenFormulasOnSheet(ByVal ws As Worksheet
 SafeExit:
     On Error Resume Next
     If wasProtected Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                   UserInterfaceOnly:=True, _
-                   AllowFiltering:=True, _
-                   AllowSorting:=True
+        PID_ReprotectWorksheet ws
     End If
 End Function
 
@@ -639,10 +653,7 @@ SafeExit:
     On Error Resume Next
     If Not ws Is Nothing Then
         If wasProtected Then
-            ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                       UserInterfaceOnly:=True, _
-                       AllowFiltering:=True, _
-                       AllowSorting:=True
+            PID_ReprotectWorksheet ws
         End If
     End If
 End Function
@@ -984,10 +995,7 @@ Private Function PID_RestoreAustrittsdatumValidationOnSheet(ByVal ws As Workshee
 SafeExit:
     On Error Resume Next
     If wasProtected Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                   UserInterfaceOnly:=True, _
-                   AllowFiltering:=True, _
-                   AllowSorting:=True
+        PID_ReprotectWorksheet ws
     End If
 End Function
 

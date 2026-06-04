@@ -783,10 +783,7 @@ Private Function PID_RestoreMonatslohnFormulasOnSheet(ByVal ws As Worksheet, _
 SafeExit:
     On Error Resume Next
     If wasProtected Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                   UserInterfaceOnly:=True, _
-                   AllowFiltering:=True, _
-                   AllowSorting:=True
+        PID_ReprotectWorksheet ws
     End If
 End Function
 

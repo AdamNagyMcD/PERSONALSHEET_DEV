@@ -3,6 +3,13 @@
 ## Unreleased
 
 ### Fixed
+- mod_FormatMonthSheet.bas + Modul1.bas: Monatsblätter D/I Spaltenbreite 13 für Datumsfelder (FP-017).
+- mod_SchutzHinzufugen.bas: Compile-Fix Excel 2016 Mac — Protect ohne AllowSelectingLockedCells; EnableSelection numerisch (FP-021).
+- mod_SchutzHinzufugen.bas: UEBERSICHT geschuetzt, nur E30/I30 editierbar (AllowEditRanges, Lock-all) (FP-021 v4).
+- DieseArbeitsmappe.cls + mod_SchutzHinzufugen.bas: Compile-Fix UEBERSICHT-Erkennung (`PID_IsUbersichtWorksheet`).
+- mod_SchutzHinzufugen.bas + mod_SumMergedCells.bas + mod_BuildDurchrechnung.bas: FINANZ-Sync nutzt zentrales `PID_ReprotectWorksheet` (FP-021).
+- mod_SchutzHinzufugen.bas: Q12:R12 (Vormonat +/-) entsperrt; `PID_ReprotectWorksheet` für konsistenten Schutz (FP-020).
+- Modul1.bas + DieseArbeitsmappe.cls: nach Öffnen wieder Automatische Berechnung; H/K/L-Formeln auf Monatsblättern per Tab-Wechsel neu berechnet (FP-024).
 - mod_CopyData.bas: CopyData startet ohne Ja/Nein-Bestätigung vor dem Kopieren (FP-019).
 
 ### Changed

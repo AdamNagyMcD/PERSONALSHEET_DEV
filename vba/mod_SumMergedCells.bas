@@ -367,10 +367,10 @@ Public Sub PID_SyncFinanzSummaryToUbersicht()
     PID_RecalculateFinanzDiffColumns ubersichtWs
     
     If Not einstellungWs Is Nothing Then
-        PID_ReprotectWorksheet einstellungWs, einstellungProtected
+        PID_SMReprotectIfWasProtected einstellungWs, einstellungProtected
     End If
     
-    PID_ReprotectWorksheet ubersichtWs, ubersichtProtected
+    PID_SMReprotectIfWasProtected ubersichtWs, ubersichtProtected
     ClearFinanzSummaryDirty
 
 RestoreSettings:
@@ -437,12 +437,12 @@ Public Sub PID_RecalculateFinanzSummaryForMonth(ByVal ws As Worksheet)
         einstellungProtected = einstellungWs.ProtectContents
         PID_UnprotectWorksheet einstellungWs
         einstellungWs.Cells(21 + monthIndex, "E").Value2 = crewPct
-        PID_ReprotectWorksheet einstellungWs, einstellungProtected
+        PID_SMReprotectIfWasProtected einstellungWs, einstellungProtected
     End If
     
     PID_SyncFinanzSummaryQuarterAndTotalRows ubersichtWs
     PID_RecalculateFinanzDiffColumns ubersichtWs
-    PID_ReprotectWorksheet ubersichtWs, ubersichtProtected
+    PID_SMReprotectIfWasProtected ubersichtWs, ubersichtProtected
     ClearFinanzSummaryDirty
 
 RestoreSettings:
@@ -651,7 +651,7 @@ Private Sub PID_RefreshMonthFinanzSummaryCells(ByVal ws As Worksheet)
     ws.Range("S36").Calculate
     ws.Range("S37").Calculate
     
-    PID_ReprotectWorksheet ws, wasProtected
+    PID_SMReprotectIfWasProtected ws, wasProtected
 
 SafeExit:
 End Sub
@@ -668,15 +668,14 @@ Private Sub PID_UnprotectWorksheet(ByVal ws As Worksheet)
 End Sub
 
 
-Private Sub PID_ReprotectWorksheet(ByVal ws As Worksheet, ByVal wasProtected As Boolean)
+Private Sub PID_SMReprotectIfWasProtected(ByVal ws As Worksheet, ByVal wasProtected As Boolean)
     On Error Resume Next
     
-    If wasProtected Then
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                   UserInterfaceOnly:=True, _
-                   AllowFiltering:=True, _
-                   AllowSorting:=True
+    If PID_IsUbersichtWorksheet(ws) Then
+        PID_ApplyUbersichtSheetProtection ws
+    ElseIf wasProtected Then
+        PID_ReprotectWorksheet ws
     End If
     
-    On Error GoTo 0
+    Err.Clear
 End Sub
