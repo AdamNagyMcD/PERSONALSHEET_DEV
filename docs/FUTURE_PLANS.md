@@ -516,6 +516,193 @@ Restaurant-Manager ohne Excel-Wissen: **was tun / was nicht** + **was tun bei ka
 
 ---
 
+## FP-017 — Monatsblätter: Spalte D und I breiter / datenabhängig
+
+**Status:** Offen — aus Excel-16-Manualtest (2026-05)  
+**Priorität:** Mittel — UX, Daten sichtbar  
+**Aufwand:** **Klein**  
+**Betroffene Bereiche:** Monatsblätter (Januar–Dezember), `mod_FormatMonthSheet.bas` oder `FormatAllMonthSheets`
+
+### Beobachtetes Verhalten
+
+Spalten **D** (Eintritt) und **I** (Austrittsdatum) sind zu schmal; Datumswerte werden abgeschnitten oder nicht vollständig angezeigt.
+
+### Geplante Verbesserung
+
+- Feste Mindestbreite für D und I (z. B. aus Referenzblatt Januar) **oder**
+- `ColumnWidth` / `AutoFit` nur für D und I nach Format-Lauf (Mac/Win 2016+ testen).
+- In `FormatAllMonthSheets` / Monats-Layout mitziehen.
+
+### Akzeptanzkriterien
+
+- [ ] Typische Datumsformate (dd.mm.yyyy) in D und I auf Monatsblatt voll sichtbar (Win Excel 2016, manuell bestätigt).
+- [ ] Kein Layout-Bruch im Mitarbeiterblock B:N.
+- [ ] Mac + Windows.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_FormatMonthSheet.bas`
+
+---
+
+## FP-018 — LOHNTABELLE: neue KV-Periode → erster Monats-Tab sehr langsam
+
+**Status:** Offen — aus Excel-16-Manualtest (2026-05)  
+**Priorität:** Mittel — Performance (Alltag)  
+**Aufwand:** **Mittel–groß** (an FP-005–FP-010 anknüpfen)  
+**Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, `DieseArbeitsmappe.cls` (lazy refresh), LOHNTABELLE
+
+### Beobachtetes Verhalten
+
+Nach **neuer KV-Periode** auf LOHNTABELLE dauert das **erste Öffnen** eines Monatsblatts sehr lange — vermutlich vollständiger KV-/Stunden-Refresh über alle Zeilen/Named Ranges.
+
+### Geplante Verbesserung (Richtung)
+
+- Dirty-Refresh weiter eingrenzen (nur aktives Blatt, nur betroffene KV-Codes/Zeilen).
+- Named-Range-Strategie vereinfachen (siehe FP-006).
+- Optional: Hintergrund-Refresh oder Fortschritts-Hinweis statt „eingefroren“ wirkender Pause.
+- Windows-Messung laut FP-010 vor großem Umbau.
+
+### Akzeptanzkriterien
+
+- [ ] Nach neuer KV-Periode: erster Monats-Tab unter akzeptabler Zeit (Ziel nach Baseline-Messung).
+- [ ] F-Dropdown listet neue Stunden korrekt (Regression FP-004).
+- [ ] Mac + Windows Excel 2016+.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_KVStundenDropdown.bas`
+- `vba/DieseArbeitsmappe.cls`
+- `docs/FUTURE_PLANS.md` FP-005–FP-010
+
+---
+
+## FP-019 — CopyData: Bestätigungsdialog entfernen
+
+**Status:** Offen — Wunsch aus Manualtest (2026-05)  
+**Priorität:** Niedrig — UX  
+**Aufwand:** **Klein**  
+**Betroffene Bereiche:** `mod_CopyData.bas`
+
+### Beobachtetes Verhalten
+
+`PID_ConfirmCopyDataAction` zeigt vor CopyData ein Ja/Nein-Fenster. Nutzer, die den Button/Makro wählen, wollen **direkt** kopieren — Dialog wirkt überflüssig.
+
+### Geplante Verbesserung
+
+- `PID_ConfirmCopyDataAction`-Aufruf entfernen oder optional (Admin-Flag); CopyData startet sofort nach gültigem Monatsblatt.
+- Kurze **Erfolgs-Meldung** am Ende beibehalten (oder optional stumm + nur Statuszeile).
+
+### Akzeptanzkriterien
+
+- [ ] CopyData ohne Vorab-Dialog; Kopie läuft wie bisher (Overrides, Panel, SPEC).
+- [ ] Ungültiges Blatt / Fehler weiterhin mit Meldung.
+- [ ] TEST 1–5 / CopyData manuell grün.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_CopyData.bas` — `PID_CopyDataToFollowingMonths`, `PID_ConfirmCopyDataAction`
+
+---
+
+## FP-020 — Monatsblatt Q12 (Vormonat +/-) entsperren
+
+**Status:** Offen — aus Excel-16-Manualtest (2026-05)  
+**Priorität:** Mittel — fachlich nötige Eingabe  
+**Aufwand:** **Klein** (Teil von FP-013 Whitelist)  
+**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, Panel rechts, `mod_FormatMonthSheet.bas`
+
+### Beobachtetes Verhalten
+
+**Q12** ist geschützt/gesperrt; Nutzer trägt dort **Vormonat +/-** ein. Layout: `Q12:R12` Input-Stil (`PID_MSApplyStyleToRangeMergedOnce`).
+
+### Geplante Verbesserung
+
+- In Schutz-Whitelist: `Q12` (bzw. `Q12:R12` merge) `Locked = False`.
+- Mit FP-013 abgleichen: Panel-Eingaben vs. Formelbereiche Q17:R29 trennen.
+
+### Akzeptanzkriterien
+
+- [ ] Q12 auf geschütztem Monatsblatt editierbar (Win Excel 2016).
+- [ ] Q17:R29 / FINANZIELL-Formeln weiterhin nicht versehentlich überschreibbar (Ziel FP-013).
+- [ ] CopyData / Panel-Snapshot unverändert.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_SchutzHinzufugen.bas`
+- `vba/mod_FormatMonthSheet.bas`
+
+---
+
+## FP-021 — UEBERSICHT: E30 und I30 entsperren (Durchrechnung Plan)
+
+**Status:** Offen — aus Excel-16-Manualtest (2026-05); Smoke TEST 12 erwartet bereits Unlock  
+**Priorität:** Mittel — fachlich nötige Eingabe  
+**Aufwand:** **Klein**  
+**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, `mod_BuildDurchrechnung.bas`
+
+### Beobachtetes Verhalten
+
+Auf **UBERSICHT** sind **E30** (Jänner Verfügbar Plan) und **I30** (Jänner Muster Plan) trotz Doku/Smoke **gesperrt** — Nutzer muss dort manuell planen.
+
+`PID_UnlockDurchrechnungInputs` setzt Unlock, wird aber vermutlich durch globales `Protect` ohne erneutes Unlock überschrieben.
+
+### Geplante Verbesserung
+
+- Beim Schutz von UEBERSICHT: nach `PID_UnlockDurchrechnungInputs` oder in `PID_ApplySheetProtectionForMacros` E30/I30 explizit `Locked = False`.
+- Smoke TEST 12 bleibt grün.
+
+### Akzeptanzkriterien
+
+- [ ] E30 und I30 auf geschütztem UEBERSICHT editierbar.
+- [ ] Durchrechnungs-Formeln in anderen Zellen unverändert.
+- [ ] TEST 12 PASS nach Fix.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_SchutzHinzufugen.bas`
+- `vba/mod_BuildDurchrechnung.bas` — `PID_UnlockDurchrechnungInputs`
+
+---
+
+## FP-022 — LOHNTABELLE: Hilfe-Button → „Eigene Stunden löschen“
+
+**Status:** Offen — aus Excel-16-Manualtest (2026-05)  
+**Priorität:** Mittel — Alltag (ausgeschiedene MA, Stunde nicht mehr nötig)  
+**Aufwand:** **Mittel**  
+**Betroffene Bereiche:** `mod_AddNewKVPeriodOnTop.bas`, LOHNTABELLE, KV-Dropdown-Refresh
+
+### Beobachtetes Verhalten
+
+Button **Hilfe** auf LOHNTABELLE wird nicht benötigt. Stattdessen: **eigene Stunden** (Eigene Stunden / KV-Zeile) **löschen** können, wenn z. B. Mitarbeiter ausgeschieden und die Stundenzahl sonst niemandem mehr zugeordnet ist.
+
+### Geplante Verbesserung
+
+- Toolbar: Hilfe-Shape entfernen oder ersetzen durch z. B. **„Eigene Stunde löschen“** (deutscher Kurztext).
+- Dialog: KV-Code / Stunde wählen → Zeile in LOHNTABELLE entfernen oder deaktivieren (Fachregel klären: nur leere Nutzung vs. harte Löschung).
+- `MarkKVDropdownsDirty` / Monats-F-Listen aktualisieren.
+- Sicherheitsabfrage vor Löschung (eine kurze Ja/Nein reicht hier).
+
+### Akzeptanzkriterien
+
+- [ ] Hilfe-Button weg oder durch Lösch-Workflow ersetzt.
+- [ ] Gelöschte „eigene Stunde“ erscheint nicht mehr in F-Dropdown auf Monatsblättern (nach Refresh).
+- [ ] Bestehende KV-Perioden und normale KV-Zeilen unverändert.
+- [ ] Mac + Windows Excel 2016+.
+
+### Betroffene Dateien (Referenz)
+
+- `vba/mod_AddNewKVPeriodOnTop.bas`
+- `vba/mod_KVStundenDropdown.bas`
+
+---
+
+## Test-Notiz (Excel 2016, 2026-05)
+
+Manueller Durchlauf: **Smoke grün/gelb**, **manuelle Tests ohne Fehler**. Offene Punkte oben als FP-017–FP-022 erfasst (kein Release-Blocker für dokumentierte Fixes FP-001–FP-004).
+
+---
+
 ## Weitere Einträge
 
 Neue Backlog-Punkte unten anfügen mit ID `FP-00N`, Status, Ursache, geplantem Ansatz und Akzeptanzkriterien.
