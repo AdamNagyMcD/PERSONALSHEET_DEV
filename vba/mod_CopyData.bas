@@ -74,8 +74,6 @@ Public Sub PID_CopyDataToFollowingMonths()
     
     If Not PID_ValidateWorkerMonthSheet(wsSource, sourceMonthIndex, "Daten kopieren") Then Exit Sub
     
-    If Not PID_ConfirmCopyDataAction(wsSource, sourceMonthIndex) Then Exit Sub
-    
     workbookYear = PID_GetWorkbookYear()
     monthNames = PID_MonthNames()
     
@@ -1094,36 +1092,6 @@ Public Function PID_ValidateWorkerMonthSheet(ByVal ws As Worksheet, _
     End If
     
     PID_ValidateWorkerMonthSheet = True
-End Function
-
-
-Private Function PID_ConfirmCopyDataAction(ByVal wsSource As Worksheet, ByVal sourceMonthIndex As Long) As Boolean
-    Dim monthNames As Variant
-    Dim targetText As String
-    Dim answer As VbMsgBoxResult
-    Dim i As Long
-    
-    monthNames = PID_MonthNames()
-    
-    If sourceMonthIndex >= 12 Then
-        targetText = "Keine Folgemonate nach " & wsSource.Name & "."
-    Else
-        targetText = "Zielmonate: "
-        For i = sourceMonthIndex + 1 To 12
-            If i > sourceMonthIndex + 1 Then targetText = targetText & ", "
-            targetText = targetText & CStr(monthNames(i - 1))
-        Next i
-    End If
-    
-    answer = MsgBox( _
-        "Daten von '" & wsSource.Name & "' (Monat " & sourceMonthIndex & ") in folgende Monate kopieren?" & vbCrLf & vbCrLf & _
-        targetText & vbCrLf & vbCrLf & _
-        "Hinweis: Zielmonate werden ueberschrieben. Manuelle Planungsaenderungen in kuenftigen Monaten bleiben erhalten." & vbCrLf & vbCrLf & _
-        "Fortfahren?", _
-        vbQuestion + vbYesNo, _
-        "Daten kopieren")
-    
-    PID_ConfirmCopyDataAction = (answer = vbYes)
 End Function
 
 

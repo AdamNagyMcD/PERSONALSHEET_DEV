@@ -579,7 +579,7 @@ Nach **neuer KV-Periode** auf LOHNTABELLE dauert das **erste Öffnen** eines Mon
 
 ## FP-019 — CopyData: Bestätigungsdialog entfernen
 
-**Status:** Offen — Wunsch aus Manualtest (2026-05)  
+**Status:** Behoben (2026-05-26) — `PID_ConfirmCopyDataAction` entfernt  
 **Priorität:** Niedrig — UX  
 **Aufwand:** **Klein**  
 **Betroffene Bereiche:** `mod_CopyData.bas`
@@ -595,13 +595,13 @@ Nach **neuer KV-Periode** auf LOHNTABELLE dauert das **erste Öffnen** eines Mon
 
 ### Akzeptanzkriterien
 
-- [ ] CopyData ohne Vorab-Dialog; Kopie läuft wie bisher (Overrides, Panel, SPEC).
-- [ ] Ungültiges Blatt / Fehler weiterhin mit Meldung.
-- [ ] TEST 1–5 / CopyData manuell grün.
+- [x] CopyData ohne Vorab-Dialog; Kopie läuft wie bisher (Overrides, Panel, SPEC).
+- [x] Ungültiges Blatt / Fehler weiterhin mit Meldung (`PID_ValidateWorkerMonthSheet`).
+- [ ] TEST 1–5 / CopyData manuell grün (nach Import in xlsm).
 
 ### Betroffene Dateien (Referenz)
 
-- `vba/mod_CopyData.bas` — `PID_CopyDataToFollowingMonths`, `PID_ConfirmCopyDataAction`
+- `vba/mod_CopyData.bas` — `PID_CopyDataToFollowingMonths`
 
 ---
 

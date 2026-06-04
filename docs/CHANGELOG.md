@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+- mod_CopyData.bas: CopyData startet ohne Ja/Nein-Bestätigung vor dem Kopieren (FP-019).
+
 ### Changed
+- docs/Kurzanleitung_Personalsheet_A4.html: CopyData ohne Bestätigungsdialog beschrieben.
 - docs/RELEASE.md: erste Release (v1.0) an FP-017–FP-022 gekoppelt; FP-023 Copyright optional.
 - docs/FUTURE_PLANS.md: FP-023 Adam Nagy / McOpCo — Blatt-Fußzeile + VBA-Modul-Copyright-Kopf.
 - docs/FUTURE_PLANS.md: Excel-16-Test-Feedback als FP-017–FP-022 (Spalten D/I, KV-Ladezeit, CopyData ohne Dialog, Q12/E30/I30 Unlock, LOHNTABELLE Eigene-Stunden löschen).
