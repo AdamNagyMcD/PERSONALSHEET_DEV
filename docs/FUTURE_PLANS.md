@@ -666,7 +666,7 @@ Auf **UBERSICHT** sind **E30** (Jänner Verfügbar Plan) und **I30** (Jänner Mu
 
 ## FP-022 — LOHNTABELLE: Hilfe-Button → „Eigene Stunden löschen“
 
-**Status:** Offen — aus Excel-16-Manualtest (2026-05)  
+**Status:** Behoben (2026-05-26) — Button `4) Stunde löschen`, Makro `DeleteCustomKVMonatsstunden`  
 **Priorität:** Mittel — Alltag (ausgeschiedene MA, Stunde nicht mehr nötig)  
 **Aufwand:** **Mittel**  
 **Betroffene Bereiche:** `mod_AddNewKVPeriodOnTop.bas`, LOHNTABELLE, KV-Dropdown-Refresh
@@ -684,9 +684,10 @@ Button **Hilfe** auf LOHNTABELLE wird nicht benötigt. Stattdessen: **eigene Stu
 
 ### Akzeptanzkriterien
 
-- [ ] Hilfe-Button weg oder durch Lösch-Workflow ersetzt.
-- [ ] Gelöschte „eigene Stunde“ erscheint nicht mehr in F-Dropdown auf Monatsblättern (nach Refresh).
-- [ ] Bestehende KV-Perioden und normale KV-Zeilen unverändert.
+- [x] Hilfe-Button durch `4) Stunde löschen` ersetzt (`DeleteCustomKVMonatsstunden`).
+- [x] Nur zusaetzliche Zeilen (mehr als Schema-Zeilen pro KV-Code) loeschbar; Ja/Nein-Bestaetigung.
+- [ ] Gelöschte „eigene Stunde“ erscheint nicht mehr in F-Dropdown auf Monatsblättern (nach Refresh) — manuell prüfen.
+- [ ] Bestehende KV-Perioden und normale KV-Zeilen unverändert — manuell prüfen.
 - [ ] Mac + Windows Excel 2016+.
 
 ### Betroffene Dateien (Referenz)

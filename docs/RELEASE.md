@@ -9,8 +9,8 @@ Hasznalat minden etterembe kikerulo verzio elott.
 | Status | Inhalt |
 |--------|--------|
 | Erledigt (Basis) | FP-001–FP-004, Smoke + manuelle Tests Excel 2016 grün/gelb (2026-05) |
-| Vor v1.0 | FP-018 KV-Ladezeit (mind. akzeptabel) · FP-022 LOHNTABELLE Eigene Stunde löschen |
-| Erledigt (v1.0-Code) | FP-017 D/I · FP-019 CopyData · FP-020 Q12 · FP-021 E30/I30 — manuell nach Import prüfen |
+| Vor v1.0 | FP-018 KV-Ladezeit (mind. akzeptabel) |
+| Erledigt (v1.0-Code) | FP-017 D/I · FP-019 CopyData · FP-020 Q12 · FP-021 E30/I30 · FP-022 Stunde löschen — manuell nach Import prüfen |
 | Optional v1.0 | FP-023 dezentes Copyright / Urheber auf allen Blättern |
 | Optional / danach | Schutz-Paket FP-011–FP-016, Performance FP-005–FP-010 (Windows-Messung) |
 

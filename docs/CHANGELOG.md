@@ -3,6 +3,11 @@
 ## Unreleased
 
 ### Fixed
+- mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE — kein Erfolgs-Dialog nach Eigene Stunden / Stunde löschen; Monatslohn-Hinweis ohne Spaltenbuchstaben; Umlaute in Dialogen (FP-022).
+- mod_AddNewKVPeriodOnTop.bas: K-Marker (`PID_EIGEN`) bleibt erhalten — Trim loescht nur L:XFD, nicht K; Markierung nach FormatKVPeriodArea erneut (FP-022).
+- mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE Button 4 „Stunde löschen“ — nur markierte/extra Stunden in Liste, kein Fallback auf alle Standard-Stunden (FP-022).
+- mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE Button 4 „Stunde löschen“ — Erkennung per K-Marker, ältere Periode/min. Block; Legacy `PID_MarkSelectedLOHNTABELLECustomHour` (FP-022).
+- mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE Button 4 „Stunde löschen“ statt Hilfe; `DeleteCustomKVMonatsstunden` mit Bestätigung und Dropdown-Refresh (FP-022).
 - mod_FormatMonthSheet.bas + Modul1.bas: Monatsblätter D/I Spaltenbreite 13 für Datumsfelder (FP-017).
 - mod_SchutzHinzufugen.bas: Compile-Fix Excel 2016 Mac — Protect ohne AllowSelectingLockedCells; EnableSelection numerisch (FP-021).
 - mod_SchutzHinzufugen.bas: UEBERSICHT geschuetzt, nur E30/I30 editierbar (AllowEditRanges, Lock-all) (FP-021 v4).
