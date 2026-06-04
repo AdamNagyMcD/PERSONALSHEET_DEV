@@ -697,9 +697,69 @@ Button **Hilfe** auf LOHNTABELLE wird nicht benötigt. Stattdessen: **eigene Stu
 
 ---
 
+## FP-023 — Copyright: Blätter + VBA-Module (Adam Nagy / McOpCo)
+
+**Status:** Offen — Wunsch vor erstem Release  
+**Priorität:** Niedrig — Branding / Urheberrecht, kein Fachfeature  
+**Aufwand:** **Klein–mittel** (Blätter) + **Klein** (VBA-Header, viele Dateien)  
+**Betroffene Bereiche:** Alle sichtbaren Worksheets; alle `vba/*.bas` und `vba/*.cls`; zentral `mod_PIDUtils.bas` oder `mod_PIDCopyright.bas`
+
+### Urheber (fest)
+
+- **Name:** Adam Nagy  
+- **Organisation:** McOpCo  
+
+### Teil A — Hinweis auf jedem Excel-Blatt
+
+Dezent, **nicht aufdringlich**, passend zum PERSONALSHEET-Design (kleine Calibri, gedämpftes Grau/helles Navy, Fußzeile rechts unten o. ä.).
+
+**Vorschlag Anzeige-Text (einheitlich):**
+
+`© Adam Nagy · McOpCo · Personalsheet [Jahr]`
+
+- `[Jahr]` = Arbeitsjahr aus `EINSTELLUNG!C35` oder Release-Jahr (Konstante `PID_COPYRIGHT_YEAR`).
+- Zentrale Konstante z. B. in `mod_PIDCopyright.bas`:
+  - `PID_COPYRIGHT_AUTHOR = "Adam Nagy"`
+  - `PID_COPYRIGHT_ORG = "McOpCo"`
+
+**Technik:** `PID_ApplyCopyrightToAllSheets` — Open / `FormatAllMonthSheets` / `FullSystemRefresh`; sichtbare Blätter ja, `FLUKTUATION_DATEN` + `KV_DROPDOWN_HELPER` optional ohne.
+
+### Teil B — VBA-Modul-Kopf (ja, üblich und sinnvoll)
+
+**Nicht** in jede einzelne `Sub`/`Function` (zu laut, wartungsintensiv), sondern **ein Standard-Kommentarblock am Dateianfang** jeder exportierten Modul-Datei (direkt unter `Attribute VB_Name`, vor `Option Explicit`). Das ist in der Branche üblich; der VBA-Editor zeigt ihn beim Öffnen des Moduls; Export/Import behält die Zeilen.
+
+**Vorschlag Block (Englisch — üblich bei Copyright; Kommentare sonst Deutsch):**
+
+```vba
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+```
+
+Optional zusätzlich **eine Zeile** nur in zentralen Entry-Makros (`CopyData`, `FullSystemRefresh`, …) — nur wenn gewünscht; Standard = Modul-Kopf reicht.
+
+**Umsetzung:** alle `vba/*.bas`, `vba/*.cls` einheitlich; bei `ResetAndImportVBAFiles` nicht überschreiben ohne Template.
+
+### Akzeptanzkriterien
+
+- [ ] Alle für Restaurant sichtbaren Blätter: Hinweis mit **Adam Nagy** und **McOpCo**, einheitlich und dezent.
+- [ ] Keine Störung von Eingabe, Formeln, Druck (A4 Spot-Check).
+- [ ] Jedes VBA-Modul im Repo trägt den Copyright-Kopf (Adam Nagy / McOpCo).
+- [ ] Mac + Windows Excel 2016+; nach Format-Lauf bleibt Blatt-Hinweis erhalten.
+
+### Betroffene Dateien (Referenz)
+
+- Neu oder `vba/mod_PIDSheetStyle.bas`
+- `vba/mod_FormatMonthSheet.bas`, `vba/DieseArbeitsmappe.cls` (Open)
+- `docs/RELEASE.md` (vor v1.0 optional mit umsetzen)
+
+---
+
 ## Test-Notiz (Excel 2016, 2026-05)
 
-Manueller Durchlauf: **Smoke grün/gelb**, **manuelle Tests ohne Fehler**. Offene Punkte oben als FP-017–FP-022 erfasst (kein Release-Blocker für dokumentierte Fixes FP-001–FP-004).
+Manueller Durchlauf: **Smoke grün/gelb**, **manuelle Tests ohne Fehler**. Offene Punkte oben als FP-017–FP-023 erfasst (kein Release-Blocker für dokumentierte Fixes FP-001–FP-004).
 
 ---
 

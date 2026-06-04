@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Changed
+- docs/RELEASE.md: erste Release (v1.0) an FP-017–FP-022 gekoppelt; FP-023 Copyright optional.
+- docs/FUTURE_PLANS.md: FP-023 Adam Nagy / McOpCo — Blatt-Fußzeile + VBA-Modul-Copyright-Kopf.
 - docs/FUTURE_PLANS.md: Excel-16-Test-Feedback als FP-017–FP-022 (Spalten D/I, KV-Ladezeit, CopyData ohne Dialog, Q12/E30/I30 Unlock, LOHNTABELLE Eigene-Stunden löschen).
 - docs/Kurzanleitung_Personalsheet_A4.html: vereinfachte Anleitung für Einsteiger (Umlaute ä/ö/ü/ß), drei Grundregeln, Schritt-für-Schritt CopyData/Austritt, kein Ziehen in E/F, FormatAllMonthSheets-Hinweis.
 - docs/FUTURE_PLANS.md: Schutz-Paket (Amateur-Vermeidung) — Übersicht + FP-011–FP-016 (Fill Handle, Sort off, Lock-all/Whitelist, EnableSelection, Endanwender-Doku, Schutz-Smoke).

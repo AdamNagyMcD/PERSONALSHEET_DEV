@@ -2,6 +2,19 @@
 
 Hasznalat minden etterembe kikerulo verzio elott.
 
+## Erste Release (v1.0) — wann?
+
+**Geplant:** Erstes ettermi Release **nach** Umsetzung der Excel-16-Test-Punkte **FP-017–FP-022** (siehe `docs/FUTURE_PLANS.md`).
+
+| Status | Inhalt |
+|--------|--------|
+| Erledigt (Basis) | FP-001–FP-004, Smoke + manuelle Tests Excel 2016 grün/gelb (2026-05) |
+| Vor v1.0 | FP-017 D/I Spaltenbreite · FP-018 KV-Ladezeit (mind. akzeptabel) · FP-019 CopyData ohne Dialog · FP-020 Q12 · FP-021 E30/I30 · FP-022 LOHNTABELLE Eigene Stunde löschen |
+| Optional v1.0 | FP-023 dezentes Copyright / Urheber auf allen Blättern |
+| Optional / danach | Schutz-Paket FP-011–FP-016, Performance FP-005–FP-010 (Windows-Messung) |
+
+**Magyarul:** Az első éttermi kiadás akkor jön, ha a fenti FP-017–FP-022 kész — utána ez a checklista + tagelt `Personalsheet.xlsm`.
+
 ## Elokeszites
 
 - [ ] Git working tree tiszta (`git status`)
@@ -35,10 +48,12 @@ Lsd. [TEST_CASES.md](../TEST_CASES.md):
 - [ ] Egy honaplap: E/F dropdown mukodik, Monatslohn szamol
 - [ ] FLUKTUATION: dashboard betolt (ha volt valtozas)
 
-## Release
+## Release (v1.0)
 
+- [ ] FP-017–FP-022 in `FUTURE_PLANS.md` auf **Behoben** gesetzt
+- [ ] `docs/CHANGELOG.md`: Unreleased → neuer Versionsabschnitt (Datum)
 - [ ] `Personalsheet.xlsm` mentese
-- [ ] Git commit + tag (pl. `v2026.05.22`)
+- [ ] Git commit + tag (pl. `v1.0.0` oder `v2026.06.xx`)
 - [ ] Backup: elozo verzio megmarad (OneDrive verzioelozmeny / masolat)
 - [ ] Ettermeknek: csak a tagelt xlsm telepitese
 
