@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Fixed
+- mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE — kein Erfolgs-Dialog nach Periode loeschen; alle KV-Datenzeilen Schriftfarbe Navy (auch alte Perioden beim Oeffnen).
+- mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE — kein Erfolgs-Dialog nach „Neue Periode“ (wie Eigene Stunden / Stunde loeschen).
+- mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE — einheitliche Zeilenhoehe (24 pt) und Spaltenbreiten B/C/E/F nach neuer KV-Periode; `ClearContents` statt `Clear` beim Einfuegen.
 - mod_KVStundenDropdown.bas + Modul1.bas + DieseArbeitsmappe.cls: erster Monats-Tab nach KV-Änderung schneller — Bulk-F-Dropdown, Manual während Refresh, H/K/L einmal (FP-018).
 - mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE — kein Erfolgs-Dialog nach Eigene Stunden / Stunde löschen; Monatslohn-Hinweis ohne Spaltenbuchstaben; Umlaute in Dialogen (FP-022).
 - mod_AddNewKVPeriodOnTop.bas: K-Marker (`PID_EIGEN`) bleibt erhalten — Trim loescht nur L:XFD, nicht K; Markierung nach FormatKVPeriodArea erneut (FP-022).

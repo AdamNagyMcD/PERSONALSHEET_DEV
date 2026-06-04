@@ -61,21 +61,6 @@ Private Function PID_KVTxtSpaeter() As String
 End Function
 
 
-Private Function PID_KVTxtNaechster() As String
-    PID_KVTxtNaechster = "N" & PID_KVTxtAe() & "chster"
-End Function
-
-
-Private Function PID_KVTxtOeffnen() As String
-    PID_KVTxtOeffnen = PID_KVTxtOe() & "ffnen"
-End Function
-
-
-Private Function PID_KVTxtEingefuegt() As String
-    PID_KVTxtEingefuegt = "eingef" & PID_KVTxtUe() & "gt"
-End Function
-
-
 Private Function PID_KVTxtWaehlen() As String
     PID_KVTxtWaehlen = "w" & PID_KVTxtAe() & "hlen"
 End Function
@@ -91,11 +76,6 @@ Private Function PID_KVTxtGroesser() As String
 End Function
 
 
-Private Function PID_KVTxtAnstossen() As String
-    PID_KVTxtAnstossen = "ansto" & PID_KVTxtSs() & "en"
-End Function
-
-
 Private Function PID_KVBtnDeletePeriod() As String
     PID_KVBtnDeletePeriod = "3) Alte Periode " & PID_KVTxtLoeschen()
 End Function
@@ -103,23 +83,6 @@ End Function
 
 Private Function PID_KVBtnDeleteCustomHour() As String
     PID_KVBtnDeleteCustomHour = "4) Stunde " & PID_KVTxtLoeschen()
-End Function
-
-
-Private Function PID_GetKVTeamAfterChangeHint() As String
-    PID_GetKVTeamAfterChangeHint = PID_KVTxtNaechster() & " Schritt:" & vbCrLf & _
-        "Einmal ein Monatsblatt " & PID_KVTxtOeffnen() & " (z. B. Januar)." & vbCrLf & _
-        "Oder Vorgesetzten/System-Refresh " & PID_KVTxtAnstossen() & " lassen."
-End Function
-
-
-Private Function PID_GetKVLoanAfterChangeHint() As String
-    PID_GetKVLoanAfterChangeHint = PID_GetKVTeamAfterChangeHint()
-End Function
-
-
-Private Function PID_GetKVYearAfterChangeHint() As String
-    PID_GetKVYearAfterChangeHint = PID_GetKVTeamAfterChangeHint()
 End Function
 
 
@@ -237,12 +200,6 @@ Public Sub AddNewKVPeriodOnTop()
     
     MarkAllKVDropdownsDirty
     MarkAllKVLohnDirty
-    
-    MsgBox "Der neue KV-Zeitraum wurde " & PID_KVTxtEingefuegt() & ":" & vbCrLf & vbCrLf & _
-           newPeriod & vbCrLf & vbCrLf & _
-           "Bitte jetzt Monatslohn in der neuen Periode in LOHNTABELLE erfassen." & vbCrLf & vbCrLf & _
-           PID_GetKVTeamAfterChangeHint(), _
-           vbInformation, "Neue Periode"
 
 CleanExit:
     On Error Resume Next
@@ -728,9 +685,7 @@ Public Sub DeleteSelectedKVPeriods()
     
     MarkAllKVDropdownsDirty
     MarkAllKVLohnDirty
-    
-    MsgBox "Geloescht: " & periodToDelete & vbCrLf & vbCrLf & PID_GetKVTeamAfterChangeHint(), _
-           vbInformation, "Alte Periode loeschen"
+
     GoTo CleanExit
 
 CleanExit:
@@ -1008,6 +963,7 @@ End Sub
 Public Sub FixLOHNTABELLE_HeaderTextIfNeeded(Optional ByVal forceFormulaRepair As Boolean = False)
     Dim wsKV As Worksheet
     Dim wasProtected As Boolean
+    Dim lastRow As Long
     
     On Error GoTo SafeExit
     
@@ -1028,8 +984,12 @@ Public Sub FixLOHNTABELLE_HeaderTextIfNeeded(Optional ByVal forceFormulaRepair A
     End If
     
     If wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row >= 4 Then
-        PID_RefreshKVPeriodTitleRowStyles wsKV, 4, wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
-        PID_ApplyKVVisualGrouping wsKV, 4, wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+        lastRow = wsKV.Cells(wsKV.Rows.Count, "A").End(xlUp).Row
+        PID_ConfigureKVTableColumnWidths wsKV
+        PID_ApplyKVTableRowHeights wsKV, 4, lastRow
+        PID_RefreshKVPeriodTitleRowStyles wsKV, 4, lastRow
+        PID_FormatKVRowTypography wsKV, 4, lastRow
+        PID_ApplyKVVisualGrouping wsKV, 4, lastRow
     End If
     
 SafeExit:
@@ -2019,7 +1979,8 @@ Private Sub InsertNewKVPeriodRows(ByVal wsKV As Worksheet, _
     newArea.UnMerge
     On Error GoTo SafeExit
     
-    newArea.Clear
+    ' Nur Inhalte leeren — Zeilenhoehen/Spaltenbreiten der Vorlage bleiben bis FormatKVPeriodArea.
+    newArea.ClearContents
     
     wsKV.Range("A" & dataStartRow & ":I" & (dataStartRow + newRowCount - 1)).Value = newPeriodData
     
@@ -2056,6 +2017,7 @@ Private Sub PID_WriteKVPeriodTitleRow(ByVal wsKV As Worksheet, _
     wsKV.Cells(rowNumber, "A").Value = titleText
     
     PID_StyleApplySubsectionTitle wsKV.Range("A" & rowNumber & ":J" & rowNumber), False
+    wsKV.Rows(rowNumber).RowHeight = PID_STYLE_COMPACT_YEAR_ROW_HEIGHT
     
     With wsKV.Range("A" & rowNumber & ":J" & rowNumber)
         .Borders(xlEdgeTop).LineStyle = xlContinuous
@@ -2353,10 +2315,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
         
         PID_ApplyEuroNumberFormat .Range("H" & firstDataRow & ":H" & lastRow)
         
-        .Columns("A").ColumnWidth = 16
-        .Columns("D").ColumnWidth = 14
-        .Columns("G").ColumnWidth = 13
-        .Columns("H").ColumnWidth = 14
+        PID_ConfigureKVTableColumnWidths wsKV
         PID_ConfigureKVStatusColumnWidths wsKV, firstDataRow, lastRow
         .Columns(PID_CUSTOM_KV_HOUR_MARKER_COL).Hidden = True
     End With
@@ -2367,6 +2326,7 @@ Private Sub FormatKVPeriodArea(ByVal wsKV As Worksheet)
     ' Eingabefelder fuer Monatsstunden/Monatslohn muessen editierbar bleiben.
     PID_ConfigureKVInputCellLocks wsKV, firstDataRow, lastRow
     
+    PID_ApplyKVTableRowHeights wsKV, firstDataRow, lastRow
     PID_ApplyKVVisualGrouping wsKV, firstDataRow, lastRow
     PID_FormatKVRowTypography wsKV, firstDataRow, lastRow
     PID_TrimKVSheetBelowTable wsKV, firstDataRow
@@ -2408,19 +2368,53 @@ Private Sub PID_FormatKVRowTypography(ByVal wsKV As Worksheet, ByVal firstRow As
     
     wsKV.Range("A3:J3").Font.Bold = True
     wsKV.Range("A3:J3").Font.Size = 10
+    wsKV.Range("A3:J3").Font.Color = PID_StyleColorNavy()
     
     For r = firstRow To lastRow
         Set rowRange = wsKV.Range("A" & r & ":J" & r)
         
         If wsKV.Range("A" & r).MergeCells Then
-            ' Titelzeile wird in PID_WriteKVPeriodTitleRow formatiert.
+            ' Titelzeile: Navy in PID_WriteKVPeriodTitleRow / PID_RefreshKVPeriodTitleRowStyles.
         ElseIf Trim$(CStr(wsKV.Cells(r, "D").Value)) <> "" Then
             rowRange.Font.Bold = False
             rowRange.Font.Size = 10
+            rowRange.Font.Color = PID_StyleColorNavy()
             rowRange.VerticalAlignment = xlCenter
             rowRange.HorizontalAlignment = xlCenter
         End If
     Next r
+    
+SafeExit:
+End Sub
+
+
+Private Sub PID_ConfigureKVTableColumnWidths(ByVal wsKV As Worksheet)
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    
+    ' Spaltenbreiten an bestehende LOHNTABELLE-Vorlage (OOXML-Baseline) angleichen.
+    wsKV.Columns("A").ColumnWidth = 16
+    wsKV.Columns("B").ColumnWidth = 14
+    wsKV.Columns("C").ColumnWidth = 14
+    wsKV.Columns("D").ColumnWidth = 14
+    wsKV.Columns("E").ColumnWidth = 13
+    wsKV.Columns("F").ColumnWidth = 25
+    wsKV.Columns("G").ColumnWidth = 13
+    wsKV.Columns("H").ColumnWidth = 14
+    
+SafeExit:
+End Sub
+
+
+Private Sub PID_ApplyKVTableRowHeights(ByVal wsKV As Worksheet, ByVal firstRow As Long, ByVal lastRow As Long)
+    On Error GoTo SafeExit
+    
+    If wsKV Is Nothing Then Exit Sub
+    If firstRow > lastRow Then Exit Sub
+    
+    ' Nach Insert+ClearContents sind neue Zeilen oft auf Excel-Standardhoehe (~15).
+    wsKV.Rows(firstRow & ":" & lastRow).RowHeight = PID_STYLE_COMPACT_YEAR_ROW_HEIGHT
     
 SafeExit:
 End Sub
