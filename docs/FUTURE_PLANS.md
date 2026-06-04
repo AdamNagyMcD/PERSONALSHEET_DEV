@@ -548,7 +548,7 @@ Spalten **D** (Eintritt) und **I** (Austrittsdatum) sind zu schmal; Datumswerte 
 
 ## FP-018 — LOHNTABELLE: neue KV-Periode → erster Monats-Tab sehr langsam
 
-**Status:** Offen — aus Excel-16-Manualtest (2026-05)  
+**Status:** Behoben (2026-05-26) — F-Dropdown pro KV-Code (Bulk), Manual während Refresh, H/K/L danach einmal  
 **Priorität:** Mittel — Performance (Alltag)  
 **Aufwand:** **Mittel–groß** (an FP-005–FP-010 anknüpfen)  
 **Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, `DieseArbeitsmappe.cls` (lazy refresh), LOHNTABELLE
@@ -566,7 +566,8 @@ Nach **neuer KV-Periode** auf LOHNTABELLE dauert das **erste Öffnen** eines Mon
 
 ### Akzeptanzkriterien
 
-- [ ] Nach neuer KV-Periode: erster Monats-Tab unter akzeptabler Zeit (Ziel nach Baseline-Messung).
+- [x] Bulk-Refresh: ein Named Range pro KV-Gruppe statt 80× pro Zeile; `PID_BeginHeavyMaintenance` während SheetActivate.
+- [ ] Nach neuer KV-Periode: erster Monats-Tab unter akzeptabler Zeit — manuell prüfen.
 - [ ] F-Dropdown listet neue Stunden korrekt (Regression FP-004).
 - [ ] Mac + Windows Excel 2016+.
 

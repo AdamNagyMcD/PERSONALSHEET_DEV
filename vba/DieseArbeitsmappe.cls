@@ -145,9 +145,16 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     If PID_IsWorkerMonthSheet(Sh) Then
         PID_EnsureWorkerSheetRuntimeReady
         PID_EnsureMonthSheetCopyDataButton Sh
-        RefreshKVDropdownsIfDirtyForSheet Sh
-        RefreshKVLohnIfDirty Sh
-        PID_RecalculateMonthFormulaColumns Sh
+        
+        If gKVDropdownsDirty Or IsKVLohnDirty() Then
+            PID_BeginHeavyMaintenance
+            RefreshKVDropdownsIfDirtyForSheet Sh
+            RefreshKVLohnIfDirty Sh
+            PID_EndHeavyMaintenance Sh
+        Else
+            PID_RecalculateMonthFormulaColumns Sh
+        End If
+        
         GoTo SafeExit
     End If
 

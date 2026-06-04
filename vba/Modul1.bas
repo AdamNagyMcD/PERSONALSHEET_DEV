@@ -13,6 +13,9 @@ Public Const PID_FLUKTUATION_REASON_LAST_ROW As Long = 49
 Public Const PID_FLUKTUATION_TIME_FIRST_ROW As Long = 53
 Public Const PID_FLUKTUATION_TIME_LAST_ROW As Long = 59
 
+Private mHeavyMaintOldCalculation As XlCalculation
+Private mHeavyMaintDepth As Long
+
 
 ' Frueher: Manual fuer schnelles Oeffnen — Endanwender sahen leere H/K/L-Formeln.
 ' Jetzt: Automatisch + EnableCalculation; Open bleibt kurz Manual nur in Workbook_Open.
@@ -22,6 +25,37 @@ Public Sub PID_ConfigureDeferredWorkbookCalculationOnOpen()
     Err.Clear
     PID_EnableCalculationForAllSheets
     Application.Calculation = xlCalculationAutomatic
+End Sub
+
+
+' Schwere Wartung (KV-Refresh): Manual waehrenddessen, danach H/K/L einmal — FP-018.
+Public Sub PID_BeginHeavyMaintenance()
+    On Error Resume Next
+    
+    If mHeavyMaintDepth <= 0 Then
+        mHeavyMaintOldCalculation = Application.Calculation
+        Application.Calculation = xlCalculationManual
+    End If
+    
+    mHeavyMaintDepth = mHeavyMaintDepth + 1
+    Err.Clear
+End Sub
+
+
+Public Sub PID_EndHeavyMaintenance(Optional ByVal wsMonth As Worksheet = Nothing)
+    On Error Resume Next
+    
+    If mHeavyMaintDepth > 0 Then mHeavyMaintDepth = mHeavyMaintDepth - 1
+    If mHeavyMaintDepth > 0 Then Exit Sub
+    
+    If Not wsMonth Is Nothing Then
+        If PID_IsWorkerMonthSheet(wsMonth) Then
+            PID_RecalculateMonthFormulaColumns wsMonth
+        End If
+    End If
+    
+    Application.Calculation = mHeavyMaintOldCalculation
+    Err.Clear
 End Sub
 
 

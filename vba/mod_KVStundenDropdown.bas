@@ -71,6 +71,8 @@ Public Sub RefreshAllMonthKVStundenDropdowns()
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
     
+    PID_BeginHeavyMaintenance
+    
     monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
     
     For i = LBound(monthNames) To UBound(monthNames)
@@ -86,6 +88,7 @@ Public Sub RefreshAllMonthKVStundenDropdowns()
     Next i
     
     MarkKVDropdownsClean
+    PID_EndHeavyMaintenance
 
 CleanExit:
     Application.DisplayAlerts = oldDisplayAlerts
@@ -96,6 +99,7 @@ CleanExit:
 CleanFail:
     gKVDropdownsDirty = True
     
+    PID_EndHeavyMaintenance
     Application.DisplayAlerts = oldDisplayAlerts
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
@@ -186,17 +190,8 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
     
     If changedRange Is Nothing Then
-        
         ClearHelperColumnsForSheet wsHelper, wsMonth.Name
-        
-        For r = PID_FIRST_ROW To PID_LAST_ROW
-            On Error Resume Next
-            wsMonth.Cells(r, "F").Validation.Delete
-            Err.Clear
-            On Error GoTo CleanFail
-            RefreshKVStundenDropdownForRow wsMonth, wsHelper, r, monthNumber
-        Next r
-        
+        RefreshKVStundenDropdownForSheetBulk wsMonth, wsHelper, monthNumber
     Else
         
         Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:E82"))
@@ -254,6 +249,193 @@ End Sub
 Public Function PID_GetTemplateKVCodeForStundenDropdown() As String
     PID_GetTemplateKVCodeForStundenDropdown = PID_KV_TEMPLATE_KV_CODE
 End Function
+
+
+Private Function PID_GetDropdownKeyForRow(ByVal wsMonth As Worksheet, ByVal rowNumber As Long) As String
+    Dim kvCode As String
+    
+    kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
+    
+    If kvCode = "" Then
+        PID_GetDropdownKeyForRow = "__TEMPLATE__"
+    Else
+        PID_GetDropdownKeyForRow = kvCode
+    End If
+End Function
+
+
+Private Function GetDropdownNameForKVCode(ByVal sheetName As String, ByVal kvCodeKey As String) As String
+    Dim safeName As String
+    Dim safeKey As String
+    
+    safeName = UCase$(Trim$(CStr(sheetName)))
+    safeName = Replace(safeName, " ", "_")
+    safeName = Replace(safeName, "-", "_")
+    safeName = Replace(safeName, ".", "_")
+    safeName = Replace(safeName, "/", "_")
+    safeName = Replace(safeName, "\", "_")
+    safeName = Replace(safeName, ChrW(196), "AE")
+    safeName = Replace(safeName, ChrW(214), "OE")
+    safeName = Replace(safeName, ChrW(220), "UE")
+    safeName = Replace(safeName, ChrW(228), "AE")
+    safeName = Replace(safeName, ChrW(246), "OE")
+    safeName = Replace(safeName, ChrW(252), "UE")
+    safeName = Replace(safeName, ChrW(223), "SS")
+    
+    safeKey = UCase$(Trim$(CStr(kvCodeKey)))
+    safeKey = Replace(safeKey, " ", "_")
+    safeKey = Replace(safeKey, "/", "_")
+    safeKey = Replace(safeKey, "\", "_")
+    
+    GetDropdownNameForKVCode = "KV_DG_" & safeName & "_" & safeKey
+End Function
+
+
+Private Function GetHelperColumnForKVCodeSlot(ByVal sheetName As String, ByVal slotIndex As Long) As Long
+    Dim monthIndex As Long
+    Dim firstCol As Long
+    
+    monthIndex = GetMonthIndexForHelper(sheetName)
+    If monthIndex < 1 Then monthIndex = 1
+    
+    If slotIndex < 1 Then slotIndex = 1
+    If slotIndex > 25 Then slotIndex = 25
+    
+    firstCol = ((monthIndex - 1) * 80) + 1
+    GetHelperColumnForKVCodeSlot = firstCol + slotIndex - 1
+End Function
+
+
+Private Sub PID_ApplyFStundenListValidation(ByVal wsMonth As Worksheet, _
+                                            ByVal rowNumber As Long, _
+                                            ByVal listName As String, _
+                                            ByVal listRange As Range)
+    On Error GoTo ApplyFailed
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
+    
+    On Error Resume Next
+    wsMonth.Cells(rowNumber, "F").Validation.Delete
+    Err.Clear
+    
+    On Error GoTo ApplyFailed
+    With wsMonth.Cells(rowNumber, "F").Validation
+        .Add Type:=xlValidateList, _
+             AlertStyle:=xlValidAlertStop, _
+             Operator:=xlBetween, _
+             Formula1:="=" & listName
+        .IgnoreBlank = True
+        .InCellDropdown = True
+        .ShowInput = True
+        .ShowError = True
+    End With
+    Exit Sub
+
+ApplyFailed:
+    On Error Resume Next
+    wsMonth.Cells(rowNumber, "F").Validation.Delete
+    Err.Clear
+    
+    If listRange Is Nothing Then Exit Sub
+    
+    On Error GoTo SafeExit
+    With wsMonth.Cells(rowNumber, "F").Validation
+        .Add Type:=xlValidateList, _
+             AlertStyle:=xlValidAlertStop, _
+             Operator:=xlBetween, _
+             Formula1:="=" & listRange.Address(External:=True)
+        .IgnoreBlank = True
+        .InCellDropdown = True
+        .ShowInput = True
+        .ShowError = True
+    End With
+
+SafeExit:
+End Sub
+
+
+Private Sub RefreshKVStundenDropdownForSheetBulk(ByVal wsMonth As Worksheet, _
+                                                 ByVal wsHelper As Worksheet, _
+                                                 ByVal monthNumber As Long)
+    Dim codeKeys As Collection
+    Dim key As String
+    Dim lookupCode As String
+    Dim r As Long
+    Dim i As Long
+    Dim slotIndex As Long
+    Dim values As Collection
+    Dim helperCol As Long
+    Dim helperLastRow As Long
+    Dim listRange As Range
+    Dim listName As String
+    
+    Set codeKeys = New Collection
+    
+    For r = PID_FIRST_ROW To PID_LAST_ROW
+        key = PID_GetDropdownKeyForRow(wsMonth, r)
+        
+        If Not CollectionHasKey_KVDropdown(codeKeys, key) Then
+            codeKeys.Add key, key
+        End If
+    Next r
+    
+    On Error Resume Next
+    wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Validation.Delete
+    Err.Clear
+    On Error GoTo 0
+    
+    slotIndex = 0
+    
+    For i = 1 To codeKeys.Count
+        key = CStr(codeKeys(i))
+        slotIndex = slotIndex + 1
+        
+        If key = "__TEMPLATE__" Then
+            lookupCode = PID_GetTemplateKVCodeForStundenDropdown()
+        Else
+            lookupCode = key
+        End If
+        
+        Set values = GetKVMonatsstundenValues(monthNumber, lookupCode)
+        
+        helperCol = GetHelperColumnForKVCodeSlot(wsMonth.Name, slotIndex)
+        wsHelper.Range(wsHelper.Cells(1, helperCol), wsHelper.Cells(30, helperCol)).ClearContents
+        
+        helperLastRow = 0
+        listName = ""
+        Set listRange = Nothing
+        
+        If Not values Is Nothing Then
+            If values.Count > 0 Then
+                helperLastRow = WriteDropdownValuesToHelper(wsHelper, helperCol, values)
+                
+                If helperLastRow > 0 Then
+                    Set listRange = wsHelper.Range(wsHelper.Cells(1, helperCol), wsHelper.Cells(helperLastRow, helperCol))
+                    listName = GetDropdownNameForKVCode(wsMonth.Name, key)
+                    PID_EnsureWorkbookNameRefersTo listName, listRange, gKVDropdownsDirty
+                End If
+            End If
+        End If
+        
+        For r = PID_FIRST_ROW To PID_LAST_ROW
+            If PID_GetDropdownKeyForRow(wsMonth, r) <> key Then GoTo NextRow
+            
+            If helperLastRow <= 0 Then
+                On Error Resume Next
+                wsMonth.Cells(r, "F").Validation.Delete
+                If key <> "__TEMPLATE__" Then wsMonth.Cells(r, "F").ClearContents
+                Err.Clear
+            Else
+                If gKVDropdownsDirty Or Not PID_RowHasValidFStundenDropdown(wsMonth, r) Then
+                    PID_ApplyFStundenListValidation wsMonth, r, listName, listRange
+                End If
+            End If
+            
+NextRow:
+        Next r
+    Next i
+End Sub
 
 
 Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
@@ -1019,7 +1201,10 @@ Public Function PID_RowHasValidFStundenDropdown(ByVal wsMonth As Worksheet, ByVa
     On Error GoTo 0
     
     If InStr(1, validationFormula, "#REF", vbTextCompare) > 0 Then Exit Function
-    If InStr(1, validationFormula, "KV_DD_", vbTextCompare) = 0 Then Exit Function
+    If InStr(1, validationFormula, "KV_DD_", vbTextCompare) = 0 _
+       And InStr(1, validationFormula, "KV_DG_", vbTextCompare) = 0 Then
+        Exit Function
+    End If
     
     PID_RowHasValidFStundenDropdown = True
 End Function

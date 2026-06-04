@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixed
+- mod_KVStundenDropdown.bas + Modul1.bas + DieseArbeitsmappe.cls: erster Monats-Tab nach KV-Änderung schneller — Bulk-F-Dropdown, Manual während Refresh, H/K/L einmal (FP-018).
 - mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE — kein Erfolgs-Dialog nach Eigene Stunden / Stunde löschen; Monatslohn-Hinweis ohne Spaltenbuchstaben; Umlaute in Dialogen (FP-022).
 - mod_AddNewKVPeriodOnTop.bas: K-Marker (`PID_EIGEN`) bleibt erhalten — Trim loescht nur L:XFD, nicht K; Markierung nach FormatKVPeriodArea erneut (FP-022).
 - mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE Button 4 „Stunde löschen“ — nur markierte/extra Stunden in Liste, kein Fallback auf alle Standard-Stunden (FP-022).
