@@ -1,6 +1,30 @@
 Attribute VB_Name = "mod_BuildFluktuationAnalyse"
 Option Explicit
 
+Private Const PID_FL_PDF_BUTTON_NAME As String = "btn_FluktuationPdfExport"
+Private Const PID_FL_PDF_BUTTON_TEXT As String = "PDF Export"
+Private Const PID_FL_PDF_BUTTON_HEIGHT As Double = 18
+Private Const PID_FL_PDF_BUTTON_WIDTH As Double = 96
+Private Const PID_FL_PDF_BUTTON_MARGIN_RIGHT As Double = 6
+Private Const PID_FL_PDF_A4_LANDSCAPE_WIDTH_INCHES As Double = 11.69
+
+' FLUKTUATION Spaltenbreiten (manuell in Personalsheet.xlsm abgestimmt, hier fixiert).
+Private Const PID_FL_COL_A As Single = 16
+Private Const PID_FL_COL_B As Single = 20
+Private Const PID_FL_COL_C As Single = 26
+Private Const PID_FL_COL_D As Single = 26
+Private Const PID_FL_COL_E As Single = 27
+Private Const PID_FL_COL_F As Single = 13.66
+Private Const PID_FL_COL_G As Single = 11.16
+Private Const PID_FL_COL_H As Single = 15.66
+Private Const PID_FL_COL_I As Single = 21.33
+Private Const PID_FL_COL_J As Single = 14.5
+Private Const PID_FL_COL_K As Single = 36.83
+Private Const PID_FL_COL_L As Single = 36.83
+Private Const PID_FL_COL_M As Single = 30.83
+Private Const PID_FL_COL_N As Single = 30.83
+Private Const PID_FL_COL_CHART As Single = 2
+
 
 ' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Win/Mac Excel 2016).
 Private Function PID_FlTxtAe() As String
@@ -211,6 +235,9 @@ Public Sub BuildFluktuationAnalyse()
     Dim ytdFluctuation As Double
     Dim quarterFluctuation(1 To 4) As Double
     
+    Dim seenExitKeys As Collection
+    Dim exitKey As String
+    
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
     Dim oldDisplayAlerts As Boolean
@@ -230,6 +257,7 @@ Public Sub BuildFluktuationAnalyse()
     Set dataWs = ThisWorkbook.Worksheets("FLUKTUATION_DATEN")
     Set analyseWs = ThisWorkbook.Worksheets(PID_FLUKTUATION_SHEET)
     currentYear = PID_GetWorkbookYear()
+    Set seenExitKeys = New Collection
     
     On Error Resume Next
     analyseWs.Unprotect Password:=PID_WORKBOOK_PASSWORD
@@ -252,10 +280,22 @@ Public Sub BuildFluktuationAnalyse()
     
     If lastRow >= 2 Then
         For r = 2 To lastRow
-            totalExits = totalExits + 1
+            If Not PID_FluctuationDataRowIsExit(dataWs, r, currentYear) Then GoTo NextDataRow
+            
+            exitKey = PID_FluctuationExitDedupKey(dataWs, r)
+            If Len(exitKey) = 0 Then GoTo NextDataRow
+            
+            On Error Resume Next
+            seenExitKeys.Add exitKey, exitKey
+            If Err.Number <> 0 Then
+                Err.Clear
+                GoTo NextDataRow
+            End If
+            On Error GoTo CleanFail
             
             monthName = Trim$(CStr(dataWs.Cells(r, "A").Value))
             monthIndex = PID_GetMonthIndexFromName(monthName)
+            If monthIndex < 1 Or monthIndex > 12 Then GoTo NextDataRow
             
             If IsNumeric(dataWs.Cells(r, "J").Value) Then
                 lossValue = CDbl(dataWs.Cells(r, "J").Value)
@@ -264,12 +304,9 @@ Public Sub BuildFluktuationAnalyse()
             End If
             
             categoryText = Trim$(CStr(dataWs.Cells(r, "K").Value))
-            totalLoss = totalLoss + lossValue
             
-            If monthIndex >= 1 And monthIndex <= 12 Then
-                monthExit(monthIndex) = monthExit(monthIndex) + 1
-                monthLoss(monthIndex) = monthLoss(monthIndex) + lossValue
-            End If
+            monthExit(monthIndex) = monthExit(monthIndex) + 1
+            monthLoss(monthIndex) = monthLoss(monthIndex) + lossValue
             
             Select Case categoryText
                 Case "Neutrale Bewegung"
@@ -299,8 +336,17 @@ Public Sub BuildFluktuationAnalyse()
                 Case "Normaler Austritt"
                     normalExits = normalExits + 1
             End Select
+
+NextDataRow:
         Next r
     End If
+    
+    totalExits = 0
+    totalLoss = 0
+    For i = 1 To 12
+        totalExits = totalExits + monthExit(i)
+        totalLoss = totalLoss + monthLoss(i)
+    Next i
     
     showEarly = (earlyExits > 0)
     showExperienced = (experiencedLoss > 0)
@@ -486,6 +532,17 @@ Public Sub BuildFluktuationAnalyse()
             End If
         Next i
         
+        If outputRow > firstDataRow Then
+            .Cells(outputRow, 1).Value = "Gesamt"
+            .Cells(outputRow, 2).Value = totalExits
+            .Cells(outputRow, 4).Value = totalLoss
+            If totalExits > 0 Then
+                .Cells(outputRow, 5).Value = totalLoss / totalExits
+            End If
+            PID_StyleApplyAccentSummaryBand .Range(.Cells(outputRow, 1), .Cells(outputRow, lastTableCol + 2))
+            outputRow = outputRow + 1
+        End If
+        
         If outputRow = firstDataRow Then
             .Cells(firstDataRow, 1).Value = "Keine Austritte erfasst."
             .Range(.Cells(firstDataRow, 1), .Cells(firstDataRow, lastTableCol + 2)).Merge
@@ -499,6 +556,8 @@ Public Sub BuildFluktuationAnalyse()
         FormatFluktuationSheet analyseWs, statusRow, kpiLabelRow, kpiValueRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, chartRow, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
         
         PID_SyncFluktuationToDisplaySheets monthFluctuation, quarterFluctuation, ytdFluctuation
+        
+        PID_EnsureFluktuationPdfExportButton analyseWs
         
         .Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     End With
@@ -545,6 +604,7 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
     Dim tableLastCol As Long
     Dim dataRow As Long
     Dim r As Long
+    Dim rowHeight As Double
     
     tableLastCol = Application.WorksheetFunction.Max(5, lastTableCol + 2)
     
@@ -627,30 +687,48 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
         
         PID_FlApplyReadOnlyZones ws, statusRow, kpiValueRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, firstDataRow, outputRow, tableLastCol, lastTableCol, explanationStartRow
         
-        .Columns("A").ColumnWidth = 16
-        .Columns("B").ColumnWidth = 20
-        .Columns("C").ColumnWidth = 26
-        .Columns("D").ColumnWidth = 26
-        .Columns("E").ColumnWidth = 26
-        .Columns("F").ColumnWidth = 18
-        .Columns("G").ColumnWidth = 18
-        .Columns("H").ColumnWidth = 22
-        .Columns("I").ColumnWidth = 36
-        .Columns("J").ColumnWidth = 36
-        .Columns("K").ColumnWidth = 36
-        .Columns("L").ColumnWidth = 36
-        .Columns("P").ColumnWidth = 2
-        .Columns("Q").ColumnWidth = 2
-        .Columns("R").ColumnWidth = 2
-        .Columns("S").ColumnWidth = 2
+        PID_ApplyFluktuationColumnWidths ws
         
-        .Rows(firstDataRow & ":" & outputRow - 1).RowHeight = 34
+        For dataRow = firstDataRow To outputRow - 1
+            rowHeight = PID_EstimateWrappedRowHeightForCell(ws, dataRow, lastTableCol, tableLastCol)
+            If lastTableCol >= 2 Then
+                rowHeight = Application.WorksheetFunction.Max(rowHeight, _
+                    PID_EstimateWrappedRowHeightForCell(ws, dataRow, lastTableCol - 1, lastTableCol - 1))
+            End If
+            If rowHeight < 34 Then rowHeight = 34
+            If rowHeight > 120 Then rowHeight = 120
+            ws.Rows(dataRow).RowHeight = rowHeight
+        Next dataRow
         .Rows(chartRow + 1 & ":" & chartRow + 32).RowHeight = 18
         
         PID_AutoFitFluktuationTextRows ws, statusRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, explanationStartRow
         
         .Range(.Cells(1, 1), .Cells(explanationStartRow + 8, tableLastCol)).VerticalAlignment = xlCenter
     End With
+End Sub
+
+
+Private Sub PID_ApplyFluktuationColumnWidths(ByVal ws As Worksheet)
+    If ws Is Nothing Then Exit Sub
+    
+    ws.Columns("A").ColumnWidth = PID_FL_COL_A
+    ws.Columns("B").ColumnWidth = PID_FL_COL_B
+    ws.Columns("C").ColumnWidth = PID_FL_COL_C
+    ws.Columns("D").ColumnWidth = PID_FL_COL_D
+    ws.Columns("E").ColumnWidth = PID_FL_COL_E
+    ws.Columns("F").ColumnWidth = PID_FL_COL_F
+    ws.Columns("G").ColumnWidth = PID_FL_COL_G
+    ws.Columns("H").ColumnWidth = PID_FL_COL_H
+    ws.Columns("I").ColumnWidth = PID_FL_COL_I
+    ws.Columns("J").ColumnWidth = PID_FL_COL_J
+    ws.Columns("K").ColumnWidth = PID_FL_COL_K
+    ws.Columns("L").ColumnWidth = PID_FL_COL_L
+    ws.Columns("M").ColumnWidth = PID_FL_COL_M
+    ws.Columns("N").ColumnWidth = PID_FL_COL_N
+    ws.Columns("P").ColumnWidth = PID_FL_COL_CHART
+    ws.Columns("Q").ColumnWidth = PID_FL_COL_CHART
+    ws.Columns("R").ColumnWidth = PID_FL_COL_CHART
+    ws.Columns("S").ColumnWidth = PID_FL_COL_CHART
 End Sub
 
 
@@ -925,6 +1003,8 @@ Public Function GetExitReasonSummaryForMonth(ByVal dataWs As Worksheet, ByVal mo
     resultText = ""
     
     For r = 2 To lastRow
+        If Not PID_FluctuationDataRowIsExit(dataWs, r, PID_GetWorkbookYear()) Then GoTo NextReasonRow
+        
         checkMonth = Trim$(CStr(dataWs.Cells(r, "A").Value))
         
         If checkMonth = monthName Then
@@ -941,6 +1021,8 @@ Public Function GetExitReasonSummaryForMonth(ByVal dataWs As Worksheet, ByVal mo
             
             resultText = AddReasonToSummary(resultText, reasonText)
         End If
+
+NextReasonRow:
     Next r
     
     If resultText = "" Then
@@ -1202,17 +1284,21 @@ Public Function WriteFluktuationAlertsSection(ByVal ws As Worksheet, _
     
     If lastRow >= 2 And hasAlerts Then
         For r = 2 To lastRow
+            If Not PID_FluctuationDataRowIsExit(dataWs, r, PID_GetWorkbookYear()) Then GoTo NextAlertRowA
             If alertNum >= 12 Then Exit For
             If WriteFluktuationAlertIfMatch(ws, dataWs, r, outRow, alertNum, True) Then
                 outRow = outRow + 1
             End If
+NextAlertRowA:
         Next r
         
         For r = 2 To lastRow
+            If Not PID_FluctuationDataRowIsExit(dataWs, r, PID_GetWorkbookYear()) Then GoTo NextAlertRowB
             If alertNum >= 12 Then Exit For
             If WriteFluktuationAlertIfMatch(ws, dataWs, r, outRow, alertNum, False) Then
                 outRow = outRow + 1
             End If
+NextAlertRowB:
         Next r
     End If
     
@@ -1235,6 +1321,8 @@ Private Function FluktuationHasAlertRows(ByVal dataWs As Worksheet, ByVal lastRo
     If lastRow < 2 Then Exit Function
     
     For r = 2 To lastRow
+        If Not PID_FluctuationDataRowIsExit(dataWs, r, PID_GetWorkbookYear()) Then GoTo NextHasAlertRow
+        
         categoryText = Trim$(CStr(dataWs.Cells(r, "K").Value))
         If categoryText = "Austrittsgrund fehlt" Or categoryText = "Austrittsgrund unbekannt" Or _
            categoryText = "Verlust erfahrener Mitarbeiter" Or _
@@ -1243,6 +1331,7 @@ Private Function FluktuationHasAlertRows(ByVal dataWs As Worksheet, ByVal lastRo
             FluktuationHasAlertRows = True
             Exit Function
         End If
+NextHasAlertRow:
     Next r
 End Function
 
@@ -1579,6 +1668,8 @@ Private Function WriteFluktuationReasonChartData(ByVal dataWs As Worksheet, _
     If lastRow < 2 Then Exit Function
     
     For r = 2 To lastRow
+        If Not PID_FluctuationDataRowIsExit(dataWs, r, PID_GetWorkbookYear()) Then GoTo NextReasonChartRow
+        
         reasonText = Trim$(CStr(dataWs.Cells(r, "F").Value))
         categoryText = Trim$(CStr(dataWs.Cells(r, "K").Value))
         
@@ -1591,6 +1682,7 @@ Private Function WriteFluktuationReasonChartData(ByVal dataWs As Worksheet, _
         End If
         
         summaryText = AddReasonToSummary(summaryText, reasonText)
+NextReasonChartRow:
     Next r
     
     If summaryText = "" Then Exit Function
@@ -1654,4 +1746,622 @@ Private Sub PID_WriteFluktuationExplanationRows(ByVal ws As Worksheet, ByVal sta
     For i = startRow + 1 To startRow + 8
         ws.Range("B" & i & ":E" & i).Merge
     Next i
+End Sub
+
+
+Private Function PID_IsMacExcel() As Boolean
+    PID_IsMacExcel = (InStr(1, Application.OperatingSystem, "Mac", vbTextCompare) > 0)
+End Function
+
+
+Private Function PID_NormalizePdfPath(ByVal pathText As String) As String
+    Dim normalized As String
+    
+    normalized = Trim$(pathText)
+    If Len(normalized) = 0 Then Exit Function
+    
+    If LCase$(Right$(normalized, 4)) <> ".pdf" Then
+        normalized = normalized & ".pdf"
+    End If
+    
+    PID_NormalizePdfPath = normalized
+End Function
+
+
+Public Sub PID_EnsureFluktuationPdfExportButtonIfNeeded()
+    Dim ws As Worksheet
+    
+    On Error GoTo SafeExit
+    
+    Set ws = ThisWorkbook.Worksheets(PID_FLUKTUATION_SHEET)
+    If ws Is Nothing Then Exit Sub
+    
+    ' Immer neu positionieren: unter ScreenUpdating=False entstehen sonst unsichtbare Off-Screen-Buttons.
+    PID_EnsureFluktuationPdfExportButton ws
+
+SafeExit:
+End Sub
+
+
+Private Function PID_ExportPathForExcel(ByVal pathText As String) As String
+    ' Excel 2016 Mac: ExportAsFixedFormat erwartet meist POSIX-Pfad (nicht HFS mit Doppelpunkten).
+    PID_ExportPathForExcel = Trim$(pathText)
+End Function
+
+
+Private Function PID_PdfExportSucceeded(ByVal filePath As String) As Boolean
+    On Error GoTo SafeExit
+    
+    PID_PdfExportSucceeded = False
+    If Len(Trim$(filePath)) = 0 Then Exit Function
+    If Len(Dir(filePath)) = 0 Then Exit Function
+    If FileLen(filePath) < 500 Then Exit Function
+    
+    PID_PdfExportSucceeded = True
+
+SafeExit:
+End Function
+
+
+Private Sub PID_PdfRemoveExistingFile(ByVal filePath As String)
+    On Error Resume Next
+    If Len(Trim$(filePath)) = 0 Then Exit Sub
+    If Len(Dir(filePath)) > 0 Then Kill filePath
+    Err.Clear
+End Sub
+
+
+Private Function PID_PdfStagingPath(ByVal finalPath As String) As String
+    Dim sepPos As Long
+    Dim folder As String
+    Dim fileName As String
+    
+    finalPath = Trim$(finalPath)
+    sepPos = InStrRev(finalPath, Application.PathSeparator)
+    If sepPos = 0 Then
+        PID_PdfStagingPath = finalPath
+        Exit Function
+    End If
+    
+    folder = Left$(finalPath, sepPos)
+    fileName = Mid$(finalPath, sepPos + 1)
+    If LCase$(Right$(fileName, 4)) = ".pdf" Then
+        fileName = Left$(fileName, Len(fileName) - 4)
+    End If
+    
+    PID_PdfStagingPath = folder & fileName & "_pid_export.pdf"
+End Function
+
+
+Private Function PID_PdfFinalizeExport(ByVal stagingPath As String, ByVal finalPath As String) As Boolean
+    On Error GoTo Fail
+    
+    PID_PdfFinalizeExport = False
+    If Not PID_PdfExportSucceeded(stagingPath) Then Exit Function
+    
+    PID_PdfRemoveExistingFile finalPath
+    
+    On Error Resume Next
+    Name stagingPath As finalPath
+    If Err.Number = 0 Then
+        PID_PdfFinalizeExport = PID_PdfExportSucceeded(finalPath)
+        Exit Function
+    End If
+    Err.Clear
+    
+    FileCopy stagingPath, finalPath
+    PID_PdfRemoveExistingFile stagingPath
+    PID_PdfFinalizeExport = PID_PdfExportSucceeded(finalPath)
+    Exit Function
+
+Fail:
+    PID_PdfFinalizeExport = PID_PdfExportSucceeded(stagingPath)
+End Function
+
+
+Private Function PID_FlPdfFitWidthZoom(ByVal ws As Worksheet, ByVal printRange As Range) As Long
+    Dim areaWidth As Double
+    Dim printableWidth As Double
+    Dim zoomPct As Double
+    
+    PID_FlPdfFitWidthZoom = 100
+    If ws Is Nothing Then Exit Function
+    If printRange Is Nothing Then Exit Function
+    
+    On Error Resume Next
+    areaWidth = PID_FlPdfColumnsWidthPoints(ws, printRange.Column, printRange.Column + printRange.Columns.Count - 1)
+    If areaWidth <= 1# Then areaWidth = printRange.Width
+    ' PageSetup.PageWidth kompiliert auf Mac Excel 2016 nicht -> feste A4-Querformat-Breite.
+    printableWidth = Application.InchesToPoints(PID_FL_PDF_A4_LANDSCAPE_WIDTH_INCHES) _
+                     - ws.PageSetup.LeftMargin - ws.PageSetup.RightMargin
+    On Error GoTo 0
+    
+    If areaWidth <= 1# Or printableWidth <= 1# Then Exit Function
+    
+    zoomPct = (printableWidth / areaWidth) * 100#
+    If zoomPct < 15# Then zoomPct = 15#
+    If zoomPct > 400# Then zoomPct = 400#
+    
+    PID_FlPdfFitWidthZoom = CLng(zoomPct)
+End Function
+
+
+Private Function PID_FlPdfMonatsHintColumn(ByVal ws As Worksheet, ByRef headerRow As Long) As Long
+    Dim found As Range
+    
+    PID_FlPdfMonatsHintColumn = 0
+    headerRow = 0
+    If ws Is Nothing Then Exit Function
+    
+    Set found = ws.Cells.Find(What:="Monats-Hinweis", LookIn:=xlValues, LookAt:=xlWhole)
+    If found Is Nothing Then Exit Function
+    
+    headerRow = found.Row
+    PID_FlPdfMonatsHintColumn = found.Column
+End Function
+
+
+Private Function PID_FlPdfColumnsWidthPoints(ByVal ws As Worksheet, ByVal firstCol As Long, ByVal lastCol As Long) As Double
+    Dim c As Long
+    Dim totalWidth As Double
+    
+    PID_FlPdfColumnsWidthPoints = 0#
+    If ws Is Nothing Then Exit Function
+    If firstCol < 1 Or lastCol < firstCol Then Exit Function
+    
+    For c = firstCol To lastCol
+        If Not ws.Columns(c).Hidden Then
+            totalWidth = totalWidth + ws.Columns(c).Width
+        End If
+    Next c
+    
+    PID_FlPdfColumnsWidthPoints = totalWidth
+End Function
+
+
+Private Function PID_FlPdfTablePrintLastCol(ByVal ws As Worksheet) As Long
+    Dim headerRow As Long
+    
+    PID_FlPdfTablePrintLastCol = PID_FlPdfMonatsHintColumn(ws, headerRow)
+End Function
+
+
+Private Sub PID_FlPdfFlattenMonthlyHintMerges(ByVal ws As Worksheet)
+    Dim headerRow As Long
+    Dim hintCol As Long
+    Dim r As Long
+    Dim lastDataRow As Long
+    Dim hintText As String
+    Dim totalColWidth As Double
+    Dim c As Long
+    Dim mergeArea As Range
+    
+    If ws Is Nothing Then Exit Sub
+    
+    hintCol = PID_FlPdfMonatsHintColumn(ws, headerRow)
+    If hintCol = 0 Then Exit Sub
+    
+    lastDataRow = headerRow
+    For r = headerRow + 1 To headerRow + 40
+        If Len(Trim$(CStr(ws.Cells(r, 1).Value))) = 0 Then Exit For
+        lastDataRow = r
+    Next r
+    
+    totalColWidth = 0#
+    For c = hintCol To hintCol + 2
+        totalColWidth = totalColWidth + ws.Columns(c).ColumnWidth
+    Next c
+    If totalColWidth < 48 Then totalColWidth = 48
+    
+    For r = headerRow To lastDataRow
+        On Error Resume Next
+        Set mergeArea = ws.Range(ws.Cells(r, hintCol), ws.Cells(r, hintCol + 2))
+        If mergeArea.MergeCells Then
+            hintText = Trim$(CStr(mergeArea.Cells(1, 1).Value))
+            mergeArea.UnMerge
+            ws.Cells(r, hintCol).Value = hintText
+            ws.Cells(r, hintCol).WrapText = True
+            ws.Cells(r, hintCol).HorizontalAlignment = xlLeft
+            ws.Cells(r, hintCol).VerticalAlignment = xlCenter
+        End If
+        Err.Clear
+    Next r
+    
+    ws.Columns(hintCol).ColumnWidth = totalColWidth
+    ws.Columns(hintCol + 1).ColumnWidth = 2
+    ws.Columns(hintCol + 2).ColumnWidth = 2
+    ws.Columns(hintCol + 1).Hidden = True
+    ws.Columns(hintCol + 2).Hidden = True
+End Sub
+
+
+Private Sub PID_FlPdfAdjustMonthlyRowHeights(ByVal ws As Worksheet)
+    Dim headerRow As Long
+    Dim hintCol As Long
+    Dim r As Long
+    Dim lastDataRow As Long
+    Dim rowHeight As Double
+    
+    If ws Is Nothing Then Exit Sub
+    
+    hintCol = PID_FlPdfMonatsHintColumn(ws, headerRow)
+    If hintCol = 0 Then Exit Sub
+    
+    lastDataRow = headerRow
+    
+    For r = headerRow + 1 To headerRow + 40
+        If Len(Trim$(CStr(ws.Cells(r, 1).Value))) = 0 Then Exit For
+        lastDataRow = r
+    Next r
+    
+    For r = headerRow + 1 To lastDataRow
+        rowHeight = PID_EstimateWrappedRowHeightForCell(ws, r, hintCol, hintCol)
+        If hintCol >= 2 Then
+            rowHeight = Application.WorksheetFunction.Max(rowHeight, _
+                PID_EstimateWrappedRowHeightForCell(ws, r, hintCol - 1, hintCol - 1))
+        End If
+        If rowHeight < 34 Then rowHeight = 34
+        If rowHeight > 120 Then rowHeight = 120
+        ws.Rows(r).RowHeight = rowHeight
+        ws.Cells(r, hintCol).VerticalAlignment = xlCenter
+    Next r
+End Sub
+
+
+Private Sub PID_FlPrepareWorksheetForPdfExport(ByVal ws As Worksheet)
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim tablePrintCol As Long
+    Dim chartBlockEndRow As Long
+    Dim fitZoom As Long
+    Dim co As ChartObject
+    Dim printRange As Range
+    
+    If ws Is Nothing Then Exit Sub
+    
+    PID_ApplyFluktuationColumnWidths ws
+    PID_FlPdfFlattenMonthlyHintMerges ws
+    PID_FlPdfAdjustMonthlyRowHeights ws
+    
+    lastRow = PID_FlPdfLastContentRow(ws)
+    chartBlockEndRow = PID_FlPdfChartBlockEndRow(ws)
+    If chartBlockEndRow > lastRow Then lastRow = chartBlockEndRow
+    
+    lastCol = PID_FlPdfLastContentCol(ws, lastRow)
+    tablePrintCol = PID_FlPdfTablePrintLastCol(ws)
+    If tablePrintCol > lastCol Then lastCol = tablePrintCol
+    If lastCol < 5 Then lastCol = 5
+    
+    On Error Resume Next
+    ws.Shapes(PID_FL_PDF_BUTTON_NAME).Delete
+    Err.Clear
+    
+    For Each co In ws.ChartObjects
+        co.PrintObject = True
+    Next co
+    
+    ws.Range("P:Z").EntireColumn.Hidden = True
+    
+    Set printRange = ws.Range(ws.Cells(1, 1), ws.Cells(lastRow, lastCol))
+    ws.PageSetup.PrintArea = printRange.Address(ReferenceStyle:=xlA1)
+    ws.PageSetup.Orientation = xlLandscape
+    ws.PageSetup.LeftMargin = Application.InchesToPoints(0.35)
+    ws.PageSetup.RightMargin = Application.InchesToPoints(0.35)
+    ws.PageSetup.TopMargin = Application.InchesToPoints(0.4)
+    ws.PageSetup.BottomMargin = Application.InchesToPoints(0.4)
+    
+    ' 1 Seite breit, Hoehe frei (mehrere Seiten): Zoom aus Druckbreite berechnen.
+    ' FitToPagesTall=0 wird auf Mac Excel 2016 oft ignoriert.
+    fitZoom = PID_FlPdfFitWidthZoom(ws, printRange)
+    ws.PageSetup.Zoom = fitZoom
+    On Error GoTo 0
+End Sub
+
+
+Private Function PID_FlPdfChartBlockEndRow(ByVal ws As Worksheet) As Long
+    Dim co As ChartObject
+    Dim chartBottom As Double
+    Dim chartTitleRow As Long
+    Dim found As Range
+    
+    PID_FlPdfChartBlockEndRow = 0
+    If ws Is Nothing Then Exit Function
+    
+    Set found = ws.Columns(1).Find(What:="Diagramme", LookIn:=xlValues, LookAt:=xlWhole)
+    If found Is Nothing Then Exit Function
+    chartTitleRow = found.Row
+    
+    chartBottom = ws.Rows(chartTitleRow).Top + ws.Rows(chartTitleRow).Height
+    
+    For Each co In ws.ChartObjects
+        If (co.Top + co.Height) > chartBottom Then chartBottom = co.Top + co.Height
+    Next co
+    
+    If ws.ChartObjects.Count = 0 Then
+        PID_FlPdfChartBlockEndRow = chartTitleRow + 18
+    Else
+        PID_FlPdfChartBlockEndRow = PID_FlResolveRowBelowPoint(ws, chartBottom, chartTitleRow)
+    End If
+End Function
+
+
+Private Function PID_ExportSheetToPdfViaTempWorkbook(ByVal ws As Worksheet, ByVal pdfPath As String) As Boolean
+    Dim wbTemp As Workbook
+    Dim wsTemp As Worksheet
+    Dim finalPath As String
+    
+    On Error GoTo SafeExit
+    
+    PID_ExportSheetToPdfViaTempWorkbook = False
+    If ws Is Nothing Then Exit Function
+    If Len(Trim$(pdfPath)) = 0 Then Exit Function
+    
+    finalPath = PID_ExportPathForExcel(pdfPath)
+    
+    ws.Copy
+    Set wbTemp = ActiveWorkbook
+    Set wsTemp = wbTemp.Worksheets(1)
+    
+    PID_FlPrepareWorksheetForPdfExport wsTemp
+    
+    On Error Resume Next
+    wsTemp.ExportAsFixedFormat xlTypePDF, finalPath
+    Err.Clear
+    
+    PID_ExportSheetToPdfViaTempWorkbook = PID_PdfExportSucceeded(finalPath)
+    
+    wbTemp.Close SaveChanges:=False
+    Exit Function
+
+SafeExit:
+    On Error Resume Next
+    If Not wbTemp Is Nothing Then wbTemp.Close SaveChanges:=False
+End Function
+
+
+Private Function PID_FlPdfLastContentRow(ByVal ws As Worksheet) As Long
+    Dim c As Long
+    Dim lastInCol As Long
+    
+    PID_FlPdfLastContentRow = 1
+    If ws Is Nothing Then Exit Function
+    
+    ' Nicht ws.Rows.Count durchlaufen (Mac: extrem langsam). End(xlUp) pro Spalte reicht.
+    For c = 1 To 15
+        lastInCol = ws.Cells(ws.Rows.Count, c).End(xlUp).Row
+        If lastInCol > PID_FlPdfLastContentRow Then PID_FlPdfLastContentRow = lastInCol
+    Next c
+End Function
+
+
+Private Function PID_FlPdfLastContentCol(ByVal ws As Worksheet, ByVal lastRow As Long) As Long
+    Dim c As Long
+    Dim maxCol As Long
+    
+    If ws Is Nothing Then Exit Function
+    If lastRow < 1 Then Exit Function
+    
+    maxCol = 5
+    
+    For c = 1 To 15
+        If Application.WorksheetFunction.CountA(ws.Range(ws.Cells(1, c), ws.Cells(lastRow, c))) > 0 Then
+            If c > maxCol Then maxCol = c
+        End If
+    Next c
+    
+    PID_FlPdfLastContentCol = maxCol
+End Function
+
+
+Private Function PID_ExportFluktuationToPdfFile(ByVal ws As Worksheet, ByVal pdfPath As String) As Boolean
+    ' Temp-Kopie: Merge-Aufloesung und PageSetup ohne Original zu veraendern.
+    PID_ExportFluktuationToPdfFile = PID_ExportSheetToPdfViaTempWorkbook(ws, pdfPath)
+End Function
+
+
+Private Function PID_PromptPdfSavePath(ByVal defaultName As String) As String
+    Dim result As Variant
+    Dim baseFolder As String
+    Dim answer As VbMsgBoxResult
+    
+    PID_PromptPdfSavePath = ""
+    
+    baseFolder = Trim$(ThisWorkbook.Path)
+    If Len(baseFolder) = 0 Then
+        MsgBox "Bitte die Arbeitsmappe zuerst speichern." & vbCrLf & _
+               "Der PDF-Export legt die Datei neben die .xlsm-Datei.", _
+               vbExclamation, "PDF Export"
+        Exit Function
+    End If
+    
+    If Right$(baseFolder, 1) <> Application.PathSeparator Then
+        baseFolder = baseFolder & Application.PathSeparator
+    End If
+    
+    ' Mac: kein GetSaveAsFilename (zeigt oft Excel statt PDF, fragt vollen Pfad ab).
+    If PID_IsMacExcel() Then
+        If Len(Dir(baseFolder & defaultName)) > 0 Then
+            answer = MsgBox("Vorhandene Datei wird " & ChrW(252) & "berschrieben:" & vbCrLf & vbCrLf & _
+                            baseFolder & defaultName, _
+                            vbQuestion + vbYesNo, "PDF Export")
+        Else
+            answer = MsgBox("PDF speichern als:" & vbCrLf & vbCrLf & _
+                            baseFolder & defaultName, _
+                            vbQuestion + vbYesNo, "PDF Export")
+        End If
+        If answer = vbYes Then
+            PID_PromptPdfSavePath = PID_NormalizePdfPath(baseFolder & defaultName)
+        End If
+        Exit Function
+    End If
+    
+    On Error Resume Next
+    result = Application.GetSaveAsFilename(defaultName, "PDF (*.pdf), *.pdf")
+    On Error GoTo 0
+    
+    If VarType(result) <> vbBoolean Then
+        If Len(Trim$(CStr(result))) > 0 Then
+            PID_PromptPdfSavePath = PID_NormalizePdfPath(CStr(result))
+        End If
+    End If
+End Function
+
+
+Public Sub ExportFluktuationSheetToPDF()
+    Dim ws As Worksheet
+    Dim pdfPath As String
+    Dim defaultName As String
+    Dim wasProtected As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldDisplayAlerts As Boolean
+    Dim oldEnableEvents As Boolean
+    Dim oldCalculation As XlCalculation
+    Dim exportOk As Boolean
+    
+    On Error GoTo CleanFail
+    
+    Set ws = ThisWorkbook.Worksheets(PID_FLUKTUATION_SHEET)
+    If ws Is Nothing Then
+        MsgBox "Blatt FLUKTUATION fehlt.", vbExclamation, "PDF Export"
+        Exit Sub
+    End If
+    
+    defaultName = "Fluktuation.pdf"
+    pdfPath = PID_PromptPdfSavePath(defaultName)
+    If Len(pdfPath) = 0 Then Exit Sub
+    
+    oldScreenUpdating = Application.ScreenUpdating
+    oldDisplayAlerts = Application.DisplayAlerts
+    oldEnableEvents = Application.EnableEvents
+    oldCalculation = Application.Calculation
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+    
+    wasProtected = ws.ProtectContents
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo CleanFail
+    
+    If Not PID_IsMacExcel() Then
+        PID_PdfRemoveExistingFile PID_PdfStagingPath(pdfPath)
+    Else
+        PID_PdfRemoveExistingFile Trim$(pdfPath) & ".pid_export.pdf"
+    End If
+    
+    exportOk = PID_ExportFluktuationToPdfFile(ws, pdfPath)
+    If Not exportOk Then GoTo CleanFail
+    
+    GoTo CleanExit
+
+CleanFail:
+    If PID_PdfExportSucceeded(pdfPath) Then GoTo CleanExit
+    
+    MsgBox "PDF Export fehlgeschlagen." & vbCrLf & vbCrLf & _
+           "Tipp: Arbeitsmappe zuerst speichern, dann erneut ""PDF Export"".", _
+           vbExclamation, "PDF Export"
+
+CleanExit:
+    On Error Resume Next
+    If Not ws Is Nothing Then
+        PID_EnsureFluktuationPdfExportButton ws
+        If wasProtected Then
+            ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        End If
+    End If
+    Application.Calculation = oldCalculation
+    Application.EnableEvents = oldEnableEvents
+    Application.DisplayAlerts = oldDisplayAlerts
+    Application.ScreenUpdating = oldScreenUpdating
+End Sub
+
+
+Private Sub PID_FlDeletePdfExportButton(ByVal ws As Worksheet)
+    Dim shp As Shape
+    Dim shapeIndex As Long
+    
+    If ws Is Nothing Then Exit Sub
+    
+    On Error Resume Next
+    For shapeIndex = ws.Shapes.Count To 1 Step -1
+        Set shp = ws.Shapes(shapeIndex)
+        If shp.Name = PID_FL_PDF_BUTTON_NAME Then shp.Delete
+    Next shapeIndex
+    Err.Clear
+End Sub
+
+
+Public Sub PID_EnsureFluktuationPdfExportButton(ByVal ws As Worksheet)
+    Dim btn As Shape
+    Dim wasProtected As Boolean
+    Dim btnLeft As Double
+    Dim btnTop As Double
+    Dim btnWidth As Double
+    Dim oldScreenUpdating As Boolean
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    
+    wasProtected = ws.ProtectContents
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    On Error GoTo SafeExit
+    
+    PID_FlDeletePdfExportButton ws
+    
+    oldScreenUpdating = Application.ScreenUpdating
+    Application.ScreenUpdating = True
+    ws.Activate
+    PID_FlPdfButtonTargetGeometry ws, btnLeft, btnTop, btnWidth
+    
+    Set btn = ws.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                 Left:=btnLeft, Top:=btnTop, _
+                                 Width:=btnWidth, Height:=PID_FL_PDF_BUTTON_HEIGHT)
+    btn.Name = PID_FL_PDF_BUTTON_NAME
+    PID_FlApplyPdfExportShapeButtonState btn, btnLeft, btnTop, btnWidth
+    
+    Application.ScreenUpdating = oldScreenUpdating
+    
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then
+        ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    End If
+End Sub
+
+
+Private Sub PID_FlPdfButtonTargetGeometry(ByVal ws As Worksheet, _
+                                          ByRef btnLeft As Double, _
+                                          ByRef btnTop As Double, _
+                                          ByRef btnWidth As Double)
+    Dim headerBand As Range
+    
+    Set headerBand = ws.Range("A1:E1")
+    btnWidth = PID_FL_PDF_BUTTON_WIDTH
+    btnLeft = headerBand.Left + headerBand.Width - btnWidth - PID_FL_PDF_BUTTON_MARGIN_RIGHT
+    btnTop = headerBand.Top + ((headerBand.Height - PID_FL_PDF_BUTTON_HEIGHT) / 2#)
+End Sub
+
+
+Private Sub PID_FlApplyPdfExportShapeButtonState(ByVal btn As Shape, _
+                                                 ByVal btnLeft As Double, _
+                                                 ByVal btnTop As Double, _
+                                                 ByVal btnWidth As Double)
+    If btn Is Nothing Then Exit Sub
+    
+    On Error Resume Next
+    btn.Placement = xlFreeFloating
+    btn.Left = btnLeft
+    btn.Top = btnTop
+    btn.Width = btnWidth
+    btn.Height = PID_FL_PDF_BUTTON_HEIGHT
+    btn.Visible = msoTrue
+    btn.TextFrame.Characters.Text = PID_FL_PDF_BUTTON_TEXT
+    btn.OnAction = "ExportFluktuationSheetToPDF"
+    btn.ZOrder msoBringToFront
+    On Error GoTo 0
+    
+    PID_StyleApplyToolbarButton btn, PID_StyleColorAccent(), PID_StyleColorNavy(), PID_StyleColorNavy()
 End Sub

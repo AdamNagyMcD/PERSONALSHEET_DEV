@@ -957,7 +957,59 @@ Private Sub PID_FixFinanzUebersichtFormulas(ByVal ws As Worksheet)
     On Error Resume Next
     ws.Range("B2").Formula = "= """ & PID_DRTxtFinanzTitle() & """ & EINSTELLUNG!C35"
     ws.Range("B23").Formula = "= ""GESAMT "" & EINSTELLUNG!C35"
+    PID_RestoreFinanzUebersichtBlockFormulas ws
     On Error GoTo 0
+End Sub
+
+
+Public Sub PID_RestoreFinanzUebersichtBlockFormulas(ByVal ws As Worksheet)
+    Dim monthRows As Variant
+    Dim einstellungRows As Variant
+    Dim quarterRows As Variant
+    Dim monthGroups As Variant
+    Dim i As Long
+    Dim q As Long
+    Dim uRow As Long
+    Dim eRow As Long
+    Dim qRow As Long
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_FinanzUebersichtBlockExists(ws) Then Exit Sub
+    
+    monthRows = Array(7, 8, 9, 11, 12, 13, 15, 16, 17, 19, 20, 21)
+    einstellungRows = Array(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17)
+    quarterRows = Array(10, 14, 18, 22)
+    monthGroups = Array(Array(7, 8, 9), Array(11, 12, 13), Array(15, 16, 17), Array(19, 20, 21))
+    
+    For i = 0 To 11
+        uRow = CLng(monthRows(i))
+        eRow = CLng(einstellungRows(i))
+        ws.Cells(uRow, "F").Formula = "=EINSTELLUNG!D" & eRow
+        ws.Cells(uRow, "I").Formula = "=EINSTELLUNG!E" & eRow
+        ws.Cells(uRow, "H").Formula = "=G" & uRow & "-F" & uRow
+        ws.Cells(uRow, "K").Formula = "=J" & uRow & "-I" & uRow
+    Next i
+    
+    For q = 0 To 3
+        qRow = CLng(quarterRows(q))
+        ws.Cells(qRow, "F").Formula = "=SUM(F" & monthGroups(q)(0) & ":F" & monthGroups(q)(2) & ")"
+        ws.Cells(qRow, "I").Formula = "=AVERAGE(I" & monthGroups(q)(0) & ":I" & monthGroups(q)(2) & ")"
+        ws.Cells(qRow, "G").Formula = "=SUM(G" & monthGroups(q)(0) & ":G" & monthGroups(q)(2) & ")"
+        ws.Cells(qRow, "J").Formula = "=AVERAGE(J" & monthGroups(q)(0) & ":J" & monthGroups(q)(2) & ")"
+        ws.Cells(qRow, "H").Formula = "=G" & qRow & "-F" & qRow
+        ws.Cells(qRow, "K").Formula = "=J" & qRow & "-I" & qRow
+    Next q
+    
+    ws.Cells(PID_FU_TOTAL_ROW, "F").Formula = "=SUM(F10,F14,F18,F22)"
+    ws.Cells(PID_FU_TOTAL_ROW, "I").Formula = "=AVERAGE(I10,I14,I18,I22)"
+    ws.Cells(PID_FU_TOTAL_ROW, "G").Formula = "=SUM(G10,G14,G18,G22)"
+    ws.Cells(PID_FU_TOTAL_ROW, "J").Formula = "=AVERAGE(J10,J14,J18,J22)"
+    ws.Cells(PID_FU_TOTAL_ROW, "H").Formula = "=G" & PID_FU_TOTAL_ROW & "-F" & PID_FU_TOTAL_ROW
+    ws.Cells(PID_FU_TOTAL_ROW, "K").Formula = "=J" & PID_FU_TOTAL_ROW & "-I" & PID_FU_TOTAL_ROW
+
+SafeExit:
 End Sub
 
 

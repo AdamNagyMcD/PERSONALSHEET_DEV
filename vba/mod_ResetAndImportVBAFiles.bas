@@ -74,6 +74,10 @@ Public Sub ResetAndImportVBAFiles()
     Do While fileName <> ""
 
         If LCase$(fileName) <> LCase$("mod_ResetAndImportVBAFiles.bas") Then
+            compName = GetVBNameFromBasFile(vbaFolder & fileName)
+            If Len(compName) > 0 Then
+                PID_RemoveVBComponentAndNumberedCopies vbProj, compName
+            End If
             vbProj.VBComponents.Import vbaFolder & fileName
             imported = imported + 1
         Else
@@ -229,6 +233,63 @@ Public Sub SyncDieseArbeitsmappeFromExport()
         MsgBox "Synchronisation fehlgeschlagen:" & vbCrLf & syncDetails, vbExclamation, "VBA Sync"
     End If
 End Sub
+
+
+Private Sub PID_RemoveVBComponentAndNumberedCopies(ByVal vbProj As Object, ByVal baseName As String)
+    Dim i As Long
+    Dim compName As String
+    Dim suffix As String
+    
+    If Len(Trim$(baseName)) = 0 Then Exit Sub
+    
+    For i = vbProj.VBComponents.Count To 1 Step -1
+        compName = vbProj.VBComponents(i).Name
+        
+        If StrComp(compName, baseName, vbTextCompare) = 0 Then
+            vbProj.VBComponents.Remove vbProj.VBComponents(i)
+        ElseIf Len(compName) > Len(baseName) Then
+            If Left$(compName, Len(baseName)) = baseName Then
+                suffix = Mid$(compName, Len(baseName) + 1)
+                If Len(suffix) > 0 And IsNumeric(suffix) Then
+                    vbProj.VBComponents.Remove vbProj.VBComponents(i)
+                End If
+            End If
+        End If
+    Next i
+End Sub
+
+
+Private Function GetVBNameFromBasFile(ByVal fullPath As String) As String
+    Dim f As Integer
+    Dim lineText As String
+    Dim trimmedLine As String
+    Dim eqPos As Long
+    Dim quoteStart As Long
+    Dim quoteEnd As Long
+    
+    GetVBNameFromBasFile = ""
+    If Dir(fullPath) = "" Then Exit Function
+    
+    f = FreeFile
+    Open fullPath For Input As #f
+    
+    Do Until EOF(f)
+        Line Input #f, lineText
+        trimmedLine = Trim$(Replace(lineText, ChrW(65279), ""))
+        
+        If Left$(trimmedLine, 16) = "Attribute VB_Name" Then
+            eqPos = InStr(trimmedLine, "=")
+            quoteStart = InStr(eqPos, trimmedLine, """")
+            quoteEnd = InStr(quoteStart + 1, trimmedLine, """")
+            If quoteStart > 0 And quoteEnd > quoteStart Then
+                GetVBNameFromBasFile = Mid$(trimmedLine, quoteStart + 1, quoteEnd - quoteStart - 1)
+            End If
+            Exit Do
+        End If
+    Loop
+    
+    Close #f
+End Function
 
 
 Private Function PID_FixLegacyModul11Name(ByVal vbProj As Object) As Boolean

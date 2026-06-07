@@ -3,6 +3,27 @@
 ## Unreleased
 
 ### Fixed
+- mod_FormatMonthSheet.bas: Spalte N Austrittsgrund — breiter, Umbruch, Zeilenhoehe; mod_CopyData.bas: O45 „Betriebszugehörigkeit“ mit Umlauten.
+- mod_BuildFluktuationDaten/Analyse.bas: Austritte gesamt = Summe Monatstabelle (Dedup, Jahresfilter, Gesamt-Zeile); PDF-Export-Button auf FLUKTUATION.
+- mod_BuildFluktuationAnalyse.bas: PDF Export Mac/Win — GetSaveAsFilename ohne benannte Parameter, MacScript-Fallback.
+- mod_BuildFluktuationAnalyse.bas: PDF Export — Druckbereich ohne Hilfsspalten, Mac-Pfad/HFS, PageSetup-Restore, Button nach Export + bei Tab-Activate.
+- mod_BuildFluktuationAnalyse.bas: PDF Export Mac — kein GetSaveAsFilename, fest `Fluktuation.pdf` neben xlsm, Temp-Workbook-Export.
+- mod_BuildFluktuationAnalyse.bas: PDF Export — FitToPagesTall=0 (mehrseitig statt 1-Seiten-Zusammenpressung), ein Exportlauf, Erfolg per Dateiprüfung, Diagramme mit PrintObject.
+- mod_BuildFluktuationAnalyse.bas: PDF Export Mac — Zoom 100% statt FitToPages, Diagramme als Bild, Staging-Datei `.pid_export.pdf` + Überschreiben, Chart-Block in Druckbereich.
+- mod_BuildFluktuationAnalyse.bas: PDF Export Mac 2016 — ChartObject.PrintObject statt CopyPicture/Shape.PrintObject (Compile-fix), minimales PageSetup.
+- mod_BuildFluktuationAnalyse.bas: PDF Export Mac — direkt nach `Fluktuation.pdf` (kein Temp-Workbook/Staging), weniger Sandbox-Dialoge.
+- mod_BuildFluktuationAnalyse.bas: PDF Export — Druckbereich via End(xlUp)/Find statt Rows.Count-Scan (Mac-Performance).
+- mod_BuildFluktuationAnalyse.bas: PDF Export — Zoom aus Seitenbreite (1 Seite breit, mehrere Seiten hoch, Mac-tauglich).
+- mod_BuildFluktuationAnalyse.bas: PDF Export — Querformat (A4), groessere Schrift via breiterer Seite; Mac-Dialog ohne Ordner-Hinweis.
+- mod_BuildFluktuationAnalyse.bas: Monatstabelle Zeilenhoehe dynamisch (Monats-Hinweis), PDF-Druckbereich inkl. Merge-Spalten; Win+Mac.
+- mod_ResetAndImportVBAFiles.bas: vor .bas-Import mod_PIDUtils1-Duplikate entfernen (mehrdeutige Public-Funktionen).
+- mod_BuildFluktuationAnalyse.bas: PDF Monats-Hinweis Merge aufloesen, Spaltenbreite M/N, Zoom aus Spaltenpunkten, Temp-Export.
+- mod_BuildFluktuationAnalyse.bas: FLUKTUATION Spaltenbreiten A-N als Konstanten (manuell abgestimmt), PID_ApplyFluktuationColumnWidths.
+- mod_BuildFluktuationAnalyse.bas: PDF-Export-Button gelb/kontrastreich, Hoehe 16pt (passt in Zeile 2).
+- mod_BuildFluktuationAnalyse.bas: PDF-Button Mac — ScreenUpdating=True fuer Position, feste Geometrie, immer neu bei Tab-Activate.
+- mod_BuildFluktuationAnalyse.bas: PDF-Button in Titelzeile A1:E1, Mac Form-Control, Fallback Shape, DisplayDrawingObjects.
+- mod_BuildFluktuationAnalyse.bas: PDF-Button — nur Shape (Mac-compile-safe), Titelzeile A1:E1 rechts.
+- mod_BuildDurchrechnung.bas + mod_SumMergedCells.bas: UEBERSICHT FINANZIELL — Formeln F/I/H/K und Quartale wiederhergestellt; G/J aus Monatsblaettern per Sync.
 - mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE — kein Erfolgs-Dialog nach Periode loeschen; alle KV-Datenzeilen Schriftfarbe Navy (auch alte Perioden beim Oeffnen).
 - mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE — kein Erfolgs-Dialog nach „Neue Periode“ (wie Eigene Stunden / Stunde loeschen).
 - mod_AddNewKVPeriodOnTop.bas: LOHNTABELLE — einheitliche Zeilenhoehe (24 pt) und Spaltenbreiten B/C/E/F nach neuer KV-Periode; `ClearContents` statt `Clear` beim Einfuegen.

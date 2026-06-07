@@ -67,6 +67,8 @@ Public Sub PID_FullSystemRefresh()
     
     RefreshFluktuationAll
     
+    PID_RestoreFinanzSummaryOnUbersicht
+    
     PID_RecalculateAllMonthMergedFormulas
     
     PID_FormatAllMoneyColumns

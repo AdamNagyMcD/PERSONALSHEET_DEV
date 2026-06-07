@@ -20,6 +20,9 @@ Private Const PID_MS_COPYDATA_BUTTON_OFFSET_LEFT As Double = 6
 Private Const PID_MS_COPYDATA_BUTTON_OFFSET_TOP As Double = 4
 ' FP-017: dd.mm.yyyy in D (Eintritt) und I (Austritt) — breiter als Default (~11).
 Private Const PID_MS_DATE_COLUMN_WIDTH As Double = 13
+Private Const PID_MS_AUSTRITTSGRUND_COL_WIDTH As Double = 34
+Private Const PID_MS_AUSTRITTSGRUND_MIN_ROW_HEIGHT As Single = 18
+Private Const PID_MS_AUSTRITTSGRUND_MAX_ROW_HEIGHT As Single = 72
 
 
 Public Sub EnsureMonthSheetCopyDataButtons()
@@ -69,6 +72,37 @@ Public Sub PID_ApplyMonthSheetDateColumnWidths(ByVal ws As Worksheet)
 End Sub
 
 
+' Spalte N (Austrittsgrund): Umbruch + Zeilenhoehe, damit lange Dropdown-Texte lesbar bleiben.
+Public Sub PID_ApplyMonthSheetAustrittsgrundLayout(ByVal ws As Worksheet)
+    Dim r As Long
+    Dim dataRange As Range
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    ws.Columns("N").ColumnWidth = PID_MS_AUSTRITTSGRUND_COL_WIDTH
+    
+    Set dataRange = ws.Range("N3:N82")
+    dataRange.WrapText = True
+    dataRange.VerticalAlignment = xlTop
+    
+    For r = PID_FIRST_ROW To PID_LAST_ROW
+        If Len(Trim$(CStr(ws.Cells(r, "N").Value))) > 0 Then
+            ws.Rows(r).AutoFit
+            If ws.Rows(r).RowHeight < PID_MS_AUSTRITTSGRUND_MIN_ROW_HEIGHT Then
+                ws.Rows(r).RowHeight = PID_MS_AUSTRITTSGRUND_MIN_ROW_HEIGHT
+            ElseIf ws.Rows(r).RowHeight > PID_MS_AUSTRITTSGRUND_MAX_ROW_HEIGHT Then
+                ws.Rows(r).RowHeight = PID_MS_AUSTRITTSGRUND_MAX_ROW_HEIGHT
+            End If
+        End If
+    Next r
+    
+SafeExit:
+End Sub
+
+
 Public Sub FormatJanuarMonthSheet()
     PID_FormatMonthSheetByName PID_MS_PILOT_SHEET
 End Sub
@@ -100,6 +134,7 @@ Public Sub FormatAllMonthSheets()
             If Not ws Is Nothing Then
                 If PID_IsWorkerMonthSheet(ws) Then
                     PID_MSCopyMonthFormatsFromReference wsRef, ws
+                    PID_ApplyMonthSheetAustrittsgrundLayout ws
                     PID_MSEnsureAktualisierungButtonOnSheet ws
                     countDone = countDone + 1
                 End If
@@ -263,6 +298,7 @@ Private Sub PID_MSApplyReferenceLayout(ByVal ws As Worksheet)
     PID_MSApplyEmployeeBlockStyles ws
     PID_MSApplyRightPanelReferenceStyles ws
     PID_ApplyMonthSheetDateColumnWidths ws
+    PID_ApplyMonthSheetAustrittsgrundLayout ws
 End Sub
 
 

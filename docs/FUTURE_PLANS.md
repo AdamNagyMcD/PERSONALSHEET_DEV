@@ -787,6 +787,40 @@ Nach jedem Öffnen stand Excel auf **Manuelle Berechnung**; Spalten **H, K, L** 
 
 ---
 
+## FP-025 — FLUKTUATION: PDF-Export-Button sichtbar (Mac Excel 2016)
+
+**Status:** Offen  
+**Priorität:** Mittel — PDF-Export funktioniert per Makro, Button fehlt auf Mac  
+**Betroffene Bereiche:** `mod_BuildFluktuationAnalyse.bas`, `DieseArbeitsmappe.cls`
+
+### Beobachtetes Verhalten (2026-05-26)
+
+Auf **Excel 2016 Mac** erscheint der Shape-Button `btn_FluktuationPdfExport` nach `RefreshFluktuationAll` / Tab-Activate **nicht** in der Titelzeile (A1:E1), obwohl das Makro `ExportFluktuationSheetToPDF` per VBA existiert. Mehrere Ansätze (E2/A1-Position, ScreenUpdating, Akzent-Farbe, Form-Control) teils compile-blockiert auf Mac.
+
+### PDF-Layout (Feintuning, optional gleiche FP)
+
+- Querformat-PDF grundsätzlich nutzbar; rechte Tabellen-Marge / Monats-Hinweis-Zeilenhöhe manuell abgestimmt.
+- Spaltenbreiten A–N in `PID_FL_COL_*` fixiert; weitere manuelle Anpassung + PDF-Proof offen.
+
+### Geplanter Ansatz
+
+- Mac: Button-Geometrie nur bei `ScreenUpdating=True` + `ws.Activate`; Position an LOHNTABELLE-Vorbild (A2:J2-Band) oder feste Punkte testen.
+- Fallback: sichtbarer **Hyperlink/Zelle** in E2 („PDF Export“) statt Shape, falls Mac-Shapes weiter unsichtbar.
+- Windows Excel 2016: Regression mit Shape-Button.
+
+### Akzeptanzkriterien
+
+- [ ] Nach Import + `RefreshFluktuationAll`: gelber **PDF Export**-Button rechts in Zeile 1 sichtbar und klickbar (Mac Excel 2016).
+- [ ] PDF-Export erzeugt lesbares Querformat-PDF ohne abgeschnittene Monats-Hinweis-Spalte.
+- [ ] Kein VBA-Compile-Fehler auf Mac (kein `DisplayDrawingObjects`, kein `PageSetup.PageWidth` auf Worksheet).
+
+### Betroffene Dateien
+
+- `vba/mod_BuildFluktuationAnalyse.bas`
+- `vba/DieseArbeitsmappe.cls`
+
+---
+
 ## Test-Notiz (Excel 2016, 2026-05)
 
 Manueller Durchlauf: **Smoke grün/gelb**, **manuelle Tests ohne Fehler**. Offene Punkte oben als FP-017–FP-023 erfasst (kein Release-Blocker für dokumentierte Fixes FP-001–FP-004).

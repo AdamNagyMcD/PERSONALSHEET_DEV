@@ -21,6 +21,16 @@ Private Const PID_PANEL_SOURCE_RANGE As String = "O18:R25"
 Private Const PID_PANEL_SPEC_RANGE As String = "O18:Q25"
 
 
+Private Function PID_CDTxtOe() As String
+    PID_CDTxtOe = ChrW(246)
+End Function
+
+
+Private Function PID_CDTxtUe() As String
+    PID_CDTxtUe = ChrW(252)
+End Function
+
+
 Public Sub CopyData()
     PID_CopyDataToFollowingMonths
 End Sub
@@ -1161,7 +1171,7 @@ Public Sub PID_ShowEmploymentDuration(ByVal ws As Worksheet, ByVal targetCell As
     diffYears = totalMonths \ 12
     diffMonths = totalMonths Mod 12
     
-    messageText = "Betriebszugehoerigkeit: "
+    messageText = "Betriebszugeh" & PID_CDTxtOe() & "rigkeit: "
     
     If diffYears > 0 Then
         messageText = messageText & diffYears & " Jahr"

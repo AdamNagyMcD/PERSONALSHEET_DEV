@@ -288,6 +288,25 @@ Public Sub RefreshFinanzSummaryIfDirty()
 End Sub
 
 
+Public Sub PID_RestoreFinanzSummaryOnUbersicht()
+    Dim ubersichtWs As Worksheet
+    
+    On Error GoTo SafeExit
+    
+    Set ubersichtWs = Nothing
+    On Error Resume Next
+    Set ubersichtWs = ThisWorkbook.Worksheets("UBERSICHT")
+    On Error GoTo SafeExit
+    
+    If ubersichtWs Is Nothing Then Exit Sub
+    
+    PID_RestoreFinanzUebersichtBlockFormulas ubersichtWs
+    PID_SyncFinanzSummaryToUbersicht
+
+SafeExit:
+End Sub
+
+
 Public Sub PID_RecalculateAllMonthMergedFormulas()
     PID_SyncFinanzSummaryToUbersicht
 End Sub
@@ -364,7 +383,6 @@ Public Sub PID_SyncFinanzSummaryToUbersicht()
     End If
     
     PID_SyncFinanzSummaryQuarterAndTotalRows ubersichtWs
-    PID_RecalculateFinanzDiffColumns ubersichtWs
     
     If Not einstellungWs Is Nothing Then
         PID_SMReprotectIfWasProtected einstellungWs, einstellungProtected
@@ -441,7 +459,6 @@ Public Sub PID_RecalculateFinanzSummaryForMonth(ByVal ws As Worksheet)
     End If
     
     PID_SyncFinanzSummaryQuarterAndTotalRows ubersichtWs
-    PID_RecalculateFinanzDiffColumns ubersichtWs
     PID_SMReprotectIfWasProtected ubersichtWs, ubersichtProtected
     ClearFinanzSummaryDirty
 
@@ -566,61 +583,7 @@ End Function
 
 
 Private Sub PID_SyncFinanzSummaryQuarterAndTotalRows(ByVal ubersichtWs As Worksheet)
-    Dim quarterRows As Variant
-    Dim monthGroups As Variant
-    Dim q As Long
-    Dim m As Long
-    Dim sumG As Double
-    Dim sumJ As Double
-    Dim totalG As Double
-    Dim totalJ As Double
-    
-    On Error GoTo SafeExit
-    
-    If ubersichtWs Is Nothing Then Exit Sub
-    
-    quarterRows = Array(10, 14, 18, 22)
-    monthGroups = Array(Array(7, 8, 9), Array(11, 12, 13), Array(15, 16, 17), Array(19, 20, 21))
-    
-    totalG = 0
-    totalJ = 0
-    
-    For q = 0 To 3
-        sumG = 0
-        sumJ = 0
-        
-        For m = 0 To 2
-            sumG = sumG + CDbl(ubersichtWs.Cells(CLng(monthGroups(q)(m)), "G").Value2)
-            sumJ = sumJ + CDbl(ubersichtWs.Cells(CLng(monthGroups(q)(m)), "J").Value2)
-        Next m
-        
-        ubersichtWs.Cells(CLng(quarterRows(q)), "G").Value2 = sumG
-        ubersichtWs.Cells(CLng(quarterRows(q)), "J").Value2 = sumJ / 3
-        
-        totalG = totalG + sumG
-        totalJ = totalJ + (sumJ / 3)
-    Next q
-    
-    ubersichtWs.Cells(23, "G").Value2 = totalG
-    ubersichtWs.Cells(23, "J").Value2 = totalJ / 4
-
-SafeExit:
-End Sub
-
-
-Private Sub PID_RecalculateFinanzDiffColumns(ByVal ubersichtWs As Worksheet)
-    Dim dataRow As Long
-    
-    On Error GoTo SafeExit
-    
-    If ubersichtWs Is Nothing Then Exit Sub
-    
-    For dataRow = 7 To 23
-        ubersichtWs.Cells(dataRow, "H").Value2 = CDbl(ubersichtWs.Cells(dataRow, "G").Value2) - CDbl(ubersichtWs.Cells(dataRow, "F").Value2)
-        ubersichtWs.Cells(dataRow, "K").Value2 = CDbl(ubersichtWs.Cells(dataRow, "J").Value2) - CDbl(ubersichtWs.Cells(dataRow, "I").Value2)
-    Next dataRow
-
-SafeExit:
+    ' Quartals-/Gesamtzeilen G/H/J/K werden per PID_RestoreFinanzUebersichtBlockFormulas als Formeln gefuehrt.
 End Sub
 
 

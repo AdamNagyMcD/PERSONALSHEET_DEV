@@ -121,6 +121,8 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     If Sh.Name = PID_FLUKTUATION_SHEET Then
         PID_EnsureSheetProtectionForMacros Sh
         RefreshFluktuationIfDirty
+        Application.ScreenUpdating = True
+        PID_EnsureFluktuationPdfExportButtonIfNeeded
         GoTo SafeExit
     End If
     

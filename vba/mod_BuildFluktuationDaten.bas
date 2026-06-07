@@ -76,6 +76,7 @@ Public Sub BuildFluktuationDaten()
     Dim categoryText As String
     
     Dim arrOut() As Variant
+    Dim oldDataLastRow As Long
     
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -193,7 +194,13 @@ NextMonthSheet:
         .Range("K1").Value = "Kategorie"
         
         If outRow > 0 Then
-            .Range("A2").Resize(outRow, 11).Value = arrOut
+            oldDataLastRow = .Cells(.Rows.Count, "A").End(xlUp).Row
+            
+            .Range("A2").Resize(outRow, 11).Value = PID_FluctuationCopyOutputRows(arrOut, outRow)
+            
+            If oldDataLastRow > outRow + 1 Then
+                .Rows((outRow + 2) & ":" & oldDataLastRow).Clear
+            End If
         End If
         
         With .Range("A1:K1")
@@ -463,5 +470,75 @@ Public Function GetFluctuationCategory(ByVal exitReason As String, ByVal daysInC
     Else
         GetFluctuationCategory = "Normaler Austritt"
     End If
+End Function
+
+
+Public Function PID_FluctuationDataRowIsExit(ByVal ws As Worksheet, _
+                                            ByVal rowNumber As Long, _
+                                            Optional ByVal workbookYear As Long = 0) As Boolean
+    Dim exitDate As Variant
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If rowNumber < 2 Then Exit Function
+    
+    If Trim$(CStr(ws.Cells(rowNumber, "B").Value)) = "" _
+       And Trim$(CStr(ws.Cells(rowNumber, "C").Value)) = "" Then Exit Function
+    
+    exitDate = ws.Cells(rowNumber, "E").Value
+    If Not IsDate(exitDate) Then Exit Function
+    
+    If workbookYear > 0 Then
+        If Year(CDate(exitDate)) <> workbookYear Then Exit Function
+    End If
+    
+    PID_FluctuationDataRowIsExit = True
+
+SafeExit:
+End Function
+
+
+Public Function PID_FluctuationExitDedupKey(ByVal ws As Worksheet, ByVal rowNumber As Long) As String
+    Dim personalID As String
+    Dim employeeName As String
+    Dim exitDate As Variant
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If rowNumber < 2 Then Exit Function
+    
+    personalID = Trim$(CStr(ws.Cells(rowNumber, "B").Value))
+    employeeName = Trim$(CStr(ws.Cells(rowNumber, "C").Value))
+    exitDate = ws.Cells(rowNumber, "E").Value
+    
+    If personalID <> "" Then
+        PID_FluctuationExitDedupKey = "ID|" & personalID & "|" & Format$(CDate(exitDate), "yyyymmdd")
+    Else
+        PID_FluctuationExitDedupKey = "NAME|" & employeeName & "|" & Format$(CDate(exitDate), "yyyymmdd")
+    End If
+
+SafeExit:
+End Function
+
+
+Public Function PID_FluctuationCopyOutputRows(ByVal sourceArr As Variant, ByVal rowCount As Long) As Variant
+    Dim dest() As Variant
+    Dim r As Long
+    Dim c As Long
+    
+    If rowCount <= 0 Then Exit Function
+    If Not IsArray(sourceArr) Then Exit Function
+    
+    ReDim dest(1 To rowCount, 1 To 11)
+    
+    For r = 1 To rowCount
+        For c = 1 To 11
+            dest(r, c) = sourceArr(r, c)
+        Next c
+    Next r
+    
+    PID_FluctuationCopyOutputRows = dest
 End Function
 
