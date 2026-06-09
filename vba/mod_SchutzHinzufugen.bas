@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_SchutzHinzufugen"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 Private mSessionProtectedSheets As Collection

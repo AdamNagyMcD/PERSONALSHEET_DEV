@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_KVStundenDropdown"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 Public Const PID_KV_CODE_LIST_NAME As String = "PID_KV_CODE_LIST"

@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_FluctuationCalculation"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 Private Const PID_FLUKTUATION_PERCENT_FORMAT As String = "0.00%"

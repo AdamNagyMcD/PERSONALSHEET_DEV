@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_BuildFluktuationAnalyse"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 Private Const PID_FL_PDF_BUTTON_NAME As String = "btn_FluktuationPdfExport"

@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_PIDAdmin"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 
@@ -72,6 +78,8 @@ Public Sub PID_FullSystemRefresh()
     PID_RecalculateAllMonthMergedFormulas
     
     PID_FormatAllMoneyColumns
+    
+    PID_ApplyCopyrightToAllSheets
     
     PID_EnableCalculationForAllSheets
     

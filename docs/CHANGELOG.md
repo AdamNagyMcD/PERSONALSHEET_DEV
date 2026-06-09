@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- mod_PIDCopyright.bas: Copyright-Hinweis Zeile 2 rechts (sichtbar beim Tab-Öffnen, ohne PageSetup/Shape); VBA-Modul-Kopf Adam Nagy / McOpCo (FP-023).
+
 ### Fixed
 - mod_FormatMonthSheet.bas: Spalte N Austrittsgrund — breiter, Umbruch, Zeilenhoehe; mod_CopyData.bas: O45 „Betriebszugehörigkeit“ mit Umlauten.
 - mod_BuildFluktuationDaten/Analyse.bas: Austritte gesamt = Summe Monatstabelle (Dedup, Jahresfilter, Gesamt-Zeile); PDF-Export-Button auf FLUKTUATION.

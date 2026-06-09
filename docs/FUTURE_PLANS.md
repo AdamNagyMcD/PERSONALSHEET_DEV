@@ -700,7 +700,7 @@ Button **Hilfe** auf LOHNTABELLE wird nicht benötigt. Stattdessen: **eigene Stu
 
 ## FP-023 — Copyright: Blätter + VBA-Module (Adam Nagy / McOpCo)
 
-**Status:** Offen — Wunsch vor erstem Release  
+**Status:** Behoben (2026-05-26) — `mod_PIDCopyright.bas`, Open/Refresh/FormatAll  
 **Priorität:** Niedrig — Branding / Urheberrecht, kein Fachfeature  
 **Aufwand:** **Klein–mittel** (Blätter) + **Klein** (VBA-Header, viele Dateien)  
 **Betroffene Bereiche:** Alle sichtbaren Worksheets; alle `vba/*.bas` und `vba/*.cls`; zentral `mod_PIDUtils.bas` oder `mod_PIDCopyright.bas`
@@ -743,12 +743,19 @@ Optional zusätzlich **eine Zeile** nur in zentralen Entry-Makros (`CopyData`, `
 
 **Umsetzung:** alle `vba/*.bas`, `vba/*.cls` einheitlich; bei `ResetAndImportVBAFiles` nicht überschreiben ohne Template.
 
+### Fix (Ist-Zustand)
+
+- `mod_PIDCopyright.bas`: `PID_ApplyCopyrightToAllSheets` — Monatsblatt `S2:V2` (neben CopyData-Button), LOHNTABELLE `L2:N2`, EINSTELLUNG `S2:U2`, UEBERSICHT `B25`, FLUKTUATION `A3`; kein PageSetup/Shape; Jahr aus `EINSTELLUNG!C35`.
+- Aufruf: `Workbook_Open`, `PID_FullSystemRefresh`, `FormatAllMonthSheets`.
+- Ausnahme: `FLUKTUATION_DATEN`, `KV_DROPDOWN_HELPER` (very hidden).
+- Alle `vba/*.bas` und `vba/*.cls`: einheitlicher Copyright-Kommentarblock am Modulanfang.
+
 ### Akzeptanzkriterien
 
-- [ ] Alle für Restaurant sichtbaren Blätter: Hinweis mit **Adam Nagy** und **McOpCo**, einheitlich und dezent.
-- [ ] Keine Störung von Eingabe, Formeln, Druck (A4 Spot-Check).
-- [ ] Jedes VBA-Modul im Repo trägt den Copyright-Kopf (Adam Nagy / McOpCo).
-- [ ] Mac + Windows Excel 2016+; nach Format-Lauf bleibt Blatt-Hinweis erhalten.
+- [x] Alle sichtbaren Blätter: Hinweis mit **Adam Nagy** und **McOpCo** (Code-Pfad).
+- [ ] Keine Störung von Eingabe, Formeln, Druck (A4 Spot-Check) — manuell prüfen.
+- [x] Jedes VBA-Modul im Repo trägt den Copyright-Kopf (Adam Nagy / McOpCo).
+- [ ] Mac + Windows Excel 2016+; nach Format-Lauf bleibt Blatt-Hinweis erhalten — manuell prüfen.
 
 ### Betroffene Dateien (Referenz)
 

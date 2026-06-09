@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_SmokeCheck"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 Private Const PID_SMOKE_SHEET_NAME As String = "SYSTEM_CHECK"

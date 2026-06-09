@@ -7,6 +7,12 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 Private mInternalChange As Boolean
@@ -67,6 +73,8 @@ SafeExit:
             PID_RecalculateMonthFormulaColumns ActiveSheet
         End If
     End If
+    
+    PID_ApplyCopyrightToAllSheets
     
     Application.ScreenUpdating = True
     Application.EnableEvents = True

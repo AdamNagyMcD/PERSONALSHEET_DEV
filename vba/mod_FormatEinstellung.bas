@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_FormatEinstellung"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 Private Const PID_ES_ADMIN_FIRST_ROW As Long = 37

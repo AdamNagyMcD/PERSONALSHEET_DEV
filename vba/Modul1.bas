@@ -1,4 +1,10 @@
 Attribute VB_Name = "Modul1"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 Public Const PID_FIRST_ROW As Long = 3

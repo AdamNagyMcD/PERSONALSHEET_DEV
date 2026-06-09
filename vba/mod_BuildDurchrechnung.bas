@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_BuildDurchrechnung"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 Private Const PID_DR_START_ROW As Long = 28

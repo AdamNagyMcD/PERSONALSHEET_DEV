@@ -1,4 +1,10 @@
 Attribute VB_Name = "mod_FormatMonthSheet"
+'==============================================================================
+' Personalsheet – VBA
+' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
+' Unauthorized copying, modification or distribution prohibited.
+'==============================================================================
+
 Option Explicit
 
 ' Design reference: manually formatted sheet "Januar" in Personalsheet.xlsm (2026-05-24).
@@ -141,6 +147,8 @@ Public Sub FormatAllMonthSheets()
             End If
         End If
     Next monthName
+    
+    PID_ApplyCopyrightToAllSheets
     
     MsgBox countDone & " Monatsblaetter von '" & PID_MS_PILOT_SHEET & "' formatiert.", _
            vbInformation, "Monatsblatt Format"
