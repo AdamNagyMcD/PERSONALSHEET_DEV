@@ -399,6 +399,8 @@ Public Sub PID_RecalculateAktuelleStundenForChangedRows(ByVal wsMonth As Workshe
     Dim c As Range
     Dim checkedRows As Collection
     Dim rowKey As String
+    Dim rowNumber As Long
+    Dim calcRange As Range
     
     On Error GoTo SafeExit
     
@@ -417,10 +419,25 @@ Public Sub PID_RecalculateAktuelleStundenForChangedRows(ByVal wsMonth As Workshe
             
             If Not PID_CollectionHasKey(checkedRows, rowKey) Then
                 checkedRows.Add rowKey, rowKey
-                wsMonth.Cells(c.Row, "H").Calculate
             End If
         End If
     Next c
+    
+    For Each c In checkedRows
+        rowNumber = CLng(c)
+        
+        If calcRange Is Nothing Then
+            Set calcRange = wsMonth.Cells(rowNumber, "H")
+        Else
+            Set calcRange = Union(calcRange, wsMonth.Cells(rowNumber, "H"))
+        End If
+    Next c
+    
+    If Not calcRange Is Nothing Then
+        On Error Resume Next
+        calcRange.Calculate
+        Err.Clear
+    End If
 
 SafeExit:
 End Sub
@@ -850,7 +867,8 @@ Public Sub PID_RecalculateLetztesGehaltForChangedRows(ByVal wsMonth As Worksheet
     If changedRange Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
     
-    Set watchRange = Union(wsMonth.Range("D3:D82"), wsMonth.Range("E3:F82"), wsMonth.Range("G3:G82"), _
+    ' E/F: Monatslohn-Handler aktualisiert L bereits — hier nur D, G, I, K.
+    Set watchRange = Union(wsMonth.Range("D3:D82"), wsMonth.Range("G3:G82"), _
                            wsMonth.Range("I3:I82"), wsMonth.Range("K3:K82"))
     Set rowsToCheck = Intersect(changedRange, watchRange)
     If rowsToCheck Is Nothing Then Exit Sub
@@ -863,10 +881,44 @@ Public Sub PID_RecalculateLetztesGehaltForChangedRows(ByVal wsMonth As Worksheet
         If c.Row >= PID_FIRST_ROW And c.Row <= PID_LAST_ROW Then
             If Not PID_CollectionHasKey(checkedRows, rowKey) Then
                 checkedRows.Add rowKey, rowKey
-                PID_RecalculateLetztesGehaltForRow wsMonth, c.Row
             End If
         End If
     Next c
+    
+    PID_RecalculateLetztesGehaltForRows wsMonth, checkedRows
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_RecalculateLetztesGehaltForRows(ByVal wsMonth As Worksheet, ByVal rows As Collection)
+    Dim i As Long
+    Dim rowNumber As Long
+    Dim calcRange As Range
+    
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If rows Is Nothing Then Exit Sub
+    If rows.Count = 0 Then Exit Sub
+    
+    For i = 1 To rows.Count
+        rowNumber = CLng(rows(i))
+        
+        If rowNumber >= PID_FIRST_ROW And rowNumber <= PID_LAST_ROW Then
+            If calcRange Is Nothing Then
+                Set calcRange = wsMonth.Cells(rowNumber, "L")
+            Else
+                Set calcRange = Union(calcRange, wsMonth.Cells(rowNumber, "L"))
+            End If
+        End If
+    Next i
+    
+    If Not calcRange Is Nothing Then
+        On Error Resume Next
+        calcRange.Calculate
+        Err.Clear
+    End If
 
 SafeExit:
 End Sub

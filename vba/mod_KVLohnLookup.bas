@@ -836,6 +836,8 @@ Public Sub PID_RecalculateMonatslohnForChangedRows(ByVal wsMonth As Worksheet, B
     Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:F82"))
     If rowsToCheck Is Nothing Then Exit Sub
     
+    PID_PreloadKVLohnCaches
+    
     Set checkedRows = New Collection
     
     For Each c In rowsToCheck.Cells
@@ -844,10 +846,12 @@ Public Sub PID_RecalculateMonatslohnForChangedRows(ByVal wsMonth As Worksheet, B
         If c.Row >= PID_FIRST_ROW And c.Row <= PID_LAST_ROW Then
             If Not PID_CollectionHasKey(checkedRows, rowKey) Then
                 checkedRows.Add rowKey, rowKey
-                PID_ForceMonatslohnRecalcForRow wsMonth, c.Row
+                PID_ForceMonatslohnRecalcForRow wsMonth, c.Row, True
             End If
         End If
     Next c
+    
+    PID_RecalculateLetztesGehaltForRows wsMonth, checkedRows
 
 SafeExit:
 End Sub

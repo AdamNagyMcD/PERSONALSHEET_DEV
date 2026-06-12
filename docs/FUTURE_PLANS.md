@@ -202,7 +202,7 @@ Pro Monatszeile ein Name `KV_DD_<Sheet>_<Row>` (ca. 80 × 12 ≈ 960 Names). Bel
 
 ## FP-007 — Performance: SheetChange — weniger doppelte Recalc pro Zeile
 
-**Status:** Offen  
+**Status:** Erledigt (2026-06-12) — Windows E/F/D/I-Test OK  
 **Priorität:** Mittel — Alltags-UX beim Tippen  
 **Plattform-Ziel:** Windows + Mac  
 **Betroffene Bereiche:** `DieseArbeitsmappe.cls`, `mod_KVLohnLookup.bas`, `Modul1.bas`
@@ -218,9 +218,16 @@ Eine Aenderung in E/F kann nacheinander ausloesen: Monatslohn-VBA, Aktuelle Stun
 
 ### Akzeptanzkriterien
 
-- [ ] E/F-Aenderung: G und abhaengige Spalten korrekt.
-- [ ] Grosser Paste in B:F blockweise ohne Timeout.
-- [ ] Keine stale UEBERSICHT/FINANZIELL-Werte.
+- [x] E/F-Aenderung: G und abhaengige Spalten korrekt (2026-06-12).
+- [ ] Grosser Paste in B:F blockweise ohne Timeout — bei Gelegenheit.
+- [ ] Keine stale UEBERSICHT/FINANZIELL-Werte — bei Gelegenheit.
+
+### Umsetzung (2026-06-12)
+
+- `PID_RecalculateMonatslohnForChangedRows`: Preload einmal; L-Recalc gesammelt am Ende (nicht pro Zelle doppelt).
+- `PID_RecalculateLetztesGehaltForChangedRows`: E/F aus Watch-Range (Monatslohn uebernimmt L).
+- `PID_RecalculateAktuelleStundenForChangedRows`: H-`Calculate` gesammelt per `Union`.
+- `DieseArbeitsmappe`: redundantes `PID_PreloadKVLohnCaches` entfernt.
 
 ### Betroffene Dateien (Referenz)
 

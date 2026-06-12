@@ -11,6 +11,7 @@
 - DieseArbeitsmappe.cls: LOHNTABELLE D4:G-Aenderung → KV-Code aus geaenderten Zeilen.
 - mod_PerformanceBaseline.bas: Baseline-Schritt 2b (scoped dirty BG1).
 - mod_KVStundenDropdown.bas (FP-006): `RefreshKVStundenDropdownForRow` nutzt `KV_DG_*` pro KV-Code; `PID_RemoveLegacyKVDDNamedRanges` bei `RefreshAllMonthKVStundenDropdowns`. Verifiziert: `PID_CountKVDDNamedRanges` = 0.
+- mod_KVLohnLookup.bas + Modul1.bas + DieseArbeitsmappe.cls (FP-007): SheetChange — kein doppeltes L-Recalc bei E/F; gebündeltes H/L-Calculate.
 
 ### Removed
 - mod_BuildFluktuationAnalyse.bas + DieseArbeitsmappe.cls: FLUKTUATION PDF-Export (Button, Makro, Export-Hilfen) entfernt; Legacy-Button wird bei Refresh gelöscht (FP-025 storniert).

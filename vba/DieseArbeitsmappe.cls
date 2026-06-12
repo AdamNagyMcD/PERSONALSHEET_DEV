@@ -245,7 +245,6 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' Wenn Spalte E sich aendert:
     ' E = KV-Code / BG -> Dropdown F in der betreffenden Zeile.
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
-        PID_PreloadKVLohnCaches
         PID_RecalculateMonatslohnForChangedRows Sh, Target
     End If
     
