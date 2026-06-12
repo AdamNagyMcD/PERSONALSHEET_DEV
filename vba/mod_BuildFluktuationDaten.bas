@@ -44,7 +44,7 @@ Private Function PID_FlDatTxtBefoerderung() As String
 End Function
 
 
-Private Function PID_FlDisplayMonthName(ByVal monthIndex As Long) As String
+Public Function PID_FlDisplayMonthName(ByVal monthIndex As Long) As String
     If monthIndex = 3 Then
         PID_FlDisplayMonthName = "M" & ChrW(228) & "rz"
     ElseIf monthIndex >= 1 And monthIndex <= 12 Then
@@ -69,18 +69,6 @@ Public Sub BuildFluktuationDaten()
     Dim monthNumber As Long
     Dim currentYear As Long
     
-    Dim personalID As Variant
-    Dim employeeName As Variant
-    Dim entryDate As Variant
-    Dim exitDate As Variant
-    Dim exitReason As String
-    
-    Dim daysInCompany As Long
-    Dim reasonWeight As Double
-    Dim timeFactor As Double
-    Dim lossValue As Double
-    Dim categoryText As String
-    
     Dim arrOut() As Variant
     Dim oldDataLastRow As Long
     
@@ -89,6 +77,11 @@ Public Sub BuildFluktuationDaten()
     Dim oldDisplayAlerts As Boolean
     
     On Error GoTo CleanFail
+    
+    If PID_FluktuationUseIncrementalDataRebuild() Then
+        PID_BuildFluktuationDatenIncremental
+        Exit Sub
+    End If
     
     oldEnableEvents = Application.EnableEvents
     oldScreenUpdating = Application.ScreenUpdating
@@ -115,7 +108,7 @@ Public Sub BuildFluktuationDaten()
     
     For i = LBound(monthNames) To UBound(monthNames)
         monthName = CStr(monthNames(i))
-        monthNumber = i + 1
+        monthNumber = i - LBound(monthNames) + 1
         
         Set ws = Nothing
         On Error Resume Next
@@ -125,103 +118,15 @@ Public Sub BuildFluktuationDaten()
         If Not ws Is Nothing Then
             If IsNumeric(ws.Range("A1").Value) Then
                 monthNumber = CLng(ws.Range("A1").Value)
-            Else
-                monthNumber = i + 1
             End If
             
-            If monthNumber < 1 Or monthNumber > 12 Then GoTo NextMonthSheet
-            
-            For r = 3 To 82
-                personalID = ws.Cells(r, "B").Value
-                employeeName = ws.Cells(r, "C").Value
-                entryDate = ws.Cells(r, "D").Value
-                exitDate = ws.Cells(r, "I").Value
-                exitReason = NormalizeExitReason(CStr(ws.Cells(r, "N").Value))
-                
-                If IsDate(exitDate) Then
-                    If Year(CDate(exitDate)) = currentYear Then
-                        If Month(CDate(exitDate)) = monthNumber Then
-                            If Trim$(CStr(personalID)) <> "" Or Trim$(CStr(employeeName)) <> "" Then
-                                
-                                If IsDate(entryDate) Then
-                                    daysInCompany = DateDiff("d", CDate(entryDate), CDate(exitDate)) + 1
-                                Else
-                                    daysInCompany = 0
-                                End If
-                                
-                                reasonWeight = GetReasonWeight(exitReason)
-                                timeFactor = GetTimeFactor(daysInCompany)
-                                categoryText = GetFluctuationCategory(exitReason, daysInCompany, reasonWeight, timeFactor)
-                                
-                                If categoryText = "Austrittsgrund fehlt" Then
-                                    lossValue = 0
-                                ElseIf categoryText = "Austrittsgrund unbekannt" Then
-                                    lossValue = 0
-                                ElseIf reasonWeight < 0 Then
-                                    lossValue = 0
-                                Else
-                                    lossValue = reasonWeight * timeFactor
-                                End If
-                                
-                                outRow = outRow + 1
-                                
-                                arrOut(outRow, 1) = PID_FlDisplayMonthName(Month(CDate(exitDate)))
-                                arrOut(outRow, 2) = personalID
-                                arrOut(outRow, 3) = employeeName
-                                arrOut(outRow, 4) = entryDate
-                                arrOut(outRow, 5) = exitDate
-                                arrOut(outRow, 6) = exitReason
-                                arrOut(outRow, 7) = daysInCompany
-                                arrOut(outRow, 8) = reasonWeight
-                                arrOut(outRow, 9) = timeFactor
-                                arrOut(outRow, 10) = lossValue
-                                arrOut(outRow, 11) = categoryText
-                            End If
-                        End If
-                    End If
-                End If
-            Next r
+            If monthNumber >= 1 And monthNumber <= 12 Then
+                PID_CollectFluktuationRowsFromMonthSheet ws, monthNumber, currentYear, arrOut, outRow
+            End If
         End If
-        
-NextMonthSheet:
     Next i
     
-    With outWs
-        .Range("A1").Value = "Monat"
-        .Range("B1").Value = "Personal ID"
-        .Range("C1").Value = "Name"
-        .Range("D1").Value = "Eintrittsdatum"
-        .Range("E1").Value = "Austrittsdatum"
-        .Range("F1").Value = "Austrittsgrund"
-        .Range("G1").Value = "Tage im Unternehmen"
-        .Range("H1").Value = "Grund-Gewicht"
-        .Range("I1").Value = "Zeit-Faktor"
-        .Range("J1").Value = "Verlust-Score"
-        .Range("K1").Value = "Kategorie"
-        
-        If outRow > 0 Then
-            oldDataLastRow = .Cells(.Rows.Count, "A").End(xlUp).Row
-            
-            .Range("A2").Resize(outRow, 11).Value = PID_FluctuationCopyOutputRows(arrOut, outRow)
-            
-            If oldDataLastRow > outRow + 1 Then
-                .Rows((outRow + 2) & ":" & oldDataLastRow).Clear
-            End If
-        End If
-        
-        With .Range("A1:K1")
-            .Font.Bold = True
-            .HorizontalAlignment = xlCenter
-            .VerticalAlignment = xlCenter
-        End With
-        
-        .Columns("A:K").AutoFit
-        .Range("D:E").NumberFormat = "dd.mm.yyyy"
-        .Range("H:J").NumberFormat = "0.00"
-        
-        .Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
-        .Visible = xlSheetVeryHidden
-    End With
+    PID_WriteFluktuationDatenOutput outWs, arrOut, outRow
 
 CleanExit:
     Application.DisplayAlerts = oldDisplayAlerts
@@ -243,6 +148,249 @@ CleanFail:
     MsgBox "Fehler in BuildFluktuationDaten:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
            vbExclamation, "Fluktuation Daten"
+End Sub
+
+
+Private Sub PID_BuildFluktuationDatenIncremental()
+    Dim outWs As Worksheet
+    Dim dirtyMonths As Collection
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim monthNumber As Long
+    Dim monthName As String
+    Dim currentYear As Long
+    Dim outRow As Long
+    Dim maxRows As Long
+    Dim arrOut() As Variant
+    Dim existingLastRow As Long
+    Dim existingData As Variant
+    Dim r As Long
+    Dim monthText As String
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldDisplayAlerts As Boolean
+    
+    On Error GoTo CleanFail
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    oldDisplayAlerts = Application.DisplayAlerts
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    Set outWs = ThisWorkbook.Worksheets("FLUKTUATION_DATEN")
+    Set dirtyMonths = PID_FluktuationDirtyMonthsClone()
+    
+    currentYear = PID_GetWorkbookYear()
+    If currentYear <= 0 Then GoTo CleanExit
+    If dirtyMonths.Count = 0 Then GoTo CleanExit
+    
+    maxRows = 12 * 80
+    ReDim arrOut(1 To maxRows, 1 To 11)
+    outRow = 0
+    
+    outWs.Visible = xlSheetVisible
+    outWs.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    
+    existingLastRow = outWs.Cells(outWs.Rows.Count, "A").End(xlUp).Row
+    If existingLastRow >= 2 Then
+        existingData = outWs.Range("A2:K" & existingLastRow).Value
+        
+        If IsArray(existingData) Then
+            For r = 1 To UBound(existingData, 1)
+                monthText = Trim$(CStr(existingData(r, 1)))
+                If monthText <> "" Then
+                    If Not PID_FluktuationMonthDisplayNameIsDirty(monthText) Then
+                        outRow = outRow + 1
+                        arrOut(outRow, 1) = existingData(r, 1)
+                        arrOut(outRow, 2) = existingData(r, 2)
+                        arrOut(outRow, 3) = existingData(r, 3)
+                        arrOut(outRow, 4) = existingData(r, 4)
+                        arrOut(outRow, 5) = existingData(r, 5)
+                        arrOut(outRow, 6) = existingData(r, 6)
+                        arrOut(outRow, 7) = existingData(r, 7)
+                        arrOut(outRow, 8) = existingData(r, 8)
+                        arrOut(outRow, 9) = existingData(r, 9)
+                        arrOut(outRow, 10) = existingData(r, 10)
+                        arrOut(outRow, 11) = existingData(r, 11)
+                    End If
+                End If
+            Next r
+        End If
+    End If
+    
+    monthNames = PID_MonthNames()
+    
+    For i = 1 To dirtyMonths.Count
+        monthNumber = CLng(dirtyMonths(i))
+        monthName = ""
+        
+        If monthNumber >= 1 And monthNumber <= 12 Then
+            monthName = CStr(monthNames(LBound(monthNames) + monthNumber - 1))
+        End If
+        
+        Set ws = Nothing
+        On Error Resume Next
+        If monthName <> "" Then Set ws = ThisWorkbook.Worksheets(monthName)
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            If IsNumeric(ws.Range("A1").Value) Then
+                monthNumber = CLng(ws.Range("A1").Value)
+            End If
+            
+            If monthNumber >= 1 And monthNumber <= 12 Then
+                PID_CollectFluktuationRowsFromMonthSheet ws, monthNumber, currentYear, arrOut, outRow
+            End If
+        End If
+    Next i
+    
+    PID_WriteFluktuationDatenOutput outWs, arrOut, outRow
+
+CleanExit:
+    Application.DisplayAlerts = oldDisplayAlerts
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    Exit Sub
+
+CleanFail:
+    On Error Resume Next
+    If Not outWs Is Nothing Then
+        outWs.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
+        outWs.Visible = xlSheetVeryHidden
+    End If
+    
+    Application.DisplayAlerts = oldDisplayAlerts
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    
+    MsgBox "Fehler in BuildFluktuationDaten (inkrementell):" & vbCrLf & _
+           Err.Number & " - " & Err.Description, _
+           vbExclamation, "Fluktuation Daten"
+End Sub
+
+
+Private Sub PID_CollectFluktuationRowsFromMonthSheet(ByVal ws As Worksheet, _
+                                                     ByVal monthNumber As Long, _
+                                                     ByVal currentYear As Long, _
+                                                     ByRef arrOut() As Variant, _
+                                                     ByRef outRow As Long)
+    Dim r As Long
+    Dim personalID As Variant
+    Dim employeeName As Variant
+    Dim entryDate As Variant
+    Dim exitDate As Variant
+    Dim exitReason As String
+    Dim daysInCompany As Long
+    Dim reasonWeight As Double
+    Dim timeFactor As Double
+    Dim lossValue As Double
+    Dim categoryText As String
+    
+    If ws Is Nothing Then Exit Sub
+    If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
+    If currentYear <= 0 Then Exit Sub
+    
+    For r = 3 To 82
+        personalID = ws.Cells(r, "B").Value
+        employeeName = ws.Cells(r, "C").Value
+        entryDate = ws.Cells(r, "D").Value
+        exitDate = ws.Cells(r, "I").Value
+        exitReason = NormalizeExitReason(CStr(ws.Cells(r, "N").Value))
+        
+        If IsDate(exitDate) Then
+            If Year(CDate(exitDate)) = currentYear Then
+                If Month(CDate(exitDate)) = monthNumber Then
+                    If Trim$(CStr(personalID)) <> "" Or Trim$(CStr(employeeName)) <> "" Then
+                        
+                        If IsDate(entryDate) Then
+                            daysInCompany = DateDiff("d", CDate(entryDate), CDate(exitDate)) + 1
+                        Else
+                            daysInCompany = 0
+                        End If
+                        
+                        reasonWeight = GetReasonWeight(exitReason)
+                        timeFactor = GetTimeFactor(daysInCompany)
+                        categoryText = GetFluctuationCategory(exitReason, daysInCompany, reasonWeight, timeFactor)
+                        
+                        If categoryText = "Austrittsgrund fehlt" Then
+                            lossValue = 0
+                        ElseIf categoryText = "Austrittsgrund unbekannt" Then
+                            lossValue = 0
+                        ElseIf reasonWeight < 0 Then
+                            lossValue = 0
+                        Else
+                            lossValue = reasonWeight * timeFactor
+                        End If
+                        
+                        outRow = outRow + 1
+                        
+                        arrOut(outRow, 1) = PID_FlDisplayMonthName(Month(CDate(exitDate)))
+                        arrOut(outRow, 2) = personalID
+                        arrOut(outRow, 3) = employeeName
+                        arrOut(outRow, 4) = entryDate
+                        arrOut(outRow, 5) = exitDate
+                        arrOut(outRow, 6) = exitReason
+                        arrOut(outRow, 7) = daysInCompany
+                        arrOut(outRow, 8) = reasonWeight
+                        arrOut(outRow, 9) = timeFactor
+                        arrOut(outRow, 10) = lossValue
+                        arrOut(outRow, 11) = categoryText
+                    End If
+                End If
+            End If
+        End If
+    Next r
+End Sub
+
+
+Private Sub PID_WriteFluktuationDatenOutput(ByVal outWs As Worksheet, ByRef arrOut() As Variant, ByVal outRow As Long)
+    Dim oldDataLastRow As Long
+    
+    If outWs Is Nothing Then Exit Sub
+    
+    With outWs
+        .Range("A1").Value = "Monat"
+        .Range("B1").Value = "Personal ID"
+        .Range("C1").Value = "Name"
+        .Range("D1").Value = "Eintrittsdatum"
+        .Range("E1").Value = "Austrittsdatum"
+        .Range("F1").Value = "Austrittsgrund"
+        .Range("G1").Value = "Tage im Unternehmen"
+        .Range("H1").Value = "Grund-Gewicht"
+        .Range("I1").Value = "Zeit-Faktor"
+        .Range("J1").Value = "Verlust-Score"
+        .Range("K1").Value = "Kategorie"
+        
+        oldDataLastRow = .Cells(.Rows.Count, "A").End(xlUp).Row
+        
+        If outRow > 0 Then
+            .Range("A2").Resize(outRow, 11).Value = PID_FluctuationCopyOutputRows(arrOut, outRow)
+            
+            If oldDataLastRow > outRow + 1 Then
+                .Rows((outRow + 2) & ":" & oldDataLastRow).Clear
+            End If
+        ElseIf oldDataLastRow > 1 Then
+            .Rows("2:" & oldDataLastRow).Clear
+        End If
+        
+        With .Range("A1:K1")
+            .Font.Bold = True
+            .HorizontalAlignment = xlCenter
+            .VerticalAlignment = xlCenter
+        End With
+        
+        .Columns("A:K").AutoFit
+        .Range("D:E").NumberFormat = "dd.mm.yyyy"
+        .Range("H:J").NumberFormat = "0.00"
+        
+        .Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
+        .Visible = xlSheetVeryHidden
+    End With
 End Sub
 
 

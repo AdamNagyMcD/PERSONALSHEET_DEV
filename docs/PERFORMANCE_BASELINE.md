@@ -115,14 +115,17 @@ Ergebnisse in die Tabellen unten eintragen. Ziel: **Sekunden (s)**, eine Dezimal
 
 ### 6 — Save mit Fluktuation dirty (AUTO + optional MANU)
 
-**AUTO:** `MarkFluktuationDirty` + `RefreshFluktuationIfDirty` (entspricht BeforeSave-Pfad).
+**AUTO:**
+
+- **6** — `RefreshFluktuationDataIfDirty` (Save-Pfad, nur FLUKTUATION_DATEN).
+- **6b** — `RefreshFluktuationIfDirty` (Tab-Pfad, Daten + Analyse).
 
 **MANU:** I oder N auf Monatsblatt aendern → Speichern (Strg+S) — Stoppuhr bis Save fertig.
 
-| Lauf | AUTO: Fluktuation-Refresh (s) | MANU: Save gesamt (s) |
-|------|-------------------------------|------------------------|
-| Baseline | **1,24** | *offen (MANU)* |
-| Nach FP-005 | **1,27** | |
+| Lauf | AUTO 6: Save Daten only (s) | AUTO 6b: Tab Daten+Analyse (s) | MANU: Save gesamt (s) |
+|------|-----------------------------|--------------------------------|------------------------|
+| Baseline | **1,27** (alt: voll) | — | *offen (MANU)* |
+| Nach FP-009 | | | |
 
 ---
 

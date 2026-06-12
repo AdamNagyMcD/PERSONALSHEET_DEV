@@ -44,7 +44,8 @@ Public Sub PID_RunPerformanceBaseline()
     report = report & PID_PerfMeasureKvMonthTabRefresh()
     report = report & PID_PerfMeasureMonatslohnRecalc()
     report = report & PID_PerfMeasureFinanzSync()
-    report = report & PID_PerfMeasureFluktuationRefresh()
+    report = report & PID_PerfMeasureFluktuationSaveRefresh()
+    report = report & PID_PerfMeasureFluktuationTabRefresh()
     report = report & PID_PerfMeasureFullSystemRefresh()
     report = report & PID_PerfManualStepsFooter()
     
@@ -193,20 +194,39 @@ SafeExit:
 End Function
 
 
-Private Function PID_PerfMeasureFluktuationRefresh() As String
+Private Function PID_PerfMeasureFluktuationSaveRefresh() As String
     Dim started As Single
     Dim elapsed As Single
     
     On Error GoTo SafeExit
     
-    MarkFluktuationDirty
+    MarkFluktuationDirtyForMonth 2
+    
+    started = Timer
+    RefreshFluktuationDataIfDirty
+    elapsed = Timer - started
+    
+    PID_PerfMeasureFluktuationSaveRefresh = _
+        "6 Save-Pfad: Fluktuation Daten only (Februar dirty): " & PID_PerfFormatSeconds(elapsed) & vbCrLf
+
+SafeExit:
+End Function
+
+
+Private Function PID_PerfMeasureFluktuationTabRefresh() As String
+    Dim started As Single
+    Dim elapsed As Single
+    
+    On Error GoTo SafeExit
+    
+    MarkFluktuationDirtyForMonth 2
     
     started = Timer
     RefreshFluktuationIfDirty
     elapsed = Timer - started
     
-    PID_PerfMeasureFluktuationRefresh = _
-        "6 Fluktuation dirty -> Refresh: " & PID_PerfFormatSeconds(elapsed) & vbCrLf
+    PID_PerfMeasureFluktuationTabRefresh = _
+        "6b Tab-Pfad: Fluktuation Daten+Analyse (Februar dirty): " & PID_PerfFormatSeconds(elapsed) & vbCrLf
 
 SafeExit:
 End Function

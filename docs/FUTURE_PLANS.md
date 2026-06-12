@@ -268,7 +268,7 @@ Jede Auswahl in D3:F82 setzt `ScreenUpdating = False` und prueft E/F-Dropdown-Va
 
 ## FP-009 — Performance: Fluktuation inkrementell (optional)
 
-**Status:** Offen — nur wenn FLUKTUATION-Tab/Save zu langsam  
+**Status:** Erledigt (2026-06-12) — Compile OK, Save/Tab-Pfad getrennt  
 **Priorität:** Niedrig (grosser Aufwand)  
 **Plattform-Ziel:** Windows (grosses Workbook)  
 **Betroffene Bereiche:** `mod_RefreshFluktuationAll.bas`, `mod_BuildFluktuationDaten.bas`, `mod_BuildFluktuationAnalyse.bas`
@@ -286,6 +286,13 @@ Jede Auswahl in D3:F82 setzt `ScreenUpdating = False` und prueft E/F-Dropdown-Va
 
 - [ ] FLUKTUATION-Inhalt fachlich identisch nach D/I/N-Aenderung.
 - [ ] Save mit dirty spuerbar schneller oder gleichwertig akzeptabel dokumentiert.
+
+### Umsetzung (2026-06-12)
+
+- **BeforeSave:** nur `BuildFluktuationDaten` (`RefreshFluktuationDataIfDirty`) — Analyse deferred.
+- **FLUKTUATION-Tab:** `RefreshFluktuationIfDirty` — Daten (falls noetig) + Analyse.
+- **Inkrementell:** `MarkFluktuationDirtyForMonthSheet` bei D/I/N; `BuildFluktuationDaten` rescannt nur dirty Monate.
+- FP-010 Schritte **6** (Save-Daten) und **6b** (Tab voll).
 
 ---
 

@@ -98,9 +98,8 @@ Private Sub Workbook_BeforeSave(ByVal SaveAsUI As Boolean, Cancel As Boolean)
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
-    ' Vor dem Speichern wird die Fluktuation-Analyse nur dann aktualisiert,
-    ' wenn sich in der Zwischenzeit relevante Daten geaendert haben.
-    RefreshFluktuationIfDirty
+    ' Vor dem Speichern: nur FLUKTUATION_DATEN (schnell); Analyse beim Tab-Oeffnen.
+    RefreshFluktuationDataIfDirty
     
     On Error Resume Next
     ThisWorkbook.Sheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden
@@ -269,7 +268,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' I = Austrittsdatum
     ' N = Austrittsgrund
     If Not Intersect(Target, Sh.Range("D3:D82,I3:I82,N3:N82")) Is Nothing Then
-        MarkFluktuationDirty
+        MarkFluktuationDirtyForMonthSheet Sh
     End If
     
     If PID_MonthChangeNeedsImmediateFinanzSync(Sh, Target) Then
