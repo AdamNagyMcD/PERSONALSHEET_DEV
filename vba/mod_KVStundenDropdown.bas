@@ -12,19 +12,79 @@ Private Const PID_KV_CODE_HELPER_COL As Long = 961
 Private Const PID_KV_TEMPLATE_KV_CODE As String = "BG2"
 
 Public gKVDropdownsDirty As Boolean
+Private mKVDropdownDirtyScopeAll As Boolean
+Private mDirtyKVCodes As Collection
 Private mKVDropdownRefreshedSheets As Collection
 Private mStundenValuesCache As Collection
 
 
 Public Sub MarkAllKVDropdownsDirty()
     gKVDropdownsDirty = True
+    mKVDropdownDirtyScopeAll = True
+    Set mDirtyKVCodes = New Collection
     Set mKVDropdownRefreshedSheets = New Collection
     PID_ClearStundenValuesCache
 End Sub
 
 
+Public Sub MarkKVDropdownDirtyForKVCode(ByVal kvCode As String)
+    kvCode = NormalizeKVCodeForLookup(kvCode)
+    If kvCode = "" Then Exit Sub
+    
+    gKVDropdownsDirty = True
+    mKVDropdownDirtyScopeAll = False
+    
+    If mDirtyKVCodes Is Nothing Then Set mDirtyKVCodes = New Collection
+    
+    If Not CollectionHasKey_KVDropdown(mDirtyKVCodes, kvCode) Then
+        mDirtyKVCodes.Add kvCode, kvCode
+        Set mKVDropdownRefreshedSheets = New Collection
+        PID_ClearStundenValuesCache
+    End If
+End Sub
+
+
+Public Sub MarkKVDropdownDirtyFromLOHNTABELLERange(ByVal wsKV As Worksheet, ByVal changedRange As Range)
+    Dim intersectRange As Range
+    Dim cell As Range
+    Dim kvCode As String
+    Dim kvCodes As Collection
+    Dim i As Long
+    
+    If wsKV Is Nothing Then Exit Sub
+    If changedRange Is Nothing Then Exit Sub
+    
+    Set intersectRange = Intersect(changedRange, wsKV.Range("D4:G500"))
+    If intersectRange Is Nothing Then Exit Sub
+    
+    Set kvCodes = New Collection
+    
+    For Each cell In intersectRange.Cells
+        If cell.Row >= 4 Then
+            kvCode = NormalizeKVCodeForLookup(CStr(wsKV.Cells(cell.Row, "D").Value))
+            If kvCode <> "" Then
+                If Not CollectionHasKey_KVDropdown(kvCodes, kvCode) Then
+                    kvCodes.Add kvCode, kvCode
+                End If
+            End If
+        End If
+    Next cell
+    
+    If kvCodes.Count = 0 Then
+        MarkAllKVDropdownsDirty
+        Exit Sub
+    End If
+    
+    For i = 1 To kvCodes.Count
+        MarkKVDropdownDirtyForKVCode CStr(kvCodes(i))
+    Next i
+End Sub
+
+
 Public Sub MarkKVDropdownsClean()
     gKVDropdownsDirty = False
+    mKVDropdownDirtyScopeAll = False
+    Set mDirtyKVCodes = New Collection
 End Sub
 
 
@@ -93,6 +153,7 @@ Public Sub RefreshAllMonthKVStundenDropdowns()
         End If
     Next i
     
+    PID_RemoveLegacyKVDDNamedRanges
     MarkKVDropdownsClean
     PID_EndHeavyMaintenance
 
@@ -196,7 +257,9 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
     
     If changedRange Is Nothing Then
-        ClearHelperColumnsForSheet wsHelper, wsMonth.Name
+        If PID_ShouldRefreshAllKVDropdownKeys() Then
+            ClearHelperColumnsForSheet wsHelper, wsMonth.Name
+        End If
         RefreshKVStundenDropdownForSheetBulk wsMonth, wsHelper, monthNumber
     Else
         
@@ -267,6 +330,25 @@ Private Function PID_GetDropdownKeyForRow(ByVal wsMonth As Worksheet, ByVal rowN
     Else
         PID_GetDropdownKeyForRow = kvCode
     End If
+End Function
+
+
+Private Function PID_BuildAllDropdownKeysForSheet(ByVal wsMonth As Worksheet) As Collection
+    Dim allKeys As Collection
+    Dim r As Long
+    Dim key As String
+    
+    Set allKeys = New Collection
+    
+    For r = PID_FIRST_ROW To PID_LAST_ROW
+        key = PID_GetDropdownKeyForRow(wsMonth, r)
+        
+        If Not CollectionHasKey_KVDropdown(allKeys, key) Then
+            allKeys.Add key, key
+        End If
+    Next r
+    
+    Set PID_BuildAllDropdownKeysForSheet = allKeys
 End Function
 
 
@@ -364,7 +446,8 @@ End Sub
 Private Sub RefreshKVStundenDropdownForSheetBulk(ByVal wsMonth As Worksheet, _
                                                  ByVal wsHelper As Worksheet, _
                                                  ByVal monthNumber As Long)
-    Dim codeKeys As Collection
+    Dim allKeys As Collection
+    Dim refreshKeys As Collection
     Dim key As String
     Dim lookupCode As String
     Dim r As Long
@@ -375,27 +458,44 @@ Private Sub RefreshKVStundenDropdownForSheetBulk(ByVal wsMonth As Worksheet, _
     Dim helperLastRow As Long
     Dim listRange As Range
     Dim listName As String
+    Dim refreshAllKeys As Boolean
     
-    Set codeKeys = New Collection
+    refreshAllKeys = PID_ShouldRefreshAllKVDropdownKeys()
+    
+    Set allKeys = PID_BuildAllDropdownKeysForSheet(wsMonth)
+    Set refreshKeys = New Collection
     
     For r = PID_FIRST_ROW To PID_LAST_ROW
         key = PID_GetDropdownKeyForRow(wsMonth, r)
         
-        If Not CollectionHasKey_KVDropdown(codeKeys, key) Then
-            codeKeys.Add key, key
+        If refreshAllKeys Or PID_IsKVCodeDirtyRefreshTarget(key) Then
+            If Not CollectionHasKey_KVDropdown(refreshKeys, key) Then
+                refreshKeys.Add key, key
+            End If
         End If
     Next r
     
-    On Error Resume Next
-    wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Validation.Delete
-    Err.Clear
-    On Error GoTo 0
+    If refreshKeys.Count = 0 Then Exit Sub
     
-    slotIndex = 0
+    If refreshAllKeys Then
+        On Error Resume Next
+        wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Validation.Delete
+        Err.Clear
+        On Error GoTo 0
+    Else
+        For r = PID_FIRST_ROW To PID_LAST_ROW
+            key = PID_GetDropdownKeyForRow(wsMonth, r)
+            If PID_IsKVCodeDirtyRefreshTarget(key) Then
+                On Error Resume Next
+                wsMonth.Cells(r, "F").Validation.Delete
+                Err.Clear
+            End If
+        Next r
+    End If
     
-    For i = 1 To codeKeys.Count
-        key = CStr(codeKeys(i))
-        slotIndex = slotIndex + 1
+    For i = 1 To refreshKeys.Count
+        key = CStr(refreshKeys(i))
+        slotIndex = PID_GetKVCodeSlotIndexInSheet(allKeys, key)
         
         If key = "__TEMPLATE__" Then
             lookupCode = PID_GetTemplateKVCodeForStundenDropdown()
@@ -433,7 +533,11 @@ Private Sub RefreshKVStundenDropdownForSheetBulk(ByVal wsMonth As Worksheet, _
                 If key <> "__TEMPLATE__" Then wsMonth.Cells(r, "F").ClearContents
                 Err.Clear
             Else
-                If gKVDropdownsDirty Or Not PID_RowHasValidFStundenDropdown(wsMonth, r) Then
+                If refreshAllKeys Then
+                    If gKVDropdownsDirty Or Not PID_RowHasValidFStundenDropdown(wsMonth, r) Then
+                        PID_ApplyFStundenListValidation wsMonth, r, listName, listRange
+                    End If
+                Else
                     PID_ApplyFStundenListValidation wsMonth, r, listName, listRange
                 End If
             End If
@@ -448,8 +552,11 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
                                           ByVal wsHelper As Worksheet, _
                                           ByVal rowNumber As Long, _
                                           ByVal monthNumber As Long)
-    Dim kvCode As String
+    Dim dropdownKey As String
+    Dim lookupCode As String
     Dim useTemplateKV As Boolean
+    Dim allKeys As Collection
+    Dim slotIndex As Long
     Dim values As Collection
     Dim helperCol As Long
     Dim helperLastRow As Long
@@ -460,18 +567,23 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     
     If wsMonth Is Nothing Then Exit Sub
     If wsHelper Is Nothing Then Exit Sub
-    If rowNumber < 3 Or rowNumber > 82 Then Exit Sub
+    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
-    kvCode = NormalizeKVCodeForLookup(CStr(wsMonth.Cells(rowNumber, "E").Value))
-    useTemplateKV = (kvCode = "")
-    If useTemplateKV Then kvCode = PID_GetTemplateKVCodeForStundenDropdown()
+    dropdownKey = PID_GetDropdownKeyForRow(wsMonth, rowNumber)
+    useTemplateKV = (dropdownKey = "__TEMPLATE__")
+    
+    If useTemplateKV Then
+        lookupCode = PID_GetTemplateKVCodeForStundenDropdown()
+    Else
+        lookupCode = dropdownKey
+    End If
     
     wsMonth.Cells(rowNumber, "F").Locked = False
     
-    Set values = GetKVMonatsstundenValues(monthNumber, kvCode)
+    Set values = GetKVMonatsstundenValues(monthNumber, lookupCode)
     
-    If values.count = 0 Then
+    If values.Count = 0 Then
         On Error Resume Next
         wsMonth.Cells(rowNumber, "F").Validation.Delete
         If Not useTemplateKV Then wsMonth.Cells(rowNumber, "F").ClearContents
@@ -479,7 +591,9 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
         Exit Sub
     End If
     
-    helperCol = GetHelperColumnForMonthRow(wsMonth.Name, rowNumber)
+    Set allKeys = PID_BuildAllDropdownKeysForSheet(wsMonth)
+    slotIndex = PID_GetKVCodeSlotIndexInSheet(allKeys, dropdownKey)
+    helperCol = GetHelperColumnForKVCodeSlot(wsMonth.Name, slotIndex)
     
     wsHelper.Range(wsHelper.Cells(1, helperCol), wsHelper.Cells(30, helperCol)).ClearContents
     
@@ -488,49 +602,15 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     If helperLastRow <= 0 Then Exit Sub
     
     Set listRange = wsHelper.Range(wsHelper.Cells(1, helperCol), wsHelper.Cells(helperLastRow, helperCol))
+    listName = GetDropdownNameForKVCode(wsMonth.Name, dropdownKey)
     
-    listName = GetDropdownNameForMonthRow(wsMonth.Name, rowNumber)
-    
-    ' Nach LOHNTABELLE-Aenderung: Named Range + Validation neu (Excel/Mac cached sonst alte F-Liste).
     PID_EnsureWorkbookNameRefersTo listName, listRange, gKVDropdownsDirty
     
     If Not gKVDropdownsDirty Then
         If PID_RowHasValidFStundenDropdown(wsMonth, rowNumber) Then Exit Sub
     End If
     
-    On Error Resume Next
-    wsMonth.Cells(rowNumber, "F").Validation.Delete
-    Err.Clear
-    
-    On Error GoTo ApplyFailed
-    With wsMonth.Cells(rowNumber, "F").Validation
-        .Add Type:=xlValidateList, _
-             AlertStyle:=xlValidAlertStop, _
-             Operator:=xlBetween, _
-             Formula1:="=" & listName
-        .IgnoreBlank = True
-        .InCellDropdown = True
-        .ShowInput = True
-        .ShowError = True
-    End With
-    Exit Sub
-
-ApplyFailed:
-    On Error Resume Next
-    wsMonth.Cells(rowNumber, "F").Validation.Delete
-    Err.Clear
-    On Error GoTo SafeExit
-    
-    With wsMonth.Cells(rowNumber, "F").Validation
-        .Add Type:=xlValidateList, _
-             AlertStyle:=xlValidAlertStop, _
-             Operator:=xlBetween, _
-             Formula1:="=" & listRange.Address(External:=True)
-        .IgnoreBlank = True
-        .InCellDropdown = True
-        .ShowInput = True
-        .ShowError = True
-    End With
+    PID_ApplyFStundenListValidation wsMonth, rowNumber, listName, listRange
 
 SafeExit:
 End Sub
@@ -629,6 +709,46 @@ End Sub
 Public Sub PID_ClearStundenValuesCache()
     Set mStundenValuesCache = Nothing
 End Sub
+
+
+Private Function PID_ShouldRefreshAllKVDropdownKeys() As Boolean
+    PID_ShouldRefreshAllKVDropdownKeys = (Not gKVDropdownsDirty) Or mKVDropdownDirtyScopeAll
+End Function
+
+
+Private Function PID_IsKVCodeDirtyRefreshTarget(ByVal dropdownKey As String) As Boolean
+    Dim lookupCode As String
+    
+    If mKVDropdownDirtyScopeAll Then
+        PID_IsKVCodeDirtyRefreshTarget = True
+        Exit Function
+    End If
+    
+    If mDirtyKVCodes Is Nothing Then Exit Function
+    If mDirtyKVCodes.Count = 0 Then Exit Function
+    
+    If dropdownKey = "__TEMPLATE__" Then
+        lookupCode = NormalizeKVCodeForLookup(PID_GetTemplateKVCodeForStundenDropdown())
+    Else
+        lookupCode = dropdownKey
+    End If
+    
+    PID_IsKVCodeDirtyRefreshTarget = CollectionHasKey_KVDropdown(mDirtyKVCodes, lookupCode)
+End Function
+
+
+Private Function PID_GetKVCodeSlotIndexInSheet(ByVal allKeys As Collection, ByVal key As String) As Long
+    Dim i As Long
+    
+    For i = 1 To allKeys.Count
+        If CStr(allKeys(i)) = key Then
+            PID_GetKVCodeSlotIndexInSheet = i
+            Exit Function
+        End If
+    Next i
+    
+    PID_GetKVCodeSlotIndexInSheet = 1
+End Function
 
 
 Private Sub PID_StoreStundenValuesInCache(ByVal cacheKey As String, ByVal values As Collection)
@@ -768,6 +888,47 @@ SafeExit:
 End Sub
 
 
+Public Sub PID_RemoveLegacyKVDDNamedRanges()
+    Dim i As Long
+    Dim nameText As String
+    
+    On Error Resume Next
+    
+    For i = ThisWorkbook.Names.Count To 1 Step -1
+        nameText = CStr(ThisWorkbook.Names(i).Name)
+        
+        If InStr(1, nameText, "KV_DD_", vbTextCompare) > 0 Then
+            ThisWorkbook.Names(i).Delete
+        End If
+    Next i
+    
+    On Error GoTo 0
+End Sub
+
+
+Public Function PID_CountKVDDNamedRanges() As Long
+    Dim i As Long
+    Dim nameText As String
+    Dim countNames As Long
+    
+    countNames = 0
+    
+    On Error Resume Next
+    
+    For i = 1 To ThisWorkbook.Names.Count
+        nameText = CStr(ThisWorkbook.Names(i).Name)
+        
+        If InStr(1, nameText, "KV_DD_", vbTextCompare) > 0 Then
+            countNames = countNames + 1
+        End If
+    Next i
+    
+    On Error GoTo 0
+    PID_CountKVDDNamedRanges = countNames
+End Function
+
+
+' Legacy row-based name — only for detecting old F-validations until migrated (FP-006).
 Public Function GetDropdownNameForMonthRow(ByVal sheetName As String, ByVal rowNumber As Long) As String
     Dim safeName As String
     
@@ -1207,10 +1368,7 @@ Public Function PID_RowHasValidFStundenDropdown(ByVal wsMonth As Worksheet, ByVa
     On Error GoTo 0
     
     If InStr(1, validationFormula, "#REF", vbTextCompare) > 0 Then Exit Function
-    If InStr(1, validationFormula, "KV_DD_", vbTextCompare) = 0 _
-       And InStr(1, validationFormula, "KV_DG_", vbTextCompare) = 0 Then
-        Exit Function
-    End If
+    If InStr(1, validationFormula, "KV_DG_", vbTextCompare) = 0 Then Exit Function
     
     PID_RowHasValidFStundenDropdown = True
 End Function

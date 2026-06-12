@@ -568,7 +568,7 @@ Public Sub DeleteCustomKVMonatsstunden()
     FormatKVPeriodArea wsKV
     PID_EnsureLOHNTABELLEButtons
     
-    MarkAllKVDropdownsDirty
+    MarkKVDropdownDirtyForKVCode selectedKVCode
     MarkAllKVLohnDirty
     
     GoTo CleanExit
@@ -809,7 +809,7 @@ Public Sub AddCustomKVMonatsstunden()
     PID_MarkCustomKVHourRow wsKV, insertRow
     PID_EnsureLOHNTABELLEButtons
     
-    MarkAllKVDropdownsDirty
+    MarkKVDropdownDirtyForKVCode selectedKVCode
     MarkAllKVLohnDirty
     
     GoTo CleanExit

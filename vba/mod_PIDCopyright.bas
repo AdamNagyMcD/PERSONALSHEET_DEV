@@ -103,7 +103,7 @@ Private Function PID_GetCopyrightRangeAddress(ByVal ws As Worksheet) As String
     End If
     
     If StrComp(ws.Name, PID_FLUKTUATION_SHEET, vbTextCompare) = 0 Then
-        PID_GetCopyrightRangeAddress = "A3:D3"
+        PID_GetCopyrightRangeAddress = "A19"
         Exit Function
     End If
     
@@ -118,6 +118,17 @@ Private Function PID_GetCopyrightHorizontalAlignment(ByVal ws As Worksheet) As L
     End If
     
     If StrComp(ws.Name, PID_FLUKTUATION_SHEET, vbTextCompare) = 0 Then
+        PID_GetCopyrightHorizontalAlignment = xlHAlignLeft
+        Exit Function
+    End If
+    
+    ' S2 (Monatsblatt) und L2 (LOHNTABELLE) linksbuendig.
+    If PID_IsWorkerMonthSheet(ws) Then
+        PID_GetCopyrightHorizontalAlignment = xlHAlignLeft
+        Exit Function
+    End If
+    
+    If StrComp(ws.Name, PID_LOHNTABELLE_SHEET, vbTextCompare) = 0 Then
         PID_GetCopyrightHorizontalAlignment = xlHAlignLeft
         Exit Function
     End If

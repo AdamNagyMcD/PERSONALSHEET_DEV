@@ -11,7 +11,7 @@ Hasznalat minden etterembe kikerulo verzio elott.
 | Erledigt (Basis) | FP-001–FP-004, Smoke + manuelle Tests Excel 2016 grün/gelb (2026-05) |
 | Erledigt (v1.0-Code) | FP-017–FP-022 inkl. FP-018 KV-Ladezeit (Bulk) — manuell nach Import prüfen |
 | Erledigt (v1.0-Code) | FP-023 Copyright Adam Nagy / McOpCo — nach Import prüfen |
-| Optional / danach | Schutz-Paket FP-011–FP-016, Performance FP-005–FP-010 (Windows-Messung) |
+| Optional / danach | Schutz-Paket FP-011–FP-016, Performance FP-005–FP-010 (`docs/PERFORMANCE_BASELINE.md`, Makro `PID_RunPerformanceBaseline`) |
 
 **Magyarul:** Az első éttermi kiadás akkor jön, ha a fenti FP-017–FP-022 kész — utána ez a checklista + tagelt `Personalsheet.xlsm`.
 

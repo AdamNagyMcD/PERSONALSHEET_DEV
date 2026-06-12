@@ -684,6 +684,7 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     ws.Range("M3:N82").Value = arrMN
     
     PID_SortMonthSheet ws
+    PID_MSRestoreEmployeeRowIndexColumn ws
     PID_ApplyMonthEmployeeZebraRows ws
     
     ' Panel vor Formel-Restore: RestoreFormulas darf den Panel-Block nicht blockieren.
@@ -702,6 +703,7 @@ Private Sub PID_WriteMonthData(ByVal targetSheetName As String, _
     
     If PID_APPLY_FORMATS_DURING_COPY Then
         PID_ApplyMonthSheetFormats ws
+        PID_ApplyMonthSheetEmployeeRowLayout ws
     End If
     
     PID_ReprotectWorksheet ws

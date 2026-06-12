@@ -29,6 +29,10 @@ Private Const PID_MS_DATE_COLUMN_WIDTH As Double = 13
 Private Const PID_MS_AUSTRITTSGRUND_COL_WIDTH As Double = 34
 Private Const PID_MS_AUSTRITTSGRUND_MIN_ROW_HEIGHT As Single = 18
 Private Const PID_MS_AUSTRITTSGRUND_MAX_ROW_HEIGHT As Single = 72
+Private Const PID_MS_ROW_INDEX_COL_WIDTH As Double = 3.82
+Private Const PID_MS_ROW_INDEX_NUMBER_FORMAT As String = "@"
+Private Const PID_MS_EMPLOYEE_HEADER_FIRST_COL As Long = 1
+Private Const PID_MS_EMPLOYEE_HEADER_LAST_COL As Long = 14
 
 
 Public Sub EnsureMonthSheetCopyDataButtons()
@@ -140,7 +144,7 @@ Public Sub FormatAllMonthSheets()
             If Not ws Is Nothing Then
                 If PID_IsWorkerMonthSheet(ws) Then
                     PID_MSCopyMonthFormatsFromReference wsRef, ws
-                    PID_ApplyMonthSheetAustrittsgrundLayout ws
+                    PID_ApplyMonthSheetEmployeeRowLayout ws
                     PID_MSEnsureAktualisierungButtonOnSheet ws
                     countDone = countDone + 1
                 End If
@@ -239,12 +243,17 @@ Private Sub PID_MSCopyMonthFormatsFromReference(ByVal wsRef As Worksheet, ByVal 
     wsTarget.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo 0
     
-    ' E/F auslassen: xlPasteFormats kopiert Locked und loescht Data Validation.
-    PID_MSCopyRangeFormats wsRef.Range("B1:D82"), wsTarget.Range("B1:D82")
-    PID_MSCopyRangeFormats wsRef.Range("G1:N82"), wsTarget.Range("G1:N82")
-    PID_MSCopyRangeFormats wsRef.Range("O3:V50"), wsTarget.Range("O3:V50")
+    PID_MSCopyMonthEmployeeHeaderFromReference wsRef, wsTarget
+    
+    ' Nur Datenzeilen: Zeile 1-2 sind bereits per Header-Kopie gesetzt (Merge!).
+    ' E3:F82 auslassen: xlPasteFormats kopiert Locked und loescht Data Validation.
+    PID_MSCopyRangeFormatsMergeSafe wsRef.Range("A3:A82"), wsTarget.Range("A3:A82")
+    PID_MSCopyRangeFormatsMergeSafe wsRef.Range("B3:D82"), wsTarget.Range("B3:D82")
+    PID_MSCopyRangeFormatsMergeSafe wsRef.Range("G3:N82"), wsTarget.Range("G3:N82")
+    PID_MSApplyRightPanelReferenceStyles wsTarget
     PID_MSCopyPanelTailFormatsFromReference wsRef, wsTarget
     PID_MSRestoreMonthSheetDropdowns wsTarget
+    PID_MSApplyEmployeeBlockStyles wsTarget
     PID_MSEnsureAktualisierungButtonOnSheet wsTarget
     PID_ApplyMonthSheetDateColumnWidths wsTarget
     
@@ -274,6 +283,19 @@ Private Sub PID_MSCopyRangeFormats(ByVal sourceRange As Range, ByVal targetRange
 End Sub
 
 
+Private Sub PID_MSCopyRangeFormatsMergeSafe(ByVal sourceRange As Range, ByVal targetRange As Range)
+    If sourceRange Is Nothing Then Exit Sub
+    If targetRange Is Nothing Then Exit Sub
+    
+    On Error Resume Next
+    targetRange.UnMerge
+    Err.Clear
+    On Error GoTo 0
+    
+    PID_MSCopyRangeFormats sourceRange, targetRange
+End Sub
+
+
 Private Sub PID_MSCopyPanelTailFormatsFromReference(ByVal wsRef As Worksheet, ByVal wsTarget As Worksheet)
     Dim tailRef As Range
     Dim tailTarget As Range
@@ -281,8 +303,13 @@ Private Sub PID_MSCopyPanelTailFormatsFromReference(ByVal wsRef As Worksheet, By
     Set tailRef = wsRef.Range(PID_MS_PANEL_TAIL_RANGE)
     Set tailTarget = wsTarget.Range(PID_MS_PANEL_TAIL_RANGE)
     
+    On Error Resume Next
+    tailTarget.UnMerge
     tailTarget.ClearFormats
-    PID_MSCopyRangeFormats tailRef, tailTarget
+    Err.Clear
+    On Error GoTo 0
+    
+    PID_MSCopyRangeFormatsMergeSafe tailRef, tailTarget
 End Sub
 
 
@@ -306,7 +333,117 @@ Private Sub PID_MSApplyReferenceLayout(ByVal ws As Worksheet)
     PID_MSApplyEmployeeBlockStyles ws
     PID_MSApplyRightPanelReferenceStyles ws
     PID_ApplyMonthSheetDateColumnWidths ws
+    PID_ApplyMonthSheetEmployeeRowLayout ws
+End Sub
+
+
+' Sorszahlen in Spalte A (1., 2., ...) und einheitliche Datenzeilenhoehe.
+Public Sub PID_ApplyMonthSheetEmployeeRowLayout(ByVal ws As Worksheet)
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    PID_ApplyMonthSheetRowIndexColumnLayout ws
+    PID_MSRestoreEmployeeRowIndexColumn ws
+    ws.Rows(PID_FIRST_ROW & ":" & PID_LAST_ROW).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
     PID_ApplyMonthSheetAustrittsgrundLayout ws
+End Sub
+
+
+' Spalte A: schmal, Textformat (@), kein Datum — Referenz Januar (OOXML).
+Public Sub PID_ApplyMonthSheetRowIndexColumnLayout(ByVal ws As Worksheet)
+    Dim indexRange As Range
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    ws.Columns("A").ColumnWidth = PID_MS_ROW_INDEX_COL_WIDTH
+    
+    ' A1 (Monatsindex) Schriftfarbe #DDEBF7 — auf der Kopfband-Farbe unauffaellig.
+    ws.Range("A1").Font.Color = RGB(221, 235, 247)
+    
+    Set indexRange = ws.Range("A" & PID_FIRST_ROW & ":A" & PID_LAST_ROW)
+    indexRange.NumberFormat = PID_MS_ROW_INDEX_NUMBER_FORMAT
+    indexRange.HorizontalAlignment = xlCenter
+    indexRange.VerticalAlignment = xlCenter
+End Sub
+
+
+Public Sub PID_MSRestoreEmployeeRowIndexColumn(ByVal ws As Worksheet)
+    Dim r As Long
+    Dim indexRange As Range
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    Set indexRange = ws.Range("A" & PID_FIRST_ROW & ":A" & PID_LAST_ROW)
+    indexRange.NumberFormat = PID_MS_ROW_INDEX_NUMBER_FORMAT
+    
+    For r = PID_FIRST_ROW To PID_LAST_ROW
+        ws.Cells(r, PID_MS_EMPLOYEE_HEADER_FIRST_COL).Value = _
+            CStr(r - PID_FIRST_ROW + 1) & "."
+    Next r
+End Sub
+
+
+Private Sub PID_MSCopyMonthEmployeeHeaderFromReference(ByVal wsRef As Worksheet, ByVal wsTarget As Worksheet)
+    Dim savedMonthIndex As Variant
+    
+    If wsRef Is Nothing Then Exit Sub
+    If wsTarget Is Nothing Then Exit Sub
+    
+    savedMonthIndex = wsTarget.Range("A1").Value2
+    
+    On Error Resume Next
+    wsTarget.Range("B1:N2").UnMerge
+    Err.Clear
+    On Error GoTo 0
+    
+    wsRef.Range("B1:N2").Copy
+    wsTarget.Range("B1:N2").PasteSpecial Paste:=xlPasteAll
+    Application.CutCopyMode = False
+    
+    PID_MSCopyRangeFormatsMergeSafe wsRef.Range("A1:A2"), wsTarget.Range("A1:A2")
+    wsTarget.Range("A1").Value2 = savedMonthIndex
+End Sub
+
+
+Private Sub PID_MSEnsureEmployeeColumnHeaderMerges(ByVal ws As Worksheet)
+    Dim col As Long
+    Dim headerRange As Range
+    Dim topText As String
+    Dim bottomText As String
+    Dim savedMonthIndex As Variant
+    
+    If ws Is Nothing Then Exit Sub
+    
+    savedMonthIndex = ws.Range("A1").Value2
+    
+    On Error Resume Next
+    ws.Range("A1:N2").UnMerge
+    On Error GoTo 0
+    
+    For col = PID_MS_EMPLOYEE_HEADER_FIRST_COL To PID_MS_EMPLOYEE_HEADER_LAST_COL
+        topText = Trim$(CStr(ws.Cells(1, col).Value2))
+        bottomText = Trim$(CStr(ws.Cells(2, col).Value2))
+        
+        Set headerRange = ws.Range(ws.Cells(1, col), ws.Cells(2, col))
+        headerRange.Merge
+        
+        If col = PID_MS_EMPLOYEE_HEADER_FIRST_COL Then
+            ws.Cells(1, col).Value2 = savedMonthIndex
+        ElseIf Len(topText) > 0 And Len(bottomText) > 0 Then
+            If Right$(topText, 1) = "-" Then
+                ws.Cells(1, col).Value = topText & bottomText
+            Else
+                ws.Cells(1, col).Value = topText & " " & bottomText
+            End If
+        ElseIf Len(topText) = 0 And Len(bottomText) > 0 Then
+            ws.Cells(1, col).Value = bottomText
+        End If
+        
+        ws.Cells(1, col).HorizontalAlignment = xlCenter
+        ws.Cells(1, col).VerticalAlignment = xlCenter
+    Next col
 End Sub
 
 
@@ -316,23 +453,26 @@ Private Sub PID_MSApplyEmployeeBlockStyles(ByVal ws As Worksheet)
     
     ws.Rows("1:2").RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
     
-    For col = 2 To 14
+    PID_MSEnsureEmployeeColumnHeaderMerges ws
+    
+    For col = PID_MS_EMPLOYEE_HEADER_FIRST_COL To PID_MS_EMPLOYEE_HEADER_LAST_COL
         Set headerCell = ws.Cells(1, col)
-        If headerCell.MergeCells Then
-            PID_StyleApplyCompactHeaderBand headerCell.MergeArea
-        Else
-            PID_StyleApplyCompactHeaderBand ws.Range(ws.Cells(1, col), ws.Cells(2, col))
-        End If
+        PID_StyleApplyCompactHeaderBand headerCell.MergeArea
     Next col
     
+    PID_MSRestoreEmployeeRowIndexColumn ws
+    ws.Rows(PID_FIRST_ROW & ":" & PID_LAST_ROW).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
+    
+    PID_ApplyMonthSheetRowIndexColumnLayout ws
     PID_ApplyMonthEmployeeZebraRows ws
     
+    ws.Range("A3:A82").HorizontalAlignment = xlCenter
     ws.Range("B3:N82").HorizontalAlignment = xlCenter
     ws.Range("B3:C82").HorizontalAlignment = xlLeft
     ws.Range("M3:N82").HorizontalAlignment = xlLeft
     
-    PID_MSApplyBlockBorders ws.Range("B1:N2")
-    PID_MSApplyBlockBorders ws.Range("B3:N82")
+    PID_MSApplyBlockBorders ws.Range("A1:N2")
+    PID_MSApplyBlockBorders ws.Range("A3:N82")
 End Sub
 
 

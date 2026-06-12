@@ -130,7 +130,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         PID_EnsureSheetProtectionForMacros Sh
         RefreshFluktuationIfDirty
         Application.ScreenUpdating = True
-        PID_EnsureFluktuationPdfExportButtonIfNeeded
+        PID_RemoveFluktuationPdfExportButtonIfNeeded
         GoTo SafeExit
     End If
     
@@ -215,7 +215,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
             
             ' F-Dropdown nur bei Struktur/Stunden-Aenderung (D:G), nicht bei Monatslohn (H) allein.
             If Not Intersect(Target, Sh.Range("D4:G500")) Is Nothing Then
-                MarkAllKVDropdownsDirty
+                MarkKVDropdownDirtyFromLOHNTABELLERange Sh, Target
             End If
         End If
         

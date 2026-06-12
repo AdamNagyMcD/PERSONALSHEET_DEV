@@ -133,7 +133,7 @@ Umsetzung und Messung bewusst **spaeter auf Windows** — Mac-Regressionen weite
 
 ## FP-005 — Performance: F-Dropdown dirty-Refresh nur betroffene Zeilen
 
-**Status:** Offen  
+**Status:** Erledigt (2026-06-12) — Windows: scoped 0,15 s vs Voll 0,52 s  
 **Priorität:** Hoch (beste ROI nach FP-004)  
 **Plattform-Ziel:** Windows (Referenz-Messung), Mac smoke  
 **Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, `DieseArbeitsmappe.cls`
@@ -150,10 +150,18 @@ Nach `MarkAllKVDropdownsDirty` baut `RefreshKVStundenDropdownForSheet` beim erst
 
 ### Akzeptanzkriterien
 
-- [ ] Nach Eigene Stunden + Monats-Tab: neue Stunde in F ohne E-Re-Select (Regression FP-004).
-- [ ] Erster Monats-Tab nach dirty spuerbar schneller als Voll-80-Zeilen-Refresh (Zeit messen vor/nach).
-- [ ] Workbook-Open weiterhin ohne 12× F-Rebuild.
-- [ ] Mac + Windows Excel 2016+.
+- [x] Nach Eigene Stunden + Monats-Tab: neue Stunde in F ohne E-Re-Select (Regression FP-004) — Windows OK (2026-06-12).
+- [x] Erster Monats-Tab nach scoped dirty spuerbar schneller: **0,15 s** (2b) vs **0,51 s** Baseline / **0,52 s** Voll-Refresh.
+- [x] Workbook-Open weiterhin ohne 12× F-Rebuild (lazy dirty unveraendert).
+- [ ] Mac smoke (Excel 2016+).
+
+### Umsetzung (2026-06-12)
+
+- `MarkKVDropdownDirtyForKVCode` / `MarkKVDropdownDirtyFromLOHNTABELLERange` — scoped dirty statt immer `MarkAllKVDropdownsDirty`.
+- `RefreshKVStundenDropdownForSheetBulk` — nur betroffene KV-Codes/Zeilen; Helper-Spalten bleiben fuer unberuehrte Codes erhalten.
+- `AddCustomKVMonatsstunden` / `DeleteCustomKVMonatsstunden` — scoped dirty fuer gewaehlten KV-Code.
+- `DieseArbeitsmappe` LOHNTABELLE D4:G — KV-Code aus geaenderten Zeilen.
+- FP-010 Schritt **2b** misst scoped dirty (BG1, Februar).
 
 ### Betroffene Dateien (Referenz)
 
@@ -164,7 +172,7 @@ Nach `MarkAllKVDropdownsDirty` baut `RefreshKVStundenDropdownForSheet` beim erst
 
 ## FP-006 — Performance: weniger Workbook Named Ranges (`KV_DD_*`)
 
-**Status:** Offen  
+**Status:** Erledigt (2026-06-12) — `PID_CountKVDDNamedRanges` = 0 nach FullSystemRefresh (Windows)  
 **Priorität:** Mittel — grosser Refactor, langfristig Open/Save  
 **Plattform-Ziel:** Windows (viele Names = spuerbar bei Open/Save)  
 **Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, Workbook-Names
@@ -180,10 +188,11 @@ Pro Monatszeile ein Name `KV_DD_<Sheet>_<Row>` (ca. 80 × 12 ≈ 960 Names). Bel
 
 ### Akzeptanzkriterien
 
-- [ ] F-Dropdown funktioniert auf allen Monatsblaettern (inkl. Merge in Panel-Naehe irrelevant fuer F).
-- [ ] Anzahl `KV_DD_*` Names deutlich reduziert oder ersetzt.
-- [ ] Open/Save-Zeit verbessert (vor/nach messen auf Windows).
-- [ ] Keine Regression CopyData / E-F-Overrides.
+- [x] F-Dropdown funktioniert (E/F-Test + FP-004/FP-005 weiter OK).
+- [x] `KV_DD_*` Names entfernt — `PID_CountKVDDNamedRanges` = **0** (2026-06-12).
+- [ ] Open/Save-Zeit verbessert (vor/nach messen auf Windows) — optional MANU-Baseline.
+- [ ] Mac smoke.
+- [ ] Keine Regression CopyData — bei Gelegenheit pruefen.
 
 ### Betroffene Dateien (Referenz)
 
@@ -269,24 +278,32 @@ Jede Auswahl in D3:F82 setzt `ScreenUpdating = False` und prueft E/F-Dropdown-Va
 
 ## FP-010 — Performance: Mess-Protokoll Windows
 
-**Status:** Offen (Voraussetzung fuer FP-005–009 Priorisierung)  
-**Priorität:** Hoch — vor Implementierung  
+**Status:** In Arbeit (2026-06-12) — `docs/PERFORMANCE_BASELINE.md` + Makro `PID_RunPerformanceBaseline`  
+**Priorität:** Hoch — vor Implementierung FP-005–009  
 **Plattform-Ziel:** Windows, leistungsstarker PC, Produktionsnahes Workbook
 
-### Checkliste Messung (Stopuhr / StatusBar)
+### Werkzeuge
 
-1. Cold Open (Manual Calc) bis erster Monats-Tab nutzbar.
-2. LOHNTABELLE → Eigene Stunden → erster Monats-Tab (F-Dropdown oeffnen).
-3. Eine Zelle E/F aendern (Reaktionszeit bis G stabil).
-4. CopyData Januar → Dezember (Dauer).
-5. UEBERSICHT-Tab nach FINANZIELL-Aenderung.
-6. Save mit `gFluktuationDirty = True`.
-7. Optional: `FullSystemRefresh` als Admin-Referenz (nicht Alltags-KPI).
+- **Doku:** `docs/PERFORMANCE_BASELINE.md` (Tabellen fuer Baseline + Re-Messung)
+- **Makro:** `PID_RunPerformanceBaseline` / `RunPerformanceBaseline` — AUTO-Schritte 2–7, Log-Blatt `PID_PERFORMANCE_LOG` (very hidden)
+
+### Checkliste Messung
+
+| # | Schritt | Methode |
+|---|---------|---------|
+| 1 | Cold Open bis erster Monats-Tab nutzbar | MANU (Stoppuhr) |
+| 2 | LOHNTABELLE → Eigene Stunden → erster Monats-Tab | MANU + AUTO (KV-Refresh Proxy) |
+| 3 | E/F-Aenderung → G stabil | MANU + AUTO (G-Recalc 1 Zeile) |
+| 4 | CopyData Januar → Dezember | MANU (Testkopie!) |
+| 5 | UEBERSICHT nach FINANZIELL-Aenderung | AUTO (`PID_SyncFinanzSummaryToUbersicht`) |
+| 6 | Save mit `gFluktuationDirty = True` | MANU + AUTO (Fluktuation-Refresh) |
+| 7 | `FullSystemRefresh` (Admin-Referenz) | AUTO |
 
 ### Ergebnis
 
-- [ ] Baseline-Zeiten in diesem Eintrag oder `docs/RELEASE.md` Notiz festhalten.
-- [ ] Nach jedem FP-00x-Fix: gleiche Schritte wiederholen.
+- [x] Erste Windows-Baseline AUTO in `docs/PERFORMANCE_BASELINE.md` (2026-06-12: KV 0,51 s, G 0,02 s, FINANZ 0,11 s, Fluktuation 1,24 s, FullRefresh 8,18 s).
+- [ ] MANU-Schritte (Cold Open, CopyData, Save) noch dokumentieren.
+- [ ] Nach jedem FP-005–009-Fix: gleiche Schritte wiederholen.
 
 ---
 
@@ -794,37 +811,10 @@ Nach jedem Öffnen stand Excel auf **Manuelle Berechnung**; Spalten **H, K, L** 
 
 ---
 
-## FP-025 — FLUKTUATION: PDF-Export-Button sichtbar (Mac Excel 2016)
+## FP-025 — FLUKTUATION: PDF-Export (storniert)
 
-**Status:** Offen  
-**Priorität:** Mittel — PDF-Export funktioniert per Makro, Button fehlt auf Mac  
-**Betroffene Bereiche:** `mod_BuildFluktuationAnalyse.bas`, `DieseArbeitsmappe.cls`
-
-### Beobachtetes Verhalten (2026-05-26)
-
-Auf **Excel 2016 Mac** erscheint der Shape-Button `btn_FluktuationPdfExport` nach `RefreshFluktuationAll` / Tab-Activate **nicht** in der Titelzeile (A1:E1), obwohl das Makro `ExportFluktuationSheetToPDF` per VBA existiert. Mehrere Ansätze (E2/A1-Position, ScreenUpdating, Akzent-Farbe, Form-Control) teils compile-blockiert auf Mac.
-
-### PDF-Layout (Feintuning, optional gleiche FP)
-
-- Querformat-PDF grundsätzlich nutzbar; rechte Tabellen-Marge / Monats-Hinweis-Zeilenhöhe manuell abgestimmt.
-- Spaltenbreiten A–N in `PID_FL_COL_*` fixiert; weitere manuelle Anpassung + PDF-Proof offen.
-
-### Geplanter Ansatz
-
-- Mac: Button-Geometrie nur bei `ScreenUpdating=True` + `ws.Activate`; Position an LOHNTABELLE-Vorbild (A2:J2-Band) oder feste Punkte testen.
-- Fallback: sichtbarer **Hyperlink/Zelle** in E2 („PDF Export“) statt Shape, falls Mac-Shapes weiter unsichtbar.
-- Windows Excel 2016: Regression mit Shape-Button.
-
-### Akzeptanzkriterien
-
-- [ ] Nach Import + `RefreshFluktuationAll`: gelber **PDF Export**-Button rechts in Zeile 1 sichtbar und klickbar (Mac Excel 2016).
-- [ ] PDF-Export erzeugt lesbares Querformat-PDF ohne abgeschnittene Monats-Hinweis-Spalte.
-- [ ] Kein VBA-Compile-Fehler auf Mac (kein `DisplayDrawingObjects`, kein `PageSetup.PageWidth` auf Worksheet).
-
-### Betroffene Dateien
-
-- `vba/mod_BuildFluktuationAnalyse.bas`
-- `vba/DieseArbeitsmappe.cls`
+**Status:** Storniert (2026-06-12) — Feature und zugehöriger VBA-Code entfernt  
+**Grund:** PDF-Export auf FLUKTUATION wird nicht benötigt; Button und Makro `ExportFluktuationSheetToPDF` gelöscht. Legacy-Shape `btn_FluktuationPdfExport` wird bei Refresh/Tab-Activate entfernt.
 
 ---
 

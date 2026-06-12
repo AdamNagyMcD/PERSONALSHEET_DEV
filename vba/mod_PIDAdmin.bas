@@ -30,6 +30,7 @@ Public Sub PID_ShowAdminMacroInfo()
     msg = msg & "- FullSystemRefresh / PID_FullSystemRefresh" & vbCrLf
     msg = msg & "- PID_QuickSystemCheck" & vbCrLf
     msg = msg & "- PID_RunSystemSmokeCheck" & vbCrLf
+    msg = msg & "- PID_RunPerformanceBaseline (FP-010)" & vbCrLf
     msg = msg & "- RebuildLOHNTABELLE" & vbCrLf
     msg = msg & "- UnprotectEverything" & vbCrLf & vbCrLf
     msg = msg & "Siehe docs/RELEASE.md"

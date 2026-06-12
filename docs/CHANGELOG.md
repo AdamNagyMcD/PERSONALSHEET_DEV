@@ -3,9 +3,26 @@
 ## Unreleased
 
 ### Added
+- docs/PERFORMANCE_BASELINE.md + mod_PerformanceBaseline.bas: FP-010 Windows-Messprotokoll und Admin-Makro `PID_RunPerformanceBaseline`.
+
+### Changed
+- mod_KVStundenDropdown.bas (FP-005): scoped KV-dirty-Refresh — nur betroffene KV-Codes/Zeilen statt 80× F-Rebuild; `MarkKVDropdownDirtyForKVCode`, `MarkKVDropdownDirtyFromLOHNTABELLERange`. Windows-Messung: scoped 0,15 s vs Voll 0,52 s (Baseline 0,51 s).
+- mod_AddNewKVPeriodOnTop.bas: Eigene Stunden hinzufuegen/loeschen markiert nur den gewaehlten KV-Code dirty.
+- DieseArbeitsmappe.cls: LOHNTABELLE D4:G-Aenderung → KV-Code aus geaenderten Zeilen.
+- mod_PerformanceBaseline.bas: Baseline-Schritt 2b (scoped dirty BG1).
+- mod_KVStundenDropdown.bas (FP-006): `RefreshKVStundenDropdownForRow` nutzt `KV_DG_*` pro KV-Code; `PID_RemoveLegacyKVDDNamedRanges` bei `RefreshAllMonthKVStundenDropdowns`. Verifiziert: `PID_CountKVDDNamedRanges` = 0.
+
+### Removed
+- mod_BuildFluktuationAnalyse.bas + DieseArbeitsmappe.cls: FLUKTUATION PDF-Export (Button, Makro, Export-Hilfen) entfernt; Legacy-Button wird bei Refresh gelöscht (FP-025 storniert).
+
+### Added
 - mod_PIDCopyright.bas: Copyright-Hinweis Zeile 2 rechts (sichtbar beim Tab-Öffnen, ohne PageSetup/Shape); VBA-Modul-Kopf Adam Nagy / McOpCo (FP-023).
 
 ### Fixed
+- mod_PIDCopyright.bas: Copyright S2 (Monatsblatt) und L2 (LOHNTABELLE) linksbuendig; FLUKTUATION-Copyright nach A19 (alt A3:D3 wird bereinigt).
+- mod_FormatMonthSheet.bas: A1 (Monatsindex) Schriftfarbe #DDEBF7 auf allen Monatsblaettern.
+- mod_FormatMonthSheet.bas: FormatAllMonthSheets merge-sicher (kein Format-Paste auf verbundene Kopf-/Panel-Zellen; Fehler 1004 behoben).
+- mod_FormatMonthSheet.bas + mod_CopyData.bas: Monatsblatt-Kopfzeilen A–N vertikal (Zeile 1+2) zusammengeführt; Spalte A Sorszahlen 1./2./… als Text (@), schmale Breite; A1 Monatsindex bleibt beim Format-Kopieren erhalten.
 - mod_PIDCopyright.bas: UEBERSICHT copyright B24 statt B25; kein blindes UnMerge fremder FINANZIELL/DURCHRECHNUNG-Merges bei FullSystemRefresh.
 - mod_BuildFluktuationDaten/Analyse.bas: Austritte gesamt = Summe Monatstabelle (Dedup, Jahresfilter, Gesamt-Zeile); PDF-Export-Button auf FLUKTUATION.
 - mod_BuildFluktuationAnalyse.bas: PDF Export Mac/Win — GetSaveAsFilename ohne benannte Parameter, MacScript-Fallback.
