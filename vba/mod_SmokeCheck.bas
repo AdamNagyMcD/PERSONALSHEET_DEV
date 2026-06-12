@@ -125,6 +125,18 @@ Public Sub PID_RunSystemSmokeCheck()
     PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
     nextRow = nextRow + 1
     
+    statusText = PID_EvaluateTest17(details)
+    manualSteps = PID_GetManualStepsForTest(17, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 17 - Month Sheet Lock Policy", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
+    statusText = PID_EvaluateTest18(details)
+    manualSteps = PID_GetManualStepsForTest(18, statusText)
+    PID_WriteSmokeResult ws, nextRow, "TEST 18 - Q12 Vormonat Lock Rules", statusText, details, manualSteps
+    PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
+    nextRow = nextRow + 1
+    
     PID_FinalizeSmokeSheet ws, nextRow - 1
     
     MsgBox "System Smoke Check abgeschlossen." & vbCrLf & vbCrLf & _
@@ -613,7 +625,80 @@ NoAccess:
 End Function
 
 
-Private Function PID_BasicMonthStructureOk() As Boolean
+Private Function PID_EvaluateTest17(ByRef details As String) As String
+    Dim ws As Worksheet
+    Dim failList As String
+    
+    On Error GoTo Fail
+    
+    Set ws = ThisWorkbook.Worksheets("Januar")
+    
+    If ws.Range("G" & PID_FIRST_ROW).Locked = False Then
+        details = "G3 auf Januar ist entsperrt — Lock-Policy nicht aktiv."
+        PID_EvaluateTest17 = "FAIL"
+        Exit Function
+    End If
+    
+    If ws.Range("E" & PID_FIRST_ROW).Locked Then
+        details = "E3 auf Januar ist gesperrt — Whitelist fehlt."
+        PID_EvaluateTest17 = "FAIL"
+        Exit Function
+    End If
+    
+    If ws.Range("B" & PID_FIRST_ROW).Locked Then
+        details = "B3 auf Januar ist gesperrt — Whitelist (B/C) fehlt."
+        PID_EvaluateTest17 = "FAIL"
+        Exit Function
+    End If
+    
+    If ws.Range("I" & PID_FIRST_ROW).Locked Then
+        details = "I3 auf Januar ist gesperrt — Whitelist (I/J) fehlt."
+        PID_EvaluateTest17 = "FAIL"
+        Exit Function
+    End If
+    
+    details = "Januar: G3 gesperrt, E3/B3/I3 entsperrt. Lock-Policy aktiv."
+    PID_EvaluateTest17 = "PASS"
+    Exit Function
+
+Fail:
+    details = "Blatt Januar nicht lesbar. FullSystemRefresh ausfuehren."
+    PID_EvaluateTest17 = "FAIL"
+End Function
+
+
+Private Function PID_EvaluateTest18(ByRef details As String) As String
+    Dim wsStart As Worksheet
+    Dim wsNormal As Worksheet
+    
+    On Error GoTo Fail
+    
+    Set wsStart = ThisWorkbook.Worksheets("Februar")
+    Set wsNormal = ThisWorkbook.Worksheets("Januar")
+    
+    If Not wsStart.Range("Q12").Locked Then
+        details = "Q12 auf Februar ist entsperrt — muss gesperrt sein (Durchrechnung-Formel)."
+        PID_EvaluateTest18 = "FAIL"
+        Exit Function
+    End If
+    
+    If wsNormal.Range("Q12").Locked Then
+        details = "Q12 auf Januar ist gesperrt — muss entsperrt sein (Vormonat-Eingabe)."
+        PID_EvaluateTest18 = "FAIL"
+        Exit Function
+    End If
+    
+    details = "Februar Q12 gesperrt (Formel), Januar Q12 entsperrt (Eingabe). Korrekt."
+    PID_EvaluateTest18 = "PASS"
+    Exit Function
+
+Fail:
+    details = "Januar oder Februar nicht lesbar. FullSystemRefresh ausfuehren."
+    PID_EvaluateTest18 = "FAIL"
+End Function
+
+
+
     If PID_CountMonthSheets() <> 12 Then Exit Function
     If Not PID_AllMonthSheetsHaveRange("A1") Then Exit Function
     If Not PID_AllMonthSheetsHaveRange("D" & PID_FIRST_ROW & ":F" & PID_LAST_ROW) Then Exit Function

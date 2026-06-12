@@ -146,7 +146,7 @@
 <body>
 
   <h1>Personalsheet – Kurzanleitung</h1>
-  <p class="subtitle">Für Restaurantleitung · Stand: Mai 2026 · Einfach erklärt – auch wenn Sie mit Excel gerade erst anfangen</p>
+  <p class="subtitle">Für Restaurantleitung · Stand: Juni 2026 · Einfach erklärt – auch wenn Sie mit Excel gerade erst anfangen</p>
 
   <div class="box rules">
     <strong class="title">Die drei wichtigsten Regeln (bitte merken)</strong>
@@ -233,6 +233,11 @@
       <td><strong>N</strong></td>
       <td><strong>Warum</strong> die Person geht (Grund aus Liste)</td>
       <td>Sie – <strong>immer</strong> zusammen mit I</td>
+    </tr>
+    <tr>
+      <td><strong>Q12</strong></td>
+      <td><strong>Vormonat +/– Stunden</strong> – Korrektur aus dem Vormonat (Panel rechts, Zeile 12)</td>
+      <td>Sie – optional, nur bei bestimmten Monaten (Jan, März, Apr, Jun, Jul, Sep, Okt, Dez). In Feb/Mai/Aug/Nov steht dort eine feste Formel – <strong>nicht ändern</strong>.</td>
     </tr>
   </table>
 
@@ -343,8 +348,9 @@
 
   <h2>10. Bitte auf keinen Fall</h2>
   <ul>
-    <li>Spalten <strong>G</strong> oder <strong>H</strong> mit der Tastatur überschreiben (dort rechnet Excel).</li>
-    <li>Von <strong>E</strong> oder <strong>F</strong> mit der Maus <strong>nach unten oder zur Seite ziehen</strong> (Fill-Handle).</li>
+    <li>Spalten <strong>G, H, K, L</strong> mit der Tastatur überschreiben (dort rechnet Excel – die Zellen sind gesperrt und geben eine Meldung).</li>
+    <li>Von <strong>E</strong> oder <strong>F</strong> mit der Maus <strong>nach unten oder zur Seite ziehen</strong> (Fill-Handle). Das ist jetzt blockiert, aber bitte trotzdem vermeiden.</li>
+    <li>In Spalten <strong>sortieren</strong> – Monatsblätter lassen kein Sortieren zu.</li>
     <li>Große Bereiche markieren und <strong>Löschen</strong> oder <strong>Einfügen</strong> – außer Sie wissen genau, was passiert.</li>
     <li>Blätter <strong>umbenennen</strong> oder <strong>löschen</strong> (Januar–Dezember, FLUKTUATION, EINSTELLUNG, LOHNTABELLE).</li>
     <li>Arbeitsjahr in <strong>EINSTELLUNG</strong>, Zelle <strong>C35</strong>, ohne Admin ändern.</li>
@@ -356,6 +362,12 @@
   <div class="box warn">
     <strong class="title">Kurz gesagt</strong>
     <p>Die Datei ist wie ein Formular: <strong>E, F, B, C, D, I, N</strong> ausfüllen – den Rest rechnet Excel. Bei Unsicherheit lieber <strong>einmal fragen</strong> als viel kaputt machen.</p>
+  </div>
+
+  <div class="box">
+    <strong class="title">Blattschutz – warum kann ich manche Zellen nicht anklicken?</strong>
+    <p>Die Monatsblätter sind geschützt: Formelbereiche (G, H, K, L) und Systemfelder lassen keine Eingabe zu – das ist Absicht, kein Fehler. Wenn Sie eine Zelle anklicken und eine Meldung kommt, sind Sie in einem gesperrten Bereich. Einfach in E, F oder B, C, D weiterarbeiten.</p>
+    <p class="small">Bei Problemen: Admin / <strong>FullSystemRefresh</strong> ausführen lassen.</p>
   </div>
 
   <div class="footer">

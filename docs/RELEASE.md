@@ -41,6 +41,14 @@ Lsd. [TEST_CASES.md](../TEST_CASES.md):
 - [ ] **TEST 2** — Exit Employee (Austrittsdatum)
 - [ ] **TEST 3** — Future Employee Survival (backward copy)
 
+## Schutz-Paket ellenorzes (FP-011–FP-013)
+
+- [ ] **TEST 17** — `PID_RunSystemSmokeCheck` → TEST 17 PASS (G3 gesperrt, E3/B3/I3 frei)
+- [ ] **TEST 18** — `PID_RunSystemSmokeCheck` → TEST 18 PASS (Q12: Februar gesperrt, Januar frei)
+- [ ] Manuell: auf Januarblatt E/F-Dropdown laeuft, G nicht editierbar (Meldung erscheint)
+- [ ] Manuell: Sort-Versuch auf Monatsblatt → abgeblockt (Excel-Meldung)
+- [ ] Manuell: Fill-Handle ziehen von E/F funktioniert nicht / ruiniert nichts (FP-011)
+
 ## Vizuális spot-check
 
 - [ ] UEBERSICHT: FINANZIELL blokk, Durchrechnung E30/I30 feher + szerkesztheto

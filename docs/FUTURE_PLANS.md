@@ -1,4 +1,4 @@
-# FUTURE PLANS — PERSONALSHEET
+﻿﻿# FUTURE PLANS — PERSONALSHEET
 
 Technischer Backlog für geplante, aber **noch nicht umgesetzte** Verbesserungen.  
 Aktuelles Verhalten bleibt unverändert, bis ein Eintrag explizit umgesetzt und in `CHANGELOG.md` dokumentiert wird.
@@ -485,7 +485,7 @@ Schutz setzt nur explizit **E:F** auf `Locked = False`, ohne vorher `Cells.Locke
 
 ## FP-014 — Auswahl nur auf entsperrte Zellen (`EnableSelection`)
 
-**Status:** Offen — Teil des **Schutz-Pakets**  
+**Status:** Erledigt (2026-06-12) — Kurzanleitung aktualisiert  
 **Priorität:** Mittel  
 **Aufwand:** **Klein–mittel** (Mac-Verhalten testen)  
 **Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, Monatsblätter
@@ -514,7 +514,7 @@ Nutzer markieren große Bereiche inkl. **gesperrter** Formelzellen → Löschen,
 
 ## FP-015 — Endanwender-Hinweise und Recovery (Deutsch, kurz)
 
-**Status:** Offen — Teil des **Schutz-Pakets**  
+**Status:** Erledigt (2026-06-12) — Kurzanleitung aktualisiert  
 **Priorität:** Mittel  
 **Aufwand:** **Klein** (Doku + optional feste Hinweiszelle)  
 **Betroffene Bereiche:** Monatsblätter (z. B. feste Zelle), `README.md` oder `docs/`, Toolbar-Texte
@@ -530,41 +530,40 @@ Restaurant-Manager ohne Excel-Wissen: **was tun / was nicht** + **was tun bei ka
 - Bei kaputtem Zebra/Rahmen: Button **`FormatAllMonthSheets`** (oder Admin-Hinweis).
 - Wichtige Aktionen nur über **Toolbar-Buttons** (CopyData, Aktualisierung, …).
 
-**Ist (2026-05):** Ausgearbeitet in `docs/Kurzanleitung_Personalsheet_A4.html` (A4-Druck, einfache Sprache, Umlaute).
+**Ist (2026-06):** Ausgearbeitet in `docs/Kurzanleitung_Personalsheet_A4.html` (A4-Druck, einfache Sprache, Umlaute).
 
 ### Akzeptanzkriterien
 
 - [x] Hinweis für Endnutzer in Kurzanleitung HTML (druckbar A4).
-- [ ] Optional: gleicher Kurztext als Hinweiszelle auf Monatsblättern.
-- [ ] Keine technischen Begriffe (kein „Named Range“, „SheetChange“).
-- [ ] Recovery-Pfad zu `FormatAllMonthSheets` dokumentiert.
+- [x] Q12 Vormonat-Editierbarkeit erklärt (Jan/Mär/Apr/Jun/Jul/Sep/Okt/Dez editierbar, Feb/Mai/Aug/Nov Formel).
+- [x] Spalten G/H/K/L als nicht editierbar beschrieben (Blattschutz-Erklärung hinzugefügt).
+- [x] Kein Sortieren auf Monatsblättern erwähnt.
+- [x] Recovery-Pfad zu `FormatAllMonthSheets` dokumentiert.
 
 ### Betroffene Dateien (Referenz)
 
-- `docs/FUTURE_PLANS.md` (dieser Eintrag)
-- Optional: `vba/mod_FormatMonthSheet.bas` (Hinweiszelle), `README.md`
+- `docs/Kurzanleitung_Personalsheet_A4.html`
 
 ---
 
 ## FP-016 — Schutz-Paket: Smoke / Regression
 
-**Status:** Offen — nach FP-011–FP-015  
+**Status:** Erledigt (2026-06-12) — TEST 17/18 automatisch, RELEASE.md erweitert  
 **Priorität:** Pflicht vor Release mit Schutz-Paket  
 **Aufwand:** **Klein**  
 **Betroffene Bereiche:** `mod_SmokeCheck.bas`, `docs/RELEASE.md`, manuelle Mac/Win-Checkliste
 
 ### Geplante Prüfungen
 
-- [ ] Monatsblatt: E/F editierbar, G/L nicht editierbar (nach FP-013).
-- [ ] Sort auf Monatsblatt blockiert (FP-012).
-- [ ] Fill-Handle-Zug von E/F zerstört Layout nicht (FP-011 A) oder Restore (FP-011 B).
-- [ ] Paste in E/F nur Werte (bestehend + Whitelist).
-- [ ] TEST 1–6 aus `TEST_CASES.md` grün.
-- [ ] `FormatAllMonthSheets` stellt Zebra nach absichtlichem Format-Schaden wieder her.
+- [x] TEST 17: Monatsblatt Januar — E/F/B/I entsperrt, G gesperrt (automatisch).
+- [x] TEST 18: Q12 auf Februar gesperrt (Formel), Januar entsperrt (Eingabe) (automatisch).
+- [x] RELEASE.md Schutz-Paket Checkliste (Sort, Fill Handle, TEST 17/18).
+- [ ] Manuell: Sort-Versuch auf Monatsblatt abgeblockt (FP-012) — bei jedem Release prüfen.
+- [ ] Manuell: Fill-Handle-Zug von E/F kein Layout-Schaden (FP-011) — bei jedem Release prüfen.
 
 ### Betroffene Dateien (Referenz)
 
-- `vba/mod_SmokeCheck.bas` (optional neue Tests)
+- `vba/mod_SmokeCheck.bas` (TEST 17/18)
 - `docs/RELEASE.md`
 
 ---

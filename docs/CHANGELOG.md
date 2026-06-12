@@ -17,6 +17,8 @@
 - mod_SchutzHinzufugen.bas + Monatsblatt-Protect-Aufrufer (FP-011/012): `PID_ProtectWorkerMonthSheet` — Fill Handle aus, Sortieren aus.
 - mod_SchutzHinzufugen.bas + mod_FormatMonthSheet.bas (FP-013): `PID_ApplyMonthSheetLockPolicy` — Lock-all + Whitelist (B/C, D, E/F, I/J, M/N, O18:Q25); Q12 nur auf Nicht-Startmonaten entsperrt (Jan/Mar–Jul/Sep–Dez).
 - mod_FormatMonthSheet.bas: Durchrechnungs-Startmonate (Februar/Mai/August/November) — Panel O15 als ein Merge O15:R15; Makro `PID_FixDurchrechnungStartMonthPanels`.
+- mod_SmokeCheck.bas (FP-016): TEST 17 (Month Sheet Lock Policy: G gesperrt, E/B/I entsperrt) + TEST 18 (Q12 Vormonat: Februar gesperrt, Januar entsperrt).
+- docs/Kurzanleitung_Personalsheet_A4.html (FP-015): Q12 Vormonat erklärt; G/H/K/L Blattschutz-Hinweis; Sortieren-Verbot; Stand Juni 2026.
 
 ### Removed
 - mod_BuildFluktuationAnalyse.bas + DieseArbeitsmappe.cls: FLUKTUATION PDF-Export (Button, Makro, Export-Hilfen) entfernt; Legacy-Button wird bei Refresh gelöscht (FP-025 storniert).
