@@ -393,6 +393,10 @@ Private Sub EnforcePasteValuesOnly(ByVal Sh As Object, ByVal Target As Range, By
     Set inputRange = Union(Sh.Range("B3:C82"), Sh.Range("D3:D82"), Sh.Range("E3:F82"), _
                            Sh.Range("I3:J82"), Sh.Range("M3:N82"), Sh.Range("O18:Q25"))
     
+    If PID_IsWorkerMonthSheet(Sh) And PID_IsMonthSheetVormonatInputEditable(Sh) Then
+        Set inputRange = Union(inputRange, Sh.Range("Q12:R12"))
+    End If
+    
     Set affectedRange = Intersect(Target, inputRange)
     If affectedRange Is Nothing Then Exit Sub
     

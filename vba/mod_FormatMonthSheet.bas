@@ -73,17 +73,7 @@ End Function
 
 
 Private Function PID_IsDurchrechnungPeriodStartMonth(ByVal ws As Worksheet) As Boolean
-    Dim monthName As Variant
-    
-    If ws Is Nothing Then Exit Function
-    If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
-    
-    For Each monthName In PID_MS_DurchrechnungPeriodStartMonthNames()
-        If StrComp(Trim$(ws.Name), CStr(monthName), vbTextCompare) = 0 Then
-            PID_IsDurchrechnungPeriodStartMonth = True
-            Exit Function
-        End If
-    Next monthName
+    PID_IsDurchrechnungPeriodStartMonth = PID_IsDurchrechnungPeriodStartMonthSheet(ws)
 End Function
 
 
@@ -609,7 +599,11 @@ Private Sub PID_MSApplyRightPanelReferenceStyles(ByVal ws As Worksheet)
         PID_MSApplyStyleToRangeMergedOnce ws.Range("S15:V15"), PID_MS_STYLE_INPUT
     End If
     
-    PID_MSApplyStyleToRangeMergedOnce ws.Range("Q12:R12"), PID_MS_STYLE_READONLY
+    If PID_IsDurchrechnungPeriodStartMonth(ws) Then
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("Q12:R12"), PID_MS_STYLE_READONLY
+    Else
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("Q12:R12"), PID_MS_STYLE_INPUT
+    End If
     
     PID_MSApplyStyleToRangeMergedOnce ws.Range("O16:V16"), PID_MS_STYLE_MESSAGE
     

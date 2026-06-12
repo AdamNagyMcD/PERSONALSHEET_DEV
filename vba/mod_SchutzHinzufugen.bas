@@ -58,10 +58,34 @@ Public Sub PID_ApplyMonthSheetLockPolicy(ByVal ws As Worksheet)
     ws.Range("I" & PID_FIRST_ROW & ":J" & PID_LAST_ROW).Locked = False
     ws.Range("M" & PID_FIRST_ROW & ":N" & PID_LAST_ROW).Locked = False
     ws.Range(PID_MONTH_PANEL_FREITEXT_RANGE).Locked = False
-    ' Q12:R12 — fixe Formeln (Vormonat/Durchrechnung), nicht editierbar.
+    If PID_IsMonthSheetVormonatInputEditable(ws) Then
+        ws.Range(PID_MONTH_PANEL_VORMONAT_RANGE).Locked = False
+    End If
     
     Err.Clear
 End Sub
+
+
+Public Function PID_IsDurchrechnungPeriodStartMonthSheet(ByVal ws As Worksheet) As Boolean
+    Dim sheetName As String
+    
+    If ws Is Nothing Then Exit Function
+    
+    sheetName = Trim$(CStr(ws.Name))
+    
+    Select Case sheetName
+        Case "Februar", "Mai", "August", "November"
+            PID_IsDurchrechnungPeriodStartMonthSheet = True
+    End Select
+End Function
+
+
+Public Function PID_IsMonthSheetVormonatInputEditable(ByVal ws As Worksheet) As Boolean
+    If ws Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheetSafe(ws) Then Exit Function
+    
+    PID_IsMonthSheetVormonatInputEditable = Not PID_IsDurchrechnungPeriodStartMonthSheet(ws)
+End Function
 
 
 Public Sub PID_UnlockSheetEditRanges(ByVal ws As Worksheet)

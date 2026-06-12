@@ -6,6 +6,9 @@ Thumbs.db
 _xlsm_*/
 _xlsm_*.zip
 _einstellung_probe/
+_panel_probe/
+_panel_probe2/
+_probe_copy.xlsm
 
 # Lokale Test-/Backup-Kopien (nicht committen)
 Kopie von Personalsheet.xlsm
