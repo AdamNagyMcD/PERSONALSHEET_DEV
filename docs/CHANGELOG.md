@@ -6,7 +6,7 @@
 - mod_PIDCopyright.bas: Copyright-Hinweis Zeile 2 rechts (sichtbar beim Tab-Öffnen, ohne PageSetup/Shape); VBA-Modul-Kopf Adam Nagy / McOpCo (FP-023).
 
 ### Fixed
-- mod_FormatMonthSheet.bas: Spalte N Austrittsgrund — breiter, Umbruch, Zeilenhoehe; mod_CopyData.bas: O45 „Betriebszugehörigkeit“ mit Umlauten.
+- mod_PIDCopyright.bas: UEBERSICHT copyright B24 statt B25; kein blindes UnMerge fremder FINANZIELL/DURCHRECHNUNG-Merges bei FullSystemRefresh.
 - mod_BuildFluktuationDaten/Analyse.bas: Austritte gesamt = Summe Monatstabelle (Dedup, Jahresfilter, Gesamt-Zeile); PDF-Export-Button auf FLUKTUATION.
 - mod_BuildFluktuationAnalyse.bas: PDF Export Mac/Win — GetSaveAsFilename ohne benannte Parameter, MacScript-Fallback.
 - mod_BuildFluktuationAnalyse.bas: PDF Export — Druckbereich ohne Hilfsspalten, Mac-Pfad/HFS, PageSetup-Restore, Button nach Export + bei Tab-Activate.
