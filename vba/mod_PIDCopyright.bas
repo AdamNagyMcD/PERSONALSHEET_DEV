@@ -103,7 +103,7 @@ Private Function PID_GetCopyrightRangeAddress(ByVal ws As Worksheet) As String
     End If
     
     If StrComp(ws.Name, PID_FLUKTUATION_SHEET, vbTextCompare) = 0 Then
-        PID_GetCopyrightRangeAddress = "A19"
+        PID_GetCopyrightRangeAddress = "A7"
         Exit Function
     End If
     
@@ -251,7 +251,7 @@ Private Function PID_GetLegacyCopyrightAddressesForSheet(ByVal ws As Worksheet) 
     End If
     
     If StrComp(ws.Name, PID_FLUKTUATION_SHEET, vbTextCompare) = 0 Then
-        PID_GetLegacyCopyrightAddressesForSheet = Array("E2:G2", "A3:D3", PID_COPYRIGHT_LEGACY_CELL)
+        PID_GetLegacyCopyrightAddressesForSheet = Array("E2:G2", "A3:D3", "A19", PID_COPYRIGHT_LEGACY_CELL)
         Exit Function
     End If
     
