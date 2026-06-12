@@ -15,7 +15,8 @@
 - DieseArbeitsmappe.cls + mod_KVStundenDropdown.bas (FP-008): SelectionChange — ScreenUpdating nur bei Dropdown-Repair; E-Validation-Cache.
 - mod_RefreshFluktuationAll.bas + mod_BuildFluktuationDaten.bas + DieseArbeitsmappe.cls (FP-009): Save nur Daten-Refresh; Analyse beim FLUKTUATION-Tab; inkrementeller Monats-Rescan.
 - mod_SchutzHinzufugen.bas + Monatsblatt-Protect-Aufrufer (FP-011/012): `PID_ProtectWorkerMonthSheet` — Fill Handle aus, Sortieren aus.
-- mod_RefreshFluktuationAll.bas + mod_BuildFluktuationDaten.bas: FullSystemRefresh erzwingt vollen Daten-Rebuild; inkrementeller Preserve-Fix.
+- mod_SchutzHinzufugen.bas + mod_FormatMonthSheet.bas (FP-013): `PID_ApplyMonthSheetLockPolicy` — Lock-all + Whitelist (B/C, D, E/F, I/J, M/N, O18:Q25); Q12 fixe Formel gesperrt; Formelbereiche G/H/K/L gesperrt.
+- mod_FormatMonthSheet.bas: Durchrechnungs-Startmonate (Februar/Mai/August/November) — Panel O15 als ein Merge O15:R15; Makro `PID_FixDurchrechnungStartMonthPanels`.
 
 ### Removed
 - mod_BuildFluktuationAnalyse.bas + DieseArbeitsmappe.cls: FLUKTUATION PDF-Export (Button, Makro, Export-Hilfen) entfernt; Legacy-Button wird bei Refresh gelöscht (FP-025 storniert).

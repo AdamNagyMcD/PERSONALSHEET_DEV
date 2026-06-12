@@ -33,6 +33,77 @@ Private Const PID_MS_ROW_INDEX_COL_WIDTH As Double = 3.82
 Private Const PID_MS_ROW_INDEX_NUMBER_FORMAT As String = "@"
 Private Const PID_MS_EMPLOYEE_HEADER_FIRST_COL As Long = 1
 Private Const PID_MS_EMPLOYEE_HEADER_LAST_COL As Long = 14
+Private Const PID_MS_PANEL_MESSAGE_ROW As Long = 15
+
+
+Public Sub PID_FixDurchrechnungStartMonthPanels()
+    Dim monthName As Variant
+    Dim ws As Worksheet
+    Dim countDone As Long
+    
+    On Error GoTo CleanFail
+    
+    For Each monthName In PID_MS_DurchrechnungPeriodStartMonthNames()
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthName))
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            If PID_IsWorkerMonthSheet(ws) Then
+                PID_MSApplyDurchrechnungStartMonthPanelRow15 ws
+                countDone = countDone + 1
+            End If
+        End If
+    Next monthName
+    
+    MsgBox countDone & " Monatsblaetter: Panel O15 als O15:R15 (wie Februar).", _
+           vbInformation, "Durchrechnung Panel"
+    Exit Sub
+
+CleanFail:
+    MsgBox "Fehler bei PID_FixDurchrechnungStartMonthPanels:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, vbExclamation, "Durchrechnung Panel"
+End Sub
+
+
+Private Function PID_MS_DurchrechnungPeriodStartMonthNames() As Variant
+    PID_MS_DurchrechnungPeriodStartMonthNames = Array("Februar", "Mai", "August", "November")
+End Function
+
+
+Private Function PID_IsDurchrechnungPeriodStartMonth(ByVal ws As Worksheet) As Boolean
+    Dim monthName As Variant
+    
+    If ws Is Nothing Then Exit Function
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Function
+    
+    For Each monthName In PID_MS_DurchrechnungPeriodStartMonthNames()
+        If StrComp(Trim$(ws.Name), CStr(monthName), vbTextCompare) = 0 Then
+            PID_IsDurchrechnungPeriodStartMonth = True
+            Exit Function
+        End If
+    Next monthName
+End Function
+
+
+Private Sub PID_MSApplyDurchrechnungStartMonthPanelRow15(ByVal ws As Worksheet)
+    Dim msgRange As Range
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    On Error Resume Next
+    ws.Range("O15:R15").UnMerge
+    ws.Range("O15:P15").UnMerge
+    ws.Range("Q15:R15").UnMerge
+    Err.Clear
+    On Error GoTo 0
+    
+    Set msgRange = ws.Range("O15:R15")
+    msgRange.Merge
+    PID_MSApplyStyleToRangeMergedOnce msgRange, PID_MS_STYLE_MESSAGE
+End Sub
 
 
 Public Sub EnsureMonthSheetCopyDataButtons()
@@ -314,13 +385,12 @@ End Sub
 
 
 Private Sub PID_MSRestoreMonthSheetDropdowns(ByVal wsTarget As Worksheet)
-    ' E/F werden beim Format-Kopieren nicht mehr ueberschrieben; falls noetig trotzdem
-    ' entsperren und Dropdowns neu aufbauen (inkl. Template-Stunden fuer leere Zeilen).
+    ' E/F werden beim Format-Kopieren nicht mehr ueberschrieben; Lock-Policy stellt
+    ' Whitelist wieder her, dann Dropdowns neu aufbauen.
     If wsTarget Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(wsTarget) Then Exit Sub
     
-    wsTarget.Range("E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW).Locked = False
-    wsTarget.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
+    PID_ApplyMonthSheetLockPolicy wsTarget
     
     PID_ApplyKVCodeDropdownValidation wsTarget
     RefreshKVStundenDropdownForSheet wsTarget
@@ -526,11 +596,20 @@ Private Sub PID_MSApplyRightPanelReferenceStyles(ByVal ws As Worksheet)
     
     PID_MSApplyStyleToRangeMergedOnce ws.Range("O7:V7"), PID_MS_STYLE_INPUT
     
-    For r = 8 To 15
+    For r = 8 To 14
         PID_MSApplyStyleToRangeMergedOnce ws.Range("O" & r & ":R" & r), PID_MS_STYLE_READONLY
         PID_MSApplyStyleToRangeMergedOnce ws.Range("S" & r & ":V" & r), PID_MS_STYLE_INPUT
     Next r
-    PID_MSApplyStyleToRangeMergedOnce ws.Range("Q12:R12"), PID_MS_STYLE_INPUT
+    
+    If PID_IsDurchrechnungPeriodStartMonth(ws) Then
+        PID_MSApplyDurchrechnungStartMonthPanelRow15 ws
+    Else
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("O15:P15"), PID_MS_STYLE_READONLY
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("Q15:R15"), PID_MS_STYLE_READONLY
+        PID_MSApplyStyleToRangeMergedOnce ws.Range("S15:V15"), PID_MS_STYLE_INPUT
+    End If
+    
+    PID_MSApplyStyleToRangeMergedOnce ws.Range("Q12:R12"), PID_MS_STYLE_READONLY
     
     PID_MSApplyStyleToRangeMergedOnce ws.Range("O16:V16"), PID_MS_STYLE_MESSAGE
     

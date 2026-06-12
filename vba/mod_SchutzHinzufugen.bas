@@ -13,6 +13,7 @@ Private mSavedCellDragAndDrop As Variant
 Private mMonthSheetFillHandleGuardActive As Boolean
 
 Private Const PID_MONTH_PANEL_VORMONAT_RANGE As String = "Q12:R12"
+Private Const PID_MONTH_PANEL_FREITEXT_RANGE As String = "O18:Q25"
 Private Const PID_UBERSICHT_SHEET As String = "UBERSICHT"
 Private Const PID_UBERSICHT_JAEN_VERF_CELL As String = "E30"
 Private Const PID_UBERSICHT_JAEN_MUST_CELL As String = "I30"
@@ -43,6 +44,26 @@ SafeExit:
 End Sub
 
 
+Public Sub PID_ApplyMonthSheetLockPolicy(ByVal ws As Worksheet)
+    On Error Resume Next
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheetSafe(ws) Then Exit Sub
+    
+    ws.Cells.Locked = True
+    
+    ws.Range("B" & PID_FIRST_ROW & ":C" & PID_LAST_ROW).Locked = False
+    ws.Range("D" & PID_FIRST_ROW & ":D" & PID_LAST_ROW).Locked = False
+    ws.Range("E" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
+    ws.Range("I" & PID_FIRST_ROW & ":J" & PID_LAST_ROW).Locked = False
+    ws.Range("M" & PID_FIRST_ROW & ":N" & PID_LAST_ROW).Locked = False
+    ws.Range(PID_MONTH_PANEL_FREITEXT_RANGE).Locked = False
+    ' Q12:R12 — fixe Formeln (Vormonat/Durchrechnung), nicht editierbar.
+    
+    Err.Clear
+End Sub
+
+
 Public Sub PID_UnlockSheetEditRanges(ByVal ws As Worksheet)
     On Error Resume Next
     
@@ -51,9 +72,7 @@ Public Sub PID_UnlockSheetEditRanges(ByVal ws As Worksheet)
     PID_ForceUnprotectWorksheet ws
     
     If PID_IsWorkerMonthSheetSafe(ws) Then
-        ws.Range("E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW).Locked = False
-        ws.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
-        ws.Range(PID_MONTH_PANEL_VORMONAT_RANGE).Locked = False
+        PID_ApplyMonthSheetLockPolicy ws
     ElseIf PID_IsUbersichtSheet(ws) Then
         PID_ApplyUbersichtEditableCells ws
     End If
@@ -232,6 +251,8 @@ Public Sub PID_ProtectWorkerMonthSheet(ByVal ws As Worksheet)
     
     If ws Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheetSafe(ws) Then Exit Sub
+    
+    PID_ApplyMonthSheetLockPolicy ws
     
     ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                UserInterfaceOnly:=True, _

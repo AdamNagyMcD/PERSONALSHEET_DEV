@@ -390,7 +390,8 @@ Private Sub EnforcePasteValuesOnly(ByVal Sh As Object, ByVal Target As Range, By
     
     pasteHandled = False
     
-    Set inputRange = Union(Sh.Range("B3:F82"), Sh.Range("I3:J82"), Sh.Range("M3:N82"), Sh.Range("O18:Q25"))
+    Set inputRange = Union(Sh.Range("B3:C82"), Sh.Range("D3:D82"), Sh.Range("E3:F82"), _
+                           Sh.Range("I3:J82"), Sh.Range("M3:N82"), Sh.Range("O18:Q25"))
     
     Set affectedRange = Intersect(Target, inputRange)
     If affectedRange Is Nothing Then Exit Sub

@@ -431,7 +431,7 @@ Nutzer löst versehentlich **Sort** aus (Menü oder Kontext). Zeilen 3–82 werd
 
 ## FP-013 — Monatsblätter: Lock-all + Whitelist-Unlock
 
-**Status:** Offen — Teil des **Schutz-Pakets** (Kern: „fast alles gesperrt“)  
+**Status:** Erledigt (2026-06-12) — Windows teszt OK    
 **Priorität:** Hoch  
 **Aufwand:** **Mittel**  
 **Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, `mod_FormatMonthSheet.bas`, `DieseArbeitsmappe.cls` (Paste-Bereiche), SPEC/TEST_CASES
@@ -458,12 +458,20 @@ Schutz setzt nur explizit **E:F** auf `Locked = False`, ohne vorher `Cells.Locke
 4. `PID_MSRestoreMonthSheetDropdowns` / Format-Kopie: `xlPasteFormats` darf **Locked** auf E/F nicht wieder kaputt machen (bereits Kommentar in Code — nach Lock-all erneut validieren).
 5. Nach Schutz: `PID_ApplySheetProtectionForMacros` erneut aufrufen oder zentral eine `PID_ApplyMonthSheetLockPolicy(ws)`.
 
+### Umsetzung (2026-06-12)
+
+- `PID_ApplyMonthSheetLockPolicy` in `mod_SchutzHinzufugen.bas`: `Cells.Locked = True`, dann Whitelist entsperren.
+- `PID_ProtectWorkerMonthSheet` und `PID_UnlockSheetEditRanges` nutzen zentrale Policy.
+- `mod_FormatMonthSheet.bas`: `PID_MSRestoreMonthSheetDropdowns` ruft Policy nach Format-Kopie auf.
+- `DieseArbeitsmappe.cls`: Paste-Whitelist an Policy angeglichen (ohne G/H).
+
 ### Akzeptanzkriterien
 
-- [ ] Nutzer kann nur Whitelist-Bereiche bearbeiten; G/K/L/Q-Formelbereiche nicht.
-- [ ] TEST 2 (Exit I/J), TEST 3 (B/C), TEST 4 (D/E-Override), Panel O18:Q25 weiterhin möglich.
-- [ ] CopyData, KV-Dropdown, L-Restore, FINANZIELL-Sync ohne Regression.
-- [ ] `FormatAllMonthSheets` setzt Lock-Policy nicht zurück (oder ruft Policy am Ende auf).
+- [x] Nutzer kann nur Whitelist-Bereiche bearbeiten; G/K/L/Q-Formelbereiche nicht.
+- [x] TEST 2 (Exit I/J), TEST 3 (B/C), TEST 4 (D/E-Override), Panel O18:Q25 weiterhin möglich.
+- [x] CopyData, KV-Dropdown, L-Restore, FINANZIELL-Sync ohne Regression.
+- [x] `FormatAllMonthSheets` setzt Lock-Policy nicht zurück (Policy am Ende).
+- [x] Panel O8:O15 auf allen Monatsblaettern manuell verifiziert (Durchrechnung-Start O15:R15).
 - [ ] Mac + Windows Excel 2016+.
 
 ### Betroffene Dateien (Referenz)
