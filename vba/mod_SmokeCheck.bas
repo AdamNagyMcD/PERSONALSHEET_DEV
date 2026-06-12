@@ -698,7 +698,7 @@ Fail:
 End Function
 
 
-
+Private Function PID_BasicMonthStructureOk() As Boolean
     If PID_CountMonthSheets() <> 12 Then Exit Function
     If Not PID_AllMonthSheetsHaveRange("A1") Then Exit Function
     If Not PID_AllMonthSheetsHaveRange("D" & PID_FIRST_ROW & ":F" & PID_LAST_ROW) Then Exit Function
