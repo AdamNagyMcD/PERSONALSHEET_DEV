@@ -75,6 +75,8 @@ Public Sub BuildFluktuationDaten()
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
     Dim oldDisplayAlerts As Boolean
+    Dim errNum As Long
+    Dim errDesc As String
     
     On Error GoTo CleanFail
     
@@ -113,6 +115,7 @@ Public Sub BuildFluktuationDaten()
         Set ws = Nothing
         On Error Resume Next
         Set ws = ThisWorkbook.Worksheets(monthName)
+        Err.Clear
         On Error GoTo CleanFail
         
         If Not ws Is Nothing Then
@@ -135,6 +138,9 @@ CleanExit:
     Exit Sub
 
 CleanFail:
+    errNum = Err.Number
+    errDesc = Err.Description
+    
     On Error Resume Next
     If Not outWs Is Nothing Then
         outWs.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
@@ -146,7 +152,7 @@ CleanFail:
     Application.EnableEvents = oldEnableEvents
     
     MsgBox "Fehler in BuildFluktuationDaten:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
+           errNum & " - " & errDesc, _
            vbExclamation, "Fluktuation Daten"
 End Sub
 
@@ -164,9 +170,10 @@ Private Sub PID_BuildFluktuationDatenIncremental()
     Dim maxRows As Long
     Dim arrOut() As Variant
     Dim existingLastRow As Long
-    Dim existingData As Variant
     Dim r As Long
     Dim monthText As String
+    Dim errNum As Long
+    Dim errDesc As String
     
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -197,31 +204,25 @@ Private Sub PID_BuildFluktuationDatenIncremental()
     outWs.Unprotect Password:=PID_WORKBOOK_PASSWORD
     
     existingLastRow = outWs.Cells(outWs.Rows.Count, "A").End(xlUp).Row
-    If existingLastRow >= 2 Then
-        existingData = outWs.Range("A2:K" & existingLastRow).Value
-        
-        If IsArray(existingData) Then
-            For r = 1 To UBound(existingData, 1)
-                monthText = Trim$(CStr(existingData(r, 1)))
-                If monthText <> "" Then
-                    If Not PID_FluktuationMonthDisplayNameIsDirty(monthText) Then
-                        outRow = outRow + 1
-                        arrOut(outRow, 1) = existingData(r, 1)
-                        arrOut(outRow, 2) = existingData(r, 2)
-                        arrOut(outRow, 3) = existingData(r, 3)
-                        arrOut(outRow, 4) = existingData(r, 4)
-                        arrOut(outRow, 5) = existingData(r, 5)
-                        arrOut(outRow, 6) = existingData(r, 6)
-                        arrOut(outRow, 7) = existingData(r, 7)
-                        arrOut(outRow, 8) = existingData(r, 8)
-                        arrOut(outRow, 9) = existingData(r, 9)
-                        arrOut(outRow, 10) = existingData(r, 10)
-                        arrOut(outRow, 11) = existingData(r, 11)
-                    End If
-                End If
-            Next r
+    For r = 2 To existingLastRow
+        monthText = Trim$(CStr(outWs.Cells(r, 1).Value))
+        If monthText <> "" Then
+            If Not PID_FluktuationMonthDisplayNameIsDirty(monthText) Then
+                outRow = outRow + 1
+                arrOut(outRow, 1) = outWs.Cells(r, 1).Value
+                arrOut(outRow, 2) = outWs.Cells(r, 2).Value
+                arrOut(outRow, 3) = outWs.Cells(r, 3).Value
+                arrOut(outRow, 4) = outWs.Cells(r, 4).Value
+                arrOut(outRow, 5) = outWs.Cells(r, 5).Value
+                arrOut(outRow, 6) = outWs.Cells(r, 6).Value
+                arrOut(outRow, 7) = outWs.Cells(r, 7).Value
+                arrOut(outRow, 8) = outWs.Cells(r, 8).Value
+                arrOut(outRow, 9) = outWs.Cells(r, 9).Value
+                arrOut(outRow, 10) = outWs.Cells(r, 10).Value
+                arrOut(outRow, 11) = outWs.Cells(r, 11).Value
+            End If
         End If
-    End If
+    Next r
     
     monthNames = PID_MonthNames()
     
@@ -236,6 +237,7 @@ Private Sub PID_BuildFluktuationDatenIncremental()
         Set ws = Nothing
         On Error Resume Next
         If monthName <> "" Then Set ws = ThisWorkbook.Worksheets(monthName)
+        Err.Clear
         On Error GoTo CleanFail
         
         If Not ws Is Nothing Then
@@ -258,6 +260,9 @@ CleanExit:
     Exit Sub
 
 CleanFail:
+    errNum = Err.Number
+    errDesc = Err.Description
+    
     On Error Resume Next
     If Not outWs Is Nothing Then
         outWs.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
@@ -269,7 +274,7 @@ CleanFail:
     Application.EnableEvents = oldEnableEvents
     
     MsgBox "Fehler in BuildFluktuationDaten (inkrementell):" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
+           errNum & " - " & errDesc, _
            vbExclamation, "Fluktuation Daten"
 End Sub
 

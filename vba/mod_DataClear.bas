@@ -295,8 +295,7 @@ Private Sub PID_TryProtectMonthSheet(ByVal ws As Worksheet)
     On Error GoTo SafeExit
     
     If ws Is Nothing Then Exit Sub
-    ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+    PID_ProtectWorkerMonthSheet ws
     
 SafeExit:
 End Sub
-

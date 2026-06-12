@@ -298,7 +298,7 @@ Jede Auswahl in D3:F82 setzt `ScreenUpdating = False` und prueft E/F-Dropdown-Va
 
 ## FP-010 — Performance: Mess-Protokoll Windows
 
-**Status:** In Arbeit (2026-06-12) — `docs/PERFORMANCE_BASELINE.md` + Makro `PID_RunPerformanceBaseline`  
+**Status:** Erledigt AUTO (2026-06-12); FP-005–009 Re-Messung offen; MANU optional  
 **Priorität:** Hoch — vor Implementierung FP-005–009  
 **Plattform-Ziel:** Windows, leistungsstarker PC, Produktionsnahes Workbook
 
@@ -348,7 +348,7 @@ Ziel: Monatsblätter und kritische Bereiche **so weit wie möglich** gegen verse
 
 ## FP-011 — Véletlen cellahúzás (Fill Handle) tönkreteszi a formázást
 
-**Status:** Offen — Teil des **Schutz-Pakets** (s. Übersicht oben)  
+**Status:** Erledigt (2026-06-12) — Windows teszt OK  
 **Priorität:** Hoch — UX / védelem nem technikai szakértőknek  
 **Aufwand:** **Klein bis mittel** (siehe unten)  
 **Betroffene Bereiche:** Monatsblätter B3:N82, `mod_SchutzHinzufugen.bas`, `mod_FormatMonthSheet.bas`, optional `DieseArbeitsmappe.cls`
@@ -374,10 +374,15 @@ Nutzer hält **E** oder **F** (entsperrt) gedrückt und **zieht** auf **gesperrt
 
 ### Akzeptanzkriterien
 
-- [ ] Fill-Handle-Zug von F/E nach G/L/B–D zerstört Zebra/Guide-Format **nicht** (oder wird sofort unsichtbar durch A).
-- [ ] E/F-Dropdown und normales Tippen unverändert.
-- [ ] Nach Unfall (falls B): `FormatAllMonthSheets` oder ein Zeilen-Restore stellt Layout wieder her.
-- [ ] Mac + Windows Excel 2016+.
+- [x] Fill-Handle-Zug von F/E nach G/L/B–D zerstört Zebra/Guide-Format **nicht** (Application-Guard auf Monats-Tabs).
+- [x] E/F-Dropdown und normales Tippen unverändert.
+- [ ] Mac smoke.
+
+### Umsetzung Stufe A (2026-06-12)
+
+- `PID_ProtectWorkerMonthSheet` in `mod_SchutzHinzufugen.bas`: `AllowSorting:=False`.
+- Fill Handle: `Application.EnableFillHandle=False` auf Monats-Tabs via `PID_ApplyMonthSheetFillHandleGuard` (Excel 2016 — kein Worksheet-Property).
+- Alle Monatsblatt-`Protect`-Stellen nutzen zentral diese Funktion.
 
 ### Betroffene Dateien (Referenz)
 
@@ -389,7 +394,7 @@ Nutzer hält **E** oder **F** (entsperrt) gedrückt und **zieht** auf **gesperrt
 
 ## FP-012 — Sortieren auf Monatsblättern deaktivieren
 
-**Status:** Offen — Teil des **Schutz-Pakets**  
+**Status:** Erledigt (2026-06-12) — Windows teszt OK  
 **Priorität:** Hoch — verhindert schwere Daten-/Zeilenvermischung  
 **Aufwand:** **Klein**  
 **Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, alle Re-`Protect`-Stellen (CopyData, Modul1, FormatMonthSheet, …)
@@ -410,9 +415,12 @@ Nutzer löst versehentlich **Sort** aus (Menü oder Kontext). Zeilen 3–82 werd
 
 ### Akzeptanzkriterien
 
-- [ ] Auf Monatsblatt ist Sortieren im geschützten Zustand nicht möglich (Win + Mac Excel 2016+).
-- [ ] E/F-Dropdown, Tippen, CopyData, FormatAllMonthSheets unverändert funktionsfähig.
-- [ ] Kein Regression bei UEBERSICHT / LOHNTABELLE (dort ggf. weiter Sort erlaubt, falls gewünscht).
+- [x] Auf Monatsblatt ist Sortieren im geschützten Zustand nicht möglich (Windows).
+- [x] E/F-Dropdown, Tippen, CopyData, FormatAllMonthSheets unverändert funktionsfähig.
+
+### Umsetzung (2026-06-12)
+
+- `PID_ProtectWorkerMonthSheet` — `AllowSorting:=False`; `mod_KVLohnLookup`, `mod_KVStundenDropdown`, `mod_DataClear`, `Modul1` umgestellt.
 
 ### Betroffene Dateien (Referenz)
 

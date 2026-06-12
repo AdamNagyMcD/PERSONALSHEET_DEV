@@ -151,7 +151,7 @@ CleanExit:
     
     On Error Resume Next
     If wasProtected Then
-        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        PID_ProtectWorkerMonthSheet wsMonth
     End If
     
     Application.ScreenUpdating = oldScreenUpdating
@@ -164,7 +164,7 @@ CleanFail:
     
     On Error Resume Next
     If wasProtected Then
-        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        PID_ProtectWorkerMonthSheet wsMonth
     End If
     
     Application.ScreenUpdating = oldScreenUpdating
@@ -231,7 +231,7 @@ SafeExit:
     If Not mBatchKVLohnRefresh Then
         On Error Resume Next
         If wasProtected Then
-            wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+            PID_ProtectWorkerMonthSheet wsMonth
         End If
     End If
 End Sub

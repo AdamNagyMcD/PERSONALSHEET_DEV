@@ -145,7 +145,7 @@ Public Sub PID_FormatAllMoneyColumns()
             PID_ApplyMonthSheetDateColumnWidths ws
             PID_ApplyMonthSheetAustrittsgrundLayout ws
             
-            ws.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+            PID_ProtectWorkerMonthSheet ws
         End If
     Next i
     

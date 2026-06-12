@@ -141,6 +141,12 @@ Public Sub PID_ClearFluktuationDirtyMonthsAfterDataRebuild()
 End Sub
 
 
+Public Sub PID_PrepareFullFluktuationDataRebuild()
+    mFluktuationDirtyScopeAll = True
+    Set mFluktuationDirtyMonths = New Collection
+End Sub
+
+
 Public Sub RefreshFluktuationDataIfDirty()
     On Error GoTo CleanFail
     
@@ -203,6 +209,9 @@ Private Sub RefreshFluktuationAllPartial(ByVal refreshData As Boolean, ByVal ref
     Application.StatusBar = "Fluktuation wird aktualisiert..."
     
     If refreshData Then
+        If refreshAnalyse Then
+            PID_PrepareFullFluktuationDataRebuild
+        End If
         BuildFluktuationDaten
         PID_ClearFluktuationDirtyMonthsAfterDataRebuild
         gFluktuationDataDirty = False

@@ -8,6 +8,9 @@ Attribute VB_Name = "mod_SchutzHinzufugen"
 Option Explicit
 
 Private mSessionProtectedSheets As Collection
+Private mSavedEnableFillHandle As Variant
+Private mSavedCellDragAndDrop As Variant
+Private mMonthSheetFillHandleGuardActive As Boolean
 
 Private Const PID_MONTH_PANEL_VORMONAT_RANGE As String = "Q12:R12"
 Private Const PID_UBERSICHT_SHEET As String = "UBERSICHT"
@@ -188,10 +191,7 @@ Private Sub PID_ApplySheetProtectionForMacros(ByVal ws As Worksheet)
     
     ElseIf PID_IsWorkerMonthSheetSafe(ws) Then
         
-        ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                   UserInterfaceOnly:=True, _
-                   AllowFiltering:=True, _
-                   AllowSorting:=True
+        PID_ProtectWorkerMonthSheet ws
         
     ElseIf ws.Name = PID_LOHNTABELLE_SHEET Then
         
@@ -224,6 +224,61 @@ Private Sub PID_ApplySheetProtectionForMacros(ByVal ws As Worksheet)
     End If
 
 SafeExit:
+End Sub
+
+
+Public Sub PID_ProtectWorkerMonthSheet(ByVal ws As Worksheet)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheetSafe(ws) Then Exit Sub
+    
+    ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
+               UserInterfaceOnly:=True, _
+               AllowFiltering:=True, _
+               AllowSorting:=False
+
+SafeExit:
+End Sub
+
+
+Public Sub PID_ApplyMonthSheetFillHandleGuard()
+    On Error Resume Next
+    
+    If mMonthSheetFillHandleGuardActive Then Exit Sub
+    
+    mSavedEnableFillHandle = Application.EnableFillHandle
+    mSavedCellDragAndDrop = Application.CellDragAndDrop
+    
+    Application.EnableFillHandle = False
+    Application.CellDragAndDrop = False
+    
+    mMonthSheetFillHandleGuardActive = True
+    Err.Clear
+End Sub
+
+
+Public Sub PID_ClearMonthSheetFillHandleGuard()
+    On Error Resume Next
+    
+    If Not mMonthSheetFillHandleGuardActive Then Exit Sub
+    
+    If Not IsEmpty(mSavedEnableFillHandle) Then
+        Application.EnableFillHandle = CBool(mSavedEnableFillHandle)
+    Else
+        Application.EnableFillHandle = True
+    End If
+    
+    If Not IsEmpty(mSavedCellDragAndDrop) Then
+        Application.CellDragAndDrop = CBool(mSavedCellDragAndDrop)
+    Else
+        Application.CellDragAndDrop = True
+    End If
+    
+    mMonthSheetFillHandleGuardActive = False
+    mSavedEnableFillHandle = Empty
+    mSavedCellDragAndDrop = Empty
+    Err.Clear
 End Sub
 
 

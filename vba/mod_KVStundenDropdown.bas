@@ -212,7 +212,7 @@ Public Sub RefreshKVStundenDropdownForSingleRow(ByVal wsMonth As Worksheet, ByVa
     wsHelper.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
     
     If monthWasProtected Then
-        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        PID_ProtectWorkerMonthSheet wsMonth
     End If
 
 CleanExit:
@@ -286,7 +286,7 @@ Public Sub RefreshKVStundenDropdownForSheet(ByVal wsMonth As Worksheet, Optional
     wsHelper.Visible = xlSheetVeryHidden
     
     If monthWasProtected Then
-        wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+        PID_ProtectWorkerMonthSheet wsMonth
     End If
 
 CleanExit:
@@ -304,7 +304,7 @@ CleanFail:
     
     If Not wsMonth Is Nothing Then
         If monthWasProtected Then
-            wsMonth.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True, AllowFiltering:=True, AllowSorting:=True
+            PID_ProtectWorkerMonthSheet wsMonth
         End If
     End If
     

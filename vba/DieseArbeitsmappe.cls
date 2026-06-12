@@ -152,6 +152,7 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     
     ' Dropdown/Lohn nur bei Bedarf (nach KV-Tabelle-Aenderung), pro Monat einmal.
     If PID_IsWorkerMonthSheet(Sh) Then
+        PID_ApplyMonthSheetFillHandleGuard
         PID_EnsureWorkerSheetRuntimeReady
         PID_EnsureMonthSheetCopyDataButton Sh
         
@@ -166,6 +167,8 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         
         GoTo SafeExit
     End If
+    
+    PID_ClearMonthSheetFillHandleGuard
 
 SafeExit:
     Application.ScreenUpdating = True
