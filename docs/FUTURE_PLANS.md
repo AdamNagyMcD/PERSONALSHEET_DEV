@@ -239,7 +239,7 @@ Eine Aenderung in E/F kann nacheinander ausloesen: Monatslohn-VBA, Aktuelle Stun
 
 ## FP-008 — Performance: SheetSelectionChange entlasten
 
-**Status:** Offen  
+**Status:** Erledigt (2026-06-12) — Windows D/E/F-Navigation OK  
 **Priorität:** Niedrig  
 **Plattform-Ziel:** Windows  
 **Betroffene Bereiche:** `DieseArbeitsmappe.cls`
@@ -255,8 +255,14 @@ Jede Auswahl in D3:F82 setzt `ScreenUpdating = False` und prueft E/F-Dropdown-Va
 
 ### Akzeptanzkriterien
 
-- [ ] Navigation E/F weiterhin fluessig.
-- [ ] Kaputte Dropdowns werden weiterhin lazy repariert.
+- [x] Navigation E/F weiterhin fluessig (2026-06-12).
+- [x] Kaputte Dropdowns werden weiterhin lazy repariert.
+
+### Umsetzung (2026-06-12)
+
+- `SheetSelectionChange`: `ScreenUpdating = False` nur bei kaputtem E/F-Dropdown (Repair-Pfad).
+- D/O45-Hinweis ohne globales ScreenUpdating.
+- `PID_MonthSheetHasValidKVCodeDropdown`: Sheet-Cache nach erstem gueltigen Check.
 
 ---
 

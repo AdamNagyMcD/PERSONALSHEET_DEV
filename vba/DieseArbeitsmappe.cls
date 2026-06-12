@@ -286,6 +286,9 @@ End Sub
 
 
 Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Range)
+    Dim eDropdownInvalid As Boolean
+    Dim fDropdownInvalid As Boolean
+    Dim needsDropdownRepair As Boolean
     
     On Error GoTo SafeExit
     
@@ -294,7 +297,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     If Not PID_IsWorkerMonthSheet(Sh) Then Exit Sub
     If Target.CountLarge > 1 Then Exit Sub
     
-    ' Ausserhalb D/E/F: nur O45-Hinweis ggf. loeschen, sonst ohne Overhead beenden.
+    ' Ausserhalb D3:F82: O45 nur loeschen wenn noetig (leichter Pfad).
     If Intersect(Target, Sh.Range("D3:F82")) Is Nothing Then
         If Len(Trim$(CStr(Sh.Range("O45").Value))) = 0 Then Exit Sub
         
@@ -304,36 +307,66 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
         GoTo SafeExit
     End If
     
-    mInternalChange = True
+    If Target.Row < PID_FIRST_ROW Or Target.Row > PID_LAST_ROW Then
+        If Len(Trim$(CStr(Sh.Range("O45").Value))) > 0 Then
+            mInternalChange = True
+            Application.EnableEvents = False
+            Sh.Range("O45").Value = ""
+        End If
+        GoTo SafeExit
+    End If
     
+    ' D: Beschaeftigungsdauer — ohne ScreenUpdating-Off.
+    If Not Intersect(Target, Sh.Range("D3:D82")) Is Nothing Then
+        mInternalChange = True
+        Application.EnableEvents = False
+        PID_ShowEmploymentDuration Sh, Target
+        GoTo SafeExit
+    End If
+    
+    eDropdownInvalid = False
+    fDropdownInvalid = False
+    
+    If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
+        eDropdownInvalid = Not PID_MonthSheetHasValidKVCodeDropdown(Sh)
+    End If
+    
+    If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
+        fDropdownInvalid = Not PID_RowHasValidFStundenDropdown(Sh, Target.Row)
+    End If
+    
+    needsDropdownRepair = eDropdownInvalid Or fDropdownInvalid
+    
+    ' O45 leeren beim Wechsel von D nach E/F (leichter Pfad).
+    If Len(Trim$(CStr(Sh.Range("O45").Value))) > 0 Then
+        mInternalChange = True
+        Application.EnableEvents = False
+        Sh.Range("O45").Value = ""
+        Application.EnableEvents = True
+        mInternalChange = False
+    End If
+    
+    ' E/F gueltig: sofort beenden — kein ScreenUpdating-Off.
+    If Not needsDropdownRepair Then Exit Sub
+    
+    mInternalChange = True
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
-    ' If user selects E and dropdown is broken/missing, rebuild column E validation.
-    If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
-        If Not PID_MonthSheetHasValidKVCodeDropdown(Sh) Then
-            On Error Resume Next
-            PID_RestoreKVCodeDropdownOnSheet Sh
-            On Error GoTo SafeExit
-        End If
+    If eDropdownInvalid Then
+        On Error Resume Next
+        PID_RestoreKVCodeDropdownOnSheet Sh
+        On Error GoTo SafeExit
     End If
     
-    ' If user selects F and dropdown is missing/broken, rebuild only that row.
-    If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
-        If Not PID_RowHasValidFStundenDropdown(Sh, Target.Row) Then
-            On Error Resume Next
-            RefreshKVStundenDropdownForSingleRow Sh, Target.Row
-            On Error GoTo SafeExit
-        End If
-    End If
-    
-    If Not Intersect(Target, Sh.Range("D3:D82")) Is Nothing Then
-        PID_ShowEmploymentDuration Sh, Target
-    ElseIf Len(Trim$(CStr(Sh.Range("O45").Value))) > 0 Then
-        Sh.Range("O45").Value = ""
+    If fDropdownInvalid Then
+        On Error Resume Next
+        RefreshKVStundenDropdownForSingleRow Sh, Target.Row
+        On Error GoTo SafeExit
     End If
 
 SafeExit:
+    On Error Resume Next
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False

@@ -16,6 +16,7 @@ Private mKVDropdownDirtyScopeAll As Boolean
 Private mDirtyKVCodes As Collection
 Private mKVDropdownRefreshedSheets As Collection
 Private mStundenValuesCache As Collection
+Private mKVCodeDropdownValidSheets As Collection
 
 
 Public Sub MarkAllKVDropdownsDirty()
@@ -24,6 +25,7 @@ Public Sub MarkAllKVDropdownsDirty()
     Set mDirtyKVCodes = New Collection
     Set mKVDropdownRefreshedSheets = New Collection
     PID_ClearStundenValuesCache
+    PID_InvalidateKVCodeDropdownValidCache
 End Sub
 
 
@@ -1137,6 +1139,7 @@ Public Sub PID_EnsureKVCodeListNamedRange()
                                    wsHelper.Cells(UBound(codes) - LBound(codes) + 1, PID_KV_CODE_HELPER_COL))
     
     CreateOrReplaceWorkbookName PID_KV_CODE_LIST_NAME, listRange
+    PID_InvalidateKVCodeDropdownValidCache
 
 SafeExit:
 End Sub
@@ -1211,6 +1214,23 @@ Failed:
 End Function
 
 
+Public Sub PID_InvalidateKVCodeDropdownValidCache()
+    Set mKVCodeDropdownValidSheets = New Collection
+End Sub
+
+
+Private Sub PID_MarkKVCodeDropdownValidForSheet(ByVal sheetName As String)
+    If sheetName = "" Then Exit Sub
+    If mKVCodeDropdownValidSheets Is Nothing Then Set mKVCodeDropdownValidSheets = New Collection
+    
+    On Error Resume Next
+    mKVCodeDropdownValidSheets.Remove sheetName
+    Err.Clear
+    mKVCodeDropdownValidSheets.Add sheetName, sheetName
+    On Error GoTo 0
+End Sub
+
+
 Public Function PID_MonthSheetHasValidKVCodeDropdown(ByVal wsMonth As Worksheet) As Boolean
     Dim validationFormula As String
     Dim validationType As Long
@@ -1218,6 +1238,13 @@ Public Function PID_MonthSheetHasValidKVCodeDropdown(ByVal wsMonth As Worksheet)
     
     If wsMonth Is Nothing Then Exit Function
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
+    
+    If Not mKVCodeDropdownValidSheets Is Nothing Then
+        If CollectionHasKey_KVDropdown(mKVCodeDropdownValidSheets, wsMonth.Name) Then
+            PID_MonthSheetHasValidKVCodeDropdown = True
+            Exit Function
+        End If
+    End If
     
     Set validationCell = wsMonth.Range("E" & PID_FIRST_ROW)
     
@@ -1237,6 +1264,7 @@ Public Function PID_MonthSheetHasValidKVCodeDropdown(ByVal wsMonth As Worksheet)
         If InStr(1, validationFormula, "KV_DROPDOWN_HELPER", vbTextCompare) = 0 Then Exit Function
     End If
     
+    PID_MarkKVCodeDropdownValidForSheet wsMonth.Name
     PID_MonthSheetHasValidKVCodeDropdown = True
 End Function
 
@@ -1403,6 +1431,7 @@ Public Function PID_RestoreKVCodeDropdownOnSheet(ByVal ws As Worksheet) As Boole
     
     PID_ApplyKVCodeDropdownValidation ws
     ws.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
+    PID_MarkKVCodeDropdownValidForSheet ws.Name
     PID_RestoreKVCodeDropdownOnSheet = True
 
 SafeExit:
