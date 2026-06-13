@@ -529,6 +529,49 @@ SafeExit:
 End Sub
 
 
+Public Sub PID_FlushPendingEFLog()
+    ' Wird von CopyData vor dem Starten aufgerufen.
+    ' Problem: Wenn der Nutzer auf Mac eine F-Zelle aendert und sofort den CopyData-Button
+    ' drueckt (ohne eine andere Zelle zu klicken), feuert SelectionChange nicht mehr.
+    ' => Die Aenderung waere nie in den Log gelangt.
+    ' Loesung: CopyData ruft diese Funktion auf, die den aktuellen F-Wert mit dem
+    ' Eintritts-Snapshot (mSelPrevFValueAtEntry) vergleicht und bei Abweichung loggt.
+    ' Windows: PID_IsMacExcel()=False => sofortiger Exit, kein Unterschied.
+    
+    Dim ws As Worksheet
+    Dim currentVal As String
+    
+    On Error GoTo SafeExit
+    
+    If Not PID_IsMacExcel() Then Exit Sub
+    If mSelPrevCol <> 6 And mSelPrevCol <> 5 Then Exit Sub
+    If mSelPrevSheet = "" Then Exit Sub
+    If mSelPrevRow < PID_FIRST_ROW Or mSelPrevRow > PID_LAST_ROW Then Exit Sub
+    
+    Set ws = Nothing
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets(mSelPrevSheet)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    currentVal = Trim$(CStr(ws.Cells(mSelPrevRow, mSelPrevCol).Value))
+    
+    If mSelPrevCol = 6 Then
+        If currentVal = mSelPrevFValueAtEntry Then Exit Sub
+    ElseIf mSelPrevCol = 5 Then
+        If NormalizeKVCodeForLookup(currentVal) = mSelPrevEValueAtEntry Then Exit Sub
+    End If
+    
+    If currentVal = "" Then Exit Sub
+    
+    PID_LogEFAenderungForSheet ws, ws.Cells(mSelPrevRow, mSelPrevCol)
+
+SafeExit:
+End Sub
+
+
 Private Sub PID_LogFChangeOnMacIfNeeded(ByVal ws As Worksheet, ByVal Target As Range)
     Dim currentF As String
     

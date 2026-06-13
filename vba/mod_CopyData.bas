@@ -93,6 +93,12 @@ Public Sub PID_CopyDataToFollowingMonths()
     workbookYear = PID_GetWorkbookYear()
     monthNames = PID_MonthNames()
     
+    ' Mac: Ausstehende F-Aenderung loggen, bevor CopyData Events abschaltet.
+    ' Wenn der Nutzer eine F-Zelle aendert und sofort CopyData drueckt (ohne Zellwechsel),
+    ' feuert SelectionChange nicht => Aenderung waere verloren. Flush holt das nach.
+    ' Windows: PID_FlushPendingEFLog prueft PID_IsMacExcel() und kehrt sofort zurueck.
+    ThisWorkbook.PID_FlushPendingEFLog
+    
     ' Self-heal: make sure workbook events are active before top-level copy run.
     Application.EnableEvents = True
     
