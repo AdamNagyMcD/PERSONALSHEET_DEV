@@ -1,1044 +1,429 @@
 ﻿# FUTURE PLANS — PERSONALSHEET
 
-Technischer Backlog für geplante, aber **noch nicht umgesetzte** Verbesserungen.  
-Aktuelles Verhalten bleibt unverändert, bis ein Eintrag explizit umgesetzt und in `CHANGELOG.md` dokumentiert wird.
+Technischer Backlog und Umsetzungsstand.  
+**Zuerst die Übersicht lesen** — Details zu erledigten Punkten stehen unten im Archiv.
+
+Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`CHANGELOG_NUTZER.md`](CHANGELOG_NUTZER.md) · [`PERFORMANCE_BASELINE.md`](PERFORMANCE_BASELINE.md) · [`RELEASE.md`](RELEASE.md)
 
 ---
 
-## FP-001 — FINANZIELL-Sync bei freien Texteingaben im Panel (O18:Q25)
+## Status-Legende
 
-**Status:** Behoben (2026-05-25) — `O18:Q25` aus Immediate-Finanz-Watch entfernt  
-**Priorität:** Niedrig / UX-Optimierung  
-**Betroffene Bereiche:** Monatsblätter (JANUAR–DEZEMBER), FINANZIELL-Kette, UEBERSICHT, EINSTELLUNG
+| Symbol | Bedeutung |
+|--------|-----------|
+| 🔴 **Offen** | Noch **nicht** umgesetzt — Code- oder Doku-Arbeit nötig |
+| 🟡 **Teilweise** | Code **fertig**, aber manuelle Tests / Restarbeit offen |
+| 🟢 **Erledigt** | Umgesetzt und für Release akzeptiert (evtl. einzelne optionale Tests offen) |
+| ⚫ **Storniert** | Bewusst nicht umgesetzt |
+| 🔵 **Mac-only** | Post-release, nur Mac Excel (Adam) |
 
-### Beobachtetes Verhalten (historisch)
-
-Wird in **O20** (oder generell in **O18:Q25**) Text eingegeben, wirkte es so, als würde sich das **gesamte Blatt** aktualisieren (kurzes Flackern / sichtbare Neuberechnung im rechten Panel).
-
-### Ursache
-
-`PID_MonthChangeNeedsImmediateFinanzSync` behandelte **O18:Q25** wie FINANZIELL-relevant. OOXML/Formelanalyse: Crew-Labor fuer UEBERSICHT kommt nur aus **Q17:R29** und **S35** — das Personal-Panel **O18:Q25** hat keine Formelbezuege dorthin (nur CopyData-Propagation laut SPEC).
-
-### Fix (Ist-Zustand)
-
-- `mod_SumMergedCells.bas`: Immediate-Watch nur noch `Q17:R29` und `S35`.
-- Aenderungen in **O18:Q25** loesen **keinen** `PID_SyncFinanzSummaryForMonth` mehr aus.
-- Mitarbeiterdaten (E–L) → weiterhin deferred Sync (`MarkFinanzSummaryDirtyForMonth`); UEBERSICHT-Tab → `RefreshFinanzSummaryIfDirty`.
-
-### Akzeptanzkriterien
-
-- [x] Freitext in O20 (O18:Q25) loest keine sofortige FINANZIELL-Kette aus.
-- [x] Q17:R29 / S35 Aenderungen syncen weiterhin sofort (Watch-Range unveraendert fuer diese Bereiche).
-- [x] CopyData kopiert O18:Q25 unveraendert (separater Codepfad).
-- [ ] Manuell: O20 tippen ohne Flackern; S35/Crew-Labor-Aenderung → UEBERSICHT korrekt.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_SumMergedCells.bas` — `PID_MonthChangeNeedsImmediateFinanzSync`
-- `vba/DieseArbeitsmappe.cls` — `Workbook_SheetChange`
-- `SPEC.md` — Copy Areas (`O18:Q25`)
+**Priorität:** Hoch → Mittel → Niedrig (innerhalb „Offen“).
 
 ---
 
-## FP-002 — CopyData: O18:Q25 propagiert nicht in Folgemonate
+## Übersicht — alle FP-Einträge
 
-**Status:** Behoben (2026-05-25, Snapshot O/Q) — `PID_ReadMonthPanelSnapshot` / `PID_WriteMonthPanelSnapshot`  
-**Priorität:** Hoch — SPEC-konformes Verhalten fehlt  
-**Betroffene Bereiche:** `CopyData`, Monatsblätter O18:Q25, Panel / Crew-Labor-Info
+### 🔴 Offen (noch umsetzen)
 
-### Beobachtetes Verhalten (historisch)
+| ID | Thema | Prio | Plattform |
+|----|--------|------|-----------|
+| [FP-028](#fp-028--copydata--monatsstunden-stunden-override-log) | Stunden-Änderung springt zurück (Override-Log) | **Hoch** | Win + Mac |
+| [FP-027](#fp-027--workbook-open-flackern--recalc) | Open: Flackern / Recalc mehrere Sekunden | Mittel | Win (2016), ggf. 365 |
+| [FP-029](#fp-029--spalte-k-urlaub-in--0-in-leerer-zeile) | Spalte K (Urlaub €): 0 statt leer | Mittel | Win + Mac |
+| [FP-014](#fp-014--enableselection-nur-entsperrte-zellen) | `EnableSelection` auf Monatsblättern | Mittel | Win + Mac |
+| [FP-026](#fp-026--mac-only-f-dropdown-performance) | Mac F-Dropdown Performance | Niedrig | **Nur Mac** (post-release) |
 
-Beim Ausführen von **CopyData** wurde der Bereich **O18:Q25** laut SPEC nicht zuverlässig in die **folgenden Monate** kopiert (Merge-Zellen; `FormulaR1C1`-Array wirkte nicht). Zusätzlich blieb auf Zielmonaten eine Markierung um O21:Q24.
+### 🟡 Erledigt — manuelle Tests / Rest offen
 
-### Fix (Ist-Zustand)
+| ID | Thema | Was fehlt noch |
+|----|--------|----------------|
+| FP-010 | Performance-Messprotokoll | MANU: Cold Open, CopyData, Save (Stoppuhr) |
+| FP-016 | Schutz-Smoke | Sort/Fill-Handle bei jedem Release manuell |
+| FP-018 | KV-Periode → erster Monats-Tab | Akzeptable Zeit nach neuer Periode messen |
+| FP-001–004, 006, 011, 013, 017, 019–024 | diverse Fixes | Einzelne Mac/Win-Spot-Checks in Akzeptanzkriterien |
 
-- `mod_CopyData.bas`: `PID_ReadMonthPanelSnapshot` / `PID_WriteMonthPanelSnapshot` — O/Q-Ankerzeilen (Merge), Quellblatt kurz entsperrt.
-- `PID_ResetFollowingMonthSelections` setzt nach CopyData auf allen Zielmonaten die Auswahl auf A1 (ScreenUpdating aus).
+→ Details: [Archiv — Teilweise](#archiv-teilweise-manuelle-restpunkte)
 
-### Akzeptanzkriterien
+### 🟢 Erledigt (Archiv)
 
-- [x] Nach CopyData vom Monat M sind O18:Q25 in M+1 … Dezember identisch mit Quellmonat M.
-- [x] Keine sichtbare Markierung O21:Q24 auf Zielmonaten nach CopyData.
-- [ ] Smoke / manueller CopyData-Test grün (Mac).
+FP-001 · FP-002 · FP-003 · FP-004 · FP-005 · FP-006 · FP-007 · FP-008 · FP-009 · FP-011 · FP-012 · FP-013 · FP-015 · FP-016 (auto) · FP-017 · FP-018 (Code) · FP-019 · FP-020 · FP-021 · FP-022 · FP-023 · FP-024
 
-### Betroffene Dateien (Referenz)
+→ Kurzfassung: [Archiv — Erledigt](#archiv-erledigt)
 
-- `vba/mod_CopyData.bas` — `PID_CopyMonthPanelBlock`, `PID_ResetFollowingMonthSelections`
-- `SPEC.md` — Copy Areas
+### ⚫ Storniert
 
----
-
-## FP-003 — Spalte L: bei Ergebnis 0 Zelle leer lassen (kein €0,00)
-
-**Status:** Behoben (2026-05-25 v2) — B/C-Guard + 0→leer; Restore per `RC[-10]`-Marker  
-**Priorität:** Mittel — UX / Konsistenz mit Spalte G  
-**Betroffene Bereiche:** Monatsblätter Spalte L (Letztes Gehalt / Laborcost), Formel-Restore
-
-### Fix (Ist-Zustand)
-
-- `Modul1.bas`: L-Formel liefert bei Ergebnis 0 `""` statt sichtbarem €0,00.
-- `PID_MonthSheetNeedsLetztesGehaltFormulaUpdate`: alte L-Formeln werden beim Open/Restore aktualisiert.
-
-### Akzeptanzkriterien
-
-- [x] Leere / irrelevante Mitarbeiterzeilen: L ohne €0,00, Zelle optisch leer.
-- [ ] Zeilen mit echtem Laborcost-Wert > 0: weiterhin korrekt formatiert (€) — manuell pruefen.
-- [x] CopyData ueberschreibt L in Zielmonaten weiterhin nicht (SPEC: L informational only).
-- [ ] Mac + Windows Excel 2016+ kompatibel — manuell pruefen.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/Modul1.bas` — `PID_GetLetztesGehaltFormulaR1C1`, Restore-Pfade
+| ID | Thema |
+|----|--------|
+| FP-025 | FLUKTUATION PDF-Export (entfernt 2026-06-12) |
 
 ---
 
-## FP-004 — LOHNTABELLE „Eigene Stunden“: F-Dropdown auf Monatsblatt erst nach erneuter E-Auswahl
+## Empfohlene Reihenfolge (nächste Schritte)
 
-**Status:** Behoben (2026-05-25) — dirty-Refresh baut F-Validation neu auf  
-**Priorität:** Mittel — Workaround existierte (E erneut waehlen)  
-**Betroffene Bereiche:** `LOHNTABELLE`, Monatsblätter Spalte E/F, KV-Stunden-Dropdown
-
-### Beobachtetes Verhalten (historisch)
-
-Nach **„Eigene Stunden“** auf **LOHNTABELLE** und Wechsel zum Monatsblatt erschien die neue Stundenzahl nicht in **F**, bis **E** erneut gewaehlt wurde.
-
-### Ursache
-
-`RefreshKVStundenDropdownForRow` aktualisierte bei bestehender Validation nur den Helper/Named Range, uebersprang aber `Validation.Add` (`PID_RowHasValidFStundenDropdown` → Exit). Excel (v. a. Mac) cached die alte Dropdown-Liste.
-
-### Fix (Ist-Zustand)
-
-- `mod_KVStundenDropdown.bas`: Bei `gKVDropdownsDirty` Named Range mit `replaceIfDifferent` und F-Validation immer neu anwenden.
-- Lazy-Refresh pro Monatstab unveraendert (`RefreshKVDropdownsIfDirtyForSheet`); kein 12-Blatt-Refresh beim Open.
-
-### Akzeptanzkriterien
-
-- [x] Nach Eigene Stunden + Monats-Tab: F-Liste enthaelt neue Stunde ohne E-Re-Select (Code-Pfad).
-- [ ] Workbook-Open bleibt schnell — manuell pruefen.
-- [ ] F-Overrides / Zukunftsplanung — manuell pruefen.
-- [ ] Mac + Windows — manuell pruefen.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_KVStundenDropdown.bas` — `RefreshKVStundenDropdownForRow`
+1. **FP-028** — fachlicher Bug (Stunden zurückspringen)
+2. **FP-029** — UX K-Spalte (schnell, analog FP-003/L)
+3. **FP-027** — Open-Performance (nach Messung Win2016 + Win365)
+4. **FP-014** — EnableSelection Monatsblätter (Mac testen)
+5. **FP-026** — erst nach v1.0-Release, Mac-only
 
 ---
 
-## Performance-Backlog (geplant: Windows, leistungsstarker Rechner)
+# Offen — Details
 
-Analyse 2026-05-25. Bestehende Optimierungen (lazy Open, dirty Flags, deferred FINANZIELL) **nicht** zurueckbauen.  
-Umsetzung und Messung bewusst **spaeter auf Windows** — Mac-Regressionen weiterhin mitdenken, aber Primaer-Testplattform Windows + grosses Workbook.
+## FP-028 — CopyData / Monatsstunden: Stunden-Override-Log
 
----
-
-## FP-005 — Performance: F-Dropdown dirty-Refresh nur betroffene Zeilen
-
-**Status:** Erledigt (2026-06-12) — Windows: scoped 0,15 s vs Voll 0,52 s  
-**Priorität:** Hoch (beste ROI nach FP-004)  
-**Plattform-Ziel:** Windows (Referenz-Messung), Mac smoke  
-**Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, `DieseArbeitsmappe.cls`
-
-### Ist-Zustand
-
-Nach `MarkAllKVDropdownsDirty` baut `RefreshKVStundenDropdownForSheet` beim ersten Monats-Tab **alle 80 F-Zeilen** neu (Validation + `KV_DD_*` Named Range). FP-004 korrekt, aber spuerbar langsam.
-
-### Geplante Verbesserung
-
-- Nur Zeilen mit gesetztem **E (KV-Code)** und passendem LOHNTABELLE-Zeitraum refreshen, **oder**
-- Nur Zeilen, deren KV-Code von der letzten LOHNTABELLE-Aenderung betroffen ist (Zielgerichtet nach `AddCustomKVMonatsstunden`), **oder**
-- Lazy: F-Liste erst bei Fokus/Klick auf F (Approach D aus alter FP-004-Analyse).
-
-### Akzeptanzkriterien
-
-- [x] Nach Eigene Stunden + Monats-Tab: neue Stunde in F ohne E-Re-Select (Regression FP-004) — Windows OK (2026-06-12).
-- [x] Erster Monats-Tab nach scoped dirty spuerbar schneller: **0,15 s** (2b) vs **0,51 s** Baseline / **0,52 s** Voll-Refresh.
-- [x] Workbook-Open weiterhin ohne 12× F-Rebuild (lazy dirty unveraendert).
-- [ ] Mac smoke (Excel 2016+).
-
-### Umsetzung (2026-06-12)
-
-- `MarkKVDropdownDirtyForKVCode` / `MarkKVDropdownDirtyFromLOHNTABELLERange` — scoped dirty statt immer `MarkAllKVDropdownsDirty`.
-- `RefreshKVStundenDropdownForSheetBulk` — nur betroffene KV-Codes/Zeilen; Helper-Spalten bleiben fuer unberuehrte Codes erhalten.
-- `AddCustomKVMonatsstunden` / `DeleteCustomKVMonatsstunden` — scoped dirty fuer gewaehlten KV-Code.
-- `DieseArbeitsmappe` LOHNTABELLE D4:G — KV-Code aus geaenderten Zeilen.
-- FP-010 Schritt **2b** misst scoped dirty (BG1, Februar).
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_KVStundenDropdown.bas` — `RefreshKVStundenDropdownForSheet`, `RefreshKVStundenDropdownForRow`
-- `vba/mod_AddNewKVPeriodOnTop.bas` — optional KV-Code/Periode an dirty-Refresh uebergeben
-
----
-
-## FP-006 — Performance: weniger Workbook Named Ranges (`KV_DD_*`)
-
-**Status:** Erledigt (2026-06-12) — `PID_CountKVDDNamedRanges` = 0 nach FullSystemRefresh (Windows)  
-**Priorität:** Mittel — grosser Refactor, langfristig Open/Save  
-**Plattform-Ziel:** Windows (viele Names = spuerbar bei Open/Save)  
-**Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, Workbook-Names
-
-### Ist-Zustand
-
-Pro Monatszeile ein Name `KV_DD_<Sheet>_<Row>` (ca. 80 × 12 ≈ 960 Names). Belastet Excel Open, Save, Validation.
-
-### Geplante Verbesserung
-
-- Weniger Names: z. B. eine Helper-Spalte pro KV-Code/Monat statt 80 Zeilen-Namen, **oder**
-- Validation `Formula1` mit direkter Bereichsadresse ohne Workbook-Name (Mac-Merge-Fall testen).
-
-### Akzeptanzkriterien
-
-- [x] F-Dropdown funktioniert (E/F-Test + FP-004/FP-005 weiter OK).
-- [x] `KV_DD_*` Names entfernt — `PID_CountKVDDNamedRanges` = **0** (2026-06-12).
-- [ ] Open/Save-Zeit verbessert (vor/nach messen auf Windows) — optional MANU-Baseline.
-- [ ] Mac smoke.
-- [ ] Keine Regression CopyData — bei Gelegenheit pruefen.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_KVStundenDropdown.bas` — `GetDropdownNameForMonthRow`, `PID_EnsureWorkbookNameRefersTo`
-
----
-
-## FP-007 — Performance: SheetChange — weniger doppelte Recalc pro Zeile
-
-**Status:** Erledigt (2026-06-12) — Windows E/F/D/I-Test OK  
-**Priorität:** Mittel — Alltags-UX beim Tippen  
-**Plattform-Ziel:** Windows + Mac  
-**Betroffene Bereiche:** `DieseArbeitsmappe.cls`, `mod_KVLohnLookup.bas`, `Modul1.bas`
-
-### Ist-Zustand
-
-Eine Aenderung in E/F kann nacheinander ausloesen: Monatslohn-VBA, Aktuelle Stunden, Letztes Gehalt, F-Invalidate, Fluktuation dirty, FINANZ deferred — mehrfaches Unprotect/Calculate pro Zeile.
-
-### Geplante Verbesserung
-
-- Paste/Bulk: ein Handler fuer den geaenderten Bereich, pro Zeile einmal recalculieren.
-- `PID_PreloadKVLohnCaches` nur wenn LOHNTABELLE-Cache wirklich invalid (nicht bei jedem Einzelcell-Event doppelt).
-
-### Akzeptanzkriterien
-
-- [x] E/F-Aenderung: G und abhaengige Spalten korrekt (2026-06-12).
-- [ ] Grosser Paste in B:F blockweise ohne Timeout — bei Gelegenheit.
-- [ ] Keine stale UEBERSICHT/FINANZIELL-Werte — bei Gelegenheit.
-
-### Umsetzung (2026-06-12)
-
-- `PID_RecalculateMonatslohnForChangedRows`: Preload einmal; L-Recalc gesammelt am Ende (nicht pro Zelle doppelt).
-- `PID_RecalculateLetztesGehaltForChangedRows`: E/F aus Watch-Range (Monatslohn uebernimmt L).
-- `PID_RecalculateAktuelleStundenForChangedRows`: H-`Calculate` gesammelt per `Union`.
-- `DieseArbeitsmappe`: redundantes `PID_PreloadKVLohnCaches` entfernt.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/DieseArbeitsmappe.cls` — `Workbook_SheetChange`
-- `vba/mod_KVLohnLookup.bas` — `PID_RecalculateMonatslohnForChangedRows`
-- `vba/Modul1.bas` — `PID_RecalculateLetztesGehaltForChangedRows`, Aktuelle Stunden
-
----
-
-## FP-008 — Performance: SheetSelectionChange entlasten
-
-**Status:** Erledigt (2026-06-12) — Windows D/E/F-Navigation OK  
-**Priorität:** Niedrig  
-**Plattform-Ziel:** Windows  
-**Betroffene Bereiche:** `DieseArbeitsmappe.cls`
-
-### Ist-Zustand
-
-Jede Auswahl in D3:F82 setzt `ScreenUpdating = False` und prueft E/F-Dropdown-Validierung; D-Zelle zeigt Beschaeftigungsdauer (O45).
-
-### Geplante Verbesserung
-
-- F/E-Rebuild nur wenn Validation wirklich fehlt/invalid (bereits teilweise — pruefen ob redundant).
-- O45/D-Hinweis ohne globales ScreenUpdating-Off bei harmlosen Spruengen.
-
-### Akzeptanzkriterien
-
-- [x] Navigation E/F weiterhin fluessig (2026-06-12).
-- [x] Kaputte Dropdowns werden weiterhin lazy repariert.
-
-### Umsetzung (2026-06-12)
-
-- `SheetSelectionChange`: `ScreenUpdating = False` nur bei kaputtem E/F-Dropdown (Repair-Pfad).
-- D/O45-Hinweis ohne globales ScreenUpdating.
-- `PID_MonthSheetHasValidKVCodeDropdown`: Sheet-Cache nach erstem gueltigen Check.
-
----
-
-## FP-009 — Performance: Fluktuation inkrementell (optional)
-
-**Status:** Erledigt (2026-06-12) — Compile OK, Save/Tab-Pfad getrennt  
-**Priorität:** Niedrig (grosser Aufwand)  
-**Plattform-Ziel:** Windows (grosses Workbook)  
-**Betroffene Bereiche:** `mod_RefreshFluktuationAll.bas`, `mod_BuildFluktuationDaten.bas`, `mod_BuildFluktuationAnalyse.bas`
-
-### Ist-Zustand
-
-`RefreshFluktuationAll` baut Daten + Analyse komplett neu (dirty, vor Save). Bewusst deferred — kann trotzdem mehrere Sekunden dauern.
-
-### Geplante Verbesserung
-
-- Inkrementelle Aktualisierung nur geaenderte Mitarbeiter/Monate, **oder**
-- Schwere Analyse nur beim Oeffnen des FLUKTUATION-Tabs (strenger als heute).
-
-### Akzeptanzkriterien
-
-- [ ] FLUKTUATION-Inhalt fachlich identisch nach D/I/N-Aenderung.
-- [ ] Save mit dirty spuerbar schneller oder gleichwertig akzeptabel dokumentiert.
-
-### Umsetzung (2026-06-12)
-
-- **BeforeSave:** nur `BuildFluktuationDaten` (`RefreshFluktuationDataIfDirty`) — Analyse deferred.
-- **FLUKTUATION-Tab:** `RefreshFluktuationIfDirty` — Daten (falls noetig) + Analyse.
-- **Inkrementell:** `MarkFluktuationDirtyForMonthSheet` bei D/I/N; `BuildFluktuationDaten` rescannt nur dirty Monate.
-- FP-010 Schritte **6** (Save-Daten) und **6b** (Tab voll).
-
----
-
-## FP-010 — Performance: Mess-Protokoll Windows
-
-**Status:** Erledigt AUTO (2026-06-12); FP-005–009 Re-Messung offen; MANU optional  
-**Priorität:** Hoch — vor Implementierung FP-005–009  
-**Plattform-Ziel:** Windows, leistungsstarker PC, Produktionsnahes Workbook
-
-### Werkzeuge
-
-- **Doku:** `docs/PERFORMANCE_BASELINE.md` (Tabellen fuer Baseline + Re-Messung)
-- **Makro:** `PID_RunPerformanceBaseline` / `RunPerformanceBaseline` — AUTO-Schritte 2–7, Log-Blatt `PID_PERFORMANCE_LOG` (very hidden)
-
-### Checkliste Messung
-
-| # | Schritt | Methode |
-|---|---------|---------|
-| 1 | Cold Open bis erster Monats-Tab nutzbar | MANU (Stoppuhr) |
-| 2 | LOHNTABELLE → Eigene Stunden → erster Monats-Tab | MANU + AUTO (KV-Refresh Proxy) |
-| 3 | E/F-Aenderung → G stabil | MANU + AUTO (G-Recalc 1 Zeile) |
-| 4 | CopyData Januar → Dezember | MANU (Testkopie!) |
-| 5 | UEBERSICHT nach FINANZIELL-Aenderung | AUTO (`PID_SyncFinanzSummaryToUbersicht`) |
-| 6 | Save mit `gFluktuationDirty = True` | MANU + AUTO (Fluktuation-Refresh) |
-| 7 | `FullSystemRefresh` (Admin-Referenz) | AUTO |
-
-### Ergebnis
-
-- [x] Erste Windows-Baseline AUTO in `docs/PERFORMANCE_BASELINE.md` (2026-06-12: KV 0,51 s, G 0,02 s, FINANZ 0,11 s, Fluktuation 1,24 s, FullRefresh 8,18 s).
-- [ ] MANU-Schritte (Cold Open, CopyData, Save) noch dokumentieren.
-- [ ] Nach jedem FP-005–009-Fix: gleiche Schritte wiederholen.
-
----
-
-## Schutz-Paket — Amateur-Vermeidung (Übersicht)
-
-Ziel: Monatsblätter und kritische Bereiche **so weit wie möglich** gegen versehentliche Excel-Gesten absichern, ohne SPEC/TEST-konforme manuelle Eingaben zu blockieren (B/C Neuer MA, H/I Exit, D/E Override, O18:Q25 Panel, E/F KV).
-
-| ID | Thema | Aufwand | Priorität |
-|----|--------|---------|-----------|
-| FP-011 | Fill Handle / Drag-Format | Klein (A) / Mittel (B) | Hoch |
-| FP-012 | Sortieren auf Monatsblättern verbieten | Klein | Hoch |
-| FP-013 | Lock-all + Whitelist-Unlock (Monatsblätter) | Mittel | Hoch |
-| FP-014 | Nur entsperrte Zellen auswählbar (`EnableSelection`) | Klein–mittel | Mittel |
-| FP-015 | Endanwender-Hinweise + Recovery-Doku | Klein (Doku) | Mittel |
-| FP-016 | Schutz-Smoke / Regression nach Paket | Klein | Nach Umsetzung |
-
-**Umsetzungsreihenfolge (empfohlen):** FP-011 A → FP-012 → FP-013 → FP-011 B (falls nötig) → FP-014 (Mac+Win testen) → FP-015 → FP-016.
-
-**Bereits vorhanden (nicht neu):** Lapvédelem + Jelszó, Paste nur Werte (`EnforcePasteValuesOnly`), rejtett helper lapok, `FormatAllMonthSheets` als Layout-Reparatur.
-
----
-
-## FP-011 — Véletlen cellahúzás (Fill Handle) tönkreteszi a formázást
-
-**Status:** Erledigt (2026-06-12) — Windows teszt OK  
-**Priorität:** Hoch — UX / védelem nem technikai szakértőknek  
-**Aufwand:** **Klein bis mittel** (siehe unten)  
-**Betroffene Bereiche:** Monatsblätter B3:N82, `mod_SchutzHinzufugen.bas`, `mod_FormatMonthSheet.bas`, optional `DieseArbeitsmappe.cls`
-
-### Beobachtetes Verhalten
-
-Nutzer hält **E** oder **F** (entsperrt) gedrückt und **zieht** auf **gesperrte** Zellen (**G, H, K, L**, B–D mit Zebra/Input-Look). Excel blockiert oft Werte, kopiert aber **Format** (Hintergrund, Rahmen) → Zebra/Guide-Stil „kaputt“, ähnlich wie früher AutoFill auf Spalte L (VBA), hier **User-Geste**.
-
-### Ursache
-
-- Schutz entsperrt nur **E:F**; `Locked` verhindert nicht zuverlässig **Format-Drag** (v. a. Mac).
-- Kein `EnableFillHandle`-Disable, kein Auto-Restore nach Format-Schaden.
-
-### Geplante Verbesserung (Aufwand)
-
-| Stufe | Ansatz | Aufwand | Risiko |
-|-------|--------|---------|--------|
-| **A (empfohlen)** | Beim Schutz/Tab: `EnableFillHandle = False` auf Monatsblättern (und ggf. `CellDragAndDrop = False`) | **Klein** (~1 Modul, wenige Zeilen) | Gering — Nutzer nutzen F/E per Dropdown, selten Fill |
-| **B** | `Workbook_SheetChange`: Format-Änderung auf Guide/Locked-Bereich → `PID_ApplyMonthEmployeeZebraRows` + Rahmen | **Mittel** | Mittel — Events, Performance bei Paste |
-| **C** | Nur Doku + `FormatAllMonthSheets` als Reparatur-Makro | **Minimal** | Löst Unfall nicht, nur Recovery |
-
-**Nicht** nötig: großer Schutz-Refactor, Named Ranges, 12-Blatt-Rebuild.
-
-### Akzeptanzkriterien
-
-- [x] Fill-Handle-Zug von F/E nach G/L/B–D zerstört Zebra/Guide-Format **nicht** (Application-Guard auf Monats-Tabs).
-- [x] E/F-Dropdown und normales Tippen unverändert.
-- [ ] Mac smoke.
-
-### Umsetzung Stufe A (2026-06-12)
-
-- `PID_ProtectWorkerMonthSheet` in `mod_SchutzHinzufugen.bas`: `AllowSorting:=False`.
-- Fill Handle: `Application.EnableFillHandle=False` auf Monats-Tabs via `PID_ApplyMonthSheetFillHandleGuard` (Excel 2016 — kein Worksheet-Property).
-- Alle Monatsblatt-`Protect`-Stellen nutzen zentral diese Funktion.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_SchutzHinzufugen.bas` — `PID_ApplySheetProtectionForMacros`
-- `vba/mod_FormatMonthSheet.bas` — `PID_ApplyMonthEmployeeZebraRows`, `FormatAllMonthSheets`
-- `vba/DieseArbeitsmappe.cls` — optional `SheetChange`-Restore (Stufe B)
-
----
-
-## FP-012 — Sortieren auf Monatsblättern deaktivieren
-
-**Status:** Erledigt (2026-06-12) — Windows teszt OK  
-**Priorität:** Hoch — verhindert schwere Daten-/Zeilenvermischung  
-**Aufwand:** **Klein**  
-**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, alle Re-`Protect`-Stellen (CopyData, Modul1, FormatMonthSheet, …)
-
-### Beobachtetes Verhalten
-
-Nutzer löst versehentlich **Sort** aus (Menü oder Kontext). Zeilen 3–82 werden neu geordnet → Mitarbeiterzeilen, Formeln, KV-Zuordnung und Zebra passen nicht mehr zusammen.
-
-### Ursache
-
-`PID_ApplySheetProtectionForMacros` setzt für Monatsblätter `AllowSorting:=True` (analog andere Blätter).
-
-### Geplante Verbesserung
-
-- Monatsblätter (Januar–Dezember): `AllowSorting:=False` beim `Protect`.
-- `AllowFiltering` nur beibehalten, wenn fachlich nötig; sonst ebenfalls `False` prüfen (optional, separates Mini-Ticket).
-- Alle Stellen, die Monatsblätter erneut schützen, konsistent anpassen (grep `AllowSorting`).
-
-### Akzeptanzkriterien
-
-- [x] Auf Monatsblatt ist Sortieren im geschützten Zustand nicht möglich (Windows).
-- [x] E/F-Dropdown, Tippen, CopyData, FormatAllMonthSheets unverändert funktionsfähig.
-
-### Umsetzung (2026-06-12)
-
-- `PID_ProtectWorkerMonthSheet` — `AllowSorting:=False`; `mod_KVLohnLookup`, `mod_KVStundenDropdown`, `mod_DataClear`, `Modul1` umgestellt.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_SchutzHinzufugen.bas`
-- `vba/mod_CopyData.bas`, `vba/Modul1.bas`, `vba/mod_FormatMonthSheet.bas` (Re-Protect-Parameter)
-
----
-
-## FP-013 — Monatsblätter: Lock-all + Whitelist-Unlock
-
-**Status:** Erledigt (2026-06-12) — Windows teszt OK    
+**Status:** 🔴 Offen — Bug Excel 2016 (2026-06)  
 **Priorität:** Hoch  
-**Aufwand:** **Mittel**  
-**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, `mod_FormatMonthSheet.bas`, `DieseArbeitsmappe.cls` (Paste-Bereiche), SPEC/TEST_CASES
+**Plattform:** Windows + Mac · `mod_CopyData.bas`
 
-### Beobachtetes Verhalten
+### Problem
 
-Viele Zellen sehen durch **Input-Styling** editierbar aus (B:F, I:J, M:N), sind aber fachlich Formel-/Guide-Bereiche (G, K, L, …). Wenn `Locked` im Template/Format-Kopie `False` bleibt, können Nutzer **in geschützte Formeln tippen** oder Werte überschreiben.
+1. MA ab Juli mit 173 h — OK.  
+2. Ab Oktober weniger + Aktualisierung ab Mai — OK.  
+3. Oktober zurückdrehen / neu ändern → springt auf **erste** Änderung zurück.
 
 ### Ursache
 
-Schutz setzt nur explizit **E:F** auf `Locked = False`, ohne vorher `Cells.Locked = True` für das ganze Blatt (Muster **EINSTELLUNG** in `mod_FormatEinstellung.bas` fehlt auf Monatsblättern).
+Verstecktes Blatt **`PID_HOUR_OVERRIDES`**: F/E-Änderungen werden geloggt; bei CopyData ab **früherem** Monat gewinnt **stale Log** gegen aktuelle Blattwerte. Log wird nur bei **Neue Periode** geleert.
 
-### Geplante Verbesserung
+### Geplante Ansätze
 
-1. Vor `Protect`: `ws.Cells.Locked = True` (ganzes Monatsblatt).
-2. **Whitelist** entsperren (SPEC + TEST_CASES):
-   - `E3:F82` — KV-Code / Stunden (täglich)
-   - `B3:C82` — Neuer Mitarbeiter / Schlüssel (TEST 3)
-   - `D3:D82` — Stunden-Override (TEST 4; E bleibt separat)
-   - `I3:J82` — Exit-Daten (TEST 2)
-   - `M3:N82` — falls weiter manuell genutzt (CopyData-Bereich)
-   - `O18:Q25` — Panel-Freitext (SPEC)
-3. **Gesperrt bleiben:** G, H (wenn nicht in Whitelist), K, L, Q17:R29, S35, Summen, Guide-Zebra außerhalb Whitelist.
-4. `PID_MSRestoreMonthSheetDropdowns` / Format-Kopie: `xlPasteFormats` darf **Locked** auf E/F nicht wieder kaputt machen (bereits Kommentar in Code — nach Lock-all erneut validieren).
-5. Nach Schutz: `PID_ApplySheetProtectionForMacros` erneut aufrufen oder zentral eine `PID_ApplyMonthSheetLockPolicy(ws)`.
-
-### Umsetzung (2026-06-12)
-
-- `PID_ApplyMonthSheetLockPolicy` in `mod_SchutzHinzufugen.bas`: `Cells.Locked = True`, dann Whitelist entsperren.
-- `PID_ProtectWorkerMonthSheet` und `PID_UnlockSheetEditRanges` nutzen zentrale Policy.
-- `mod_FormatMonthSheet.bas`: `PID_MSRestoreMonthSheetDropdowns` ruft Policy nach Format-Kopie auf.
-- `DieseArbeitsmappe.cls`: Paste-Whitelist an Policy angeglichen (ohne G/H).
+| # | Ansatz |
+|---|--------|
+| **1 (empfohlen)** | Nach CopyData: Log mit Blattwerten ab Quellmonat abgleichen |
+| **2** | `CollectFutureOverrides` auch E/F für bestehende MA aus Blatt lesen |
+| **3** | F-Änderung in M → Log-Einträge MA/F für Monate > M invalidieren |
+| **4** | Admin-Reset / Workaround in Anleitung |
 
 ### Akzeptanzkriterien
 
-- [x] Nutzer kann nur Whitelist-Bereiche bearbeiten; G/K/L/Q-Formelbereiche nicht.
-- [x] TEST 2 (Exit I/J), TEST 3 (B/C), TEST 4 (D/E-Override), Panel O18:Q25 weiterhin möglich.
-- [x] CopyData, KV-Dropdown, L-Restore, FINANZIELL-Sync ohne Regression.
-- [x] `FormatAllMonthSheets` setzt Lock-Policy nicht zurück (Policy am Ende).
-- [x] Panel O8:O15 auf allen Monatsblaettern manuell verifiziert (Durchrechnung-Start O15:R15).
-- [ ] Mac + Windows Excel 2016+.
+- [ ] Juli 173 → Okt weniger → zurück 173 → CopyData ab Mai **und** ab Okt: überall 173
+- [ ] Zwei nacheinander verschiedene Okt-Werte — **letzter** bleibt
+- [ ] November-Sonderwert bei CopyData ab Mai bleibt (Regression)
+- [ ] Smoke + CopyData-SPEC grün
 
-### Betroffene Dateien (Referenz)
+### Workaround (bis Fix)
 
-- `vba/mod_SchutzHinzufugen.bas` — zentrale Policy
-- `vba/mod_FormatMonthSheet.bas` — nach Format-Kopie
-- `vba/mod_FormatEinstellung.bas` — Referenzmuster Lock-all/Whitelist
-- `SPEC.md`, `TEST_CASES.md`
+Aktualisierung vom **Monat der Änderung** aus; ggf. `PID_HOUR_OVERRIDES` leeren (Admin).
 
 ---
 
-## FP-014 — Auswahl nur auf entsperrte Zellen (`EnableSelection`)
+## FP-027 — Workbook-Open: Flackern / Recalc
 
-**Status:** Erledigt (2026-06-12) — Kurzanleitung aktualisiert  
+**Status:** 🔴 Offen — Feedback Excel 2016 (2026-06)  
 **Priorität:** Mittel  
-**Aufwand:** **Klein–mittel** (Mac-Verhalten testen)  
-**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, Monatsblätter
+**Plattform:** Primär Win2016; Mechanismus betrifft alle Versionen
 
-### Beobachtetes Verhalten
+### Problem
 
-Nutzer markieren große Bereiche inkl. **gesperrter** Formelzellen → Löschen, Format-Paste oder Drag mit höherer Fehlerwahrscheinlichkeit.
+Beim Öffnen: Excel flackert / „Berechnet…“ mehrere Sekunden (Win2016). Funktion danach OK.
 
-### Geplante Verbesserung
+### Ursache (vermutet)
 
-- Nach `Protect` auf Monatsblättern: `EnableSelection = xlUnlockedCell` (nur entsperrte Zellen auswählbar).
-- Optional: `xlNoRestrictions` auf Admin-Makro-Pfad kurzzeitig (wie bestehendes Unprotect für Makros).
+Open-Ende: `xlCalculationAutomatic` → Full-Workbook-Recalc; plus Copyright, Schutz, H/K/L auf aktivem Tab.
+
+### Geplante Ansätze
+
+| # | Ansatz |
+|---|--------|
+| A | Messung FP-010 Schritt 1 auf Win2016 **und** Win365 |
+| B | Open-scoped Recalc (nur aktives Blatt H/K/L) |
+| C | Lazy Tab-Recalc konsistent |
+| D | Deferred Copyright/Schutz |
 
 ### Akzeptanzkriterien
 
-- [ ] Normale Arbeit in E/F und Whitelist (FP-013) unverändert.
-- [ ] Makros (CopyData, Format, L-Restore) funktionieren mit `UserInterfaceOnly:=True`.
-- [ ] Mac Excel 2016: keine blockierenden UX-Regressionen (Panel, Dropdowns).
-- [ ] Windows gleicher Smoke wie Mac.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_SchutzHinzufugen.bas`
+- [ ] Win2016: Open spürbar kürzer (FP-010 messen)
+- [ ] Win365 + Mac: keine Regression
+- [ ] H/K/L nach Open korrekt (FP-024)
 
 ---
 
-## FP-015 — Endanwender-Hinweise und Recovery (Deutsch, kurz)
+## FP-029 — Spalte K (Urlaub in €): 0 in leerer Zeile
 
-**Status:** Erledigt (2026-06-12) — Kurzanleitung aktualisiert  
+**Status:** 🔴 Offen — Feedback (2026-06)  
 **Priorität:** Mittel  
-**Aufwand:** **Klein** (Doku + optional feste Hinweiszelle)  
-**Betroffene Bereiche:** Monatsblätter (z. B. feste Zelle), `README.md` oder `docs/`, Toolbar-Texte
+**Plattform:** Win + Mac · Spalte **K**, `Modul1.bas` / CopyData
 
-### Ziel
+### Problem
 
-Restaurant-Manager ohne Excel-Wissen: **was tun / was nicht** + **was tun bei kaputtem Layout**.
+Leere MA-Zeilen (kein Name/ID) zeigen **0,00 €** in K statt leerer Zelle.
 
-### Geplante Inhalte (Deutsch, kurz)
+### Ansatz
 
-- Nur **E und F** täglich ändern; **nicht ziehen** (Fill Handle).
-- Kein Sortieren, kein großflächiges Löschen.
-- Bei kaputtem Zebra/Rahmen: Button **`FormatAllMonthSheets`** (oder Admin-Hinweis).
-- Wichtige Aktionen nur über **Toolbar-Buttons** (CopyData, Aktualisierung, …).
-
-**Ist (2026-06):** Ausgearbeitet in `docs/Kurzanleitung_Personalsheet_A4.html` (A4-Druck, einfache Sprache, Umlaute).
+Analog **FP-003** (Spalte L): B/C-Leer-Guard, J leer → K leer, 0 → `""`, kanonische Formel in `Modul1.bas`.
 
 ### Akzeptanzkriterien
 
-- [x] Hinweis für Endnutzer in Kurzanleitung HTML (druckbar A4).
-- [x] Q12 Vormonat-Editierbarkeit erklärt (Jan/Mär/Apr/Jun/Jul/Sep/Okt/Dez editierbar, Feb/Mai/Aug/Nov Formel).
-- [x] Spalten G/H/K/L als nicht editierbar beschrieben (Blattschutz-Erklärung hinzugefügt).
-- [x] Kein Sortieren auf Monatsblättern erwähnt.
-- [x] Recovery-Pfad zu `FormatAllMonthSheets` dokumentiert.
-
-### Betroffene Dateien (Referenz)
-
-- `docs/Kurzanleitung_Personalsheet_A4.html`
+- [ ] Leere Zeile: K ohne 0
+- [ ] MA ohne J: K leer
+- [ ] MA + J + Lohn: K korrekt (€)
+- [ ] CopyData propagiert Formel
 
 ---
 
-## FP-016 — Schutz-Paket: Smoke / Regression
+## FP-014 — EnableSelection (nur entsperrte Zellen)
 
-**Status:** Erledigt (2026-06-12) — TEST 17/18 automatisch, RELEASE.md erweitert  
-**Priorität:** Pflicht vor Release mit Schutz-Paket  
-**Aufwand:** **Klein**  
-**Betroffene Bereiche:** `mod_SmokeCheck.bas`, `docs/RELEASE.md`, manuelle Mac/Win-Checkliste
+**Status:** 🔴 Offen (Code auf Monatsblättern **nicht** umgesetzt; Kurzanleitung FP-015 erledigt)  
+**Priorität:** Mittel  
+**Plattform:** Win + Mac · `mod_SchutzHinzufugen.bas`
 
-### Geplante Prüfungen
+### Problem
 
-- [x] TEST 17: Monatsblatt Januar — E/F/B/I entsperrt, G gesperrt (automatisch).
-- [x] TEST 18: Q12 auf Februar gesperrt (Formel), Januar entsperrt (Eingabe) (automatisch).
-- [x] RELEASE.md Schutz-Paket Checkliste (Sort, Fill Handle, TEST 17/18).
-- [ ] Manuell: Sort-Versuch auf Monatsblatt abgeblockt (FP-012) — bei jedem Release prüfen.
-- [ ] Manuell: Fill-Handle-Zug von E/F kein Layout-Schaden (FP-011) — bei jedem Release prüfen.
+Nutzer markieren große Bereiche inkl. gesperrter Formelzellen → höheres Fehlerrisiko.
 
-### Betroffene Dateien (Referenz)
+### Geplant
 
-- `vba/mod_SmokeCheck.bas` (TEST 17/18)
-- `docs/RELEASE.md`
-
----
-
-## FP-017 — Monatsblätter: Spalte D und I breiter / datenabhängig
-
-**Status:** Behoben (2026-05-26) — `PID_ApplyMonthSheetDateColumnWidths`, Breite 13 (wie G/J)  
-**Priorität:** Mittel — UX, Daten sichtbar  
-**Aufwand:** **Klein**  
-**Betroffene Bereiche:** Monatsblätter (Januar–Dezember), `mod_FormatMonthSheet.bas` oder `FormatAllMonthSheets`
-
-### Beobachtetes Verhalten
-
-Spalten **D** (Eintritt) und **I** (Austrittsdatum) sind zu schmal; Datumswerte werden abgeschnitten oder nicht vollständig angezeigt.
-
-### Geplante Verbesserung
-
-- Feste Mindestbreite für D und I (z. B. aus Referenzblatt Januar) **oder**
-- `ColumnWidth` / `AutoFit` nur für D und I nach Format-Lauf (Mac/Win 2016+ testen).
-- In `FormatAllMonthSheets` / Monats-Layout mitziehen.
+`EnableSelection = xlUnlockedCell` auf **Monatsblättern** nach Protect (UBERSICHT hat bereits einen Pfad).
 
 ### Akzeptanzkriterien
 
-- [x] Feste Mindestbreite 13 für D und I (Code).
-- [ ] Typische Datumsformate (dd.mm.yyyy) in D und I auf Monatsblatt voll sichtbar (Win Excel 2016, manuell bestätigt).
-- [ ] Kein Layout-Bruch im Mitarbeiterblock B:N.
-- [ ] Mac + Windows.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_FormatMonthSheet.bas`
+- [ ] E/F und Whitelist normal nutzbar
+- [ ] CopyData, Format, L-Restore mit `UserInterfaceOnly:=True`
+- [ ] Mac 2016: keine UX-Regression (Dropdowns, Panel)
+- [ ] Windows gleicher Smoke
 
 ---
 
-## FP-018 — LOHNTABELLE: neue KV-Periode → erster Monats-Tab sehr langsam
+## FP-026 — Mac-only: F-Dropdown Performance
 
-**Status:** Behoben (2026-05-26) — F-Dropdown pro KV-Code (Bulk), Manual während Refresh, H/K/L danach einmal  
-**Priorität:** Mittel — Performance (Alltag)  
-**Aufwand:** **Mittel–groß** (an FP-005–FP-010 anknüpfen)  
-**Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, `DieseArbeitsmappe.cls` (lazy refresh), LOHNTABELLE
+**Status:** 🔵 Geplant — **post-release v1.0**  
+**Priorität:** Niedrig  
+**Plattform:** Nur Mac · Windows-Pfad **nicht** anfassen
 
-### Beobachtetes Verhalten
+### Ist-Zustand (Mac, 2026-06)
 
-Nach **neuer KV-Periode** auf LOHNTABELLE dauert das **erste Öffnen** eines Monatsblatts sehr lange — vermutlich vollständiger KV-/Stunden-Refresh über alle Zeilen/Named Ranges.
+E/F-Aktionen ~0,5 s (voller F-Rebuild). Zuverlässig nach KV-Fixes, aber langsam.
 
-### Geplante Verbesserung (Richtung)
+### Geplant
 
-- Dirty-Refresh weiter eingrenzen (nur aktives Blatt, nur betroffene KV-Codes/Zeilen).
-- Named-Range-Strategie vereinfachen (siehe FP-006).
-- Optional: Hintergrund-Refresh oder Fortschritts-Hinweis statt „eingefroren“ wirkender Pause.
-- Windows-Messung laut FP-010 vor großem Umbau.
+Sor-/KV-szintű refresh; Stunden-Cache mit strikter Invalidierung; weniger Doppel-Refresh.
 
 ### Akzeptanzkriterien
 
-- [x] Bulk-Refresh: ein Named Range pro KV-Gruppe statt 80× pro Zeile; `PID_BeginHeavyMaintenance` während SheetActivate.
-- [ ] Nach neuer KV-Periode: erster Monats-Tab unter akzeptabler Zeit — manuell prüfen.
-- [ ] F-Dropdown listet neue Stunden korrekt (Regression FP-004).
-- [ ] Mac + Windows Excel 2016+.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_KVStundenDropdown.bas`
-- `vba/DieseArbeitsmappe.cls`
-- `docs/FUTURE_PLANS.md` FP-005–FP-010
+- [ ] Mac smoke: BG1 ↔ BG1_5, Eigene Stunden, LOHNTABELLE-View
+- [ ] ~0,1 s pro E/F-Aktion (Ziel)
+- [ ] Windows Baseline 2b unverändert (~0,15 s)
 
 ---
 
-## FP-019 — CopyData: Bestätigungsdialog entfernen
+# Archiv
 
-**Status:** Behoben (2026-05-26) — `PID_ConfirmCopyDataAction` entfernt  
-**Priorität:** Niedrig — UX  
-**Aufwand:** **Klein**  
-**Betroffene Bereiche:** `mod_CopyData.bas`
+## Archiv — Erledigt
 
-### Beobachtetes Verhalten
+Kompakte Liste. Vollständige Historie in [`CHANGELOG.md`](CHANGELOG.md).
 
-`PID_ConfirmCopyDataAction` zeigt vor CopyData ein Ja/Nein-Fenster. Nutzer, die den Button/Makro wählen, wollen **direkt** kopieren — Dialog wirkt überflüssig.
+| ID | Status | Kurz | Datum |
+|----|--------|------|-------|
+| FP-001 | 🟢 | O18:Q25 löst kein FINANZIELL-Flackern mehr aus | 2026-05-25 |
+| FP-002 | 🟢 | CopyData kopiert Panel O18:Q25 in Folgemonate | 2026-05-25 |
+| FP-003 | 🟢 | Spalte L: 0 → leer (B/C-Guard) | 2026-05-25 |
+| FP-004 | 🟢 | F-Dropdown nach Eigene Stunden ohne E-Re-Select | 2026-05-25 |
+| FP-005 | 🟢 | Scoped KV-dirty F-Refresh (0,15 s vs 0,52 s) | 2026-06-12 |
+| FP-006 | 🟢 | `KV_DD_*` Names entfernt (`PID_CountKVDDNamedRanges` = 0) | 2026-06-12 |
+| FP-007 | 🟢 | SheetChange: gebündeltes H/L/G-Recalc | 2026-06-12 |
+| FP-008 | 🟢 | SelectionChange entlastet | 2026-06-12 |
+| FP-009 | 🟢 | Fluktuation: Save nur Daten; Analyse beim Tab | 2026-06-12 |
+| FP-010 | 🟢 AUTO | Baseline-Makro + Doku; MANU-Stoppuhr offen | 2026-06-12 |
+| FP-011 | 🟢 | Fill Handle / Drag auf Monatsblättern aus | 2026-06-12 |
+| FP-012 | 🟢 | Sortieren auf Monatsblättern aus | 2026-06-12 |
+| FP-013 | 🟢 | Lock-all + Whitelist (B/C, D, E/F, I/J, M/N, O18:Q25, Q12) | 2026-06-12 |
+| FP-015 | 🟢 | Kurzanleitung A4 (Deutsch, Du-Form, Juni 2026) | 2026-06-12 |
+| FP-016 | 🟢 | Smoke TEST 17/18 + RELEASE-Checkliste Schutz | 2026-06-12 |
+| FP-017 | 🟢 | Spalten D/I Breite 13 | 2026-05-26 |
+| FP-018 | 🟢 | KV-Periode: Bulk F-Refresh, HeavyMaintenance | 2026-05-26 |
+| FP-019 | 🟢 | CopyData ohne Bestätigungsdialog | 2026-05-26 |
+| FP-020 | 🟢 | Q12 Vormonat +/- editierbar (Nicht-Startmonate) | 2026-05-26 |
+| FP-021 | 🟢 | UEBERSICHT E30/I30 editierbar | 2026-05-26 |
+| FP-022 | 🟢 | LOHNTABELLE „4) Stunde löschen“ | 2026-05-26 |
+| FP-023 | 🟢 | Copyright Blätter + VBA-Module (Adam Nagy / McOpCo) | 2026-05-26 |
+| FP-024 | 🟢 | Automatische Berechnung nach Open; H/K/L per Tab | 2026-05-26 |
 
-### Geplante Verbesserung
+### Schutz-Paket (FP-011–016) — erledigt
 
-- `PID_ConfirmCopyDataAction`-Aufruf entfernen oder optional (Admin-Flag); CopyData startet sofort nach gültigem Monatsblatt.
-- Kurze **Erfolgs-Meldung** am Ende beibehalten (oder optional stumm + nur Statuszeile).
+| ID | Thema | Ergebnis |
+|----|--------|----------|
+| FP-011 | Fill Handle | `EnableFillHandle=False` auf Monats-Tabs |
+| FP-012 | Sortieren | `AllowSorting:=False` |
+| FP-013 | Lock-all + Whitelist | `PID_ApplyMonthSheetLockPolicy` |
+| FP-015 | Endanwender-Doku | `docs/Kurzanleitung_Personalsheet_A4.html` |
+| FP-016 | Smoke | TEST 17 (Lock), TEST 18 (Q12 Feb/Jan) |
 
-### Akzeptanzkriterien
+**Bereits vor Release:** Paste nur Werte, versteckte Helper-Blätter, `FormatAllMonthSheets` als Layout-Reparatur.
 
-- [x] CopyData ohne Vorab-Dialog; Kopie läuft wie bisher (Overrides, Panel, SPEC).
-- [x] Ungültiges Blatt / Fehler weiterhin mit Meldung (`PID_ValidateWorkerMonthSheet`).
-- [ ] TEST 1–5 / CopyData manuell grün (nach Import in xlsm).
+### Performance-Paket (FP-005–010) — erledigt
 
-### Betroffene Dateien (Referenz)
+Messung: [`PERFORMANCE_BASELINE.md`](PERFORMANCE_BASELINE.md) · Makro `PID_RunPerformanceBaseline`.
 
-- `vba/mod_CopyData.bas` — `PID_CopyDataToFollowingMonths`
-
----
-
-## FP-020 — Monatsblatt Q12 (Vormonat +/-) entsperren
-
-**Status:** Behoben (2026-05-26) — `Q12:R12` in `PID_UnlockSheetEditRanges`  
-**Priorität:** Mittel — fachlich nötige Eingabe  
-**Aufwand:** **Klein** (Teil von FP-013 Whitelist)  
-**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, Panel rechts, `mod_FormatMonthSheet.bas`
-
-### Beobachtetes Verhalten
-
-**Q12** ist geschützt/gesperrt; Nutzer trägt dort **Vormonat +/-** ein. Layout: `Q12:R12` Input-Stil (`PID_MSApplyStyleToRangeMergedOnce`).
-
-### Geplante Verbesserung
-
-- In Schutz-Whitelist: `Q12` (bzw. `Q12:R12` merge) `Locked = False`.
-- Mit FP-013 abgleichen: Panel-Eingaben vs. Formelbereiche Q17:R29 trennen.
-
-### Akzeptanzkriterien
-
-- [x] Q12:R12 auf geschütztem Monatsblatt editierbar (Code-Pfad).
-- [ ] Q17:R29 / FINANZIELL-Formeln weiterhin nicht versehentlich überschreibbar (Ziel FP-013).
-- [ ] CopyData / Panel-Snapshot unverändert — manuell prüfen.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_SchutzHinzufugen.bas` — `PID_UnlockSheetEditRanges`, `PID_ReprotectWorksheet`
-
----
-
-## FP-021 — UEBERSICHT: E30 und I30 entsperren (Durchrechnung Plan)
-
-**Status:** Behoben (2026-05-26) — E30/I30 in `PID_UnlockSheetEditRanges`, UEBERSICHT-Schutz-Zweig  
-**Priorität:** Mittel — fachlich nötige Eingabe  
-**Aufwand:** **Klein**  
-**Betroffene Bereiche:** `mod_SchutzHinzufugen.bas`, `mod_BuildDurchrechnung.bas`
-
-### Beobachtetes Verhalten
-
-Auf **UBERSICHT** sind **E30** (Jänner Verfügbar Plan) und **I30** (Jänner Muster Plan) trotz Doku/Smoke **gesperrt** — Nutzer muss dort manuell planen.
-
-`PID_UnlockDurchrechnungInputs` setzt Unlock, wird aber vermutlich durch globales `Protect` ohne erneutes Unlock überschrieben.
-
-### Geplante Verbesserung
-
-- Beim Schutz von UEBERSICHT: nach `PID_UnlockDurchrechnungInputs` oder in `PID_ApplySheetProtectionForMacros` E30/I30 explizit `Locked = False`.
-- Smoke TEST 12 bleibt grün.
-
-### Akzeptanzkriterien
-
-- [x] E30 und I30 auf geschütztem UEBERSICHT editierbar (Code-Pfad).
-- [ ] Durchrechnungs-Formeln in anderen Zellen unverändert — manuell prüfen.
-- [ ] TEST 12 PASS nach Import.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_SchutzHinzufugen.bas` — `PID_UnlockSheetEditRanges`, `PID_ReprotectWorksheet`
+| Schritt | Inhalt | AUTO (2026-06-12) |
+|---------|--------|-------------------|
+| 2b | Scoped dirty BG1, Februar | **0,15 s** |
+| 2 | Voll KV-Refresh 1 Blatt | 0,52 s |
+| 3 | G-Recalc 1 Zeile | 0,02 s |
+| 5 | FINANZ-Sync | 0,10 s |
+| 6 | Fluktuation Save-Daten | 1,27 s |
+| 7 | FullSystemRefresh | 7,98 s |
 
 ---
 
-## FP-022 — LOHNTABELLE: Hilfe-Button → „Eigene Stunden löschen“
+## Archiv — Teilweise (manuelle Restpunkte)
 
-**Status:** Behoben (2026-05-26) — Button `4) Stunde löschen`, Makro `DeleteCustomKVMonatsstunden`  
-**Priorität:** Mittel — Alltag (ausgeschiedene MA, Stunde nicht mehr nötig)  
-**Aufwand:** **Mittel**  
-**Betroffene Bereiche:** `mod_AddNewKVPeriodOnTop.bas`, LOHNTABELLE, KV-Dropdown-Refresh
+Diese Punkte sind **im Code umgesetzt**; offene Kästchen in den alten Akzeptanzkriterien = **manuelle Regression**, kein Blocker unless noted.
 
-### Beobachtetes Verhalten
-
-Button **Hilfe** auf LOHNTABELLE wird nicht benötigt. Stattdessen: **eigene Stunden** (Eigene Stunden / KV-Zeile) **löschen** können, wenn z. B. Mitarbeiter ausgeschieden und die Stundenzahl sonst niemandem mehr zugeordnet ist.
-
-### Geplante Verbesserung
-
-- Toolbar: Hilfe-Shape entfernen oder ersetzen durch z. B. **„Eigene Stunde löschen“** (deutscher Kurztext).
-- Dialog: KV-Code / Stunde wählen → Zeile in LOHNTABELLE entfernen oder deaktivieren (Fachregel klären: nur leere Nutzung vs. harte Löschung).
-- `MarkKVDropdownsDirty` / Monats-F-Listen aktualisieren.
-- Sicherheitsabfrage vor Löschung (eine kurze Ja/Nein reicht hier).
-
-### Akzeptanzkriterien
-
-- [x] Hilfe-Button durch `4) Stunde löschen` ersetzt (`DeleteCustomKVMonatsstunden`).
-- [x] Nur zusaetzliche Zeilen (mehr als Schema-Zeilen pro KV-Code) loeschbar; Ja/Nein-Bestaetigung.
-- [ ] Gelöschte „eigene Stunde“ erscheint nicht mehr in F-Dropdown auf Monatsblättern (nach Refresh) — manuell prüfen.
-- [ ] Bestehende KV-Perioden und normale KV-Zeilen unverändert — manuell prüfen.
-- [ ] Mac + Windows Excel 2016+.
-
-### Betroffene Dateien (Referenz)
-
-- `vba/mod_AddNewKVPeriodOnTop.bas`
-- `vba/mod_KVStundenDropdown.bas`
+| ID | Offen (manuell) |
+|----|------------------|
+| FP-001 | O20 tippen ohne Flackern; S35 → UEBERSICHT |
+| FP-002 | CopyData Smoke Mac |
+| FP-003 | L > 0 €-Format; Mac/Win |
+| FP-004 | Open schnell; F-Overrides; Mac/Win |
+| FP-005 | Mac smoke |
+| FP-006 | Open/Save-Zeit optional; Mac; CopyData |
+| FP-007 | Grosser Paste-Block; stale FINANZ |
+| FP-009 | Fachlicher Identitäts-Check nach D/I/N |
+| FP-010 | MANU Cold Open, CopyData, Save |
+| FP-011 | Mac Fill-Handle smoke |
+| FP-013 | Mac + Win Excel 2016+ Whitelist |
+| FP-016 | Sort/Fill bei Release manuell |
+| FP-017 | Datum sichtbar Win2016; Mac |
+| FP-018 | Erster Monats-Tab Zeit nach neuer Periode |
+| FP-019 | TEST 1–5 CopyData |
+| FP-020–021 | Panel/FINANZ manuell |
+| FP-022 | F-Dropdown nach Löschen; Mac/Win |
+| FP-023 | Druck A4 Spot-Check; Copyright nach Format |
 
 ---
 
-## FP-023 — Copyright: Blätter + VBA-Module (Adam Nagy / McOpCo)
+## Archiv — Storniert
 
-**Status:** Behoben (2026-05-26) — `mod_PIDCopyright.bas`, Open/Refresh/FormatAll  
-**Priorität:** Niedrig — Branding / Urheberrecht, kein Fachfeature  
-**Aufwand:** **Klein–mittel** (Blätter) + **Klein** (VBA-Header, viele Dateien)  
-**Betroffene Bereiche:** Alle sichtbaren Worksheets; alle `vba/*.bas` und `vba/*.cls`; zentral `mod_PIDUtils.bas` oder `mod_PIDCopyright.bas`
+### FP-025 — FLUKTUATION PDF-Export
 
-### Urheber (fest)
-
-- **Name:** Adam Nagy  
-- **Organisation:** McOpCo  
-
-### Teil A — Hinweis auf jedem Excel-Blatt
-
-Dezent, **nicht aufdringlich**, passend zum PERSONALSHEET-Design (kleine Calibri, gedämpftes Grau/helles Navy, Fußzeile rechts unten o. ä.).
-
-**Vorschlag Anzeige-Text (einheitlich):**
-
-`© Adam Nagy · McOpCo · Personalsheet [Jahr]`
-
-- `[Jahr]` = Arbeitsjahr aus `EINSTELLUNG!C35` oder Release-Jahr (Konstante `PID_COPYRIGHT_YEAR`).
-- Zentrale Konstante z. B. in `mod_PIDCopyright.bas`:
-  - `PID_COPYRIGHT_AUTHOR = "Adam Nagy"`
-  - `PID_COPYRIGHT_ORG = "McOpCo"`
-
-**Technik:** `PID_ApplyCopyrightToAllSheets` — Open / `FormatAllMonthSheets` / `FullSystemRefresh`; sichtbare Blätter ja, `FLUKTUATION_DATEN` + `KV_DROPDOWN_HELPER` optional ohne.
-
-### Teil B — VBA-Modul-Kopf (ja, üblich und sinnvoll)
-
-**Nicht** in jede einzelne `Sub`/`Function` (zu laut, wartungsintensiv), sondern **ein Standard-Kommentarblock am Dateianfang** jeder exportierten Modul-Datei (direkt unter `Attribute VB_Name`, vor `Option Explicit`). Das ist in der Branche üblich; der VBA-Editor zeigt ihn beim Öffnen des Moduls; Export/Import behält die Zeilen.
-
-**Vorschlag Block (Englisch — üblich bei Copyright; Kommentare sonst Deutsch):**
-
-```vba
-'==============================================================================
-' Personalsheet – VBA
-' Copyright (c) Adam Nagy / McOpCo. All rights reserved.
-' Unauthorized copying, modification or distribution prohibited.
-'==============================================================================
-```
-
-Optional zusätzlich **eine Zeile** nur in zentralen Entry-Makros (`CopyData`, `FullSystemRefresh`, …) — nur wenn gewünscht; Standard = Modul-Kopf reicht.
-
-**Umsetzung:** alle `vba/*.bas`, `vba/*.cls` einheitlich; bei `ResetAndImportVBAFiles` nicht überschreiben ohne Template.
-
-### Fix (Ist-Zustand)
-
-- `mod_PIDCopyright.bas`: `PID_ApplyCopyrightToAllSheets` — Monatsblatt `S2:V2` (neben CopyData-Button), LOHNTABELLE `L2:N2`, EINSTELLUNG `S2:U2`, UEBERSICHT `B25`, FLUKTUATION `A3`; kein PageSetup/Shape; Jahr aus `EINSTELLUNG!C35`.
-- Aufruf: `Workbook_Open`, `PID_FullSystemRefresh`, `FormatAllMonthSheets`.
-- Ausnahme: `FLUKTUATION_DATEN`, `KV_DROPDOWN_HELPER` (very hidden).
-- Alle `vba/*.bas` und `vba/*.cls`: einheitlicher Copyright-Kommentarblock am Modulanfang.
-
-### Akzeptanzkriterien
-
-- [x] Alle sichtbaren Blätter: Hinweis mit **Adam Nagy** und **McOpCo** (Code-Pfad).
-- [ ] Keine Störung von Eingabe, Formeln, Druck (A4 Spot-Check) — manuell prüfen.
-- [x] Jedes VBA-Modul im Repo trägt den Copyright-Kopf (Adam Nagy / McOpCo).
-- [ ] Mac + Windows Excel 2016+; nach Format-Lauf bleibt Blatt-Hinweis erhalten — manuell prüfen.
-
-### Betroffene Dateien (Referenz)
-
-- Neu oder `vba/mod_PIDSheetStyle.bas`
-- `vba/mod_FormatMonthSheet.bas`, `vba/DieseArbeitsmappe.cls` (Open)
-- `docs/RELEASE.md` (vor v1.0 optional mit umsetzen)
+**Status:** ⚫ Storniert (2026-06-12)  
+PDF-Button und Makro entfernt; Legacy-Shape wird bei Tab-Activate gelöscht.
 
 ---
 
-## FP-024 — Berechnung: Automatisch statt dauerhaft Manuell (H/K/L-Formeln)
+## Archiv — Detailliert (Referenz)
 
-**Status:** Behoben (2026-05-26)  
-**Priorität:** Hoch — Endanwender / falsche Anzeige in H, K, L  
-**Betroffene Bereiche:** `Modul1.bas`, `DieseArbeitsmappe.cls`
+<details>
+<summary>FP-001 bis FP-004 (Früh-Fixes, eingeklappt)</summary>
 
-### Beobachtetes Verhalten
+### FP-001 — FINANZIELL-Sync O18:Q25
 
-Nach jedem Öffnen stand Excel auf **Manuelle Berechnung**; Spalten **H, K, L** (Formeln) blieben oft leer oder veraltet, bis der Nutzer manuell auf Automatisch schaltete.
+**Behoben 2026-05-25.** Freitext O18:Q25 löst keinen sofortigen FINANZIELL-Sync mehr (`mod_SumMergedCells.bas`). Q17:R29 / S35 weiterhin sofort.
 
-### Ursache
+### FP-002 — CopyData O18:Q25
 
-`Workbook_Open` und `PID_ConfigureDeferredWorkbookCalculationOnOpen` setzten `xlCalculationManual` ohne Rückstellung auf Automatisch.
+**Behoben 2026-05-25.** Panel-Snapshot O/Q merge-sicher in Folgemonate (`PID_ReadMonthPanelSnapshot`).
 
-### Fix (Ist-Zustand)
+### FP-003 — Spalte L leer statt €0
 
-- Open-Ende: `PID_EnableCalculationForAllSheets` + `xlCalculationAutomatic`.
-- `PID_RecalculateMonthFormulaColumns` bei Open (aktives Monatsblatt) und `SheetActivate` (H/K/L `.Calculate`).
-- `Workbook_BeforeClose`: Automatisch für die Excel-Sitzung.
-- Kurz **Manual** nur während der Open-Initialisierung (Performance), danach Automatisch.
+**Behoben 2026-05-25.** `PID_GetLetztesGehaltFormulaR1C1`: B/C-Guard, 0 → `""`.
 
-### Akzeptanzkriterien
+### FP-004 — F-Dropdown nach Eigene Stunden
 
-- [x] Nach Öffnen: Excel-Status „Automatische Berechnung“ (ohne manuelles Umstellen).
-- [ ] H/K/L auf Monatsblatt zeigen Werte nach Tab-Wechsel (manuell Excel 2016).
-- [ ] Open-Zeit akzeptabel (ggf. FP-018 separat).
+**Behoben 2026-05-25.** Dirty-Refresh baut F-Validation neu (`mod_KVStundenDropdown.bas`).
 
----
+</details>
 
-## FP-025 — FLUKTUATION: PDF-Export (storniert)
+<details>
+<summary>FP-005 bis FP-010 (Performance, eingeklappt)</summary>
 
-**Status:** Storniert (2026-06-12) — Feature und zugehöriger VBA-Code entfernt  
-**Grund:** PDF-Export auf FLUKTUATION wird nicht benötigt; Button und Makro `ExportFluktuationSheetToPDF` gelöscht. Legacy-Shape `btn_FluktuationPdfExport` wird bei Refresh/Tab-Activate entfernt.
+### FP-005 — Scoped F-Dropdown Refresh
+
+**Erledigt 2026-06-12.** `MarkKVDropdownDirtyForKVCode`, nur betroffene Zeilen/KV-Codes.
+
+### FP-006 — Weniger Named Ranges
+
+**Erledigt 2026-06-12.** `KV_DG_*` pro KV-Code; Legacy `KV_DD_*` entfernt.
+
+### FP-007 — SheetChange Recalc
+
+**Erledigt 2026-06-12.** Kein doppeltes L-Recalc; gebündeltes H/L.
+
+### FP-008 — SelectionChange
+
+**Erledigt 2026-06-12.** ScreenUpdating nur bei Dropdown-Repair.
+
+### FP-009 — Fluktuation inkrementell
+
+**Erledigt 2026-06-12.** Save: nur Daten; Tab: Analyse; Monats-Dirty-Rescan.
+
+### FP-010 — Mess-Protokoll
+
+**Erledigt AUTO 2026-06-12.** `docs/PERFORMANCE_BASELINE.md`, `PID_RunPerformanceBaseline`. MANU optional.
+
+</details>
+
+<details>
+<summary>FP-011 bis FP-016 (Schutz-Paket, eingeklappt)</summary>
+
+Siehe Tabelle [Schutz-Paket](#schutz-paket-fp-011016--erledigt). Volltext war in alter FUTURE_PLANS-Version; Kernthemen: Fill Handle aus, Sort aus, Lock-all/Whitelist, Kurzanleitung, TEST 17/18.
+
+</details>
+
+<details>
+<summary>FP-017 bis FP-024 (v1.0 Excel-16-Feedback, eingeklappt)</summary>
+
+### FP-017 — D/I Spaltenbreite
+
+Breite 13 via `PID_ApplyMonthSheetDateColumnWidths`.
+
+### FP-018 — KV-Periode Ladezeit
+
+Bulk F-Dropdown, `PID_BeginHeavyMaintenance` / `EndHeavyMaintenance`.
+
+### FP-019 — CopyData ohne Dialog
+
+`PID_ConfirmCopyDataAction` entfernt.
+
+### FP-020 — Q12 Vormonat
+
+Q12:R12 in Whitelist; Feb/Mai/Aug/Nov Formel (Startmonate).
+
+### FP-021 — UEBERSICHT E30/I30
+
+Durchrechnungs-Planfelder editierbar.
+
+### FP-022 — Stunde löschen
+
+Button `4) Stunde löschen`, `DeleteCustomKVMonatsstunden`.
+
+### FP-023 — Copyright
+
+`mod_PIDCopyright.bas`, Blatt Zeile 2 / VBA-Modulkopf.
+
+### FP-024 — Automatische Berechnung
+
+Open → Automatic; H/K/L `.Calculate` bei Tab.
+
+</details>
 
 ---
 
 ## Test-Notiz (Excel 2016, 2026-05)
 
-Manueller Durchlauf: **Smoke grün/gelb**, **manuelle Tests ohne Fehler**. Offene Punkte oben als FP-017–FP-023 erfasst (kein Release-Blocker für dokumentierte Fixes FP-001–FP-004).
+Smoke grün/gelb; manuelle Tests ohne harte Fehler. Offene Bugs → FP-027/028/029.
 
----
-
-## Mac-only (post-release)
-
-Nur **Adam / Mac Excel** — alle anderen Standorte Windows. Kein Release-Blocker; Umsetzung **erst nach v1.0-Release**, wenn Zeit und Mac-Smoke-Regression möglich.
-
-| Prio | ID | Aufgabe | Status |
-|------|-----|---------|--------|
-| 1 | FP-026 | Mac F-Dropdown Performance (sor-szintű refresh) | Geplant (post-release) |
-
----
-
-## FP-026 — Mac-only: F-Dropdown Performance (sor-szintű refresh)
-
-**Status:** Geplant — **erst nach Release v1.0**  
-**Priorität:** Niedrig (Mac-only, 1 Nutzer; Stabilität vor Geschwindigkeit)  
-**Plattform:** Nur Mac Excel — Windows-Pfad **unverändert** lassen  
-**Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, `DieseArbeitsmappe.cls`
-
-### Ist-Zustand (Mac, 2026-06)
-
-Nach KV-Fixes zuverlässig, aber spürbar langsam: bei E-Gruppenwechsel / F-Fokus oft **ganzer Monatsblatt-F-Rebuild** (~0,5 s), kein Stunden-Cache, direkte Helper-Adresse in Validierung. Bewusster Trade-off gegen x14-Gruppen-Validierung und fehlendes `SheetChange` bei E-Dropdown.
-
-### Geplante Verbesserung
-
-- **Sor-szintű** (vagy KV-csoport-szintű) F-refresh Mac-en, ahol E/F esemény történik — ne mind a 80 sor.
-- Stunden-Cache Mac-en vissza, **szigorú invalidálás** (LOHNTABELLE, Eigene Stunden, E-Wechsel).
-- Dupla refresh csökkentése (E elhagyás + F fokusz → egy rebuild).
-- Windows: scoped dirty (FP-005) und lazy Refresh **nicht** anfassen.
-
-### Akzeptanzkriterien
-
-- [ ] Mac smoke: Juni/Mai, BG1 ↔ BG1_5, Eigene Stunden (z. B. 172), LOHNTABELLE-View bleibt.
-- [ ] Spürbar schneller als Ist (~0,5 s → Ziel ~0,1 s pro E/F-Aktion).
-- [ ] Windows `PID_RunPerformanceBaseline` Schritt 2b unverändert (~0,15 s scoped).
-- [ ] Keine Regression gegen Mac-Refresh-Pfad (SheetChange + SelectionChange Fallback).
-
-### Referenz
-
-- `docs/PERFORMANCE_BASELINE.md` (Windows-Messung)
-- FP-005 Approach D (lazy F pro Zeile) als Vorbild, Mac-spezifisch validieren
-
----
-
-## FP-027 — Workbook-Open: Flackern / Recalc beim Öffnen (Windows)
-
-**Status:** Geplant — Feedback Excel 2016 (2026-06)  
-**Priorität:** Mittel (UX, kein Funktionsfehler)  
-**Plattform-Ziel:** Primär **Windows** (2016 gemeldet); Mechanismus betrifft alle Excel-Versionen, Schweregrad variiert  
-**Betroffene Bereiche:** `DieseArbeitsmappe.cls` (`Workbook_Open`), `Modul1.bas` (`PID_ConfigureDeferredWorkbookCalculationOnOpen`), `mod_PIDCopyright.bas`, `mod_SchutzHinzufugen.bas`
-
-### Beobachtetes Verhalten
-
-Beim **Öffnen** der Datei: Excel **flackert**, Status „Berechnet…“ / kurzes Pörgeln **mehrere Sekunden** — Windows Excel **2016**, Smoke und Funktion danach OK.
-
-### Ursache (vermutet)
-
-1. `Workbook_Open` endet mit `xlCalculationAutomatic` + `PID_EnableCalculationForAllSheets` (FP-024) → Excel recalculiert **alle dirty Zellen im Workbook** (12 Monatsblätter, UEBERSICHT, LOHNTABELLE, …).
-2. Zusätzlich beim Open: Blattschutz (UBERSICHT, Hidden), `PID_ApplyCopyrightToAllSheets` (alle sichtbaren Blätter), ggf. H/K/L-`.Calculate` auf aktivem Monatsblatt.
-3. **Nicht Win2016-spezifischer Bug**, sondern **Recalc-Umfang + langsamere Engine** auf älterem Excel — auf **365 / neueren Builds** oft kürzer oder kaum wahrnehmbar (schnellere CPU, bessere Calc-Pipeline), aber **derselbe Mechanismus**.
-
-### Geplante Ansätze (Priorität)
-
-| # | Ansatz | Beschreibung |
-|---|--------|--------------|
-| A | **Messung** | FP-010 Schritt 1 (Cold Open) auf Win2016 **und** Win365 — Vorher/Nachher. |
-| B | **Open-scoped Recalc** | Nach Open nur **aktives Blatt** H/K/L (+ nötiges Panel) explizit berechnen; **kein** implizites Full-Workbook-Recalc beim Automatic-Schalter. |
-| C | **Lazy Tab-Recalc** | Andere Blätter erst bei erstem `SheetActivate` (teilweise schon vorhanden — konsistent machen). |
-| D | **Deferred Copyright** | Copyright/Schutz beim Open nur sichtbares Blatt; Rest beim Tab-Wechsel. |
-
-**Nicht:** Dauerhaft Manual ohne FP-024-Fix (leere H/K/L für Endanwender).
-
-### Akzeptanzkriterien
-
-- [ ] Win2016: Open bis erster Monats-Tab **spürbar kürzer** (Ziel: subjektiv „kein mehrsekündiges Pörgeln“; FP-010 messen).
-- [ ] Win365: Keine Regression; Open weiterhin akzeptabel.
-- [ ] Mac: Open-Pfad unverändert schnell genug (Regression Smoke).
-- [ ] H/K/L auf Monatsblatt nach Open **sofort sichtbar korrekt** (FP-024 bleibt erfüllt).
-- [ ] UEBERSICHT / FLUKTUATION korrekt nach erstem Tab-Besuch.
-
-### Referenz
-
-- FP-024 (Automatic nach Open), FP-010 / `docs/PERFORMANCE_BASELINE.md`
-- `DieseArbeitsmappe.cls` — `Workbook_Open`, `PID_ConfigureDeferredWorkbookCalculationOnOpen`
-
----
-
-## FP-028 — CopyData / Monatsstunden: Stunden-Override-Log überschreibt Korrekturen
-
-**Status:** Geplant — Bug Excel 2016 (2026-06)  
-**Priorität:** Hoch (fachlicher Datenfehler bei Stundenänderung)  
-**Plattform:** Windows + Mac (Logik in `mod_CopyData.bas`, plattformneutral)  
-**Betroffene Bereiche:** `mod_CopyData.bas` (`PID_HOUR_OVERRIDES`, `PID_LogEFAenderungForSheet`, `PID_ApplyLoggedHourOverrides`, `CopyData`)
-
-### Beobachtetes Verhalten
-
-1. Mitarbeiter ab **Juli** mit **173** Stunden — OK.
-2. Ab **Oktober** auf weniger Stunden geändert + **Aktualisierung des restlichen Jahres** (z. B. ab Mai) → ab Oktober weniger — **OK**.
-3. Oktober **zurückdrehen** oder **neu ändern** + erneut aktualisieren → Wert **springt zurück auf die erste Änderung** — unabhängig von neuer Eingabe.
-
-### Ursache
-
-Verstecktes Blatt **`PID_HOUR_OVERRIDES`**: jede Änderung an **KV-Gruppe (E)** / **Stunden (F)** wird per `SheetChange` geloggt. Bei **CopyData** wendet `PID_ApplyLoggedHourOverrides` diese Einträge auf Folgemonate an, wenn von einem **früheren** Monat kopiert wird.
-
-- Log wird nur bei **Neue Periode** geleert (`PID_ResetHourOverrideLog`), **nicht** nach CopyData und **nicht** zuverlässig bei Undo.
-- **`PID_CollectFutureOverrides`** erfasst E/F-Abweichungen bei **bestehenden** Mitarbeitern in Folgemonaten **nicht** — nur Austritt-Felder; E/F-Midyear-Changes hängen am Log.
-- **Stale Log-Eintrag** (erste Oktober-Änderung) gewinnt gegen aktuelle Blattwerte → „zurück auf erste Modifikation“.
-
-### Geplante Ansätze (Priorität)
-
-| # | Ansatz | Beschreibung |
-|---|--------|--------------|
-| **1 (empfohlen)** | **CopyData + Log-Reconcile** | Nach erfolgreichem CopyData: Log mit **tatsächlichen Blattwerten** ab Quellmonat abgleichen; veraltete Einträge löschen/aktualisieren. |
-| **2** | **CollectFutureOverrides E/F** | Für bestehende MA auch E/F-Differenzen in Folgemonaten aus Blatt lesen (Blatt = Wahrheit, Log = Audit optional). |
-| **3** | **F-Änderung invalidiert Log** | Bei F-Änderung in Monat M: Log-Einträge **dieselbe MA, Feld F, Monate > M** löschen (Vorsicht: November-Sonderfall nur mit Blatt-Abgleich). |
-| **4** | **Admin / Workaround** | „Stunden-Log zurücksetzen“ oder Doku: Aktualisierung **vom Änderungsmonat** aus (Oktober, nicht Mai). |
-
-### Akzeptanzkriterien
-
-- [ ] Szenario Juli 173 → Oktober weniger → CopyData → Oktober zurück auf 173 → CopyData ab Mai **und** ab Oktober: überall 173.
-- [ ] Szenario: zwei nacheinander verschiedene Oktober-Werte — **letzter** Wert bleibt nach CopyData.
-- [ ] November manuell abweichend + CopyData ab Mai: **November-Sonderwert bleibt** erhalten (Regression).
-- [ ] Smoke + CopyData-SPEC unverändert grün.
-- [ ] `PID_HOUR_OVERRIDES` bleibt very hidden; Endanwender sieht kein technisches Blatt.
-
-### Workaround (bis Fix)
-
-- Stundenänderung immer vom **Monat der Änderung** aus aktualisieren (nicht von einem früheren Monat).
-- Bei hartnäckigem Zurückspringen: Inhalt von `PID_HOUR_OVERRIDES` leeren (Admin) oder nach **Neue Periode** (Log-Reset).
-
-### Referenz
-
-- `mod_CopyData.bas` — `PID_LogEFAenderungForSheet`, `PID_UpsertHourOverride`, `PID_ApplyLoggedHourOverrides`
-- `DieseArbeitsmappe.cls` — `Workbook_SheetChange` (F → Log)
-- Anleitung: „Aktualisierung“ vom richtigen Monatsblatt
-
----
-
-## FP-029 — Spalte K (Urlaub in €): leere Zeile zeigt 0 statt leer
-
-**Status:** Geplant — Feedback (2026-06)  
-**Priorität:** Mittel — UX / Konsistenz mit Spalte G und L  
-**Plattform:** Windows + Mac  
-**Betroffene Bereiche:** Monatsblätter Spalte **K** (`Urlaub in €`), Formel K3:K82, `mod_CopyData.bas` (Formel-Propagation)
-
-### Beobachtetes Verhalten
-
-In **Spalte K** (`Urlaub in €`) steht in Zeilen **ohne Mitarbeiterdaten** (Name/ID leer, keine offenen Urlaubstage) trotzdem **`0`** bzw. **`0,00 €`** — obwohl die Zeile faktisch leer ist.
-
-### Ursache (vermutet)
-
-K-Formel (Januar-Referenz, R1C1 via CopyData):
-
-- Berechnet Urlaubsgeld aus **Monatslohn (G)** und **Offene Urlaubstage (J)**.
-- Abschluss typisch `IFERROR(..., 0)` → leere/irrelevante Zeilen werden als **0** angezeigt, nicht als leere Zelle.
-- Analog zum historischen L-Problem (**FP-003**, behoben): fehlender **B/C-Leer-Guard** und kein **0 → ""** für Anzeige.
-
-### Geplanter Ansatz
-
-| # | Ansatz |
-|---|--------|
-| 1 | K-Formel wie L: `IF(OR(B="",C=""),"", …)` und Ergebnis **0 → ""**. |
-| 2 | Zusätzlich: wenn **J (Offene Urlaubstage)** leer → **K leer** (kein 0×Lohn). |
-| 3 | Kanonische K-Formel in `Modul1.bas` (Restore/Open/CopyData), nicht nur Januar hardcoded. |
-| 4 | `PID_ApplyEuroNumberFormat` / leere Zellen: optisch leer (wie G/L). |
-
-### Akzeptanzkriterien
-
-- [ ] Leere Mitarbeiterzeile (B/C leer): **K ohne 0**, Zelle optisch leer.
-- [ ] Zeile mit MA, aber **J leer**: K leer (nicht 0).
-- [ ] Zeile mit MA + **J > 0** + Lohn: K korrekt berechnet (€).
-- [ ] CopyData propagiert aktualisierte K-Formel in Folgemonate.
-- [ ] Smoke + manuell Win/Mac.
-
-### Referenz
-
-- Analog **FP-003** (Spalte L — Letztes Gehalt, 0→leer)
-- `vba/Modul1.bas` — `PID_GetLetztesGehaltFormulaR1C1` als Vorbild
-- `vba/mod_CopyData.bas` — `formulaK` / `PID_RestoreFormulas`
+**Nicht im FP-Backlog (bereits umgesetzt, 2026-06):** Q31 Fluktuation % auf Monatsblatt **sofort** bei Austrittsdatum-Änderung (I) — `PID_CalculateFluctuation` in `DieseArbeitsmappe.cls`.
 
 ---
 
 ## Weitere Einträge
 
-Neue Backlog-Punkte unten anfügen mit ID `FP-00N`, Status, Ursache, geplantem Ansatz und Akzeptanzkriterien.
+Neue Punkte als **FP-03N** unten anfügen, dann in [Übersicht — Offen](#-offen-noch-umsetzen) eintragen.
+
+**Vorlage:**
+
+```markdown
+## FP-0NN — Titel
+
+**Status:** 🔴 Offen  
+**Priorität:** …  
+**Plattform:** …
+
+### Problem
+…
+
+### Akzeptanzkriterien
+- [ ] …
+```
