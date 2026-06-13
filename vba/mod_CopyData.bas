@@ -115,7 +115,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     
     formulaH = wsSource.Range("H3:H82").FormulaR1C1
     formulaG = PID_GetMonatslohnFormulaR1C1()
-    formulaK = wsSource.Range("K3:K82").FormulaR1C1
+    formulaK = PID_GetUrlaubGeldFormulaR1C1()
     formulaL = PID_GetLetztesGehaltFormulaR1C1()
     
     PID_ReadMonthPanelSnapshot wsSource, panelBlock, panelO, panelQ, panelOIsFormula, panelQIsFormula, panelOFormats, panelQFormats

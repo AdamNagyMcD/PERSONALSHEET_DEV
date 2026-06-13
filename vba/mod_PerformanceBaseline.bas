@@ -256,6 +256,7 @@ Private Sub PID_PerfRunFullSystemRefreshTimed()
     RefreshAllMonthKVStundenDropdowns
     PID_RestoreMonatslohnFormulasSilent
     PID_RestoreAktuelleStundenFormulasSilent
+    PID_RestoreUrlaubGeldFormulasSilent
     PID_RestoreLetztesGehaltFormulasSilent
     PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty

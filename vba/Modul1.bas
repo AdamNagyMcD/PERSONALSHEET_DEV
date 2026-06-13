@@ -1167,3 +1167,90 @@ SafeExit:
     End If
 End Function
 
+
+' ===========================================================================
+' FP-029 — Spalte K (Urlaub in EUR): kanonische Formel mit B/C- und J-Guard
+' ===========================================================================
+
+Public Function PID_GetUrlaubGeldFormulaR1C1() As String
+    ' K = Spalte 11; Offsets: B=RC[-9], C=RC[-8], D=RC[-7], G=RC[-4], J=RC[-1]
+    ' Kern: Tagessatz (G / Tage-im-Monat) * J; Monatstage via MONTH(D) analog Originalformel.
+    Dim coreFormula As String
+    coreFormula = "IFERROR(IF(OR(MONTH(RC[-7])=1,MONTH(RC[-7])=3,MONTH(RC[-7])=5," & _
+                  "MONTH(RC[-7])=7,MONTH(RC[-7])=8,MONTH(RC[-7])=10,MONTH(RC[-7])=12)," & _
+                  "(RC[-4]/31)*RC[-1]," & _
+                  "IF(OR(MONTH(RC[-7])=4,MONTH(RC[-7])=6,MONTH(RC[-7])=9,MONTH(RC[-7])=11)," & _
+                  "(RC[-4]/30)*RC[-1]," & _
+                  "(RC[-4]/DAY(EOMONTH(RC[-7],0)))*RC[-1])),"""")"
+
+    ' B/C leer (keine MA) -> leer; J leer oder 0 (kein Urlaub) -> leer.
+    PID_GetUrlaubGeldFormulaR1C1 = _
+        "=IF(OR(RC[-9]="""",RC[-8]=""""),""""," & _
+        "IF(OR(RC[-1]="""",RC[-1]=0),""""," & _
+        coreFormula & "))"
+End Function
+
+
+Public Function PID_RestoreUrlaubGeldFormulasSilent() As Long
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim formulaR1C1 As String
+    Dim wasProtected As Boolean
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+
+    On Error GoTo SafeExit
+
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+
+    formulaR1C1 = PID_GetUrlaubGeldFormulaR1C1()
+    monthNames = PID_MonthNames()
+    PID_RestoreUrlaubGeldFormulasSilent = 0
+
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        Err.Clear
+        On Error GoTo SafeExit
+
+        If Not ws Is Nothing Then
+            wasProtected = ws.ProtectContents
+            If Not PID_TryUnprotectMonthSheetForMacro(ws) Then GoTo NextSheet
+
+            ws.Range("K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW).FormulaR1C1 = formulaR1C1
+
+            On Error Resume Next
+            ws.Range("K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW).Calculate
+            Err.Clear
+            On Error GoTo SafeExit
+
+            If wasProtected Then PID_ReprotectWorksheet ws
+            PID_RestoreUrlaubGeldFormulasSilent = PID_RestoreUrlaubGeldFormulasSilent + 1
+        End If
+
+NextSheet:
+    Next i
+
+SafeExit:
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+End Function
+
+
+Public Sub PID_RestoreUrlaubGeldFormulas()
+    Dim updatedCount As Long
+
+    updatedCount = PID_RestoreUrlaubGeldFormulasSilent
+
+    MsgBox "Urlaub-Euro-Formeln (Spalte K) wurden wiederhergestellt." & vbCrLf & vbCrLf & _
+           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           "Bereich: K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW, _
+           vbInformation, "Spalte K"
+End Sub
+

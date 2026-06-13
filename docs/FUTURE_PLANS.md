@@ -28,7 +28,6 @@ Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`PERFORMANCE_BASELINE.md`](PE
 | ID | Thema | Prio | Plattform |
 |----|--------|------|-----------|
 | [FP-027](#fp-027--workbook-open-flackern--recalc) | Open: Flackern / Recalc mehrere Sekunden | Mittel | Win (2016), ggf. 365 |
-| [FP-029](#fp-029--spalte-k-urlaub-in--0-in-leerer-zeile) | Spalte K (Urlaub €): 0 statt leer | Mittel | Win + Mac |
 | [FP-014](#fp-014--enableselection-nur-entsperrte-zellen) | `EnableSelection` auf Monatsblättern | Mittel | Win + Mac |
 | [FP-026](#fp-026--mac-only-f-dropdown-performance) | Mac F-Dropdown Performance | Niedrig | **Nur Mac** (post-release) |
 
@@ -36,6 +35,7 @@ Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`PERFORMANCE_BASELINE.md`](PE
 
 | ID | Thema | Was fehlt noch |
 |----|--------|----------------|
+| FP-029 | Spalte K (Urlaub €): 0 statt leer | Manuell prüfen: leere Zeile K leer, MA+J K korrekt |
 | FP-028 | CopyData Stunden-Override-Log | ✅ Win manuell verifiziert (Juli→CopyData→korrekt) |
 | FP-010 | Performance-Messprotokoll | MANU: Cold Open, CopyData, Save (Stoppuhr) |
 | FP-016 | Schutz-Smoke | Sort/Fill-Handle bei jedem Release manuell |
@@ -60,11 +60,10 @@ FP-001 · FP-002 · FP-003 · FP-004 · FP-005 · FP-006 · FP-007 · FP-008 · 
 
 ## Empfohlene Reihenfolge (nächste Schritte)
 
-1. **FP-028** — Stunden-CopyData manuell verifizieren (Juli→Okt→zurück→CopyData)
-2. **FP-029** — UX K-Spalte (schnell, analog FP-003/L)
-3. **FP-027** — Open-Performance (nach Messung Win2016 + Win365)
-4. **FP-014** — EnableSelection Monatsblätter (Mac testen)
-5. **FP-026** — erst nach v1.0-Release, Mac-only
+1. **FP-029** — K-Spalte manuell prüfen (leere Zeile, MA+J, CopyData)
+2. **FP-027** — Open-Performance (nach Messung Win2016 + Win365)
+3. **FP-014** — EnableSelection Monatsblätter (Mac testen)
+4. **FP-026** — erst nach v1.0-Release, Mac-only
 
 ---
 
@@ -148,7 +147,7 @@ Open-Ende: `xlCalculationAutomatic` → Full-Workbook-Recalc; plus Copyright, Sc
 
 ## FP-029 — Spalte K (Urlaub in €): 0 in leerer Zeile
 
-**Status:** 🔴 Offen — Feedback (2026-06)  
+**Status:** 🟡 Umgesetzt — manueller Test ausstehend  
 **Priorität:** Mittel  
 **Plattform:** Win + Mac · Spalte **K**, `Modul1.bas` / CopyData
 
@@ -156,16 +155,19 @@ Open-Ende: `xlCalculationAutomatic` → Full-Workbook-Recalc; plus Copyright, Sc
 
 Leere MA-Zeilen (kein Name/ID) zeigen **0,00 €** in K statt leerer Zelle.
 
-### Ansatz
+### Umgesetzt (2026-06-13)
 
-Analog **FP-003** (Spalte L): B/C-Leer-Guard, J leer → K leer, 0 → `""`, kanonische Formel in `Modul1.bas`.
+- `PID_GetUrlaubGeldFormulaR1C1`: B/C-Guard + J-Guard + IFERROR 0→leer
+- `PID_RestoreUrlaubGeldFormulasSilent` / `PID_RestoreUrlaubGeldFormulas`
+- CopyData: `formulaK` aus kanonischer Funktion (nicht mehr vom Quellblatt)
+- Full-Refresh-Kette: mod_PIDAdmin, mod_ResetAndImportVBAFiles, mod_PerformanceBaseline
 
-### Akzeptanzkriterien
+### Manuell testen
 
-- [ ] Leere Zeile: K ohne 0
+- [ ] Leere Zeile: K ohne 0 (kein Mitarbeiter → leer)
 - [ ] MA ohne J: K leer
 - [ ] MA + J + Lohn: K korrekt (€)
-- [ ] CopyData propagiert Formel
+- [ ] CopyData propagiert Formel (nicht 0)
 
 ---
 
