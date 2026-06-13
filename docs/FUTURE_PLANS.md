@@ -3,7 +3,7 @@
 Technischer Backlog und Umsetzungsstand.  
 **Zuerst die Übersicht lesen** — Details zu erledigten Punkten stehen unten im Archiv.
 
-Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`CHANGELOG_NUTZER.md`](CHANGELOG_NUTZER.md) · [`PERFORMANCE_BASELINE.md`](PERFORMANCE_BASELINE.md) · [`RELEASE.md`](RELEASE.md)
+Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`PERFORMANCE_BASELINE.md`](PERFORMANCE_BASELINE.md) · [`RELEASE.md`](RELEASE.md)
 
 ---
 
@@ -27,7 +27,7 @@ Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`CHANGELOG_NUTZER.md`](CHANGE
 
 | ID | Thema | Prio | Plattform |
 |----|--------|------|-----------|
-| [FP-028](#fp-028--copydata--monatsstunden-stunden-override-log) | Stunden-Änderung springt zurück (Override-Log) | **Hoch** | Win + Mac |
+| [FP-028](#fp-028--copydata--monatsstunden-stunden-override-log) | Stunden: nach CopyData zurück auf Original (Teilfix) | **Hoch** | Win + Mac |
 | [FP-027](#fp-027--workbook-open-flackern--recalc) | Open: Flackern / Recalc mehrere Sekunden | Mittel | Win (2016), ggf. 365 |
 | [FP-029](#fp-029--spalte-k-urlaub-in--0-in-leerer-zeile) | Spalte K (Urlaub €): 0 statt leer | Mittel | Win + Mac |
 | [FP-014](#fp-014--enableselection-nur-entsperrte-zellen) | `EnableSelection` auf Monatsblättern | Mittel | Win + Mac |
@@ -60,7 +60,7 @@ FP-001 · FP-002 · FP-003 · FP-004 · FP-005 · FP-006 · FP-007 · FP-008 · 
 
 ## Empfohlene Reihenfolge (nächste Schritte)
 
-1. **FP-028** — fachlicher Bug (Stunden zurückspringen)
+1. **FP-028** — Stunden-CopyData (Teilfix offen, **zuhause** abschließen)
 2. **FP-029** — UX K-Spalte (schnell, analog FP-003/L)
 3. **FP-027** — Open-Performance (nach Messung Win2016 + Win365)
 4. **FP-014** — EnableSelection Monatsblätter (Mac testen)
@@ -72,28 +72,39 @@ FP-001 · FP-002 · FP-003 · FP-004 · FP-005 · FP-006 · FP-007 · FP-008 · 
 
 ## FP-028 — CopyData / Monatsstunden: Stunden-Override-Log
 
-**Status:** 🔴 Offen — Bug Excel 2016 (2026-06)  
-**Priorität:** Hoch  
+**Status:** 🟡 Teilfix — Win2016-Test 2026-06 **nicht grün** · Rest **zuhause**  
+**Priorität:** Hoch (Release-Blocker)  
 **Plattform:** Windows + Mac · `mod_CopyData.bas`
 
-### Problem
+### Problem (Original)
 
 1. MA ab Juli mit 173 h — OK.  
 2. Ab Oktober weniger + Aktualisierung ab Mai — OK.  
 3. Oktober zurückdrehen / neu ändern → springt auf **erste** Änderung zurück.
 
-### Ursache
+### Feedback nach Teilfix (2026-06, Win2016)
 
-Verstecktes Blatt **`PID_HOUR_OVERRIDES`**: F/E-Änderungen werden geloggt; bei CopyData ab **früherem** Monat gewinnt **stale Log** gegen aktuelle Blattwerte. Log wird nur bei **Neue Periode** geleert.
+- Im **Änderungsmonat** wirkt die Korrektur zunächst — Wert bzw. Log-Eintrag bleibt dort sichtbar.  
+- Nach **CopyData** („Aktualisierung des restlichen Jahres“) springt **Monatsstunden (F)** in den Folgemonaten wieder auf den **ursprünglichen** KV-Wert zurück.  
+- Verstecktes Blatt **`PID_HOUR_OVERRIDES`** kann den neuen Wert trotzdem führen — Blatt und Log weiter **desynchron**.
 
-### Geplante Ansätze
+### Bereits umgesetzt (Teilfix, uncommitted)
 
-| # | Ansatz |
-|---|--------|
-| **1 (empfohlen)** | Nach CopyData: Log mit Blattwerten ab Quellmonat abgleichen |
-| **2** | `CollectFutureOverrides` auch E/F für bestehende MA aus Blatt lesen |
-| **3** | F-Änderung in M → Log-Einträge MA/F für Monate > M invalidieren |
-| **4** | Admin-Reset / Workaround in Anleitung |
+| # | Änderung |
+|---|----------|
+| 1 | `PID_ApplyLoggedHourOverrides` aus CopyData-Cascade entfernt |
+| 2 | `CollectFutureOverrides`: E/F aus Folgemonats-Blatt (`PID_CollectFutureEFOverrideIfChanged`) |
+| 3 | Nach CopyData: `PID_ReconcileHourOverrideLogFromMonthSheets` |
+
+→ Reicht für Win2016-Szenario **noch nicht** — weiter debuggen zuhause.
+
+### Nächste Schritte (zuhause)
+
+- [ ] Repro Schritt für Schritt: welcher Monat als Quelle, welche Folgemonate falsch  
+- [ ] Prüfen: `PID_BuildTargetMonthData` / `currentValues`-Rollforward überschreibt F?  
+- [ ] Prüfen: SheetChange-Log vs. Reconcile-Reihenfolge  
+- [ ] Ggf. Log bei F-Änderung in Monat M → Einträge für Monate **> M** invalidieren  
+- [ ] Regression: November-Sonderwert, zwei Okt-Änderungen hintereinander
 
 ### Akzeptanzkriterien
 
@@ -104,7 +115,7 @@ Verstecktes Blatt **`PID_HOUR_OVERRIDES`**: F/E-Änderungen werden geloggt; bei 
 
 ### Workaround (bis Fix)
 
-Aktualisierung vom **Monat der Änderung** aus; ggf. `PID_HOUR_OVERRIDES` leeren (Admin).
+Aktualisierung immer vom **Monat der letzten Änderung** aus starten (nicht von früherem Monat).
 
 ---
 
@@ -238,6 +249,10 @@ Kompakte Liste. Vollständige Historie in [`CHANGELOG.md`](CHANGELOG.md).
 | FP-022 | 🟢 | LOHNTABELLE „4) Stunde löschen“ | 2026-05-26 |
 | FP-023 | 🟢 | Copyright Blätter + VBA-Module (Adam Nagy / McOpCo) | 2026-05-26 |
 | FP-024 | 🟢 | Automatische Berechnung nach Open; H/K/L per Tab | 2026-05-26 |
+
+### FP-028 — CopyData Stunden (Teilfix, offen)
+
+**Stand 2026-06:** Erster Fix in `mod_CopyData.bas` (E/F aus Blatt, Log-Reconcile) — Win2016-Test **fehlgeschlagen** (F revert). Siehe [Offen — FP-028](#fp-028--copydata--monatsstunden-stunden-override-log).
 
 ### Schutz-Paket (FP-011–016) — erledigt
 
@@ -402,7 +417,7 @@ Open → Automatic; H/K/L `.Calculate` bei Tab.
 
 ## Test-Notiz (Excel 2016, 2026-05)
 
-Smoke grün/gelb; manuelle Tests ohne harte Fehler. Offene Bugs → FP-027/028/029.
+Smoke grün/gelb; manuelle Tests ohne harte Fehler. Offene Punkte → **FP-028** (Blocker), FP-027/029.
 
 **Nicht im FP-Backlog (bereits umgesetzt, 2026-06):** Q31 Fluktuation % auf Monatsblatt **sofort** bei Austrittsdatum-Änderung (I) — `PID_CalculateFluctuation` in `DieseArbeitsmappe.cls`.
 

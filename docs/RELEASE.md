@@ -16,7 +16,7 @@ Verknüpfungen: [`FUTURE_PLANS.md`](FUTURE_PLANS.md) · [`CHANGELOG.md`](CHANGEL
 | Erledigt (v1.0-Code) | FP-017–FP-022 inkl. FP-018 KV-Ladezeit (Bulk) — manuell nach Import prüfen |
 | Erledigt (v1.0-Code) | FP-023 Copyright Adam Nagy / McOpCo — nach Import prüfen |
 | Erledigt (Zusatz) | Schutz-Paket FP-011–FP-016, Performance FP-005–FP-010 |
-| Offen vor Rollout | FP-027–FP-029 (siehe FUTURE_PLANS — Übersicht „Offen“) |
+| Offen vor Rollout | **FP-028** (Stunden-CopyData — Teilfix, Rest zuhause); FP-027, FP-029, FP-014 (UX/optional); FP-026 post-release Mac |
 
 **Ablauf:** Wenn FP-017–FP-022 im Workbook verifiziert sind → diese Checkliste durchgehen → getaggte `Personalsheet.xlsm` an die Restaurants.
 

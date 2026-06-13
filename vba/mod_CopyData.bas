@@ -122,7 +122,6 @@ Public Sub PID_CopyDataToFollowingMonths()
     Set futureNewStarts = New Collection
     
     PID_CollectFutureOverrides sourceData, sourceMonthIndex, monthNames, futureOverrides, futureNewStarts
-    PID_ApplyLoggedHourOverrides futureOverrides, sourceMonthIndex, workbookYear
     
     For i = sourceMonthIndex + 1 To 12
         targetSheetName = CStr(monthNames(i - 1))
@@ -132,6 +131,8 @@ Public Sub PID_CopyDataToFollowingMonths()
         PID_WriteMonthData targetSheetName, currentData, formulaH, formulaG, formulaK, formulaL, _
                            panelBlock, panelO, panelQ, panelOIsFormula, panelQIsFormula, panelOFormats, panelQFormats
     Next i
+    
+    PID_ReconcileHourOverrideLogFromMonthSheets workbookYear, sourceMonthIndex + 1, monthNames
     
     PID_ResetFollowingMonthSelections sourceMonthIndex, sourceSheetName
     
@@ -295,12 +296,97 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                             PID_AddOverrideValue futureOverrides, monthIndex, keyText, "N", targetData(r, 13)
                         End If
                         
+                        PID_CollectFutureEFOverrideIfChanged futureOverrides, currentValues, monthIndex, keyText, "E", targetData(r, 4)
+                        PID_CollectFutureEFOverrideIfChanged futureOverrides, currentValues, monthIndex, keyText, "F", targetData(r, 5)
+                        
                     End If
                     
                 End If
             Next r
         End If
     Next monthIndex
+End Sub
+
+
+Private Sub PID_CollectFutureEFOverrideIfChanged(ByRef futureOverrides As Collection, _
+                                                 ByRef currentValues As Collection, _
+                                                 ByVal monthIndex As Long, _
+                                                 ByVal keyText As String, _
+                                                 ByVal fieldCode As String, _
+                                                 ByVal targetValue As Variant)
+    Dim currentValue As Variant
+    
+    If keyText = "" Then Exit Sub
+    If fieldCode <> "E" And fieldCode <> "F" Then Exit Sub
+    
+    currentValue = PID_GetCollectionValue(currentValues, PID_BaseKey(keyText, fieldCode), "")
+    
+    If PID_CopyDataFieldValuesEqual(currentValue, targetValue) Then Exit Sub
+    
+    PID_AddOverrideValue futureOverrides, monthIndex, keyText, fieldCode, targetValue
+    PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, fieldCode), CStr(targetValue)
+End Sub
+
+
+Private Function PID_CopyDataFieldValuesEqual(ByVal leftValue As Variant, ByVal rightValue As Variant) As Boolean
+    Dim leftText As String
+    Dim rightText As String
+    
+    leftText = Trim$(CStr(leftValue))
+    rightText = Trim$(CStr(rightValue))
+    
+    If leftText = "" And rightText = "" Then
+        PID_CopyDataFieldValuesEqual = True
+        Exit Function
+    End If
+    
+    If IsNumeric(leftValue) And IsNumeric(rightValue) Then
+        PID_CopyDataFieldValuesEqual = (Abs(CDbl(leftValue) - CDbl(rightValue)) < 0.0001)
+        Exit Function
+    End If
+    
+    PID_CopyDataFieldValuesEqual = (StrComp(leftText, rightText, vbTextCompare) = 0)
+End Function
+
+
+Private Sub PID_ReconcileHourOverrideLogFromMonthSheets(ByVal workbookYear As Long, _
+                                                        ByVal fromMonthIndex As Long, _
+                                                        ByVal monthNames As Variant)
+    Dim monthIndex As Long
+    Dim ws As Worksheet
+    Dim targetData As Variant
+    Dim r As Long
+    Dim keyText As String
+    
+    On Error GoTo SafeExit
+    
+    If fromMonthIndex < 1 Then fromMonthIndex = 1
+    If fromMonthIndex > 12 Then Exit Sub
+    
+    For monthIndex = fromMonthIndex To 12
+        Set ws = Nothing
+        
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(monthIndex - 1)))
+        On Error GoTo SafeExit
+        
+        If Not ws Is Nothing Then
+            If PID_IsWorkerMonthSheet(ws) Then
+                targetData = PID_ReadMonthData(ws)
+                
+                For r = 1 To UBound(targetData, 1)
+                    keyText = PID_BuildEmployeeKey(targetData(r, 1), targetData(r, 2))
+                    
+                    If keyText <> "" Then
+                        PID_UpsertHourOverride workbookYear, monthIndex, keyText, "E", targetData(r, 4)
+                        PID_UpsertHourOverride workbookYear, monthIndex, keyText, "F", targetData(r, 5)
+                    End If
+                Next r
+            End If
+        End If
+    Next monthIndex
+
+SafeExit:
 End Sub
 
 
