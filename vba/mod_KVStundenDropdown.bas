@@ -125,6 +125,7 @@ Public Sub PID_MacRefreshKVDropdownsForKVPeriodChange(Optional ByVal targetPerio
     workbookYear = PID_GetWorkbookYear()
     monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
     
+    PID_BeginPreserveWorkbookView
     PID_BeginHeavyMaintenance
     
     For i = LBound(monthNames) To UBound(monthNames)
@@ -141,7 +142,7 @@ Public Sub PID_MacRefreshKVDropdownsForKVPeriodChange(Optional ByVal targetPerio
         On Error GoTo 0
         
         If Not ws Is Nothing Then
-            RefreshKVStundenDropdownForSheet ws
+            RefreshKVStundenDropdownForSheet ws, , True
             
             On Error Resume Next
             If mKVDropdownRefreshedSheets Is Nothing Then Set mKVDropdownRefreshedSheets = New Collection
@@ -155,6 +156,10 @@ NextMonthMacRefresh:
     Next i
     
     PID_EndHeavyMaintenance
+    PID_EndPreserveWorkbookView
+    
+    ' Betroffene Monate sind neu aufgebaut — globaler Dirty-Zustand nicht offen lassen.
+    MarkKVDropdownsClean
 End Sub
 
 
@@ -169,9 +174,10 @@ Public Sub RefreshKVDropdownsIfDirtyForSheet(ByVal wsMonth As Worksheet)
         If Not mKVDropdownRefreshedSheets Is Nothing Then
             If CollectionHasKey_KVDropdown(mKVDropdownRefreshedSheets, wsMonth.Name) Then Exit Sub
         End If
+        RefreshKVStundenDropdownForSheet wsMonth
+    Else
+        RefreshKVStundenDropdownForSheet wsMonth, , True
     End If
-    
-    RefreshKVStundenDropdownForSheet wsMonth
     
     On Error Resume Next
     If mKVDropdownRefreshedSheets Is Nothing Then Set mKVDropdownRefreshedSheets = New Collection
@@ -198,6 +204,7 @@ Public Sub RefreshAllMonthKVStundenDropdowns()
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
     
+    PID_BeginPreserveWorkbookView
     PID_BeginHeavyMaintenance
     
     monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
@@ -210,13 +217,14 @@ Public Sub RefreshAllMonthKVStundenDropdowns()
         On Error GoTo CleanFail
         
         If Not ws Is Nothing Then
-            RefreshKVStundenDropdownForSheet ws
+            RefreshKVStundenDropdownForSheet ws, , PID_IsMacExcel()
         End If
     Next i
     
     PID_RemoveLegacyKVDDNamedRanges
     MarkKVDropdownsClean
     PID_EndHeavyMaintenance
+    PID_EndPreserveWorkbookView
 
 CleanExit:
     Application.DisplayAlerts = oldDisplayAlerts
@@ -228,6 +236,7 @@ CleanFail:
     gKVDropdownsDirty = True
     
     PID_EndHeavyMaintenance
+    PID_EndPreserveWorkbookView
     Application.DisplayAlerts = oldDisplayAlerts
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
@@ -457,6 +466,31 @@ Private Function GetHelperColumnForKVCodeSlot(ByVal sheetName As String, ByVal s
 End Function
 
 
+Private Sub PID_ForceDeleteAllFStundenValidations(ByVal wsMonth As Worksheet)
+    Dim r As Long
+    
+    On Error Resume Next
+    
+    wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Validation.Delete
+    DoEvents
+    
+    For r = PID_FIRST_ROW To PID_LAST_ROW
+        wsMonth.Cells(r, "F").Validation.Delete
+    Next r
+    
+    If PID_IsMacExcel() Then
+        DoEvents
+        wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Validation.Delete
+        For r = PID_FIRST_ROW To PID_LAST_ROW
+            wsMonth.Cells(r, "F").Validation.Delete
+        Next r
+    End If
+    
+    Err.Clear
+    On Error GoTo 0
+End Sub
+
+
 Private Sub PID_ApplyFStundenListValidation(ByVal wsMonth As Worksheet, _
                                             ByVal rowNumber As Long, _
                                             ByVal listName As String, _
@@ -467,10 +501,12 @@ Private Sub PID_ApplyFStundenListValidation(ByVal wsMonth As Worksheet, _
     On Error Resume Next
     wsMonth.Cells(rowNumber, "F").Validation.Delete
     Err.Clear
+    DoEvents
+    wsMonth.Cells(rowNumber, "F").Validation.Delete
+    Err.Clear
     
     If listRange Is Nothing Then Exit Sub
     
-    ' Mac Excel 2016: Named Range (KV_DG_*) fuer Listen oft unzuverlaessig — direkte Helper-Adresse.
     If PID_IsMacExcel() Then GoTo ApplyDirectAddress
     
     On Error GoTo ApplyFailed
@@ -544,13 +580,7 @@ Private Sub RefreshKVStundenDropdownForSheetBulk(ByVal wsMonth As Worksheet, _
     If refreshKeys.Count = 0 Then Exit Sub
     
     If refreshAllKeys Then
-        On Error Resume Next
-        wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Validation.Delete
-        Err.Clear
-        DoEvents
-        wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Validation.Delete
-        Err.Clear
-        On Error GoTo 0
+        PID_ForceDeleteAllFStundenValidations wsMonth
     Else
         For r = PID_FIRST_ROW To PID_LAST_ROW
             key = PID_GetDropdownKeyForRow(wsMonth, r)
@@ -588,7 +618,7 @@ Private Sub RefreshKVStundenDropdownForSheetBulk(ByVal wsMonth As Worksheet, _
                 If helperLastRow > 0 Then
                     Set listRange = wsHelper.Range(wsHelper.Cells(1, helperCol), wsHelper.Cells(helperLastRow, helperCol))
                     listName = GetDropdownNameForKVCode(wsMonth.Name, key)
-                    PID_EnsureWorkbookNameRefersTo listName, listRange, gKVDropdownsDirty
+                    PID_EnsureWorkbookNameRefersTo listName, listRange, (gKVDropdownsDirty Or forceFullRebuild)
                 End If
             End If
         End If
@@ -602,7 +632,9 @@ Private Sub RefreshKVStundenDropdownForSheetBulk(ByVal wsMonth As Worksheet, _
                 If key <> "__TEMPLATE__" Then wsMonth.Cells(r, "F").ClearContents
                 Err.Clear
             Else
-                If refreshAllKeys Then
+                If forceFullRebuild Then
+                    PID_ApplyFStundenListValidation wsMonth, r, listName, listRange
+                ElseIf refreshAllKeys Then
                     If gKVDropdownsDirty Or Not PID_RowHasValidFStundenDropdown(wsMonth, r) Then
                         PID_ApplyFStundenListValidation wsMonth, r, listName, listRange
                     End If
@@ -673,7 +705,7 @@ Public Sub RefreshKVStundenDropdownForRow(ByVal wsMonth As Worksheet, _
     Set listRange = wsHelper.Range(wsHelper.Cells(1, helperCol), wsHelper.Cells(helperLastRow, helperCol))
     listName = GetDropdownNameForKVCode(wsMonth.Name, dropdownKey)
     
-    PID_EnsureWorkbookNameRefersTo listName, listRange, gKVDropdownsDirty
+    PID_EnsureWorkbookNameRefersTo listName, listRange, True
     
     PID_ApplyFStundenListValidation wsMonth, rowNumber, listName, listRange
 
@@ -715,15 +747,18 @@ Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode
     
     cacheKey = CStr(monthNumber) & "|" & kvCode
     
-    If Not mStundenValuesCache Is Nothing Then
-        On Error Resume Next
-        Set cachedValues = mStundenValuesCache(cacheKey)
-        If Err.Number = 0 Then
-            Set GetKVMonatsstundenValues = PID_CloneStundenValuesCollection(cachedValues)
-            Exit Function
+    ' Mac: kein Stunden-Cache — LOHNTABELLE-Aenderungen (Eigene Stunden) sonst oft veraltet.
+    If Not PID_IsMacExcel() Then
+        If Not mStundenValuesCache Is Nothing Then
+            On Error Resume Next
+            Set cachedValues = mStundenValuesCache(cacheKey)
+            If Err.Number = 0 Then
+                Set GetKVMonatsstundenValues = PID_CloneStundenValuesCollection(cachedValues)
+                Exit Function
+            End If
+            Err.Clear
+            On Error GoTo SafeExit
         End If
-        Err.Clear
-        On Error GoTo SafeExit
     End If
     
     Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
@@ -740,7 +775,9 @@ Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode
         AddMonatsstundenValuesFromPeriod wsKV, previousPeriod, kvCode, values
     End If
     
-    PID_StoreStundenValuesInCache cacheKey, values
+    If Not PID_IsMacExcel() Then
+        PID_StoreStundenValuesInCache cacheKey, values
+    End If
     Set GetKVMonatsstundenValues = PID_CloneStundenValuesCollection(values)
     Exit Function
 
@@ -760,15 +797,27 @@ Public Sub PID_RefreshFStundenDropdownForERows(ByVal wsMonth As Worksheet, ByVal
     Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:E82"))
     If rowsToCheck Is Nothing Then Exit Sub
     
-    ' Dropdown-Auswahl in E meldet Change oft spaet oder gar nicht (Mac).
     DoEvents
-    PID_ClearStundenValuesCache
-    
-    ' Einzelzelle Validation.Delete reicht nicht (x14-Gruppen auf F) — ganze
-    ' Monatsblatt-Liste neu aufbauen wie bei FullSystemRefresh fuer diesen Monat.
-    RefreshKVStundenDropdownForSheet wsMonth, , True
+    PID_ForceRefreshFStundenDropdownForSheet wsMonth
 
 SafeExit:
+End Sub
+
+
+Public Sub PID_ForceRefreshFStundenDropdownForSheet(ByVal wsMonth As Worksheet)
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
+    
+    PID_BeginHeavyMaintenance
+    PID_ClearStundenValuesCache
+    RefreshKVStundenDropdownForSheet wsMonth, , True
+    PID_EndHeavyMaintenance wsMonth
+    
+SafeExit:
+    On Error Resume Next
+    PID_EndHeavyMaintenance
 End Sub
 
 
@@ -1468,6 +1517,7 @@ Public Function PID_RowHasValidFStundenDropdown(ByVal wsMonth As Worksheet, ByVa
     Dim validationType As Long
     Dim dropdownKey As String
     Dim expectedListName As String
+    Dim normalizedFormula As String
     Dim allKeys As Collection
     Dim slotIndex As Long
     Dim expectedHelperCol As Long
@@ -1482,28 +1532,61 @@ Public Function PID_RowHasValidFStundenDropdown(ByVal wsMonth As Worksheet, ByVa
     
     If validationType <> xlValidateList Then Exit Function
     
-    validationFormula = UCase$(CStr(wsMonth.Cells(rowNumber, "F").Validation.Formula1))
+    validationFormula = CStr(wsMonth.Cells(rowNumber, "F").Validation.Formula1)
     If Err.Number <> 0 Then Exit Function
     On Error GoTo 0
     
-    If InStr(1, validationFormula, "#REF", vbTextCompare) > 0 Then Exit Function
+    normalizedFormula = PID_NormalizeValidationListFormula(validationFormula)
+    If InStr(1, normalizedFormula, "#REF", vbTextCompare) > 0 Then Exit Function
     
     dropdownKey = PID_GetDropdownKeyForRow(wsMonth, rowNumber)
     expectedListName = UCase$(GetDropdownNameForKVCode(wsMonth.Name, dropdownKey))
     
-    If InStr(1, validationFormula, expectedListName, vbTextCompare) > 0 Then
+    ' Exakter Named-Range-Vergleich (inkl. Workbook-Praefix auf Mac).
+    If PID_ValidationFormulaRefersToListName(normalizedFormula, expectedListName) Then
         PID_RowHasValidFStundenDropdown = True
         Exit Function
     End If
     
-    If InStr(1, validationFormula, "KV_DROPDOWN_HELPER", vbTextCompare) > 0 Then
+    If InStr(1, UCase$(validationFormula), "KV_DROPDOWN_HELPER", vbTextCompare) > 0 Then
         Set allKeys = PID_BuildAllDropdownKeysForSheet(wsMonth)
         slotIndex = PID_GetKVCodeSlotIndexInSheet(allKeys, dropdownKey)
         expectedHelperCol = GetHelperColumnForKVCodeSlot(wsMonth.Name, slotIndex)
         
-        If PID_ValidationFormulaUsesHelperColumn(validationFormula, expectedHelperCol) Then
+        If PID_ValidationFormulaUsesHelperColumn(UCase$(validationFormula), expectedHelperCol) Then
             PID_RowHasValidFStundenDropdown = True
         End If
+    End If
+End Function
+
+
+Private Function PID_NormalizeValidationListFormula(ByVal formula As String) As String
+    Dim normalized As String
+    
+    normalized = UCase$(Trim$(CStr(formula)))
+    If Left$(normalized, 1) = "=" Then normalized = Mid$(normalized, 2)
+    PID_NormalizeValidationListFormula = Replace(normalized, "$", "")
+End Function
+
+
+Private Function PID_ValidationFormulaRefersToListName(ByVal normalizedFormula As String, ByVal listName As String) As Boolean
+    Dim pos As Long
+    
+    If normalizedFormula = listName Then
+        PID_ValidationFormulaRefersToListName = True
+        Exit Function
+    End If
+    
+    If Len(listName) = 0 Then Exit Function
+    If Len(normalizedFormula) < Len(listName) Then Exit Function
+    
+    If Right$(normalizedFormula, Len(listName)) <> listName Then Exit Function
+    
+    pos = Len(normalizedFormula) - Len(listName) + 1
+    If pos = 1 Then
+        PID_ValidationFormulaRefersToListName = True
+    ElseIf Mid$(normalizedFormula, pos - 1, 1) = "!" Then
+        PID_ValidationFormulaRefersToListName = True
     End If
 End Function
 

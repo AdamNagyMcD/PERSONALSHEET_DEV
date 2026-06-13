@@ -10,6 +10,11 @@
 - mod_KVStundenDropdown.bas + DieseArbeitsmappe.cls: KV-Gruppe (E) wechseln baut F-Dropdown sofort neu (scoped pro Zeile); Validierung muss zur aktuellen Gruppe passen (BG1_5→BG1), nicht nur „irgendein“ KV_DG_*.
 - DieseArbeitsmappe.cls: E-Dropdown-Auswahl — F-Refresh beim Verlassen von E und beim Sprung E→F; ganze Monatsblatt-F-Spalte neu (x14-Gruppen-Validierung).
 - mod_KVStundenDropdown.bas + Modul1.bas + mod_AddNewKVPeriodOnTop.bas: Mac-only sofortiger Dropdown-Refresh nach Eigene Stunden; Windows lazy-Refresh unveraendert.
+- mod_KVStundenDropdown.bas: Mac — auch nach Eigene Stunden und bei SheetActivate immer `forceFullRebuild` (x14-Validierung sonst veraltete Helper-Zellrange trotz neuer Stunde).
+- mod_KVStundenDropdown.bas: `forceFullRebuild` wendet F-Validierung immer neu an (nicht ueberspringen wenn alte x14-Liste noch „gueltig“ wirkt); aggressives Loeschen pro Zelle; Named Range KV_DG_* wieder auf Mac.
+- Modul1.bas + mod_KVStundenDropdown.bas + mod_AddNewKVPeriodOnTop.bas: Nach Eigene Stunden / Stunde Loeschen bleibt LOHNTABELLE sichtbar (Scroll + Zeile G); Mac-Monats-Refresh springt nicht mehr auf Dezember.
+- mod_KVStundenDropdown.bas + DieseArbeitsmappe.cls: F-Dropdown-Gueltigkeit exakter Named-Range-Vergleich (BG1 vs BG1_5); F-Refresh auch beim Sprung auf F wenn E-Gruppe gewechselt (Mac-Fallback).
+- mod_KVStundenDropdown.bas + DieseArbeitsmappe.cls: Mac — kein Stunden-Cache; E-Wechsel per SelectionChange (Dropdown meldet kein SheetChange); F-Refresh bei E verlassen / F fokussieren erzwungen; `PID_ForceRefreshFStundenDropdownForSheet`; Dirty-Clean nach Mac-Period-Refresh.
 
 ### Changed
 - mod_KVStundenDropdown.bas (FP-005): scoped KV-dirty-Refresh — nur betroffene KV-Codes/Zeilen statt 80× F-Rebuild; `MarkKVDropdownDirtyForKVCode`, `MarkKVDropdownDirtyFromLOHNTABELLERange`. Windows-Messung: scoped 0,15 s vs Voll 0,52 s (Baseline 0,51 s).

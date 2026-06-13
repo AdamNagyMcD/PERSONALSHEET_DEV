@@ -467,6 +467,8 @@ Public Sub DeleteCustomKVMonatsstunden()
     Dim oldDisplayAlerts As Boolean
     Dim oldCalculation As XlCalculation
     Dim stateCaptured As Boolean
+    Dim savedScrollRow As Long
+    Dim savedScrollCol As Long
     
     On Error GoTo CleanFail
     
@@ -559,6 +561,11 @@ Public Sub DeleteCustomKVMonatsstunden()
     Application.Calculation = xlCalculationManual
     stateCaptured = True
     
+    If Not ActiveWindow Is Nothing Then
+        savedScrollRow = ActiveWindow.ScrollRow
+        savedScrollCol = ActiveWindow.ScrollColumn
+    End If
+    
     On Error Resume Next
     wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
@@ -583,6 +590,7 @@ CleanExit:
         Application.DisplayAlerts = oldDisplayAlerts
         Application.ScreenUpdating = oldScreenUpdating
         Application.EnableEvents = oldEnableEvents
+        PID_RestoreLOHNTABELLEView wsKV, savedScrollRow, savedScrollCol, deleteRow, "G"
     End If
     On Error GoTo 0
     Exit Sub
@@ -599,6 +607,7 @@ CleanFail:
         Application.DisplayAlerts = oldDisplayAlerts
         Application.ScreenUpdating = oldScreenUpdating
         Application.EnableEvents = oldEnableEvents
+        PID_RestoreLOHNTABELLEView wsKV, savedScrollRow, savedScrollCol, deleteRow, "G"
     End If
     
     MsgBox "Fehler bei DeleteCustomKVMonatsstunden:" & vbCrLf & _
@@ -745,6 +754,8 @@ Public Sub AddCustomKVMonatsstunden()
     Dim oldDisplayAlerts As Boolean
     Dim oldCalculation As XlCalculation
     Dim stateCaptured As Boolean
+    Dim savedScrollRow As Long
+    Dim savedScrollCol As Long
     
     On Error GoTo CleanFail
     
@@ -798,6 +809,11 @@ Public Sub AddCustomKVMonatsstunden()
     Application.Calculation = xlCalculationManual
     stateCaptured = True
     
+    If Not ActiveWindow Is Nothing Then
+        savedScrollRow = ActiveWindow.ScrollRow
+        savedScrollCol = ActiveWindow.ScrollColumn
+    End If
+    
     On Error Resume Next
     wsKV.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo CleanFail
@@ -825,6 +841,7 @@ CleanExit:
         Application.DisplayAlerts = oldDisplayAlerts
         Application.ScreenUpdating = oldScreenUpdating
         Application.EnableEvents = oldEnableEvents
+        PID_RestoreLOHNTABELLEView wsKV, savedScrollRow, savedScrollCol, insertRow, "G"
     End If
     On Error GoTo 0
     Exit Sub
@@ -841,6 +858,7 @@ CleanFail:
         Application.DisplayAlerts = oldDisplayAlerts
         Application.ScreenUpdating = oldScreenUpdating
         Application.EnableEvents = oldEnableEvents
+        PID_RestoreLOHNTABELLEView wsKV, savedScrollRow, savedScrollCol, insertRow, "G"
     End If
     
     MsgBox "Fehler bei AddCustomKVMonatsstunden:" & vbCrLf & _

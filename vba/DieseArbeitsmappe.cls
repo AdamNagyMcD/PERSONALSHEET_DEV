@@ -24,6 +24,8 @@ Private mWorkerSheetRuntimeReady As Boolean
 Private mSelPrevSheet As String
 Private mSelPrevRow As Long
 Private mSelPrevCol As Long
+Private mSelPrevEValueAtEntry As String
+Private mFStundenRefreshRanThisSelection As Boolean
 
 
 Private Sub PID_EnsureWorkerSheetRuntimeReady()
@@ -244,6 +246,11 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     Application.FormatStaleValues = False
     On Error GoTo SafeExit
     
+    ' E zuerst: Dropdown in F muss sofort passen (Mac meldet Change oft nicht).
+    If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
+        PID_RefreshFStundenDropdownForERows Sh, Target
+    End If
+    
     ' Einfuege-Schutz:
     ' Beim Einfuegen aus alten Dateien oder anderen Quellen soll nur der Wert uebernommen werden.
     pasteHandled = False
@@ -265,10 +272,6 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     
     If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
         PID_LogEFAenderungForSheet Sh, Target
-    End If
-    
-    If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
-        PID_RefreshFStundenDropdownForERows Sh, Target
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:
@@ -299,9 +302,11 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     
     On Error GoTo SafeExit
     
+    mFStundenRefreshRanThisSelection = False
+    
     If Not TypeOf Sh Is Worksheet Then Exit Sub
     If PID_IsWorkerMonthSheet(Sh) And Target.CountLarge = 1 Then
-        PID_RefreshFStundenAfterLeavingE Sh, Target
+        PID_RefreshFStundenOnSelectionChange Sh, Target
     End If
     
     If mInternalChange Then GoTo UpdateSelectionPrev
@@ -344,9 +349,6 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     
     If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
         fDropdownInvalid = Not PID_RowHasValidFStundenDropdown(Sh, Target.Row)
-        If mSelPrevSheet = Sh.Name And mSelPrevCol = 5 And mSelPrevRow = Target.Row Then
-            fDropdownInvalid = True
-        End If
     End If
     
     needsDropdownRepair = eDropdownInvalid Or fDropdownInvalid
@@ -360,13 +362,9 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
         mInternalChange = False
     End If
     
-    ' E->F: leave-E hat bereits ganzes Blatt refreshed; sonst nur E-Dropdown reparieren.
-    If fDropdownInvalid And mSelPrevSheet = Sh.Name And mSelPrevCol = 5 And mSelPrevRow = Target.Row Then
-        GoTo UpdateSelectionPrev
-    End If
-    
-    ' E/F gueltig: sofort beenden — kein ScreenUpdating-Off.
+    ' E/F ungueltig: reparieren.
     If Not needsDropdownRepair Then GoTo UpdateSelectionPrev
+    If mFStundenRefreshRanThisSelection Then GoTo UpdateSelectionPrev
     
     mInternalChange = True
     Application.EnableEvents = False
@@ -380,8 +378,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     
     If fDropdownInvalid Then
         On Error Resume Next
-        PID_ClearStundenValuesCache
-        RefreshKVStundenDropdownForSheet Sh, , True
+        PID_ForceRefreshFStundenDropdownForSheet Sh
         On Error GoTo SafeExit
     End If
 
@@ -400,29 +397,74 @@ SafeExit:
 End Sub
 
 
-Private Sub PID_RefreshFStundenAfterLeavingE(ByVal ws As Worksheet, ByVal Target As Range)
-    Dim leftERow As Long
+Private Sub PID_RefreshFStundenOnSelectionChange(ByVal ws As Worksheet, ByVal Target As Range)
+    Dim shouldRefresh As Boolean
+    Dim currentE As String
     
     On Error GoTo SafeExit
     
     If ws Is Nothing Then Exit Sub
     If Target Is Nothing Then Exit Sub
-    If mInternalChange Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    If Target.CountLarge <> 1 Then Exit Sub
     
-    If mSelPrevSheet <> ws.Name Then Exit Sub
-    If mSelPrevCol <> 5 Then Exit Sub
+    ' Mac: SheetChange bei E-Dropdown oft aus — Refresh bei E-Wechsel / F-Fokus erzwingen.
+    If PID_IsMacExcel() Then
+        shouldRefresh = False
+        
+        If mSelPrevSheet = ws.Name And mSelPrevCol = 5 Then
+            If mSelPrevRow >= PID_FIRST_ROW And mSelPrevRow <= PID_LAST_ROW Then
+                If Not (Target.Row = mSelPrevRow And Target.Column = 5) Then
+                    shouldRefresh = True
+                    
+                    currentE = NormalizeKVCodeForLookup(CStr(ws.Cells(mSelPrevRow, "E").Value))
+                    If Len(mSelPrevEValueAtEntry) > 0 Then
+                        If StrComp(currentE, mSelPrevEValueAtEntry, vbBinaryCompare) <> 0 Then
+                            shouldRefresh = True
+                        End If
+                    End If
+                End If
+            End If
+        End If
+        
+        If Target.Column = 6 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
+            shouldRefresh = True
+        End If
+    Else
+        shouldRefresh = False
+        
+        If mSelPrevSheet = ws.Name And mSelPrevCol = 5 Then
+            If mSelPrevRow >= PID_FIRST_ROW And mSelPrevRow <= PID_LAST_ROW Then
+                If Not (Target.Row = mSelPrevRow And Target.Column = 5) Then
+                    shouldRefresh = True
+                End If
+            End If
+        End If
+        
+        If Not shouldRefresh Then
+            If Target.Column = 6 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
+                shouldRefresh = Not PID_RowHasValidFStundenDropdown(ws, Target.Row)
+            End If
+        End If
+    End If
     
-    leftERow = mSelPrevRow
-    If leftERow < PID_FIRST_ROW Or leftERow > PID_LAST_ROW Then Exit Sub
+    If Not shouldRefresh Then Exit Sub
     
-    If Target.Row = leftERow And Target.Column = 5 Then Exit Sub
+    PID_ExecuteFStundenSheetRefresh ws
+
+SafeExit:
+End Sub
+
+
+Private Sub PID_ExecuteFStundenSheetRefresh(ByVal ws As Worksheet)
+    On Error GoTo SafeExit
     
     mInternalChange = True
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
-    PID_ClearStundenValuesCache
-    RefreshKVStundenDropdownForSheet ws, , True
+    PID_ForceRefreshFStundenDropdownForSheet ws
+    mFStundenRefreshRanThisSelection = True
 
 SafeExit:
     On Error Resume Next
@@ -442,6 +484,10 @@ Private Sub PID_UpdateMonthSelectionPrev(ByVal ws As Worksheet, ByVal Target As 
     mSelPrevSheet = ws.Name
     mSelPrevRow = Target.Row
     mSelPrevCol = Target.Column
+    
+    If Target.Column = 5 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
+        mSelPrevEValueAtEntry = NormalizeKVCodeForLookup(CStr(ws.Cells(Target.Row, "E").Value))
+    End If
 
 SafeExit:
 End Sub

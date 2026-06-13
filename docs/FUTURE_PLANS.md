@@ -1,4 +1,4 @@
-﻿﻿# FUTURE PLANS — PERSONALSHEET
+﻿# FUTURE PLANS — PERSONALSHEET
 
 Technischer Backlog für geplante, aber **noch nicht umgesetzte** Verbesserungen.  
 Aktuelles Verhalten bleibt unverändert, bis ein Eintrag explizit umgesetzt und in `CHANGELOG.md` dokumentiert wird.
@@ -856,6 +856,48 @@ Nach jedem Öffnen stand Excel auf **Manuelle Berechnung**; Spalten **H, K, L** 
 ## Test-Notiz (Excel 2016, 2026-05)
 
 Manueller Durchlauf: **Smoke grün/gelb**, **manuelle Tests ohne Fehler**. Offene Punkte oben als FP-017–FP-023 erfasst (kein Release-Blocker für dokumentierte Fixes FP-001–FP-004).
+
+---
+
+## Mac-only (post-release)
+
+Nur **Adam / Mac Excel** — alle anderen Standorte Windows. Kein Release-Blocker; Umsetzung **erst nach v1.0-Release**, wenn Zeit und Mac-Smoke-Regression möglich.
+
+| Prio | ID | Aufgabe | Status |
+|------|-----|---------|--------|
+| 1 | FP-026 | Mac F-Dropdown Performance (sor-szintű refresh) | Geplant (post-release) |
+
+---
+
+## FP-026 — Mac-only: F-Dropdown Performance (sor-szintű refresh)
+
+**Status:** Geplant — **erst nach Release v1.0**  
+**Priorität:** Niedrig (Mac-only, 1 Nutzer; Stabilität vor Geschwindigkeit)  
+**Plattform:** Nur Mac Excel — Windows-Pfad **unverändert** lassen  
+**Betroffene Bereiche:** `mod_KVStundenDropdown.bas`, `DieseArbeitsmappe.cls`
+
+### Ist-Zustand (Mac, 2026-06)
+
+Nach KV-Fixes zuverlässig, aber spürbar langsam: bei E-Gruppenwechsel / F-Fokus oft **ganzer Monatsblatt-F-Rebuild** (~0,5 s), kein Stunden-Cache, direkte Helper-Adresse in Validierung. Bewusster Trade-off gegen x14-Gruppen-Validierung und fehlendes `SheetChange` bei E-Dropdown.
+
+### Geplante Verbesserung
+
+- **Sor-szintű** (vagy KV-csoport-szintű) F-refresh Mac-en, ahol E/F esemény történik — ne mind a 80 sor.
+- Stunden-Cache Mac-en vissza, **szigorú invalidálás** (LOHNTABELLE, Eigene Stunden, E-Wechsel).
+- Dupla refresh csökkentése (E elhagyás + F fokusz → egy rebuild).
+- Windows: scoped dirty (FP-005) und lazy Refresh **nicht** anfassen.
+
+### Akzeptanzkriterien
+
+- [ ] Mac smoke: Juni/Mai, BG1 ↔ BG1_5, Eigene Stunden (z. B. 172), LOHNTABELLE-View bleibt.
+- [ ] Spürbar schneller als Ist (~0,5 s → Ziel ~0,1 s pro E/F-Aktion).
+- [ ] Windows `PID_RunPerformanceBaseline` Schritt 2b unverändert (~0,15 s scoped).
+- [ ] Keine Regression gegen Mac-Refresh-Pfad (SheetChange + SelectionChange Fallback).
+
+### Referenz
+
+- `docs/PERFORMANCE_BASELINE.md` (Windows-Messung)
+- FP-005 Approach D (lazy F pro Zeile) als Vorbild, Mac-spezifisch validieren
 
 ---
 

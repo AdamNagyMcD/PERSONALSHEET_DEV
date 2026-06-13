@@ -22,6 +22,11 @@ Public Const PID_FLUKTUATION_TIME_LAST_ROW As Long = 59
 Private mHeavyMaintOldCalculation As XlCalculation
 Private mHeavyMaintDepth As Long
 
+Private mViewPreserveSheet As Worksheet
+Private mViewPreserveScrollRow As Long
+Private mViewPreserveScrollCol As Long
+Private mViewPreserveDepth As Long
+
 
 ' Frueher: Manual fuer schnelles Oeffnen — Endanwender sahen leere H/K/L-Formeln.
 ' Jetzt: Automatisch + EnableCalculation; Open bleibt kurz Manual nur in Workbook_Open.
@@ -61,6 +66,70 @@ Public Sub PID_EndHeavyMaintenance(Optional ByVal wsMonth As Worksheet = Nothing
     End If
     
     Application.Calculation = mHeavyMaintOldCalculation
+    Err.Clear
+End Sub
+
+
+' Aktives Blatt + Scrollposition waehrend Hintergrund-Refresh (z. B. Mac Monatsloop) sichern.
+Public Sub PID_BeginPreserveWorkbookView()
+    On Error Resume Next
+    
+    If mViewPreserveDepth <= 0 Then
+        Set mViewPreserveSheet = ActiveSheet
+        mViewPreserveScrollRow = 0
+        mViewPreserveScrollCol = 0
+        
+        If Not ActiveWindow Is Nothing Then
+            mViewPreserveScrollRow = ActiveWindow.ScrollRow
+            mViewPreserveScrollCol = ActiveWindow.ScrollColumn
+        End If
+    End If
+    
+    mViewPreserveDepth = mViewPreserveDepth + 1
+    Err.Clear
+End Sub
+
+
+Public Sub PID_EndPreserveWorkbookView()
+    On Error Resume Next
+    
+    If mViewPreserveDepth > 0 Then mViewPreserveDepth = mViewPreserveDepth - 1
+    If mViewPreserveDepth > 0 Then Exit Sub
+    
+    If Not mViewPreserveSheet Is Nothing Then
+        mViewPreserveSheet.Activate
+        
+        If Not ActiveWindow Is Nothing Then
+            If mViewPreserveScrollRow > 0 Then ActiveWindow.ScrollRow = mViewPreserveScrollRow
+            If mViewPreserveScrollCol > 0 Then ActiveWindow.ScrollColumn = mViewPreserveScrollCol
+        End If
+    End If
+    
+    Set mViewPreserveSheet = Nothing
+    Err.Clear
+End Sub
+
+
+Public Sub PID_RestoreLOHNTABELLEView(ByVal wsKV As Worksheet, _
+                                      ByVal scrollRow As Long, _
+                                      ByVal scrollCol As Long, _
+                                      Optional ByVal focusRow As Long = 0, _
+                                      Optional ByVal focusCol As String = "G")
+    On Error Resume Next
+    
+    If wsKV Is Nothing Then Exit Sub
+    
+    wsKV.Activate
+    
+    If Not ActiveWindow Is Nothing Then
+        If scrollRow > 0 Then ActiveWindow.ScrollRow = scrollRow
+        If scrollCol > 0 Then ActiveWindow.ScrollColumn = scrollCol
+    End If
+    
+    If focusRow >= 4 Then
+        wsKV.Range(focusCol & CStr(focusRow)).Select
+    End If
+    
     Err.Clear
 End Sub
 
