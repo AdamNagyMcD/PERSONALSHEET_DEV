@@ -1,5 +1,7 @@
 # PERSONALSHEET CHANGELOG
 
+Entwickler-Log (technisch). **Für Restaurant Manager:** [`CHANGELOG_NUTZER.md`](CHANGELOG_NUTZER.md) — verständlich, nach Datum sortiert.
+
 ## Unreleased
 
 ### Added

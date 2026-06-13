@@ -2,377 +2,450 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <title>Personalsheet – Kurzanleitung</title>
+  <title>Personalsheet – Anleitung für Restaurant Manager</title>
   <style>
-    @page {
-      size: A4;
-      margin: 14mm 16mm;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
+    @page { size: A4; margin: 14mm 16mm; }
+    * { box-sizing: border-box; }
     body {
       font-family: "Helvetica Neue", Arial, sans-serif;
       font-size: 11pt;
-      line-height: 1.45;
+      line-height: 1.5;
       color: #1a1a1a;
       max-width: 180mm;
       margin: 0 auto;
       padding: 8mm 0;
     }
-
-    h1 {
-      font-size: 18pt;
-      margin: 0 0 3mm;
-      line-height: 1.2;
-    }
-
-    .subtitle {
-      font-size: 10pt;
-      color: #444;
-      margin-bottom: 6mm;
-    }
-
+    h1 { font-size: 18pt; margin: 0 0 3mm; line-height: 1.2; }
+    .subtitle { font-size: 10pt; color: #444; margin-bottom: 6mm; }
     h2 {
       font-size: 12pt;
-      margin: 6mm 0 2mm;
+      margin: 7mm 0 2.5mm;
       padding-bottom: 1mm;
       border-bottom: 1px solid #ccc;
       page-break-after: avoid;
     }
-
-    h3 {
-      font-size: 10.5pt;
-      margin: 3mm 0 1.5mm;
-      color: #333;
-    }
-
-    p {
-      margin: 0 0 2.5mm;
-    }
-
-    ul, ol {
-      margin: 1mm 0 3mm;
-      padding-left: 5.5mm;
-    }
-
-    li {
-      margin-bottom: 2mm;
-    }
-
+    h3 { font-size: 10.5pt; margin: 4mm 0 2mm; color: #333; }
+    p { margin: 0 0 2.5mm; }
+    ul, ol { margin: 1mm 0 3.5mm; padding-left: 5.5mm; }
+    li { margin-bottom: 2mm; }
     table {
       width: 100%;
       border-collapse: collapse;
       margin: 2mm 0 4mm;
       font-size: 10pt;
     }
-
     th, td {
       border: 1px solid #bbb;
       padding: 2.5mm 3mm;
       vertical-align: top;
       text-align: left;
     }
-
-    th {
-      background: #f0f0f0;
-      font-weight: bold;
-    }
-
+    th { background: #f0f0f0; font-weight: bold; }
     .box {
       border: 1px solid #888;
       background: #fafafa;
       padding: 3.5mm 4mm;
       margin: 3mm 0;
     }
-
     .box strong.title {
       display: block;
       margin-bottom: 2mm;
       font-size: 11pt;
     }
-
-    .warn {
-      border-color: #c05000;
-      background: #fff8f0;
-    }
-
-    .ok {
-      border-color: #2d6a2d;
-      background: #f4faf4;
-    }
-
-    .rules {
-      border-color: #1a4d8c;
-      background: #f0f6fc;
-      font-size: 10.5pt;
-    }
-
-    .step {
-      margin-left: 0;
-      padding-left: 5mm;
-    }
-
-    .small {
-      font-size: 9pt;
-      color: #555;
-    }
-
+    .rules { border-color: #1a4d8c; background: #f0f6fc; }
+    .warn { border-color: #c05000; background: #fff8f0; }
+    .ok { border-color: #2d6a2d; background: #f4faf4; }
+    .contact { border-color: #1a4d8c; background: #f8fbff; }
+    .checklist li { list-style: none; margin-left: -4mm; }
+    .checklist li::before { content: "☐ "; font-weight: bold; }
     .footer {
-      margin-top: 5mm;
+      margin-top: 6mm;
       padding-top: 2mm;
       border-top: 1px solid #ddd;
       font-size: 8.5pt;
       color: #666;
     }
-
     @media print {
-      body {
-        padding: 0;
-      }
-
-      h2 {
-        break-after: avoid;
-      }
-
-      .box, table {
-        break-inside: avoid;
-      }
+      body { padding: 0; }
+      h2 { break-after: avoid; }
+      .box, table { break-inside: avoid; }
     }
   </style>
 </head>
 <body>
 
-  <h1>Personalsheet – Kurzanleitung</h1>
-  <p class="subtitle">Für Restaurantleitung · Stand: Juni 2026 · Einfach erklärt – auch wenn Sie mit Excel gerade erst anfangen</p>
+  <h1>Personalsheet – Anleitung für Restaurant Manager</h1>
+  <p class="subtitle">Schritt-für-Schritt · Stand: Juni 2026</p>
 
   <div class="box rules">
-    <strong class="title">Die drei wichtigsten Regeln (bitte merken)</strong>
+    <strong class="title">Die drei wichtigsten Regeln</strong>
     <ol>
-      <li><strong>Stunden und Vertragstyp</strong> ändern Sie fast nur in den Spalten <strong>E</strong> und <strong>F</strong> (weiße Felder mit Liste).</li>
-      <li><strong>Nicht ziehen:</strong> Zelle in E oder F anklicken und <strong>nicht</strong> mit der Maus nach unten oder zur Seite ziehen. Das zerstört oft die Farben im Blatt.</li>
-      <li><strong>Am Monatsende:</strong> Daten mit dem Knopf bzw. Makro <strong>CopyData</strong> in die nächsten Monate kopieren (Anleitung unten).</li>
+      <li><strong>LOHNTABELLE</strong> und <strong>EINSTELLUNG</strong> aktuell halten – das ist die Basis für alles andere.</li>
+      <li>Auf den Monatsblättern <strong>KV-Gruppe</strong> und <strong>Monatsstunden</strong> immer aus der <strong>Liste wählen</strong>, nicht frei eintippen.</li>
+      <li>Nach <strong>jeder Änderung</strong> auf dem Monatsblatt, die auch die folgenden Monate betrifft: Button <strong>„Aktualisierung des restlichen Jahres“</strong> – nicht nur am Monatsende!</li>
     </ol>
   </div>
 
-  <h2>1. Wofür ist diese Excel-Datei?</h2>
-  <p>Sie führen hier Ihr <strong>Personal pro Monat</strong>: Wer arbeitet, welche Stunden laut Vertrag (KV), wer ausscheidet. Excel rechnet den <strong>Monatslohn</strong> und zeigt auf dem Blatt <strong>FLUKTUATION</strong>, ob viele Leute gehen.</p>
-  <p><strong>Sie müssen nicht rechnen.</strong> Sie tragen Daten ein – Formeln macht die Datei.</p>
+  <h2>Zweck des Personalsheets</h2>
+  <p>Das Personalsheet ist dein <strong>Personal- und Planungswerkzeug fürs ganze Jahr</strong>. Du führst darin:</p>
+  <ul>
+    <li>die offiziellen Lohn- und Vertragswerte (Blatt <strong>LOHNTABELLE</strong>),</li>
+    <li>Budget und Restaurant-Planzahlen (Blatt <strong>EINSTELLUNG</strong>),</li>
+    <li>dein Team Monat für Monat (Blätter <strong>Januar bis Dezember</strong>),</li>
+    <li>auf <strong>UBERSICHT</strong> die <strong>Jahreszahlen im Überblick</strong> – ein ganzes Jahr vorausprojiziert, gut zum Planen,</li>
+    <li>auf <strong>FLUKTUATION</strong>, wie sich deine Personalbewegung entwickelt.</li>
+  </ul>
+  <p>Du musst <strong>keine Löhne selbst ausrechnen</strong>. Du pflegst die Daten aus Payroll und aus deinem Restaurant – das Personalsheet rechnet den Rest.</p>
 
-  <h3>Welches Blatt wofür?</h3>
+  <h2>Welches Blatt wann?</h2>
   <table>
     <tr>
-      <th>Blatt-Name</th>
-      <th>Das machen Sie dort</th>
-    </tr>
-    <tr>
-      <td><strong>Januar … Dezember</strong></td>
-      <td>Jeden Monat: Mitarbeiter, Stunden (E/F), Austritt (I + N)</td>
-    </tr>
-    <tr>
-      <td><strong>FLUKTUATION</strong></td>
-      <td>Nur <strong>lesen</strong>: Ampel-Status, „Sofort prüfen“, Diagramme</td>
+      <th>Blatt</th>
+      <th>Deine Aufgabe</th>
     </tr>
     <tr>
       <td><strong>LOHNTABELLE</strong></td>
-      <td><strong>Nicht</strong> selbst ändern – nur Admin bei neuem KV</td>
+      <td><strong>Regelmäßig pflegen:</strong> Neue KV-Daten von Payroll (ca. jeden Mai), Löhne pro KV-Gruppe, eigene Stunden bei Sonderverträgen.</td>
     </tr>
     <tr>
       <td><strong>EINSTELLUNG</strong></td>
-      <td>Arbeitsjahr – <strong>nur Admin</strong> (Zelle C35)</td>
+      <td><strong>Regelmäßig pflegen:</strong> Jahres-Budget und deine Restaurant-Zahlen (Musterdienstplan, Feiertag, Urlaub, Krank …) – oft monatlich anpassen.</td>
+    </tr>
+    <tr>
+      <td><strong>Januar … Dezember</strong></td>
+      <td><strong>Täglich / monatlich:</strong> Mitarbeiterliste, Verträge, Stunden, Austritte – dein Hauptblatt im laufenden Betrieb.</td>
+    </tr>
+    <tr>
+      <td><strong>UBERSICHT</strong></td>
+      <td><strong>Planen und prüfen:</strong> Jahreszahlen, Finanz- und Durchrechnung – wie sich Stunden und Kosten über das Jahr entwickeln.</td>
+    </tr>
+    <tr>
+      <td><strong>FLUKTUATION</strong></td>
+      <td><strong>Lesen:</strong> Ampel, „Sofort prüfen“, ob Austrittsdaten vollständig sind.</td>
     </tr>
   </table>
 
-  <h2>2. Monatsblatt – wo trage ich was ein?</h2>
-  <p>Unten die Tabelle ab Zeile 3. Die <strong>Buchstaben oben</strong> sind die Spalten (A, B, C … wie in der Schule).</p>
+  <h2>Button „Aktualisierung des restlichen Jahres“</h2>
+  <p>Dieser Button ist <strong>nicht nur für den Monatsabschluss</strong>. Klick ihn immer, wenn du auf einem Monatsblatt etwas änderst, das auch in den <strong>folgenden Monaten</strong> gelten soll – z.&nbsp;B.:</p>
+  <ul>
+    <li>neuer Mitarbeiter,</li>
+    <li>Austritt,</li>
+    <li>andere KV-Gruppe oder Stunden ab diesem Monat,</li>
+    <li>sonstige Änderungen in der Mitarbeitertabelle, die nach vorne mitlaufen sollen.</li>
+  </ul>
+  <p><strong>Ablauf:</strong> Änderung eintragen → speichern → Button auf <strong>dem Monatsblatt klicken, ab dem</strong> die Änderung gelten soll → warten → speichern → im nächsten Monat kurz prüfen, ob alles angekommen ist.</p>
+  <p>Am Monatsende machst du das ohnehin – aber vergiss es nicht auch <strong>zwischendurch</strong>, sobald du etwas Relevantes geändert hast.</p>
 
-  <table>
-    <tr>
-      <th>Spalte</th>
-      <th>In einfachen Worten</th>
-      <th>Wer pflegt das?</th>
-    </tr>
-    <tr>
-      <td><strong>B und C</strong></td>
-      <td>Nummer und <strong>Name</strong> des Mitarbeiters</td>
-      <td>Sie – wenn jemand <strong>neu</strong> kommt</td>
-    </tr>
-    <tr>
-      <td><strong>D</strong></td>
-      <td>Datum: <strong>Eintritt</strong> ins Unternehmen</td>
-      <td>Sie – bei neuen Leuten</td>
-    </tr>
-    <tr>
-      <td><strong>E</strong></td>
-      <td><strong>Vertragstyp</strong> (KV-Code) – aus der Liste wählen</td>
-      <td>Sie – bei Änderung oder neu</td>
-    </tr>
-    <tr>
-      <td><strong>F</strong></td>
-      <td><strong>Stunden pro Monat</strong> – Liste erscheint nach E</td>
-      <td>Sie – oft jede Woche / bei Änderung</td>
-    </tr>
-    <tr>
-      <td><strong>G</strong></td>
-      <td><strong>Monatslohn</strong> – wird von Excel berechnet</td>
-      <td><strong>Nicht</strong> von Hand überschreiben</td>
-    </tr>
-    <tr>
-      <td><strong>H</strong></td>
-      <td><strong>Aktuelle Stunden</strong> – Formel</td>
-      <td><strong>Nicht</strong> von Hand überschreiben</td>
-    </tr>
-    <tr>
-      <td><strong>I</strong></td>
-      <td><strong>Austrittsdatum</strong> – nur wenn jemand geht</td>
-      <td>Sie – beim Austritt</td>
-    </tr>
-    <tr>
-      <td><strong>N</strong></td>
-      <td><strong>Warum</strong> die Person geht (Grund aus Liste)</td>
-      <td>Sie – <strong>immer</strong> zusammen mit I</td>
-    </tr>
-    <tr>
-      <td><strong>Q12</strong></td>
-      <td><strong>Vormonat +/– Stunden</strong> – Korrektur aus dem Vormonat (Panel rechts, Zeile 12)</td>
-      <td>Sie – optional, nur bei bestimmten Monaten (Jan, März, Apr, Jun, Jul, Sep, Okt, Dez). In Feb/Mai/Aug/Nov steht dort eine feste Formel – <strong>nicht ändern</strong>.</td>
-    </tr>
-  </table>
+  <h2>LOHNTABELLE pflegen</h2>
+  <p>Hier stehen alle <strong>offiziellen KV-Werte</strong>, die Payroll liefert. Ohne aktuelle LOHNTABELLE stimmen die Monatsblätter nicht.</p>
 
-  <div class="box warn">
-    <strong class="title">Austritt – beides ausfüllen!</strong>
-    <p>Wenn jemand das Team verlässt:</p>
-    <ol class="step">
-      <li>In Spalte <strong>I</strong> das <strong>Datum</strong> eintragen (wann ausscheidet).</li>
-      <li>In Spalte <strong>N</strong> den <strong>Grund</strong> aus der Liste wählen.</li>
-    </ol>
-    <p>Nur I ohne N reicht <strong>nicht</strong>. Dann steht auf FLUKTUATION oft „Daten prüfen“ und die Auswertung ist unvollständig.</p>
-  </div>
-
-  <h2>3. Normaler Alltag (ohne Austritt)</h2>
+  <h3>Neue KV-Daten (jedes Jahr, meist im Mai)</h3>
   <ol>
-    <li>Blatt des <strong>aktuellen Monats</strong> öffnen (z.&nbsp;B. <strong>Mai</strong>).</li>
-    <li>Zeile des Mitarbeiters finden (Name in Spalte C).</li>
-    <li>In <strong>E</strong> den richtigen Vertragstyp wählen (Dropdown-Pfeil).</li>
-    <li>In <strong>F</strong> die Stunden wählen – die Liste kommt, wenn E schon passt.</li>
-    <li>Datei <strong>speichern</strong> (Strg+S bzw. Cmd+S auf Mac).</li>
-  </ol>
-  <p class="small">Wenn in F keine Liste erscheint: E noch einmal anklicken und wählen, Blatt wechseln und zurück – oder Admin fragen.</p>
-
-  <h2>4. Neuer Mitarbeiter</h2>
-  <ol>
-    <li>Erste <strong>freie Zeile</strong> in der Tabelle suchen (B und C leer).</li>
-    <li><strong>B</strong> = Personal-Nummer, <strong>C</strong> = Name eintragen.</li>
-    <li><strong>D</strong> = Eintrittsdatum.</li>
-    <li><strong>E</strong> und <strong>F</strong> wie oben setzen.</li>
+    <li>Payroll schickt die <strong>neue Lohntabelle</strong> für das kommende KV-Jahr.</li>
+    <li>Blatt <strong>LOHNTABELLE</strong> öffnen.</li>
+    <li>Button <strong>„1) Neue Periode“</strong> nutzen und die Werte <strong>genau so eintragen</strong>, wie Payroll sie schickt: KV-Zeitraum, KV-Gruppe, Monatsstunden, <strong>Monatslohn pro Gruppe</strong>.</li>
     <li>Speichern.</li>
   </ol>
 
-  <h2>5. Monatsende: Daten in die nächsten Monate kopieren</h2>
-  <p>So bleiben die Mitarbeiter auch in <strong>Juni, Juli, …</strong> eingetragen. Sie kopieren ab dem Monat, den Sie gerade bearbeitet haben.</p>
-
-  <div class="box ok">
-    <strong class="title">CopyData – Schritt für Schritt</strong>
-    <ol class="step">
-      <li>Monatsblatt öffnen, <strong>ab dem</strong> kopiert werden soll (z.&nbsp;B. <strong>Mai</strong>).</li>
-      <li><strong>Windows:</strong> Taste <strong>Alt</strong> gedrückt halten, dann <strong>F8</strong>.<br>
-          <strong>Mac:</strong> oft <strong>fn + Alt + F8</strong>, oder Menü <strong>Entwicklertools → Makros</strong>.</li>
-      <li>In der Liste <strong>CopyData</strong> anklicken.</li>
-      <li><strong>Ausführen</strong> klicken – der Kopiervorgang startet <strong>sofort</strong> (kein Extra-Dialog).</li>
-      <li>Warten, bis Excel fertig ist (Statuszeile unten).</li>
-      <li>Datei speichern.</li>
-    </ol>
-    <p class="small">Gleiche Funktion, anderer Name in der Liste: <em>DatenInFolgendeMonateKopieren</em> – dasselbe Programm.</p>
-  </div>
-
-  <p><strong>Was passiert dabei?</strong> Alle Monate <strong>nach</strong> Ihrem aktiven Blatt bekommen die Mitarbeiterdaten. Alte Planungen in der Zukunft bleiben laut System erhalten – trotzdem den Dialog ernst nehmen.</p>
-
-  <h2>6. Blatt FLUKTUATION – kurz lesen</h2>
+  <h3>Eigene Stunden (Sonderverträge)</h3>
+  <p>Wenn jemand <strong>nicht</strong> die Standard-Stunden aus dem KV hat (eigene Vereinbarung):</p>
   <ol>
-    <li>Unten auf das Blatt <strong>FLUKTUATION</strong> klicken.</li>
-    <li>Oben den <strong>Status</strong> ansehen (z.&nbsp;B. Niedrig, Mittel, Hoch).</li>
-    <li>Liste <strong>„Sofort prüfen“</strong> lesen – dort steht <strong>wer</strong> und <strong>was fehlt</strong> (oft fehlender Austrittsgrund in N).</li>
+    <li>Oben auf LOHNTABELLE den Button <strong>„2) Eigene Stunden“</strong> nutzen.</li>
+    <li>Zeitraum, KV-Gruppe und die <strong>individuelle Stundenzahl</strong> eintragen – ggf. auch den Monatslohn, wenn bekannt.</li>
+    <li>Falsch angelegt? Button <strong>„4) Stunde löschen“</strong> (nur für selbst hinzugefügte Stunden).</li>
+  </ol>
+  <p><strong>Wichtig:</strong> Jede Änderung an LOHNTABELLE wirkt auf alle Monatsblätter. Nach größeren Anpassungen die Monatsblätter kurz stichprobenartig prüfen.</p>
+
+  <h2>EINSTELLUNG pflegen</h2>
+  <p>Hier planst du dein Restaurant <strong>für das ganze Jahr</strong>. Die Werte kommen aus dem <strong>Budget</strong> und aus deinen <strong>eigenen Excel-Auswertungen</strong> (Dienstplan, Urlaubsplanung usw.).</p>
+
+  <h3>Jahresstart</h3>
+  <ol>
+    <li>Das <strong>Budget</strong> eintragen, das du für das Jahr erhalten hast.</li>
+    <li>Das <strong>Arbeitsjahr</strong> prüfen (muss zum Kalender passen).</li>
+  </ol>
+
+  <h3>Restaurant-Spezifikation – monatlich pflegen</h3>
+  <p>In der monatlichen Tabelle auf EINSTELLUNG trägst du u.&nbsp;a. ein:</p>
+  <ul>
+    <li><strong>Musterdienstplan-Stunden</strong> – wie viele Stunden dein Plan vorsieht,</li>
+    <li><strong>Feiertagstunden</strong>,</li>
+    <li><strong>Urlaubsstunden</strong> (wie viel Urlaub ihr als Restaurant geplant/geschickt habt),</li>
+    <li><strong>Krankstunden</strong>, wenn relevant,</li>
+    <li>weitere Planwerte, die du aus deinen anderen Tabellen übernimmst.</li>
+  </ul>
+  <p><strong>Oft aktualisieren!</strong> Kommt jemand neu, geht jemand, ändert sich der Dienstplan oder Urlaub – sofort EINSTELLUNG anpassen.</p>
+
+  <h2>Erste Schritte (neues Jahr oder neue Datei)</h2>
+  <ol>
+    <li><strong>LOHNTABELLE:</strong> Alles eintragen, was <strong>Payroll</strong> liefert (über „1) Neue Periode“ + ggf. „2) Eigene Stunden“).</li>
+    <li><strong>EINSTELLUNG:</strong> Budget eintragen, dann deine Restaurant-Planzahlen für alle Monate – dein <strong>Jahresplan</strong>.</li>
+    <li><strong>Januar</strong> (oder erster offener Monat): Mitarbeiterliste pflegen (siehe unten).</li>
+    <li>Speichern.</li>
+    <li>Button <strong>„Aktualisierung des restlichen Jahres“</strong> – damit die Monate synchron sind.</li>
+    <li>Ab jetzt: Monat für Monat im laufenden Betrieb weiterarbeiten.</li>
   </ol>
   <div class="box ok">
-    <strong class="title">Alles in Ordnung?</strong>
-    Status <strong>Niedrig</strong> oder grün, und „Sofort prüfen“ ist leer oder nur harmlose Hinweise → weiter normal pflegen, nichts Dramatisches.
+    <strong class="title">Abgleich mit Payroll</strong>
+    <p>Vergleiche deine Einträge regelmäßig mit der <strong>monatlichen Payroll-Checkliste</strong>. <strong>Alles muss von Anfang bis Ende stimmen</strong> – Punkt für Punkt. Wenn etwas nicht passt, klär das mit den <strong>Payroll-Kolleginnen und -Kollegen</strong>, bevor du weiter korrigierst.</p>
   </div>
 
-  <h2>7. Wenn das Blatt „komisch“ aussieht (Farben, Streifen)</h2>
-  <p>Oft passiert das durch <strong>Ziehen</strong> von E oder F oder durch versehentliches Einfügen mit Format.</p>
-  <ol>
-    <li><strong>Stoppen</strong> – nicht weiter klicken und ziehen.</li>
-    <li>Datei speichern.</li>
-    <li><strong>Admin</strong> bitten, das Makro <strong>FormatAllMonthSheets</strong> auszuführen (stellt das Layout der Monatsblätter wieder her).</li>
-    <li>Wenn es danach noch falsch ist: Admin / IT.</li>
-  </ol>
+  <h2>Aufbau der Monatsblätter</h2>
+  <p>Jedes Monatsblatt sieht gleich aus: in der Mitte die <strong>Mitarbeitertabelle</strong>, rechts die <strong>Monatsübersicht</strong> mit Planzahlen und Summen.</p>
 
-  <h2>8. Monat komplett leeren (nur in Ausnahmen!)</h2>
-  <p>Nur wenn der Monat <strong>von vorne</strong> neu beginnen soll – alte Zeilen weg.</p>
-  <ol>
-    <li>Monatsblatt öffnen.</li>
-    <li>Alt+F8 (Mac: fn+Alt+F8) → Makro <strong>DataClear</strong> → Ausführen.</li>
-    <li>Den Warn-Text <strong>genau lesen</strong> – erst dann bestätigen.</li>
-  </ol>
-  <p class="small">Löscht u.&nbsp;a. Mitarbeiterzeilen in diesem Monat. Nicht ausprobieren „zum Spaß“.</p>
-
-  <h2>9. Häufige Probleme – erste Hilfe</h2>
+  <h3>Mitarbeitertabelle – welches Feld wofür?</h3>
   <table>
     <tr>
-      <th>So fühlt es sich an</th>
-      <th>Was Sie tun können</th>
+      <th>Feld (Überschrift in der Tabelle)</th>
+      <th>Was trägst du ein?</th>
     </tr>
     <tr>
-      <td>In <strong>F</strong> gibt es keine Liste</td>
-      <td><strong>E</strong> zuerst wählen; Blatt schließen und wieder öffnen; sonst Admin</td>
+      <td><strong>Personal ID</strong></td>
+      <td>Offizielle Mitarbeiter-Nummer.</td>
     </tr>
     <tr>
-      <td><strong>G</strong> (Lohn) sieht falsch aus</td>
-      <td><strong>E</strong> und <strong>F</strong> prüfen; LOHNTABELLE nur durch Admin prüfen lassen</td>
+      <td><strong>Name</strong></td>
+      <td>Nachname und Vorname.</td>
     </tr>
     <tr>
-      <td>FLUKTUATION: „Daten prüfen“</td>
-      <td>Bei allen Austritten: <strong>I</strong> und <strong>N</strong> vollständig? Dann FLUKTUATION nochmal öffnen</td>
+      <td><strong>Eintrittsdatum</strong></td>
+      <td>Start im Unternehmen.</td>
     </tr>
     <tr>
-      <td>Excel hängt oder ist sehr langsam</td>
-      <td>Speichern, Excel <strong>komplett schließen</strong>, neu starten</td>
+      <td><strong>KV Gruppe</strong></td>
+      <td>Vertragstyp aus der <strong>Liste wählen</strong> (z.&nbsp;B. BG1, BG1_5 …).</td>
     </tr>
     <tr>
-      <td>Gar nichts stimmt mehr</td>
-      <td><strong>Nicht</strong> selbst herumprobieren – <strong>Admin</strong> (Vollrefresh: PID_FullSystemRefresh)</td>
+      <td><strong>Stunden</strong></td>
+      <td>Monatsstunden aus der <strong>Liste wählen</strong> (nachdem die KV-Gruppe gesetzt ist).</td>
+    </tr>
+    <tr>
+      <td><strong>Lohn</strong></td>
+      <td>Wird angezeigt – <strong>nicht von Hand eintragen</strong>.</td>
+    </tr>
+    <tr>
+      <td><strong>Aktuelle Stunden</strong></td>
+      <td>Wird angezeigt – <strong>nicht von Hand eintragen</strong>.</td>
+    </tr>
+    <tr>
+      <td><strong>Austrittsdatum</strong></td>
+      <td>Nur bei Austritt in diesem Monat.</td>
+    </tr>
+    <tr>
+      <td><strong>Offene Urlaubstage</strong></td>
+      <td><strong>Nur bei Austritt:</strong> wie viel offener Urlaub mitgeht (Geld/Thema Abrechnung – Payroll-Wert eintragen).</td>
+    </tr>
+    <tr>
+      <td><strong>Bemerkung</strong></td>
+      <td>Kurze Notiz bei Bedarf (z.&nbsp;B. besondere Vereinbarung).</td>
+    </tr>
+    <tr>
+      <td><strong>Austrittsgrund</strong></td>
+      <td><strong>Pflicht bei Austritt</strong> – Grund aus der Liste wählen.</td>
     </tr>
   </table>
 
-  <h2>10. Bitte auf keinen Fall</h2>
+  <h3>Rechte Seite – Monatsübersicht</h3>
   <ul>
-    <li>Spalten <strong>G, H, K, L</strong> mit der Tastatur überschreiben (dort rechnet Excel – die Zellen sind gesperrt und geben eine Meldung).</li>
-    <li>Von <strong>E</strong> oder <strong>F</strong> mit der Maus <strong>nach unten oder zur Seite ziehen</strong> (Fill-Handle). Das ist jetzt blockiert, aber bitte trotzdem vermeiden.</li>
-    <li>In Spalten <strong>sortieren</strong> – Monatsblätter lassen kein Sortieren zu.</li>
-    <li>Große Bereiche markieren und <strong>Löschen</strong> oder <strong>Einfügen</strong> – außer Sie wissen genau, was passiert.</li>
-    <li>Blätter <strong>umbenennen</strong> oder <strong>löschen</strong> (Januar–Dezember, FLUKTUATION, EINSTELLUNG, LOHNTABELLE).</li>
-    <li>Arbeitsjahr in <strong>EINSTELLUNG</strong>, Zelle <strong>C35</strong>, ohne Admin ändern.</li>
-    <li>Austritt nur in <strong>I</strong>, aber <strong>N</strong> leer lassen.</li>
-    <li><strong>LOHNTABELLE</strong> selbst bearbeiten (KV-Änderungen nur durch befugte Personen).</li>
-    <li>Versteckte Blätter sichtbar machen und löschen.</li>
+    <li><strong>Krankstunden, Feiertagstunden, Urlaubsstunden</strong> – Summen für den Monat (Planwerte kommen aus <strong>EINSTELLUNG</strong>).</li>
+    <li><strong>Vormonat +/- Stunden</strong> – siehe unten.</li>
+    <li><strong>Verfügbare Stunden für DPL, Musterdienstplan, Stunden-Differenz</strong> – Planung und Abgleich.</li>
+    <li><strong>Reine Laborcost</strong> – reine Personalkosten des Monats.</li>
+    <li><strong>Feld unter „Reine Laborcost“</strong> (Freitext-Bereich) – hier trägst du <strong>zusätzliche Kosten</strong> ein, die unter <strong>Crew Labor</strong> fallen (z.&nbsp;B. Sonderzahlungen, Extra-Aufwände, die sonst nirgends stehen). Kurz und klar formulieren.</li>
   </ul>
 
-  <div class="box warn">
-    <strong class="title">Kurz gesagt</strong>
-    <p>Die Datei ist wie ein Formular: <strong>E, F, B, C, D, I, N</strong> ausfüllen – den Rest rechnet Excel. Bei Unsicherheit lieber <strong>einmal fragen</strong> als viel kaputt machen.</p>
+  <div class="box ok">
+    <strong class="title">Vormonat +/- Stunden – was bedeutet das?</strong>
+    <p>Hier steht die <strong>Stunden-Differenz aus dem Vormonat</strong>: Hattet ihr im letzten Monat mehr oder weniger Stunden „übrig“ als geplant?</p>
+    <p>So seid ihr in einer <strong>fortlaufenden Plus/Minus-Bilanz</strong> über die Monate: ihr seht, ob sich Stunden ansammeln und ob <strong>Überstunden-Risiko</strong> entsteht.</p>
+    <p>Dieselbe Logik findest du auch in der <strong>UBERSICHT</strong> in der unteren Tabelle (Durchrechnung über mehrere Monate). Monatsblatt und UBERSICHT sollten zusammenpassen.</p>
+    <p><strong>Februar, Mai, August und November</strong> sind <strong>Startmonate</strong> einer Durchrechnungsperiode – dort gibt es keinen Vormonat in dieser Rechnung. Deshalb ist das Feld dort fest vorgegeben: <strong>nicht ändern, hier startet ihr neu</strong>. In allen anderen Monaten trägst du die Korrektur aus dem Vormonat ein.</p>
   </div>
 
+  <h2>Neue Mitarbeiter eintragen</h2>
+  <ol>
+    <li>Blatt des <strong>aktuellen Monats</strong> öffnen.</li>
+    <li>Erste <strong>freie Zeile</strong> in der Tabelle (kein Name eingetragen).</li>
+    <li>Personal ID, Name, Eintrittsdatum eintragen.</li>
+    <li>KV-Gruppe und Stunden aus der Liste wählen.</li>
+    <li>Speichern.</li>
+    <li><strong>„Aktualisierung des restlichen Jahres“</strong> – damit die Person in den Folgemonaten erscheint.</li>
+    <li><strong>EINSTELLUNG</strong> prüfen/anpassen (Planstunden, Teamgröße).</li>
+  </ol>
+  <p><strong>Offene Urlaubstage</strong> bei neuen Mitarbeitern <strong>nicht</strong> eintragen – das Feld ist nur relevant beim <strong>Austritt</strong>.</p>
+
+  <h2>Bestehende Mitarbeiter pflegen</h2>
+  <ul>
+    <li><strong>Stunden geändert:</strong> neues Stunden-Paket aus der Liste wählen → speichern → <strong>„Aktualisierung des restlichen Jahres“</strong>, wenn es ab diesem Monat für alle folgenden Monate gelten soll.</li>
+    <li><strong>Vertrag geändert:</strong> KV-Gruppe anpassen, danach Stunden prüfen → ggf. wieder aktualisieren.</li>
+    <li><strong>Bemerkung:</strong> kurz notieren, wenn nötig.</li>
+    <li>Bei jeder relevanten Änderung auch <strong>EINSTELLUNG</strong> aktualisieren.</li>
+  </ul>
+  <div class="box warn">
+    <strong class="title">KV-Gruppe und Stunden</strong>
+    <p>Immer den <strong>Dropdown-Pfeil</strong> in der Zelle nutzen und aus der Liste wählen. Nicht frei tippen. Zellen <strong>nicht nach unten ziehen</strong> – das kann das Layout stören.</p>
+  </div>
+
+  <h2>Austritte eintragen</h2>
+  <p>Beim Austritt brauchst du <strong>drei Angaben</strong>:</p>
+  <ol>
+    <li><strong>Austrittsdatum</strong> – wann die Person geht.</li>
+    <li><strong>Austrittsgrund</strong> – aus der Liste (z.&nbsp;B. Kündigung durch Mitarbeiter).</li>
+    <li><strong>Offene Urlaubstage</strong> – wie viel Urlaub noch offen ist bzw. mit welchem Urlaubsgeld-Wert die Person geht (Wert von Payroll / Abrechnung).</li>
+  </ol>
+  <div class="box warn">
+    <strong class="title">Austrittsdatum und -grund sind Pflicht</strong>
+    <p>Fehlt der Grund, zeigt FLUKTUATION „Sofort prüfen“. Offene Urlaubstage nur beim Austritt ausfüllen – sonst leer lassen.</p>
+  </div>
+  <p><strong>Ablauf:</strong> Im <strong>Austrittsmonat</strong> eintragen → speichern → <strong>„Aktualisierung des restlichen Jahres“</strong> → Person ist ab dem nächsten Monat weg → FLUKTUATION kurz prüfen → <strong>EINSTELLUNG</strong> anpassen.</p>
+
+  <h2>Urlaub, Krankenstand und Abwesenheiten</h2>
+  <p>Diese Planwerte pflegst du auf dem Blatt <strong>EINSTELLUNG</strong> – monatlich und bei jeder relevanten Änderung:</p>
+  <ul>
+    <li>geplante / abgeschickte <strong>Urlaubsstunden</strong>,</li>
+    <li><strong>Krankstunden</strong>,</li>
+    <li><strong>Feiertagstunden</strong>,</li>
+    <li><strong>Musterdienstplan-Stunden</strong>.</li>
+  </ul>
+  <p>Auf dem Monatsblatt siehst du rechts die <strong>Auswirkung</strong> dieser Werte. Pro Mitarbeiter kannst du in <strong>Bemerkung</strong> kurz festhalten, wenn jemand länger fehlt – das ersetzt aber nicht die Planung auf EINSTELLUNG.</p>
+
+  <h2>Von Monat zu Monat weiterarbeiten</h2>
+  <ol>
+    <li>LOHNTABELLE und EINSTELLUNG aktuell halten.</li>
+    <li>Aktuellen Monat laufend pflegen.</li>
+    <li>Nach <strong>jeder relevanten Änderung</strong>: <strong>„Aktualisierung des restlichen Jahres“</strong> vom richtigen Monatsblatt aus.</li>
+    <li>Nächsten Monat öffnen und stichprobenartig prüfen.</li>
+    <li>Änderungen, die erst ab einem Monat gelten, <strong>erst in diesem Monat</strong> eintragen.</li>
+    <li>Mit Payroll-Checkliste abgleichen – <strong>alles muss passen</strong>.</li>
+  </ol>
+
+  <h2>Dein Arbeitsablauf</h2>
+  <h3>Laufend (bei Bedarf)</h3>
+  <ul>
+    <li>Neue / ausgeschiedene Mitarbeiter auf dem Monatsblatt → danach aktualisieren.</li>
+    <li>EINSTELLUNG bei Planänderungen.</li>
+    <li>LOHNTABELLE bei neuen KV- oder Sondervertrags-Daten.</li>
+    <li>UBERSICHT anschauen, wenn du den Jahresüberblick brauchst.</li>
+    <li>Speichern nicht vergessen.</li>
+  </ul>
+  <h3>Monatsanfang</h3>
+  <ul>
+    <li>Neues Monatsblatt: stimmt die Namensliste?</li>
+    <li>EINSTELLUNG für diesen Monat aktuell?</li>
+    <li>FLUKTUATION: „Sofort prüfen“ leer?</li>
+  </ul>
+  <h3>Monatsende</h3>
+  <ul>
+    <li>Alle Austritte vollständig (Datum, Grund, offener Urlaub).</li>
+    <li>Letzter Check: <strong>„Aktualisierung des restlichen Jahres“</strong> für alle Änderungen des Monats erledigt?</li>
+    <li>Checkliste unten.</li>
+    <li>Payroll-Checkliste: alles 1:1 verglichen.</li>
+  </ul>
+
+  <h2>Monatliche Kontrolle</h2>
+  <h3>Am Monatsanfang</h3>
+  <ul>
+    <li>Mitarbeiterzahl plausibel?</li>
+    <li>Hat jeder ID, Name, Eintritt, KV-Gruppe und Stunden?</li>
+    <li>EINSTELLUNG-Planwerte für diesen Monat passend?</li>
+    <li>UBERSICHT: passt der Jahresüberblick?</li>
+    <li>FLUKTUATION ohne offene Punkte?</li>
+  </ul>
+  <h3>Am Monatsende</h3>
+  <ul>
+    <li>Alle Austritte abgeschlossen?</li>
+    <li>Alle Monats-Änderungen mit „Aktualisierung des restlichen Jahres“ nach vorne gebracht?</li>
+    <li>Stichprobe im Folgemonat?</li>
+    <li>Payroll-Checkliste: <strong>alles stimmt</strong>?</li>
+  </ul>
+
+  <h2>FLUKTUATION – kurz lesen</h2>
+  <ol>
+    <li>Blatt <strong>FLUKTUATION</strong> öffnen.</li>
+    <li>Status und „Sofort prüfen“ lesen.</li>
+    <li>Fehlende Austrittsgründe auf den Monatsblättern nachtragen.</li>
+  </ol>
+
+  <h2>Ist alles vollständig und logisch?</h2>
+  <ul>
+    <li>Jeder aktive Mitarbeiter: ID, Name, Eintritt, KV-Gruppe, Stunden.</li>
+    <li>Eintritt liegt vor Austritt (falls Austritt eingetragen).</li>
+    <li>Monatslohn wirkt plausibel – sonst KV-Gruppe und Stunden prüfen, LOHNTABELLE prüfen.</li>
+    <li>EINSTELLUNG passt zum realen Restaurant-Betrieb.</li>
+    <li>UBERSICHT und Vormonat +/- ergeben zusammen ein sinnvolles Bild (kein unkontrolliertes Überstunden-Risiko).</li>
+    <li>Payroll-Checkliste: keine Abweichung.</li>
+  </ul>
+
+  <h2>Typische Fehler vermeiden</h2>
+  <table>
+    <tr>
+      <th>Fehler</th>
+      <th>So vermeidest du ihn</th>
+    </tr>
+    <tr>
+      <td>LOHNTABELLE vergessen nach Payroll-Mail im Mai</td>
+      <td>KV-Update sofort einplanen – „1) Neue Periode“.</td>
+    </tr>
+    <tr>
+      <td>Änderung auf Monatsblatt, aber vergessen zu aktualisieren</td>
+      <td>Nach jeder relevanten Änderung den Button klicken – nicht erst am Monatsende.</td>
+    </tr>
+    <tr>
+      <td>EINSTELLUNG veraltet nach Teamwechsel</td>
+      <td>Bei jeder Personaländerung mitdenken.</td>
+    </tr>
+    <tr>
+      <td>Austritt ohne Grund oder ohne offenen Urlaub</td>
+      <td>Alle drei Austritts-Felder ausfüllen.</td>
+    </tr>
+    <tr>
+      <td>Offene Urlaubstage bei aktiven Mitarbeitern</td>
+      <td>Nur beim Austritt – sonst leer lassen.</td>
+    </tr>
+    <tr>
+      <td>KV-Gruppe frei getippt</td>
+      <td>Immer aus der Liste wählen.</td>
+    </tr>
+    <tr>
+      <td>Abweichung zu Payroll ignoriert</td>
+      <td>Payroll-Kolleginnen und -Kollegen ansprechen – es muss alles passen.</td>
+    </tr>
+  </table>
+
+  <h2>Praktische Checkliste für den Monatsabschluss</h2>
   <div class="box">
-    <strong class="title">Blattschutz – warum kann ich manche Zellen nicht anklicken?</strong>
-    <p>Die Monatsblätter sind geschützt: Formelbereiche (G, H, K, L) und Systemfelder lassen keine Eingabe zu – das ist Absicht, kein Fehler. Wenn Sie eine Zelle anklicken und eine Meldung kommt, sind Sie in einem gesperrten Bereich. Einfach in E, F oder B, C, D weiterarbeiten.</p>
-    <p class="small">Bei Problemen: Admin / <strong>FullSystemRefresh</strong> ausführen lassen.</p>
+    <ul class="checklist">
+      <li>LOHNTABELLE aktuell (KV, Löhne, eigene Stunden).</li>
+      <li>EINSTELLUNG für diesen und kommende Monate aktuell.</li>
+      <li>Alle aktiven Mitarbeiter vollständig (ID, Name, Eintritt, KV-Gruppe, Stunden).</li>
+      <li>Alle Austritte: Datum, Grund, offener Urlaub.</li>
+      <li>Extra-Kosten unter Crew Labor eingetragen, falls nötig.</li>
+      <li>Alle Änderungen des Monats mit „Aktualisierung des restlichen Jahres“ nach vorne gebracht.</li>
+      <li>Stichprobe Folgemonat.</li>
+      <li>Payroll-Checkliste: alles stimmt 1:1.</li>
+      <li>FLUKTUATION ohne offene Punkte.</li>
+      <li>Gespeichert.</li>
+    </ul>
+  </div>
+
+  <h2>Wenn etwas nicht stimmt</h2>
+  <ul>
+    <li>Stunden-Liste erscheint nicht → zuerst KV-Gruppe wählen, Zelle verlassen, Stunden-Feld erneut anklicken.</li>
+    <li>FLUKTUATION „Daten prüfen“ → Austrittsgründe und fehlende Austrittsdaten suchen.</li>
+    <li>Blatt sieht „kaputt“ aus (Farben durcheinander) → <strong>nicht weiter herumprobieren</strong>, speichern und mir Bescheid geben (siehe unten).</li>
+    <li>Abweichung zu Payroll → Payroll kontaktieren, bevor du weiter machst.</li>
+    <li>Technische Fragen, Fehler, Unklarheiten → schreib mir (siehe unten).</li>
+  </ul>
+
+  <div class="box contact">
+    <strong class="title">Fragen, Fehler, Feedback – Adam Nagy</strong>
+    <p>Das Personalsheet betreue ich laufend. Wenn etwas nicht funktioniert, unklar ist oder falsch aussieht: <strong>schreib mir</strong>. Ich schau mir das an und melde mich zurück.</p>
+    <p><strong>E-Mail:</strong> <a href="mailto:adam.nagy@at.mcd.com">adam.nagy@at.mcd.com</a></p>
+    <p class="footer" style="margin-top: 3mm; border: none; padding: 0;">© Adam Nagy · McOpCo · Personalsheet 2026</p>
   </div>
 
   <div class="footer">
-    Personalsheet · Kurzanleitung für Restaurantleitung · Fragen: Admin / IT ·
-    Makros: Alt+F8 (Mac oft fn+Alt+F8) → CopyData, DataClear, FormatAllMonthSheets, RefreshFluktuationNow
+    Personalsheet · Anleitung für Restaurant Manager · Stand Juni 2026
   </div>
 
 </body>

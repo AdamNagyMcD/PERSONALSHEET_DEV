@@ -901,6 +901,100 @@ Nach KV-Fixes zuverlässig, aber spürbar langsam: bei E-Gruppenwechsel / F-Foku
 
 ---
 
+## FP-027 — Workbook-Open: Flackern / Recalc beim Öffnen (Windows)
+
+**Status:** Geplant — Feedback Excel 2016 (2026-06)  
+**Priorität:** Mittel (UX, kein Funktionsfehler)  
+**Plattform-Ziel:** Primär **Windows** (2016 gemeldet); Mechanismus betrifft alle Excel-Versionen, Schweregrad variiert  
+**Betroffene Bereiche:** `DieseArbeitsmappe.cls` (`Workbook_Open`), `Modul1.bas` (`PID_ConfigureDeferredWorkbookCalculationOnOpen`), `mod_PIDCopyright.bas`, `mod_SchutzHinzufugen.bas`
+
+### Beobachtetes Verhalten
+
+Beim **Öffnen** der Datei: Excel **flackert**, Status „Berechnet…“ / kurzes Pörgeln **mehrere Sekunden** — Windows Excel **2016**, Smoke und Funktion danach OK.
+
+### Ursache (vermutet)
+
+1. `Workbook_Open` endet mit `xlCalculationAutomatic` + `PID_EnableCalculationForAllSheets` (FP-024) → Excel recalculiert **alle dirty Zellen im Workbook** (12 Monatsblätter, UEBERSICHT, LOHNTABELLE, …).
+2. Zusätzlich beim Open: Blattschutz (UBERSICHT, Hidden), `PID_ApplyCopyrightToAllSheets` (alle sichtbaren Blätter), ggf. H/K/L-`.Calculate` auf aktivem Monatsblatt.
+3. **Nicht Win2016-spezifischer Bug**, sondern **Recalc-Umfang + langsamere Engine** auf älterem Excel — auf **365 / neueren Builds** oft kürzer oder kaum wahrnehmbar (schnellere CPU, bessere Calc-Pipeline), aber **derselbe Mechanismus**.
+
+### Geplante Ansätze (Priorität)
+
+| # | Ansatz | Beschreibung |
+|---|--------|--------------|
+| A | **Messung** | FP-010 Schritt 1 (Cold Open) auf Win2016 **und** Win365 — Vorher/Nachher. |
+| B | **Open-scoped Recalc** | Nach Open nur **aktives Blatt** H/K/L (+ nötiges Panel) explizit berechnen; **kein** implizites Full-Workbook-Recalc beim Automatic-Schalter. |
+| C | **Lazy Tab-Recalc** | Andere Blätter erst bei erstem `SheetActivate` (teilweise schon vorhanden — konsistent machen). |
+| D | **Deferred Copyright** | Copyright/Schutz beim Open nur sichtbares Blatt; Rest beim Tab-Wechsel. |
+
+**Nicht:** Dauerhaft Manual ohne FP-024-Fix (leere H/K/L für Endanwender).
+
+### Akzeptanzkriterien
+
+- [ ] Win2016: Open bis erster Monats-Tab **spürbar kürzer** (Ziel: subjektiv „kein mehrsekündiges Pörgeln“; FP-010 messen).
+- [ ] Win365: Keine Regression; Open weiterhin akzeptabel.
+- [ ] Mac: Open-Pfad unverändert schnell genug (Regression Smoke).
+- [ ] H/K/L auf Monatsblatt nach Open **sofort sichtbar korrekt** (FP-024 bleibt erfüllt).
+- [ ] UEBERSICHT / FLUKTUATION korrekt nach erstem Tab-Besuch.
+
+### Referenz
+
+- FP-024 (Automatic nach Open), FP-010 / `docs/PERFORMANCE_BASELINE.md`
+- `DieseArbeitsmappe.cls` — `Workbook_Open`, `PID_ConfigureDeferredWorkbookCalculationOnOpen`
+
+---
+
+## FP-028 — CopyData / Monatsstunden: Stunden-Override-Log überschreibt Korrekturen
+
+**Status:** Geplant — Bug Excel 2016 (2026-06)  
+**Priorität:** Hoch (fachlicher Datenfehler bei Stundenänderung)  
+**Plattform:** Windows + Mac (Logik in `mod_CopyData.bas`, plattformneutral)  
+**Betroffene Bereiche:** `mod_CopyData.bas` (`PID_HOUR_OVERRIDES`, `PID_LogEFAenderungForSheet`, `PID_ApplyLoggedHourOverrides`, `CopyData`)
+
+### Beobachtetes Verhalten
+
+1. Mitarbeiter ab **Juli** mit **173** Stunden — OK.
+2. Ab **Oktober** auf weniger Stunden geändert + **Aktualisierung des restlichen Jahres** (z. B. ab Mai) → ab Oktober weniger — **OK**.
+3. Oktober **zurückdrehen** oder **neu ändern** + erneut aktualisieren → Wert **springt zurück auf die erste Änderung** — unabhängig von neuer Eingabe.
+
+### Ursache
+
+Verstecktes Blatt **`PID_HOUR_OVERRIDES`**: jede Änderung an **KV-Gruppe (E)** / **Stunden (F)** wird per `SheetChange` geloggt. Bei **CopyData** wendet `PID_ApplyLoggedHourOverrides` diese Einträge auf Folgemonate an, wenn von einem **früheren** Monat kopiert wird.
+
+- Log wird nur bei **Neue Periode** geleert (`PID_ResetHourOverrideLog`), **nicht** nach CopyData und **nicht** zuverlässig bei Undo.
+- **`PID_CollectFutureOverrides`** erfasst E/F-Abweichungen bei **bestehenden** Mitarbeitern in Folgemonaten **nicht** — nur Austritt-Felder; E/F-Midyear-Changes hängen am Log.
+- **Stale Log-Eintrag** (erste Oktober-Änderung) gewinnt gegen aktuelle Blattwerte → „zurück auf erste Modifikation“.
+
+### Geplante Ansätze (Priorität)
+
+| # | Ansatz | Beschreibung |
+|---|--------|--------------|
+| **1 (empfohlen)** | **CopyData + Log-Reconcile** | Nach erfolgreichem CopyData: Log mit **tatsächlichen Blattwerten** ab Quellmonat abgleichen; veraltete Einträge löschen/aktualisieren. |
+| **2** | **CollectFutureOverrides E/F** | Für bestehende MA auch E/F-Differenzen in Folgemonaten aus Blatt lesen (Blatt = Wahrheit, Log = Audit optional). |
+| **3** | **F-Änderung invalidiert Log** | Bei F-Änderung in Monat M: Log-Einträge **dieselbe MA, Feld F, Monate > M** löschen (Vorsicht: November-Sonderfall nur mit Blatt-Abgleich). |
+| **4** | **Admin / Workaround** | „Stunden-Log zurücksetzen“ oder Doku: Aktualisierung **vom Änderungsmonat** aus (Oktober, nicht Mai). |
+
+### Akzeptanzkriterien
+
+- [ ] Szenario Juli 173 → Oktober weniger → CopyData → Oktober zurück auf 173 → CopyData ab Mai **und** ab Oktober: überall 173.
+- [ ] Szenario: zwei nacheinander verschiedene Oktober-Werte — **letzter** Wert bleibt nach CopyData.
+- [ ] November manuell abweichend + CopyData ab Mai: **November-Sonderwert bleibt** erhalten (Regression).
+- [ ] Smoke + CopyData-SPEC unverändert grün.
+- [ ] `PID_HOUR_OVERRIDES` bleibt very hidden; Endanwender sieht kein technisches Blatt.
+
+### Workaround (bis Fix)
+
+- Stundenänderung immer vom **Monat der Änderung** aus aktualisieren (nicht von einem früheren Monat).
+- Bei hartnäckigem Zurückspringen: Inhalt von `PID_HOUR_OVERRIDES` leeren (Admin) oder nach **Neue Periode** (Log-Reset).
+
+### Referenz
+
+- `mod_CopyData.bas` — `PID_LogEFAenderungForSheet`, `PID_UpsertHourOverride`, `PID_ApplyLoggedHourOverrides`
+- `DieseArbeitsmappe.cls` — `Workbook_SheetChange` (F → Log)
+- Anleitung: „Aktualisierung“ vom richtigen Monatsblatt
+
+---
+
 ## Weitere Einträge
 
 Neue Backlog-Punkte unten anfügen mit ID `FP-00N`, Status, Ursache, geplantem Ansatz und Akzeptanzkriterien.
