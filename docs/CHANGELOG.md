@@ -5,6 +5,12 @@
 ### Added
 - docs/PERFORMANCE_BASELINE.md + mod_PerformanceBaseline.bas: FP-010 Windows-Messprotokoll und Admin-Makro `PID_RunPerformanceBaseline`.
 
+### Fixed
+- mod_KVStundenDropdown.bas: `MarkKVDropdownDirtyForKVCode` leert Stunden-Cache und Refresh-Tracking auch beim erneuten Markieren desselben KV-Codes (Windows + Mac, kein Performance-Einfluss).
+- mod_KVStundenDropdown.bas + DieseArbeitsmappe.cls: KV-Gruppe (E) wechseln baut F-Dropdown sofort neu (scoped pro Zeile); Validierung muss zur aktuellen Gruppe passen (BG1_5→BG1), nicht nur „irgendein“ KV_DG_*.
+- DieseArbeitsmappe.cls: E-Dropdown-Auswahl — F-Refresh beim Verlassen von E und beim Sprung E→F; ganze Monatsblatt-F-Spalte neu (x14-Gruppen-Validierung).
+- mod_KVStundenDropdown.bas + Modul1.bas + mod_AddNewKVPeriodOnTop.bas: Mac-only sofortiger Dropdown-Refresh nach Eigene Stunden; Windows lazy-Refresh unveraendert.
+
 ### Changed
 - mod_KVStundenDropdown.bas (FP-005): scoped KV-dirty-Refresh — nur betroffene KV-Codes/Zeilen statt 80× F-Rebuild; `MarkKVDropdownDirtyForKVCode`, `MarkKVDropdownDirtyFromLOHNTABELLERange`. Windows-Messung: scoped 0,15 s vs Voll 0,52 s (Baseline 0,51 s).
 - mod_AddNewKVPeriodOnTop.bas: Eigene Stunden hinzufuegen/loeschen markiert nur den gewaehlten KV-Code dirty.

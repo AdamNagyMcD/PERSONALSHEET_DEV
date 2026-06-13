@@ -570,6 +570,7 @@ Public Sub DeleteCustomKVMonatsstunden()
     
     MarkKVDropdownDirtyForKVCode selectedKVCode
     MarkAllKVLohnDirty
+    PID_MacRefreshKVDropdownsForKVPeriodChange selectedPeriod
     
     GoTo CleanExit
 
@@ -811,6 +812,7 @@ Public Sub AddCustomKVMonatsstunden()
     
     MarkKVDropdownDirtyForKVCode selectedKVCode
     MarkAllKVLohnDirty
+    PID_MacRefreshKVDropdownsForKVPeriodChange selectedPeriod
     
     GoTo CleanExit
 

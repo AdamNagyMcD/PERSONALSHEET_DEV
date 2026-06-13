@@ -21,6 +21,11 @@ Private mInternalChange As Boolean
 Private mWorkerSheetRuntimeReady As Boolean
 
 
+Private mSelPrevSheet As String
+Private mSelPrevRow As Long
+Private mSelPrevCol As Long
+
+
 Private Sub PID_EnsureWorkerSheetRuntimeReady()
     If mWorkerSheetRuntimeReady Then Exit Sub
     
@@ -263,7 +268,7 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     End If
     
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
-        PID_InvalidateFStundenDropdownForRows Sh, Target
+        PID_RefreshFStundenDropdownForERows Sh, Target
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:
@@ -294,19 +299,23 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     
     On Error GoTo SafeExit
     
-    If mInternalChange Then Exit Sub
     If Not TypeOf Sh Is Worksheet Then Exit Sub
-    If Not PID_IsWorkerMonthSheet(Sh) Then Exit Sub
-    If Target.CountLarge > 1 Then Exit Sub
+    If PID_IsWorkerMonthSheet(Sh) And Target.CountLarge = 1 Then
+        PID_RefreshFStundenAfterLeavingE Sh, Target
+    End If
+    
+    If mInternalChange Then GoTo UpdateSelectionPrev
+    If Not PID_IsWorkerMonthSheet(Sh) Then GoTo UpdateSelectionPrev
+    If Target.CountLarge > 1 Then GoTo UpdateSelectionPrev
     
     ' Ausserhalb D3:F82: O45 nur loeschen wenn noetig (leichter Pfad).
     If Intersect(Target, Sh.Range("D3:F82")) Is Nothing Then
-        If Len(Trim$(CStr(Sh.Range("O45").Value))) = 0 Then Exit Sub
+        If Len(Trim$(CStr(Sh.Range("O45").Value))) = 0 Then GoTo UpdateSelectionPrev
         
         mInternalChange = True
         Application.EnableEvents = False
         Sh.Range("O45").Value = ""
-        GoTo SafeExit
+        GoTo UpdateSelectionPrev
     End If
     
     If Target.Row < PID_FIRST_ROW Or Target.Row > PID_LAST_ROW Then
@@ -315,7 +324,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
             Application.EnableEvents = False
             Sh.Range("O45").Value = ""
         End If
-        GoTo SafeExit
+        GoTo UpdateSelectionPrev
     End If
     
     ' D: Beschaeftigungsdauer — ohne ScreenUpdating-Off.
@@ -323,7 +332,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
         mInternalChange = True
         Application.EnableEvents = False
         PID_ShowEmploymentDuration Sh, Target
-        GoTo SafeExit
+        GoTo UpdateSelectionPrev
     End If
     
     eDropdownInvalid = False
@@ -335,6 +344,9 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     
     If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
         fDropdownInvalid = Not PID_RowHasValidFStundenDropdown(Sh, Target.Row)
+        If mSelPrevSheet = Sh.Name And mSelPrevCol = 5 And mSelPrevRow = Target.Row Then
+            fDropdownInvalid = True
+        End If
     End If
     
     needsDropdownRepair = eDropdownInvalid Or fDropdownInvalid
@@ -348,8 +360,13 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
         mInternalChange = False
     End If
     
+    ' E->F: leave-E hat bereits ganzes Blatt refreshed; sonst nur E-Dropdown reparieren.
+    If fDropdownInvalid And mSelPrevSheet = Sh.Name And mSelPrevCol = 5 And mSelPrevRow = Target.Row Then
+        GoTo UpdateSelectionPrev
+    End If
+    
     ' E/F gueltig: sofort beenden — kein ScreenUpdating-Off.
-    If Not needsDropdownRepair Then Exit Sub
+    If Not needsDropdownRepair Then GoTo UpdateSelectionPrev
     
     mInternalChange = True
     Application.EnableEvents = False
@@ -363,8 +380,16 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     
     If fDropdownInvalid Then
         On Error Resume Next
-        RefreshKVStundenDropdownForSingleRow Sh, Target.Row
+        PID_ClearStundenValuesCache
+        RefreshKVStundenDropdownForSheet Sh, , True
         On Error GoTo SafeExit
+    End If
+
+UpdateSelectionPrev:
+    If TypeOf Sh Is Worksheet Then
+        If PID_IsWorkerMonthSheet(Sh) And Target.CountLarge = 1 Then
+            PID_UpdateMonthSelectionPrev Sh, Target
+        End If
     End If
 
 SafeExit:
@@ -372,6 +397,53 @@ SafeExit:
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
+End Sub
+
+
+Private Sub PID_RefreshFStundenAfterLeavingE(ByVal ws As Worksheet, ByVal Target As Range)
+    Dim leftERow As Long
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Target Is Nothing Then Exit Sub
+    If mInternalChange Then Exit Sub
+    
+    If mSelPrevSheet <> ws.Name Then Exit Sub
+    If mSelPrevCol <> 5 Then Exit Sub
+    
+    leftERow = mSelPrevRow
+    If leftERow < PID_FIRST_ROW Or leftERow > PID_LAST_ROW Then Exit Sub
+    
+    If Target.Row = leftERow And Target.Column = 5 Then Exit Sub
+    
+    mInternalChange = True
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    
+    PID_ClearStundenValuesCache
+    RefreshKVStundenDropdownForSheet ws, , True
+
+SafeExit:
+    On Error Resume Next
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    mInternalChange = False
+End Sub
+
+
+Private Sub PID_UpdateMonthSelectionPrev(ByVal ws As Worksheet, ByVal Target As Range)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Target Is Nothing Then Exit Sub
+    If Target.CountLarge <> 1 Then Exit Sub
+    
+    mSelPrevSheet = ws.Name
+    mSelPrevRow = Target.Row
+    mSelPrevCol = Target.Column
+
+SafeExit:
 End Sub
 
 
@@ -390,8 +462,7 @@ Private Sub EnforcePasteValuesOnly(ByVal Sh As Object, ByVal Target As Range, By
     
     pasteHandled = False
     
-    Set inputRange = Union(Sh.Range("B3:C82"), Sh.Range("D3:D82"), Sh.Range("E3:F82"), _
-                           Sh.Range("I3:J82"), Sh.Range("M3:N82"), Sh.Range("O18:Q25"))
+    Set inputRange = Union(Sh.Range("B3:C82"), Sh.Range("D3:D82"), Sh.Range("E3:F82"), Sh.Range("I3:J82"), Sh.Range("M3:N82"), Sh.Range("O18:Q25"))
     
     If PID_IsWorkerMonthSheet(Sh) And PID_IsMonthSheetVormonatInputEditable(Sh) Then
         Set inputRange = Union(inputRange, Sh.Range("Q12:R12"))

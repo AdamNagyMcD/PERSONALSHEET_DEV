@@ -242,6 +242,11 @@ Fallback:
 End Function
 
 
+Public Function PID_IsMacExcel() As Boolean
+    PID_IsMacExcel = (InStr(1, Application.OperatingSystem, "Mac", vbTextCompare) > 0)
+End Function
+
+
 Public Function PID_WorksheetExists(ByVal sheetName As String) As Boolean
     Dim ws As Worksheet
     
