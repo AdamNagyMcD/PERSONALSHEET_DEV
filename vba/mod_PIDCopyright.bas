@@ -51,11 +51,14 @@ Private Function PID_CopyrightAlreadyCurrent(ByVal ws As Worksheet, ByVal expect
     Dim rangeAddr As String
     Dim cellVal As String
 
-    On Error Exit Function
+    On Error GoTo SafeExit
 
     rangeAddr = PID_GetCopyrightRangeAddress(ws)
     cellVal = Trim$(CStr(ws.Range(rangeAddr).Cells(1, 1).Value))
     PID_CopyrightAlreadyCurrent = (cellVal = expected)
+    Exit Function
+
+SafeExit:
 End Function
 
 
