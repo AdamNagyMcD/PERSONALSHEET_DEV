@@ -1175,19 +1175,16 @@ End Function
 Public Function PID_GetUrlaubGeldFormulaR1C1() As String
     ' K = Spalte 11; Offsets: B=RC[-9], C=RC[-8], D=RC[-7], G=RC[-4], J=RC[-1]
     ' Kern: Tagessatz (G / Tage-im-Monat) * J; Monatstage via MONTH(D) analog Originalformel.
-    Dim coreFormula As String
-    coreFormula = "IFERROR(IF(OR(MONTH(RC[-7])=1,MONTH(RC[-7])=3,MONTH(RC[-7])=5," & _
-                  "MONTH(RC[-7])=7,MONTH(RC[-7])=8,MONTH(RC[-7])=10,MONTH(RC[-7])=12)," & _
-                  "(RC[-4]/31)*RC[-1]," & _
-                  "IF(OR(MONTH(RC[-7])=4,MONTH(RC[-7])=6,MONTH(RC[-7])=9,MONTH(RC[-7])=11)," & _
-                  "(RC[-4]/30)*RC[-1]," & _
-                  "(RC[-4]/DAY(EOMONTH(RC[-7],0)))*RC[-1])),"""")"
-
-    ' B/C leer (keine MA) -> leer; J leer oder 0 (kein Urlaub) -> leer.
+    ' Nur B/C-Guard: leere Zeile -> leer. IFERROR gibt 0 zurueck (nicht ""),
+    ' da L-Spalte K arithmetisch addiert (G+K) — K="" wuerde dort zu Fehler fuehren.
     PID_GetUrlaubGeldFormulaR1C1 = _
         "=IF(OR(RC[-9]="""",RC[-8]=""""),""""," & _
-        "IF(OR(RC[-1]="""",RC[-1]=0),""""," & _
-        coreFormula & "))"
+        "IFERROR(IF(OR(MONTH(RC[-7])=1,MONTH(RC[-7])=3,MONTH(RC[-7])=5," & _
+        "MONTH(RC[-7])=7,MONTH(RC[-7])=8,MONTH(RC[-7])=10,MONTH(RC[-7])=12)," & _
+        "(RC[-4]/31)*RC[-1]," & _
+        "IF(OR(MONTH(RC[-7])=4,MONTH(RC[-7])=6,MONTH(RC[-7])=9,MONTH(RC[-7])=11)," & _
+        "(RC[-4]/30)*RC[-1]," & _
+        "(RC[-4]/DAY(EOMONTH(RC[-7],0)))*RC[-1])),0))"
 End Function
 
 
