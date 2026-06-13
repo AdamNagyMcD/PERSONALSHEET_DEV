@@ -70,25 +70,28 @@ Private Sub Workbook_Open()
     On Error GoTo SafeExit
 
 SafeExit:
-    PID_ConfigureDeferredWorkbookCalculationOnOpen
-    
     Set wsUbersicht = PID_GetUbersichtWorksheet()
     If Not wsUbersicht Is Nothing Then
         PID_ApplyUbersichtSheetProtection wsUbersicht
     End If
-    
+
     If Not ActiveSheet Is Nothing Then
         If PID_IsWorkerMonthSheet(ActiveSheet) Then
             PID_EnsureWorkerSheetRuntimeReady
             PID_RecalculateMonthFormulaColumns ActiveSheet
         End If
     End If
-    
+
+    ' FP-027: Copyright mit Skip-Guard (kein Unprotect/Write wenn schon aktuell).
     PID_ApplyCopyrightToAllSheets
-    
+
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
+
+    ' FP-027: AutoCalc erst nach ScreenUpdating=True — Benutzer sieht das Blatt sofort,
+    ' das "Berechnet…" laeuft danach im Hintergrund statt das Open zu blockieren.
+    PID_ConfigureDeferredWorkbookCalculationOnOpen
 End Sub
 
 

@@ -7,8 +7,10 @@ Entwicklungs- und Release-Log.
 ### Added
 - mod_PIDAdminSheet.bas: verstecktes Admin-Panel `_ADMIN` (VeryHidden) mit Buttons (Smoke, Full Refresh, VBA Import, Schutz AN/AUS, …); `PID_ToggleAdminSheet`.
 - Modul1.bas (FP-029): `PID_GetUrlaubGeldFormulaR1C1`, `PID_RestoreUrlaubGeldFormulasSilent`, `PID_RestoreUrlaubGeldFormulas` — kanonische Spalte-K-Formel mit B/C-Guard, J-Guard und 0→leer.
+- mod_PIDCopyright.bas (FP-027): `PID_CopyrightAlreadyCurrent` — Skip-Guard in `PID_ApplyCopyrightToAllSheets`; kein Unprotect/Write wenn Copyright schon aktuell.
 
 ### Fixed
+- DieseArbeitsmappe.cls (FP-027): `PID_ConfigureDeferredWorkbookCalculationOnOpen` wird erst nach `ScreenUpdating=True` aufgerufen — Blatt erscheint sofort, „Berechnet…" laeuft danach sichtbar statt das Open zu blockieren.
 - Modul1.bas / mod_CopyData.bas (FP-029): Spalte K zeigte 0,00 € in leeren MA-Zeilen; neue kanonische Formel liefert leer bei fehlendem MA oder J=leer; CopyData propagiert Formel (nicht mehr vom Quellblatt kopiert).
 - mod_KVLohnLookup.bas + mod_SmokeCheck.bas: TEST 15 erkennt VBA-geschriebene G-Werte (nicht nur G3-Formel); `PID_EnsureMonatslohnFormulas` prueft alle 12 Monate.
 - mod_CopyData.bas + DieseArbeitsmappe.cls (FP-028): E/F-Overrides nur aus User-Log; bei Aenderung Monat M Log > M loeschen; redundante Log-Zeilen und Reconcile nach CopyData entfernt.

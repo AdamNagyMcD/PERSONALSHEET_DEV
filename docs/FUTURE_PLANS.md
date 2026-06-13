@@ -27,7 +27,6 @@ Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`PERFORMANCE_BASELINE.md`](PE
 
 | ID | Thema | Prio | Plattform |
 |----|--------|------|-----------|
-| [FP-027](#fp-027--workbook-open-flackern--recalc) | Open: Flackern / Recalc mehrere Sekunden | Mittel | Win (2016), ggf. 365 |
 | [FP-014](#fp-014--enableselection-nur-entsperrte-zellen) | `EnableSelection` auf Monatsblättern | Mittel | Win + Mac |
 | [FP-026](#fp-026--mac-only-f-dropdown-performance) | Mac F-Dropdown Performance | Niedrig | **Nur Mac** (post-release) |
 
@@ -35,6 +34,7 @@ Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`PERFORMANCE_BASELINE.md`](PE
 
 | ID | Thema | Was fehlt noch |
 |----|--------|----------------|
+| FP-027 | Open: Flackern / Recalc | Win2016/365 manuell prüfen: Blatt erscheint sofort |
 | FP-029 | Spalte K (Urlaub €): 0 statt leer | Manuell prüfen: leere Zeile K leer, MA+J K korrekt |
 | FP-028 | CopyData Stunden-Override-Log | ✅ Win manuell verifiziert (Juli→CopyData→korrekt) |
 | FP-010 | Performance-Messprotokoll | MANU: Cold Open, CopyData, Save (Stoppuhr) |
@@ -60,8 +60,8 @@ FP-001 · FP-002 · FP-003 · FP-004 · FP-005 · FP-006 · FP-007 · FP-008 · 
 
 ## Empfohlene Reihenfolge (nächste Schritte)
 
-1. **FP-029** — K-Spalte manuell prüfen (leere Zeile, MA+J, CopyData)
-2. **FP-027** — Open-Performance (nach Messung Win2016 + Win365)
+1. **FP-027** — Open manuell prüfen (Win2016 + Win365 + Mac)
+2. **FP-029** — K-Spalte manuell prüfen (leere Zeile, MA+J, CopyData)
 3. **FP-014** — EnableSelection Monatsblätter (Mac testen)
 4. **FP-026** — erst nach v1.0-Release, Mac-only
 
@@ -116,32 +116,28 @@ Aktualisierung vom **Monat der letzten Änderung** aus starten.
 
 ## FP-027 — Workbook-Open: Flackern / Recalc
 
-**Status:** 🔴 Offen — Feedback Excel 2016 (2026-06)  
+**Status:** 🟡 Umgesetzt — manueller Test ausstehend  
 **Priorität:** Mittel  
 **Plattform:** Primär Win2016; Mechanismus betrifft alle Versionen
 
 ### Problem
 
-Beim Öffnen: Excel flackert / „Berechnet…“ mehrere Sekunden (Win2016). Funktion danach OK.
+Beim Öffnen: Excel flackert / „Berechnet…" mehrere Sekunden (Win2016). Funktion danach OK.
 
-### Ursache (vermutet)
+### Ursache
 
-Open-Ende: `xlCalculationAutomatic` → Full-Workbook-Recalc; plus Copyright, Schutz, H/K/L auf aktivem Tab.
+Open-Ende: xlCalculationAutomatic vor ScreenUpdating=True blockiert; plus 16x Unprotect/Write/Reprotect in PID_ApplyCopyrightToAllSheets.
 
-### Geplante Ansätze
+### Umgesetzt (2026-06-13)
 
-| # | Ansatz |
-|---|--------|
-| A | Messung FP-010 Schritt 1 auf Win2016 **und** Win365 |
-| B | Open-scoped Recalc (nur aktives Blatt H/K/L) |
-| C | Lazy Tab-Recalc konsistent |
-| D | Deferred Copyright/Schutz |
+- DieseArbeitsmappe.cls: PID_ConfigureDeferredWorkbookCalculationOnOpen nach ScreenUpdating=True verschoben
+- mod_PIDCopyright.bas: PID_CopyrightAlreadyCurrent-Guard — kein Unprotect/Write wenn Copyright identisch
 
-### Akzeptanzkriterien
+### Manuell testen
 
-- [ ] Win2016: Open spürbar kürzer (FP-010 messen)
+- [ ] Win2016: Open spürbar kürzer — Blatt erscheint sofort, Berechnet laeuft danach
 - [ ] Win365 + Mac: keine Regression
-- [ ] H/K/L nach Open korrekt (FP-024)
+- [ ] H/K/L nach Open korrekt auf aktivem Tab (FP-024)
 
 ---
 

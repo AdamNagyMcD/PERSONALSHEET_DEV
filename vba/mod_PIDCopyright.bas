@@ -29,17 +29,34 @@ End Function
 
 Public Sub PID_ApplyCopyrightToAllSheets()
     Dim ws As Worksheet
-    
+    Dim copyrightText As String
+
     On Error GoTo SafeExit
-    
+
+    copyrightText = PID_GetCopyrightText()
+
     For Each ws In ThisWorkbook.Worksheets
         If PID_SheetNeedsCopyrightNotice(ws) Then
-            PID_ApplyCopyrightToWorksheet ws
+            If Not PID_CopyrightAlreadyCurrent(ws, copyrightText) Then
+                PID_ApplyCopyrightToWorksheet ws
+            End If
         End If
     Next ws
 
 SafeExit:
 End Sub
+
+
+Private Function PID_CopyrightAlreadyCurrent(ByVal ws As Worksheet, ByVal expected As String) As Boolean
+    Dim rangeAddr As String
+    Dim cellVal As String
+
+    On Error Exit Function
+
+    rangeAddr = PID_GetCopyrightRangeAddress(ws)
+    cellVal = Trim$(CStr(ws.Range(rangeAddr).Cells(1, 1).Value))
+    PID_CopyrightAlreadyCurrent = (cellVal = expected)
+End Function
 
 
 Public Sub PID_ApplyCopyrightToWorksheet(ByVal ws As Worksheet)
