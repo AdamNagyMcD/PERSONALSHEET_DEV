@@ -27,7 +27,6 @@ Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`PERFORMANCE_BASELINE.md`](PE
 
 | ID | Thema | Prio | Plattform |
 |----|--------|------|-----------|
-| [FP-014](#fp-014--enableselection-nur-entsperrte-zellen) | `EnableSelection` auf Monatsblättern | Mittel | Win + Mac |
 | [FP-026](#fp-026--mac-only-f-dropdown-performance) | Mac F-Dropdown Performance | Niedrig | **Nur Mac** (post-release) |
 
 ### 🟡 Erledigt — manuelle Tests / Rest offen
@@ -55,6 +54,7 @@ FP-001 · FP-002 · FP-003 · FP-004 · FP-005 · FP-006 · FP-007 · FP-008 · 
 | ID | Thema |
 |----|--------|
 | FP-025 | FLUKTUATION PDF-Export (entfernt 2026-06-12) |
+| FP-014 | EnableSelection Monatsblätter (storniert 2026-06-13) |
 
 ---
 
@@ -62,8 +62,7 @@ FP-001 · FP-002 · FP-003 · FP-004 · FP-005 · FP-006 · FP-007 · FP-008 · 
 
 1. **FP-027** — Open manuell prüfen (Win2016 + Win365 + Mac)
 2. **FP-029** — K-Spalte manuell prüfen (leere Zeile, MA+J, CopyData)
-3. **FP-014** — EnableSelection Monatsblätter (Mac testen)
-4. **FP-026** — erst nach v1.0-Release, Mac-only
+3. **FP-026** — erst nach v1.0-Release, Mac-only
 
 ---
 
@@ -164,29 +163,6 @@ Leere MA-Zeilen (kein Name/ID) zeigen **0,00 €** in K statt leerer Zelle.
 - [ ] MA ohne J: K leer
 - [ ] MA + J + Lohn: K korrekt (€)
 - [ ] CopyData propagiert Formel (nicht 0)
-
----
-
-## FP-014 — EnableSelection (nur entsperrte Zellen)
-
-**Status:** 🔴 Offen (Code auf Monatsblättern **nicht** umgesetzt; Kurzanleitung FP-015 erledigt)  
-**Priorität:** Mittel  
-**Plattform:** Win + Mac · `mod_SchutzHinzufugen.bas`
-
-### Problem
-
-Nutzer markieren große Bereiche inkl. gesperrter Formelzellen → höheres Fehlerrisiko.
-
-### Geplant
-
-`EnableSelection = xlUnlockedCell` auf **Monatsblättern** nach Protect (UBERSICHT hat bereits einen Pfad).
-
-### Akzeptanzkriterien
-
-- [ ] E/F und Whitelist normal nutzbar
-- [ ] CopyData, Format, L-Restore mit `UserInterfaceOnly:=True`
-- [ ] Mac 2016: keine UX-Regression (Dropdowns, Panel)
-- [ ] Windows gleicher Smoke
 
 ---
 
