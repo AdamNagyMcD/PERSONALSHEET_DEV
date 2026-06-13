@@ -124,11 +124,6 @@ Public Sub PID_AdminRunFormatMonths()
 End Sub
 
 
-Public Sub PID_AdminRunVbaImport()
-    ResetAndImportVBAFiles
-End Sub
-
-
 Public Sub PID_AdminRunPerfBaseline()
     If Not PID_ConfirmAdminAction( _
         "Performance-Baseline messen und in PERFORMANCE_BASELINE schreiben?", _
@@ -318,7 +313,7 @@ Private Function PID_AdminButtonSpecs() As Variant
         Array("Refresh", "Full Refresh", "PID_AdminRunFullRefresh", 0), _
         Array("Quick", "Quick Check", "PID_AdminRunQuickCheck", 1), _
         Array("Format", "Format Monate", "PID_AdminRunFormatMonths", 1), _
-        Array("Import", "VBA Import", "PID_AdminRunVbaImport", 2), _
+        Array("Import", "VBA Import", "ResetAndImportVBAFiles", 2), _
         Array("Perf", "Perf. Baseline", "PID_AdminRunPerfBaseline", 2), _
         Array("Protect", "Schutz AN", "PID_AdminRunProtectAll", 3), _
         Array("Unprotect", "Schutz AUS", "PID_AdminRunUnprotectAll", 2), _
