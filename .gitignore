@@ -13,4 +13,6 @@ _probe_copy.xlsm
 # Lokale Test-/Backup-Kopien (nicht committen)
 Kopie von Personalsheet.xlsm
 Personalsheet_import_test*.xlsm
+Personalsheet.zip
+Personalsheet_tmp.zip
 Fluktuation.pdf
