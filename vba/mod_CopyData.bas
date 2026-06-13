@@ -1296,6 +1296,7 @@ Private Sub PID_HideUnwantedTechnicalSheets()
     ThisWorkbook.Worksheets(PID_HOUR_OVERRIDE_LOG_SHEET).Visible = xlSheetVeryHidden
     ThisWorkbook.Worksheets("Settings").Visible = xlSheetVeryHidden
     ThisWorkbook.Worksheets("Message").Visible = xlSheetVeryHidden
+    ThisWorkbook.Worksheets(PID_ADMIN_SHEET_NAME).Visible = xlSheetVeryHidden
     
     On Error GoTo 0
 End Sub

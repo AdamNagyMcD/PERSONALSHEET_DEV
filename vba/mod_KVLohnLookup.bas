@@ -609,17 +609,65 @@ End Function
 
 
 Public Function PID_MonthSheetHasMonatslohnFormula(ByVal wsMonth As Worksheet) As Boolean
-    Dim formulaText As String
+    Dim r As Long
+    Dim eText As String
+    Dim fText As String
+    Dim gText As String
+    Dim gFormula As String
+    Dim hasFormulaTemplate As Boolean
+    Dim hasManagedRows As Boolean
     
     On Error GoTo SafeExit
     
     If wsMonth Is Nothing Then Exit Function
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
     
-    formulaText = CStr(wsMonth.Range("G" & PID_FIRST_ROW).FormulaR1C1)
-    PID_MonthSheetHasMonatslohnFormula = (InStr(1, formulaText, "PID_KVLohnLookup", vbTextCompare) > 0)
+    For r = PID_FIRST_ROW To PID_LAST_ROW
+        gFormula = CStr(wsMonth.Cells(r, "G").FormulaR1C1)
+        If InStr(1, gFormula, "PID_KVLohnLookup", vbTextCompare) > 0 Then
+            hasFormulaTemplate = True
+        End If
+        
+        eText = Trim$(CStr(wsMonth.Cells(r, "E").Value2))
+        fText = Trim$(CStr(wsMonth.Cells(r, "F").Value2))
+        
+        If Len(eText) = 0 Or Len(fText) = 0 Then GoTo NextMonatslohnRow
+        
+        gText = Trim$(CStr(wsMonth.Cells(r, "G").Value2))
+        
+        If IsNumeric(gText) Then
+            hasManagedRows = True
+        ElseIf StrComp(gText, "Nicht gefunden", vbTextCompare) = 0 Then
+            hasManagedRows = True
+        Else
+            PID_MonthSheetHasMonatslohnFormula = False
+            Exit Function
+        End If
+
+NextMonatslohnRow:
+    Next r
+    
+    PID_MonthSheetHasMonatslohnFormula = hasFormulaTemplate Or hasManagedRows Or Not PID_MonthSheetHasKvInputRows(wsMonth)
 
 SafeExit:
+End Function
+
+
+Private Function PID_MonthSheetHasKvInputRows(ByVal wsMonth As Worksheet) As Boolean
+    Dim r As Long
+    Dim eText As String
+    Dim fText As String
+    
+    If wsMonth Is Nothing Then Exit Function
+    
+    For r = PID_FIRST_ROW To PID_LAST_ROW
+        eText = Trim$(CStr(wsMonth.Cells(r, "E").Value2))
+        fText = Trim$(CStr(wsMonth.Cells(r, "F").Value2))
+        If Len(eText) > 0 And Len(fText) > 0 Then
+            PID_MonthSheetHasKvInputRows = True
+            Exit Function
+        End If
+    Next r
 End Function
 
 
@@ -685,18 +733,31 @@ End Sub
 
 
 Public Sub PID_EnsureMonatslohnFormulas(Optional ByVal showMessage As Boolean = False)
+    Dim monthNames As Variant
     Dim ws As Worksheet
+    Dim i As Long
+    Dim needsRestore As Boolean
     
     On Error GoTo SafeExit
     
-    Set ws = Nothing
-    On Error Resume Next
-    Set ws = ThisWorkbook.Worksheets("Januar")
-    On Error GoTo SafeExit
+    monthNames = PID_MonthNames()
+    needsRestore = False
     
-    If ws Is Nothing Then Exit Sub
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        On Error GoTo SafeExit
+        
+        If Not ws Is Nothing Then
+            If Not PID_MonthSheetHasMonatslohnFormula(ws) Then
+                needsRestore = True
+                Exit For
+            End If
+        End If
+    Next i
     
-    If PID_MonthSheetHasMonatslohnFormula(ws) Then Exit Sub
+    If Not needsRestore Then Exit Sub
     
     If showMessage Then
         PID_RestoreMonatslohnFormulas

@@ -273,6 +273,7 @@ Public Sub PID_HideTechnicalSheets()
     
     ThisWorkbook.Worksheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden
     ThisWorkbook.Worksheets("KV_DROPDOWN_HELPER").Visible = xlSheetVeryHidden
+    ThisWorkbook.Worksheets(PID_ADMIN_SHEET_NAME).Visible = xlSheetVeryHidden
     
     On Error GoTo 0
     

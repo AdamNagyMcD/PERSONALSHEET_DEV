@@ -5,9 +5,11 @@ Entwicklungs- und Release-Log.
 ## Unreleased
 
 ### Added
+- mod_PIDAdminSheet.bas: verstecktes Admin-Panel `_ADMIN` (VeryHidden) mit Buttons (Smoke, Full Refresh, VBA Import, Schutz AN/AUS, …); `PID_ToggleAdminSheet`.
 - docs/PERFORMANCE_BASELINE.md + mod_PerformanceBaseline.bas: FP-010 Windows-Messprotokoll und Admin-Makro `PID_RunPerformanceBaseline`.
 
 ### Fixed
+- mod_KVLohnLookup.bas + mod_SmokeCheck.bas: TEST 15 erkennt VBA-geschriebene G-Werte (nicht nur G3-Formel); `PID_EnsureMonatslohnFormulas` prueft alle 12 Monate.
 - mod_CopyData.bas (FP-028, **Teilfix — offen**): E/F aus Folgemonats-Blatt + Log-Reconcile nach CopyData; Win2016-Regression (F revert) noch offen.
 - mod_KVStundenDropdown.bas + DieseArbeitsmappe.cls: KV-Gruppe (E) wechseln baut F-Dropdown sofort neu (scoped pro Zeile); Validierung muss zur aktuellen Gruppe passen (BG1_5→BG1), nicht nur „irgendein“ KV_DG_*.
 - DieseArbeitsmappe.cls: E-Dropdown-Auswahl — F-Refresh beim Verlassen von E und beim Sprung E→F; ganze Monatsblatt-F-Spalte neu (x14-Gruppen-Validierung).

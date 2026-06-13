@@ -26,6 +26,7 @@ Public Sub PID_ShowAdminMacroInfo()
     Dim msg As String
     
     msg = "Admin-/Entwickler-Makros (nicht fuer Restaurant-User):" & vbCrLf & vbCrLf
+    msg = msg & "- PID_ToggleAdminSheet (Admin-Panel ein/aus)" & vbCrLf
     msg = msg & "- ResetAndImportVBAFiles" & vbCrLf
     msg = msg & "- FullSystemRefresh / PID_FullSystemRefresh" & vbCrLf
     msg = msg & "- PID_QuickSystemCheck" & vbCrLf
@@ -81,6 +82,9 @@ Public Sub PID_FullSystemRefresh()
     PID_FormatAllMoneyColumns
     
     PID_ApplyCopyrightToAllSheets
+    
+    PID_EnsureAdminSheet
+    PID_HideAdminSheet False
     
     PID_EnableCalculationForAllSheets
     

@@ -56,6 +56,8 @@ Private Sub Workbook_Open()
     
     PID_SetupSheetProtectionForOpen
     
+    PID_EnsureAdminSheet
+    
     ' Wichtig:
     ' Beim Oeffnen wird die vollstaendige Fluktuation-Analyse NICHT aktualisiert.
     ' Das ermoeglicht schnelleres Oeffnen - aktualisiert wird nur wenn wirklich noetig.
@@ -64,6 +66,7 @@ Private Sub Workbook_Open()
     On Error Resume Next
     ThisWorkbook.Sheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden
     ThisWorkbook.Sheets("KV_DROPDOWN_HELPER").Visible = xlSheetVeryHidden
+    PID_HideAdminSheet False
     On Error GoTo SafeExit
 
 SafeExit:
@@ -111,6 +114,7 @@ Private Sub Workbook_BeforeSave(ByVal SaveAsUI As Boolean, Cancel As Boolean)
     On Error Resume Next
     ThisWorkbook.Sheets("FLUKTUATION_DATEN").Visible = xlSheetVeryHidden
     ThisWorkbook.Sheets("KV_DROPDOWN_HELPER").Visible = xlSheetVeryHidden
+    PID_HideAdminSheet False
     On Error GoTo SafeExit
 
 SafeExit:

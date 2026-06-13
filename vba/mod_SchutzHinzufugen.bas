@@ -257,6 +257,10 @@ Private Sub PID_ApplySheetProtectionForMacros(ByVal ws As Worksheet)
         
         ws.Visible = xlSheetVeryHidden
         
+    ElseIf StrComp(ws.Name, PID_ADMIN_SHEET_NAME, vbTextCompare) = 0 Then
+        
+        PID_ForceUnprotectWorksheet ws
+        
     Else
         
         ws.Protect Password:=PID_WORKBOOK_PASSWORD, _

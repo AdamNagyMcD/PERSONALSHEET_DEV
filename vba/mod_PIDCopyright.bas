@@ -12,7 +12,7 @@ Public Const PID_COPYRIGHT_ORG As String = "McOpCo"
 
 Private Const PID_COPYRIGHT_LEGACY_CELL As String = "Z100"
 Private Const PID_COPYRIGHT_SHAPE_NAME As String = "shp_PID_Copyright"
-Private Const PID_COPYRIGHT_SKIP_SHEETS As String = "|FLUKTUATION_DATEN|KV_DROPDOWN_HELPER|"
+Private Const PID_COPYRIGHT_SKIP_SHEETS As String = "|FLUKTUATION_DATEN|KV_DROPDOWN_HELPER|_ADMIN|"
 
 
 Public Function PID_GetCopyrightText() As String

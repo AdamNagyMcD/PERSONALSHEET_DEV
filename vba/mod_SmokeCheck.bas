@@ -595,12 +595,12 @@ Private Function PID_EvaluateTest15(ByRef details As String) As String
     End If
     
     If Len(missingSheets) > 0 Then
-        details = "Monatslohn-Formel (PID_KVLohnLookup) fehlt auf: " & missingSheets & ". FullSystemRefresh empfohlen."
+        details = "Monatslohn (Spalte G) unvollstaendig auf: " & missingSheets & " — E/F-Zeile ohne G-Wert. FullSystemRefresh empfohlen."
         PID_EvaluateTest15 = "FAIL"
         Exit Function
     End If
     
-    details = "Monatslohn-Formel auf allen " & checkedCount & " Monatsblaettern in Spalte G vorhanden."
+    details = "Monatslohn auf allen " & checkedCount & " Monatsblaettern in Ordnung (Formel oder VBA-Wert in G)."
     PID_EvaluateTest15 = "PASS"
 End Function
 
