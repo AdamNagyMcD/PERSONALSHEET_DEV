@@ -27,6 +27,7 @@ Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`PERFORMANCE_BASELINE.md`](PE
 
 | ID | Thema | Prio | Plattform |
 |----|--------|------|-----------|
+| [FP-030](#fp-030--copydata-mehrfach-stundenmodifikation) | CopyData: mehrfache Stunden-Änderung | Hoch | Win + Mac |
 | [FP-026](#fp-026--mac-only-f-dropdown-performance) | Mac F-Dropdown Performance | Niedrig | **Nur Mac** (post-release) |
 
 ### 🟡 Erledigt — manuelle Tests / Rest offen
@@ -164,6 +165,29 @@ Leere MA-Zeilen (kein Name/ID) zeigen **0,00 €** in K statt leerer Zelle.
 - [ ] MA ohne J: K leer
 - [ ] MA + J + Lohn: K korrekt (€)
 - [ ] CopyData propagiert Formel (nicht 0)
+
+---
+
+## FP-030 — CopyData: mehrfache Stunden-Änderung
+
+**Status:** 🔴 Offen  
+**Priorität:** Hoch  
+**Plattform:** Win + Mac · `mod_CopyData.bas`
+
+### Problem
+
+Erster Override (z.B. Juli=150h) funktioniert. Zweiter Override auf denselben Monat (Juli=140h) oder weitere Monate (November=160h) nach einem ersten CopyData-Lauf werden nicht zuverlässig übernommen — der Log bleibt am ersten Wert hängen.
+
+### Vermutliche Ursachen
+
+- `PID_ReconcileUnloggedFChangesForMac`: `runningF`-Invarianz schützt Zwischenmonate korrekt, aber wenn der erste Log-Eintrag (z.B. 150h) noch vorhanden ist und der Nutzer auf 140h ändert, erkennt die Reconcile-Logik den Unterschied nicht mehr zuverlässig
+- `PID_PruneHourOverrideLogForCopy`: möglicherweise zu aggressiv beim Löschen gültiger Einträge
+
+### Nächste Schritte
+
+1. Diagnostik: Log-Inhalt vor CopyData sichtbar machen (Admin-Panel oder StatusBar)
+2. Root cause isolieren: Prune-Logik vs. Reconcile-Logik
+3. Fix implementieren
 
 ---
 
