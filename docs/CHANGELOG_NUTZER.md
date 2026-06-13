@@ -119,6 +119,7 @@ Diese Punkte sind in der Entwicklung / auf dem Mac getestet — kommen mit dem n
 |--------|------|
 | **Beim Öffnen kurz „Berechnet…“** | Besonders Excel 2016 — wird optimiert (FP-027). |
 | **Stunden ändern, dann zurückdrehen** | Alte Stundenänderung kann „hängen bleiben“ — technisches Protokoll; Fix geplant (FP-028). **Workaround:** Aktualisierung immer vom **Monat der Änderung** aus starten. |
+| **Urlaub in € (Spalte K) zeigt 0** | In leeren Zeilen steht 0 statt nichts — Fix geplant (FP-029), analog Spalte L. |
 
 Fragen: **Adam Nagy** · adam.nagy@at.mcd.com
 

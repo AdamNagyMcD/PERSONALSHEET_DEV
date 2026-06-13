@@ -995,6 +995,50 @@ Verstecktes Blatt **`PID_HOUR_OVERRIDES`**: jede Änderung an **KV-Gruppe (E)** 
 
 ---
 
+## FP-029 — Spalte K (Urlaub in €): leere Zeile zeigt 0 statt leer
+
+**Status:** Geplant — Feedback (2026-06)  
+**Priorität:** Mittel — UX / Konsistenz mit Spalte G und L  
+**Plattform:** Windows + Mac  
+**Betroffene Bereiche:** Monatsblätter Spalte **K** (`Urlaub in €`), Formel K3:K82, `mod_CopyData.bas` (Formel-Propagation)
+
+### Beobachtetes Verhalten
+
+In **Spalte K** (`Urlaub in €`) steht in Zeilen **ohne Mitarbeiterdaten** (Name/ID leer, keine offenen Urlaubstage) trotzdem **`0`** bzw. **`0,00 €`** — obwohl die Zeile faktisch leer ist.
+
+### Ursache (vermutet)
+
+K-Formel (Januar-Referenz, R1C1 via CopyData):
+
+- Berechnet Urlaubsgeld aus **Monatslohn (G)** und **Offene Urlaubstage (J)**.
+- Abschluss typisch `IFERROR(..., 0)` → leere/irrelevante Zeilen werden als **0** angezeigt, nicht als leere Zelle.
+- Analog zum historischen L-Problem (**FP-003**, behoben): fehlender **B/C-Leer-Guard** und kein **0 → ""** für Anzeige.
+
+### Geplanter Ansatz
+
+| # | Ansatz |
+|---|--------|
+| 1 | K-Formel wie L: `IF(OR(B="",C=""),"", …)` und Ergebnis **0 → ""**. |
+| 2 | Zusätzlich: wenn **J (Offene Urlaubstage)** leer → **K leer** (kein 0×Lohn). |
+| 3 | Kanonische K-Formel in `Modul1.bas` (Restore/Open/CopyData), nicht nur Januar hardcoded. |
+| 4 | `PID_ApplyEuroNumberFormat` / leere Zellen: optisch leer (wie G/L). |
+
+### Akzeptanzkriterien
+
+- [ ] Leere Mitarbeiterzeile (B/C leer): **K ohne 0**, Zelle optisch leer.
+- [ ] Zeile mit MA, aber **J leer**: K leer (nicht 0).
+- [ ] Zeile mit MA + **J > 0** + Lohn: K korrekt berechnet (€).
+- [ ] CopyData propagiert aktualisierte K-Formel in Folgemonate.
+- [ ] Smoke + manuell Win/Mac.
+
+### Referenz
+
+- Analog **FP-003** (Spalte L — Letztes Gehalt, 0→leer)
+- `vba/Modul1.bas` — `PID_GetLetztesGehaltFormulaR1C1` als Vorbild
+- `vba/mod_CopyData.bas` — `formulaK` / `PID_RestoreFormulas`
+
+---
+
 ## Weitere Einträge
 
 Neue Backlog-Punkte unten anfügen mit ID `FP-00N`, Status, Ursache, geplantem Ansatz und Akzeptanzkriterien.

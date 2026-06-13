@@ -282,6 +282,11 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
         MarkFluktuationDirtyForMonthSheet Sh
     End If
     
+    ' Q31 (Fluktuation %) sofort auf diesem Monatsblatt, wenn Austrittsdatum geaendert wird.
+    If Not Intersect(Target, Sh.Range("I3:I82")) Is Nothing Then
+        PID_CalculateFluctuation Sh
+    End If
+    
     If PID_MonthChangeNeedsImmediateFinanzSync(Sh, Target) Then
         PID_SyncFinanzSummaryForMonth Sh
     ElseIf PID_MonthChangeDefersFinanzSummarySync(Sh, Target) Then
