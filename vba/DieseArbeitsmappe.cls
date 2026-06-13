@@ -274,8 +274,8 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
         PID_RecalculateLetztesGehaltForChangedRows Sh, Target
     End If
     
-    If Not Intersect(Target, Sh.Range("F3:F82")) Is Nothing Then
-        PID_LogEFAenderungForSheet Sh, Target
+    If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
+        PID_LogEFAenderungForSheet Sh, Intersect(Target, Sh.Range("E3:F82"))
     End If
     
     ' Fluktuation-Markierung fuer Aktualisierung:

@@ -32,11 +32,26 @@ Public Sub PID_ShowAdminMacroInfo()
     msg = msg & "- PID_QuickSystemCheck" & vbCrLf
     msg = msg & "- PID_RunSystemSmokeCheck" & vbCrLf
     msg = msg & "- PID_RunPerformanceBaseline (FP-010)" & vbCrLf
+    msg = msg & "- PID_AdminResetHourOverrideLog (Stunden-Log leeren)" & vbCrLf
     msg = msg & "- RebuildLOHNTABELLE" & vbCrLf
     msg = msg & "- UnprotectEverything" & vbCrLf & vbCrLf
     msg = msg & "Siehe docs/RELEASE.md"
     
     MsgBox msg, vbInformation, "Admin Makros"
+End Sub
+
+
+Public Sub PID_AdminResetHourOverrideLog()
+    If Not PID_ConfirmAdminAction( _
+        "Das versteckte Blatt PID_HOUR_OVERRIDES wird geleert." & vbCrLf & _
+        "Nur noetig nach altem CopyData-Log oder FP-028-Tests.", _
+        "Stunden-Log leeren") Then
+        Exit Sub
+    End If
+    
+    PID_ResetHourOverrideLog
+    
+    MsgBox "PID_HOUR_OVERRIDES geleert.", vbInformation, "Admin"
 End Sub
 
 

@@ -111,6 +111,8 @@ Public Sub PID_CopyDataToFollowingMonths()
     sourceData = PID_ReadMonthData(wsSource)
     currentData = sourceData
     
+    PID_PruneHourOverrideLogForCopy workbookYear, sourceMonthIndex, sourceData
+    
     formulaH = wsSource.Range("H3:H82").FormulaR1C1
     formulaG = PID_GetMonatslohnFormulaR1C1()
     formulaK = wsSource.Range("K3:K82").FormulaR1C1
@@ -122,6 +124,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     Set futureNewStarts = New Collection
     
     PID_CollectFutureOverrides sourceData, sourceMonthIndex, monthNames, futureOverrides, futureNewStarts
+    PID_ApplyLoggedHourOverrides futureOverrides, sourceMonthIndex, workbookYear, sourceData, futureNewStarts
     
     For i = sourceMonthIndex + 1 To 12
         targetSheetName = CStr(monthNames(i - 1))
@@ -131,8 +134,6 @@ Public Sub PID_CopyDataToFollowingMonths()
         PID_WriteMonthData targetSheetName, currentData, formulaH, formulaG, formulaK, formulaL, _
                            panelBlock, panelO, panelQ, panelOIsFormula, panelQIsFormula, panelOFormats, panelQFormats
     Next i
-    
-    PID_ReconcileHourOverrideLogFromMonthSheets workbookYear, sourceMonthIndex + 1, monthNames
     
     PID_ResetFollowingMonthSelections sourceMonthIndex, sourceSheetName
     
@@ -187,7 +188,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                                       ByRef futureOverrides As Collection, _
                                       ByRef futureNewStarts As Collection)
     Dim baseValues As Collection
-    Dim currentValues As Collection
     
     Dim ws As Worksheet
     Dim monthIndex As Long
@@ -196,7 +196,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
     Dim targetData As Variant
     
     Set baseValues = New Collection
-    Set currentValues = New Collection
     
     For r = 1 To UBound(sourceData, 1)
         keyText = PID_BuildEmployeeKey(sourceData(r, 1), sourceData(r, 2))
@@ -213,16 +212,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
             PID_AddOrReplaceCollectionValue baseValues, PID_BaseKey(keyText, "J"), CStr(sourceData(r, 9))
             PID_AddOrReplaceCollectionValue baseValues, PID_BaseKey(keyText, "M"), CStr(sourceData(r, 12))
             PID_AddOrReplaceCollectionValue baseValues, PID_BaseKey(keyText, "N"), CStr(sourceData(r, 13))
-            
-            PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "B"), CStr(sourceData(r, 1))
-            PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "C"), CStr(sourceData(r, 2))
-            PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "D"), CStr(sourceData(r, 3))
-            PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "E"), CStr(sourceData(r, 4))
-            PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "F"), CStr(sourceData(r, 5))
-            PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "I"), CStr(sourceData(r, 8))
-            PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "J"), CStr(sourceData(r, 9))
-            PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "M"), CStr(sourceData(r, 12))
-            PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "N"), CStr(sourceData(r, 13))
         End If
     Next r
     
@@ -269,16 +258,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                         PID_AddOrReplaceCollectionValue baseValues, PID_BaseKey(keyText, "M"), CStr(targetData(r, 12))
                         PID_AddOrReplaceCollectionValue baseValues, PID_BaseKey(keyText, "N"), CStr(targetData(r, 13))
                         
-                        PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "B"), CStr(targetData(r, 1))
-                        PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "C"), CStr(targetData(r, 2))
-                        PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "D"), CStr(targetData(r, 3))
-                        PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "E"), CStr(targetData(r, 4))
-                        PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "F"), CStr(targetData(r, 5))
-                        PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "I"), CStr(targetData(r, 8))
-                        PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "J"), CStr(targetData(r, 9))
-                        PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "M"), CStr(targetData(r, 12))
-                        PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, "N"), CStr(targetData(r, 13))
-                        
                     Else
                         If Trim$(CStr(targetData(r, 8))) <> "" Then
                             PID_AddOverrideValue futureOverrides, monthIndex, keyText, "I", targetData(r, 8)
@@ -296,9 +275,6 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
                             PID_AddOverrideValue futureOverrides, monthIndex, keyText, "N", targetData(r, 13)
                         End If
                         
-                        PID_CollectFutureEFOverrideIfChanged futureOverrides, currentValues, monthIndex, keyText, "E", targetData(r, 4)
-                        PID_CollectFutureEFOverrideIfChanged futureOverrides, currentValues, monthIndex, keyText, "F", targetData(r, 5)
-                        
                     End If
                     
                 End If
@@ -308,45 +284,124 @@ Private Sub PID_CollectFutureOverrides(ByVal sourceData As Variant, _
 End Sub
 
 
-Private Sub PID_CollectFutureEFOverrideIfChanged(ByRef futureOverrides As Collection, _
-                                                 ByRef currentValues As Collection, _
-                                                 ByVal monthIndex As Long, _
-                                                 ByVal keyText As String, _
-                                                 ByVal fieldCode As String, _
-                                                 ByVal targetValue As Variant)
-    Dim currentValue As Variant
+Private Sub PID_PruneHourOverrideLogForCopy(ByVal workbookYear As Long, _
+                                            ByVal sourceMonthIndex As Long, _
+                                            ByVal sourceData As Variant)
+    Dim wsLog As Worksheet
+    Dim lastRow As Long
+    Dim r As Long
+    Dim logYear As Long
+    Dim logMonth As Long
+    Dim employeeKey As String
+    Dim fieldCode As String
+    Dim logValue As Variant
+    Dim sourceValue As Variant
     
-    If keyText = "" Then Exit Sub
-    If fieldCode <> "E" And fieldCode <> "F" Then Exit Sub
+    On Error GoTo SafeExit
     
-    currentValue = PID_GetCollectionValue(currentValues, PID_BaseKey(keyText, fieldCode), "")
+    If sourceMonthIndex < 1 Or sourceMonthIndex > 12 Then Exit Sub
     
-    If PID_CopyDataFieldValuesEqual(currentValue, targetValue) Then Exit Sub
+    Set wsLog = Nothing
+    On Error Resume Next
+    Set wsLog = ThisWorkbook.Worksheets(PID_HOUR_OVERRIDE_LOG_SHEET)
+    On Error GoTo SafeExit
     
-    PID_AddOverrideValue futureOverrides, monthIndex, keyText, fieldCode, targetValue
-    PID_AddOrReplaceCollectionValue currentValues, PID_BaseKey(keyText, fieldCode), CStr(targetValue)
+    If wsLog Is Nothing Then Exit Sub
+    
+    lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row
+    If lastRow < 2 Then Exit Sub
+    
+    For r = lastRow To 2 Step -1
+        If Not IsNumeric(wsLog.Cells(r, "A").Value) Then GoTo NextPruneRow
+        If Not IsNumeric(wsLog.Cells(r, "B").Value) Then GoTo NextPruneRow
+        
+        logYear = CLng(wsLog.Cells(r, "A").Value)
+        logMonth = CLng(wsLog.Cells(r, "B").Value)
+        
+        If logYear <> workbookYear Then GoTo NextPruneRow
+        If logMonth <= sourceMonthIndex Then GoTo NextPruneRow
+        
+        employeeKey = Trim$(CStr(wsLog.Cells(r, "C").Value))
+        fieldCode = Trim$(CStr(wsLog.Cells(r, "D").Value))
+        logValue = wsLog.Cells(r, "E").Value
+        
+        If employeeKey = "" Then GoTo NextPruneRow
+        If fieldCode <> "E" And fieldCode <> "F" Then GoTo NextPruneRow
+        If Trim$(CStr(logValue)) = "" Then GoTo NextPruneRow
+        
+        If Not PID_EmployeeKeyExistsInSourceData(sourceData, employeeKey) Then GoTo NextPruneRow
+        
+        sourceValue = PID_GetSourceEFValue(sourceData, employeeKey, fieldCode)
+        If Trim$(CStr(sourceValue)) = "" Then GoTo NextPruneRow
+        
+        If PID_CopyDataFieldValuesEqual(logValue, sourceValue) Then
+            wsLog.Rows(r).Delete
+        End If
+
+NextPruneRow:
+    Next r
+
+SafeExit:
 End Sub
 
 
-Private Function PID_CopyDataFieldValuesEqual(ByVal leftValue As Variant, ByVal rightValue As Variant) As Boolean
-    Dim leftText As String
-    Dim rightText As String
+Private Function PID_EmployeeKeyExistsInSourceData(ByVal sourceData As Variant, ByVal employeeKey As String) As Boolean
+    Dim r As Long
+    Dim keyText As String
     
-    leftText = Trim$(CStr(leftValue))
-    rightText = Trim$(CStr(rightValue))
+    PID_EmployeeKeyExistsInSourceData = False
     
-    If leftText = "" And rightText = "" Then
-        PID_CopyDataFieldValuesEqual = True
-        Exit Function
-    End If
-    
-    If IsNumeric(leftValue) And IsNumeric(rightValue) Then
-        PID_CopyDataFieldValuesEqual = (Abs(CDbl(leftValue) - CDbl(rightValue)) < 0.0001)
-        Exit Function
-    End If
-    
-    PID_CopyDataFieldValuesEqual = (StrComp(leftText, rightText, vbTextCompare) = 0)
+    For r = 1 To UBound(sourceData, 1)
+        keyText = PID_BuildEmployeeKey(sourceData(r, 1), sourceData(r, 2))
+        
+        If StrComp(keyText, employeeKey, vbTextCompare) = 0 Then
+            PID_EmployeeKeyExistsInSourceData = True
+            Exit Function
+        End If
+    Next r
 End Function
+
+
+Private Sub PID_ClearHourOverrideLogAfterMonth(ByVal workbookYear As Long, _
+                                               ByVal monthIndex As Long, _
+                                               ByVal employeeKey As String, _
+                                               ByVal fieldCode As String)
+    Dim wsLog As Worksheet
+    Dim lastRow As Long
+    Dim r As Long
+    Dim logMonth As Long
+    
+    On Error GoTo SafeExit
+    
+    If employeeKey = "" Then Exit Sub
+    If fieldCode <> "E" And fieldCode <> "F" Then Exit Sub
+    If monthIndex < 1 Or monthIndex > 12 Then Exit Sub
+    
+    Set wsLog = Nothing
+    On Error Resume Next
+    Set wsLog = ThisWorkbook.Worksheets(PID_HOUR_OVERRIDE_LOG_SHEET)
+    On Error GoTo SafeExit
+    
+    If wsLog Is Nothing Then Exit Sub
+    
+    lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row
+    If lastRow < 2 Then Exit Sub
+    
+    For r = lastRow To 2 Step -1
+        If CLng(Val(wsLog.Cells(r, "A").Value)) = workbookYear _
+           And UCase$(Trim$(CStr(wsLog.Cells(r, "C").Value))) = UCase$(employeeKey) _
+           And UCase$(Trim$(CStr(wsLog.Cells(r, "D").Value))) = fieldCode Then
+            
+            logMonth = CLng(Val(wsLog.Cells(r, "B").Value))
+            
+            If logMonth > monthIndex Then
+                wsLog.Rows(r).Delete
+            End If
+        End If
+    Next r
+
+SafeExit:
+End Sub
 
 
 Private Sub PID_ReconcileHourOverrideLogFromMonthSheets(ByVal workbookYear As Long, _
@@ -427,6 +482,7 @@ Public Sub PID_LogEFAenderungForSheet(ByVal wsMonth As Worksheet, ByVal changedR
             
             If fieldCode <> "" Then
                 PID_UpsertHourOverride workbookYear, monthIndex, keyText, fieldCode, c.Value
+                PID_ClearHourOverrideLogAfterMonth workbookYear, monthIndex, keyText, fieldCode
             End If
         End If
     Next c
@@ -437,7 +493,9 @@ End Sub
 
 Private Sub PID_ApplyLoggedHourOverrides(ByRef futureOverrides As Collection, _
                                          ByVal sourceMonthIndex As Long, _
-                                         ByVal workbookYear As Long)
+                                         ByVal workbookYear As Long, _
+                                         ByVal sourceData As Variant, _
+                                         ByVal futureNewStarts As Collection)
     Dim wsLog As Worksheet
     Dim lastRow As Long
     Dim data As Variant
@@ -446,8 +504,15 @@ Private Sub PID_ApplyLoggedHourOverrides(ByRef futureOverrides As Collection, _
     Dim logMonth As Long
     Dim employeeKey As String
     Dim fieldCode As String
+    Dim logValue As Variant
+    Dim runningValue As Variant
+    Dim runningValues As Collection
+    Dim employeeStartMonth As Long
+    Dim sourceValue As Variant
     
     On Error GoTo SafeExit
+    
+    Set runningValues = New Collection
     
     Set wsLog = Nothing
     On Error Resume Next
@@ -461,30 +526,153 @@ Private Sub PID_ApplyLoggedHourOverrides(ByRef futureOverrides As Collection, _
     
     data = wsLog.Range("A2:E" & lastRow).Value
     
-    For r = 1 To UBound(data, 1)
-        If IsNumeric(data(r, 1)) And IsNumeric(data(r, 2)) Then
-            logYear = CLng(data(r, 1))
-            logMonth = CLng(data(r, 2))
+    For logMonth = sourceMonthIndex + 1 To 12
+        For r = 1 To UBound(data, 1)
+            If Not IsNumeric(data(r, 1)) Then GoTo NextLogRow
+            If Not IsNumeric(data(r, 2)) Then GoTo NextLogRow
             
-            If logYear = workbookYear Then
-                If logMonth > sourceMonthIndex And logMonth <= 12 Then
-                    employeeKey = Trim$(CStr(data(r, 3)))
-                    fieldCode = Trim$(CStr(data(r, 4)))
-                    
-                    If employeeKey <> "" Then
-                        If fieldCode = "E" Or fieldCode = "F" Then
-                            If Trim$(CStr(data(r, 5))) <> "" Then
-                                PID_AddOverrideValue futureOverrides, logMonth, employeeKey, fieldCode, data(r, 5)
-                            End If
-                        End If
-                    End If
+            logYear = CLng(data(r, 1))
+            If logYear <> workbookYear Then GoTo NextLogRow
+            If CLng(data(r, 2)) <> logMonth Then GoTo NextLogRow
+            
+            employeeKey = Trim$(CStr(data(r, 3)))
+            fieldCode = Trim$(CStr(data(r, 4)))
+            logValue = data(r, 5)
+            
+            If employeeKey = "" Then GoTo NextLogRow
+            If fieldCode <> "E" And fieldCode <> "F" Then GoTo NextLogRow
+            If Trim$(CStr(logValue)) = "" Then GoTo NextLogRow
+            
+            employeeStartMonth = PID_GetFutureNewStartMonth(futureNewStarts, employeeKey)
+            If employeeStartMonth > 0 Then
+                If logMonth < employeeStartMonth Then GoTo NextLogRow
+            ElseIf PID_EmployeeKeyExistsInSourceData(sourceData, employeeKey) Then
+                sourceValue = PID_GetSourceEFValue(sourceData, employeeKey, fieldCode)
+                If Trim$(CStr(sourceValue)) <> "" Then
+                    If PID_CopyDataFieldValuesEqual(logValue, sourceValue) Then GoTo NextLogRow
                 End If
             End If
-        End If
-    Next r
+            
+            runningValue = PID_GetRunningEFValue(runningValues, sourceData, employeeKey, fieldCode)
+            
+            If Not PID_CopyDataFieldValuesEqual(runningValue, logValue) Then
+                PID_AddOverrideValue futureOverrides, logMonth, employeeKey, fieldCode, logValue
+                PID_SetRunningEFValue runningValues, employeeKey, fieldCode, logValue
+            End If
+
+NextLogRow:
+        Next r
+    Next logMonth
     
 SafeExit:
 End Sub
+
+
+Private Function PID_GetFutureNewStartMonth(ByVal futureNewStarts As Collection, ByVal employeeKey As String) As Long
+    Dim item As Variant
+    Dim parts As Variant
+    
+    PID_GetFutureNewStartMonth = 0
+    
+    For Each item In futureNewStarts
+        parts = Split(CStr(item), PID_Sep())
+        
+        If UBound(parts) >= 1 Then
+            If StrComp(CStr(parts(1)), employeeKey, vbTextCompare) = 0 Then
+                PID_GetFutureNewStartMonth = CLng(parts(0))
+                Exit Function
+            End If
+        End If
+    Next item
+End Function
+
+
+Private Function PID_GetRunningEFValue(ByVal runningValues As Collection, _
+                                      ByVal sourceData As Variant, _
+                                      ByVal employeeKey As String, _
+                                      ByVal fieldCode As String) As Variant
+    Dim runningKey As String
+    
+    runningKey = PID_RunningEFKey(employeeKey, fieldCode)
+    
+    On Error GoTo UseSource
+    
+    PID_GetRunningEFValue = runningValues.Item(runningKey)
+    Exit Function
+    
+UseSource:
+    PID_GetRunningEFValue = PID_GetSourceEFValue(sourceData, employeeKey, fieldCode)
+End Function
+
+
+Private Sub PID_SetRunningEFValue(ByRef runningValues As Collection, _
+                                  ByVal employeeKey As String, _
+                                  ByVal fieldCode As String, _
+                                  ByVal valueToStore As Variant)
+    Dim runningKey As String
+    
+    runningKey = PID_RunningEFKey(employeeKey, fieldCode)
+    PID_AddOrReplaceCollectionValue runningValues, runningKey, valueToStore
+End Sub
+
+
+Private Function PID_RunningEFKey(ByVal employeeKey As String, ByVal fieldCode As String) As String
+    PID_RunningEFKey = employeeKey & PID_Sep() & fieldCode
+End Function
+
+
+Private Function PID_GetSourceEFValue(ByVal sourceData As Variant, _
+                                      ByVal employeeKey As String, _
+                                      ByVal fieldCode As String) As Variant
+    Dim r As Long
+    Dim keyText As String
+    Dim colIndex As Long
+    
+    PID_GetSourceEFValue = Empty
+    
+    If fieldCode = "E" Then
+        colIndex = 4
+    ElseIf fieldCode = "F" Then
+        colIndex = 5
+    Else
+        Exit Function
+    End If
+    
+    For r = 1 To UBound(sourceData, 1)
+        keyText = PID_BuildEmployeeKey(sourceData(r, 1), sourceData(r, 2))
+        
+        If StrComp(keyText, employeeKey, vbTextCompare) = 0 Then
+            PID_GetSourceEFValue = sourceData(r, colIndex)
+            Exit Function
+        End If
+    Next r
+End Function
+
+
+Private Function PID_CopyDataFieldValuesEqual(ByVal leftValue As Variant, ByVal rightValue As Variant) As Boolean
+    Dim leftText As String
+    Dim rightText As String
+    
+    If IsEmpty(leftValue) And IsEmpty(rightValue) Then
+        PID_CopyDataFieldValuesEqual = True
+        Exit Function
+    End If
+    
+    leftText = Trim$(CStr(leftValue))
+    rightText = Trim$(CStr(rightValue))
+    
+    If leftText = "" And rightText = "" Then
+        PID_CopyDataFieldValuesEqual = True
+        Exit Function
+    End If
+    
+    If IsNumeric(leftValue) And IsNumeric(rightValue) Then
+        PID_CopyDataFieldValuesEqual = (Abs(CDbl(leftValue) - CDbl(rightValue)) < 0.0001)
+        Exit Function
+    End If
+    
+    PID_CopyDataFieldValuesEqual = (StrComp(leftText, rightText, vbTextCompare) = 0)
+End Function
 
 
 Private Sub PID_UpsertHourOverride(ByVal workbookYear As Long, _
@@ -552,6 +740,11 @@ Private Function PID_GetOrCreateHourOverrideLogSheet() As Worksheet
         ws.Range("D1").Value = "Field"
         ws.Range("E1").Value = "Value"
     End If
+    
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    ws.Unprotect
+    On Error GoTo 0
     
     ws.Visible = xlSheetVeryHidden
     

@@ -15,6 +15,7 @@ Private Const PID_ADMIN_BTN_HEIGHT As Double = 30#
 Private Const PID_ADMIN_BTN_GAP_H As Double = 14#
 Private Const PID_ADMIN_BTN_GAP_V As Double = 10#
 Private Const PID_ADMIN_BTN_COLS As Long = 2
+Private Const PID_ADMIN_BTN_COUNT As Long = 14
 
 
 Public Sub PID_EnsureAdminSheet()
@@ -27,7 +28,7 @@ Public Sub PID_EnsureAdminSheet()
         Set ws = ThisWorkbook.Worksheets.Add(Before:=ThisWorkbook.Worksheets(1))
         ws.Name = PID_ADMIN_SHEET_NAME
     Else
-        ws.Move Before:=ThisWorkbook.Worksheets(1)
+        PID_AdminMoveSheetToFront ws
     End If
     
     PID_BuildAdminSheetLayout ws
@@ -48,7 +49,7 @@ Public Sub PID_ShowAdminSheet()
     If ws Is Nothing Then Exit Sub
     
     ws.Visible = xlSheetVisible
-    ws.Move Before:=ThisWorkbook.Worksheets(1)
+    PID_AdminMoveSheetToFront ws
     ws.Activate
     ws.Range("A1").Select
 
@@ -260,8 +261,17 @@ Private Sub PID_BuildAdminSheetLayout(ByVal ws As Worksheet)
 End Sub
 
 
+Private Sub PID_AdminMoveSheetToFront(ByVal ws As Worksheet)
+    If ws Is Nothing Then Exit Sub
+    If ws.Index = 1 Then Exit Sub
+    
+    On Error Resume Next
+    ws.Move Before:=ThisWorkbook.Worksheets(1)
+    On Error GoTo 0
+End Sub
+
+
 Private Sub PID_EnsureAdminSheetButtons(ByVal ws As Worksheet)
-    Dim specs As Variant
     Dim i As Long
     Dim colIndex As Long
     Dim rowIndex As Long
@@ -270,10 +280,12 @@ Private Sub PID_EnsureAdminSheetButtons(ByVal ws As Worksheet)
     Dim btnLeft As Double
     Dim btnTop As Double
     Dim btn As Shape
+    Dim btnKey As String
+    Dim btnLabel As String
+    Dim btnMacro As String
+    Dim btnStyle As Long
     
     If ws Is Nothing Then Exit Sub
-    
-    specs = PID_AdminButtonSpecs()
     
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
@@ -285,7 +297,9 @@ Private Sub PID_EnsureAdminSheetButtons(ByVal ws As Worksheet)
     anchorLeft = ws.Range("B5").Left
     anchorTop = ws.Range("B5").Top
     
-    For i = LBound(specs) To UBound(specs)
+    For i = 0 To PID_ADMIN_BTN_COUNT - 1
+        PID_AdminGetButtonSpec i, btnKey, btnLabel, btnMacro, btnStyle
+        
         colIndex = i Mod PID_ADMIN_BTN_COLS
         rowIndex = i \ PID_ADMIN_BTN_COLS
         
@@ -298,32 +312,51 @@ Private Sub PID_EnsureAdminSheetButtons(ByVal ws As Worksheet)
                                      Width:=PID_ADMIN_BTN_WIDTH, _
                                      Height:=PID_ADMIN_BTN_HEIGHT)
         
-        btn.Name = PID_ADMIN_BTN_PREFIX & CStr(specs(i)(0))
-        btn.TextFrame.Characters.Text = CStr(specs(i)(1))
-        btn.OnAction = CStr(specs(i)(2))
+        btn.Name = PID_ADMIN_BTN_PREFIX & btnKey
+        btn.TextFrame.Characters.Text = btnLabel
+        btn.OnAction = btnMacro
         
-        PID_AdminApplyButtonStyle btn, CLng(specs(i)(3))
+        PID_AdminApplyButtonStyle btn, btnStyle
     Next i
 End Sub
 
 
-Private Function PID_AdminButtonSpecs() As Variant
-    PID_AdminButtonSpecs = Array( _
-        Array("Smoke", "Smoke Check", "PID_AdminRunSmokeCheck", 0), _
-        Array("Refresh", "Full Refresh", "PID_AdminRunFullRefresh", 0), _
-        Array("Quick", "Quick Check", "PID_AdminRunQuickCheck", 1), _
-        Array("Format", "Format Monate", "PID_AdminRunFormatMonths", 1), _
-        Array("Import", "VBA Import", "ResetAndImportVBAFiles", 2), _
-        Array("Perf", "Perf. Baseline", "PID_AdminRunPerfBaseline", 2), _
-        Array("Protect", "Schutz AN", "PID_AdminRunProtectAll", 3), _
-        Array("Unprotect", "Schutz AUS", "PID_AdminRunUnprotectAll", 2), _
-        Array("ShowTech", "Tech-Bl. zeigen", "PID_AdminShowTechSheets", 1), _
-        Array("HideTech", "Tech-Bl. verbergen", "PID_AdminHideTechSheets", 1), _
-        Array("Lohn", "LOHNTABELLE", "PID_AdminRunRebuildLohn", 2), _
-        Array("SmokeSheet", "SYSTEM_CHECK", "PID_AdminOpenSmokeSheet", 3), _
-        Array("Hide", "Admin verbergen", "PID_AdminHidePanel", 3) _
-    )
-End Function
+Private Sub PID_AdminGetButtonSpec(ByVal index As Long, _
+                                   ByRef btnKey As String, _
+                                   ByRef btnLabel As String, _
+                                   ByRef btnMacro As String, _
+                                   ByRef btnStyle As Long)
+    Select Case index
+        Case 0
+            btnKey = "Smoke": btnLabel = "Smoke Check": btnMacro = "PID_AdminRunSmokeCheck": btnStyle = 0
+        Case 1
+            btnKey = "Refresh": btnLabel = "Full Refresh": btnMacro = "PID_AdminRunFullRefresh": btnStyle = 0
+        Case 2
+            btnKey = "Quick": btnLabel = "Quick Check": btnMacro = "PID_AdminRunQuickCheck": btnStyle = 1
+        Case 3
+            btnKey = "Format": btnLabel = "Format Monate": btnMacro = "PID_AdminRunFormatMonths": btnStyle = 1
+        Case 4
+            btnKey = "Import": btnLabel = "VBA Import": btnMacro = "ResetAndImportVBAFiles": btnStyle = 2
+        Case 5
+            btnKey = "Perf": btnLabel = "Perf. Baseline": btnMacro = "PID_AdminRunPerfBaseline": btnStyle = 2
+        Case 6
+            btnKey = "Protect": btnLabel = "Schutz AN": btnMacro = "PID_AdminRunProtectAll": btnStyle = 3
+        Case 7
+            btnKey = "Unprotect": btnLabel = "Schutz AUS": btnMacro = "PID_AdminRunUnprotectAll": btnStyle = 2
+        Case 8
+            btnKey = "ShowTech": btnLabel = "Tech-Bl. zeigen": btnMacro = "PID_AdminShowTechSheets": btnStyle = 1
+        Case 9
+            btnKey = "HideTech": btnLabel = "Tech-Bl. verbergen": btnMacro = "PID_AdminHideTechSheets": btnStyle = 1
+        Case 10
+            btnKey = "Lohn": btnLabel = "LOHNTABELLE": btnMacro = "PID_AdminRunRebuildLohn": btnStyle = 2
+        Case 11
+            btnKey = "ResetHours": btnLabel = "Stunden-Log": btnMacro = "PID_AdminResetHourOverrideLog": btnStyle = 2
+        Case 12
+            btnKey = "SmokeSheet": btnLabel = "SYSTEM_CHECK": btnMacro = "PID_AdminOpenSmokeSheet": btnStyle = 3
+        Case Else
+            btnKey = "Hide": btnLabel = "Admin verbergen": btnMacro = "PID_AdminHidePanel": btnStyle = 3
+    End Select
+End Sub
 
 
 Private Sub PID_AdminApplyButtonStyle(ByVal btn As Shape, ByVal styleId As Long)
