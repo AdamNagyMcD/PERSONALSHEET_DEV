@@ -529,6 +529,15 @@ SafeExit:
 End Sub
 
 
+Public Sub PID_ResetInternalChangeFlag()
+    ' Wird von CopyData am Anfang aufgerufen, um einen moeglichen haengengebliebenen
+    ' mInternalChange=True-Zustand zu bereinigen (kann auf Mac passieren wenn ein
+    ' Event-Handler durch einen Mac-spezifischen Fehler ohne SafeExit beendet wurde).
+    ' Windows: harmlos (mInternalChange ist bereits False).
+    mInternalChange = False
+End Sub
+
+
 Public Sub PID_FlushPendingEFLog()
     ' Wird von CopyData vor dem Starten aufgerufen.
     ' Problem: Wenn der Nutzer auf Mac eine F-Zelle aendert und sofort den CopyData-Button

@@ -93,10 +93,10 @@ Public Sub PID_CopyDataToFollowingMonths()
     workbookYear = PID_GetWorkbookYear()
     monthNames = PID_MonthNames()
     
-    ' Mac: Ausstehende F-Aenderung loggen, bevor CopyData Events abschaltet.
-    ' Wenn der Nutzer eine F-Zelle aendert und sofort CopyData drueckt (ohne Zellwechsel),
-    ' feuert SelectionChange nicht => Aenderung waere verloren. Flush holt das nach.
-    ' Windows: PID_FlushPendingEFLog prueft PID_IsMacExcel() und kehrt sofort zurueck.
+    ' Mac-Vorbereitung: haengengebliebene mInternalChange-Flag bereinigen, dann
+    ' alle ungeloggten F-Aenderungen sichern, bevor Events abgeschaltet werden.
+    ' Windows: ResetInternalChangeFlag ist harmlos; alle anderen Pruefungen kehren sofort zurueck.
+    ThisWorkbook.PID_ResetInternalChangeFlag
     ThisWorkbook.PID_FlushPendingEFLog
     
     ' Self-heal: make sure workbook events are active before top-level copy run.
@@ -117,6 +117,12 @@ Public Sub PID_CopyDataToFollowingMonths()
     
     sourceData = PID_ReadMonthData(wsSource)
     currentData = sourceData
+    
+    ' Mac: Scan aller Zukunfts-Monatsblaetter auf ungeloggte F-Aenderungen.
+    ' Muss VOR PID_PruneHourOverrideLogForCopy laufen, damit neu entdeckte Eintraege
+    ' in den Prune/Apply-Zyklus einfliessen.
+    ' Windows: sofortiger Exit via PID_IsMacExcel()=False.
+    PID_ReconcileUnloggedFChangesForMac workbookYear, sourceMonthIndex, sourceData, monthNames
     
     PID_PruneHourOverrideLogForCopy workbookYear, sourceMonthIndex, sourceData
     
@@ -369,6 +375,141 @@ Private Function PID_EmployeeKeyExistsInSourceData(ByVal sourceData As Variant, 
         End If
     Next r
 End Function
+
+
+Private Sub PID_ReconcileUnloggedFChangesForMac(ByVal workbookYear As Long, _
+                                                ByVal sourceMonthIndex As Long, _
+                                                ByVal sourceData As Variant, _
+                                                ByVal monthNames As Variant)
+    ' Mac-only: Scannt alle Zukunfts-Monatsblaetter und loggt F-Werte, die nicht via
+    ' SheetChange/SelectionChange erfasst wurden.
+    '
+    ' Algorithmus (verhindert falsch-positive Eintraege fuer propagierte Werte):
+    '   runningF wird NUR durch bestehende Log-Eintraege aktualisiert, NICHT durch
+    '   neu entdeckte User-Aenderungen. So werden CopyData-propagierte Zwischenmonate
+    '   (z.B. August mit 150h nach Juli-Override) nicht faelschlicherweise als Overrides geloggt.
+    '
+    ' Beispiel: Log hat (7,F,150). User aendert Juli→140h und November→160h (beide ungeloggt).
+    '   Monat 7:  erwartet=150 (aus Log), tatsaechlich=140 → neu loggen (7,F,140). running=150.
+    '   Monat 8:  erwartet=150 (running unveraendert), tatsaechlich=150 → kein Log. ✓
+    '   Monat 11: erwartet=150, tatsaechlich=160 → neu loggen (11,F,160). ✓
+    '   Monat 12: erwartet=150, tatsaechlich=150 → kein Log. ✓
+    '
+    ' Windows: PID_IsMacExcel()=False → sofortiger Exit, kein Unterschied.
+    
+    Dim wsLog As Worksheet
+    Dim logArr As Variant
+    Dim lastLogRow As Long
+    Dim runningF As Collection
+    Dim monthIndex As Long
+    Dim ws As Worksheet
+    Dim targetData As Variant
+    Dim empRow As Long
+    Dim keyText As String
+    Dim actualF As Variant
+    Dim expectedF As Variant
+    Dim sourceF As Variant
+    Dim logRow As Long
+    
+    On Error GoTo SafeExit
+    
+    If Not PID_IsMacExcel() Then Exit Sub
+    If sourceMonthIndex >= 12 Then Exit Sub
+    
+    Set wsLog = Nothing
+    On Error Resume Next
+    Set wsLog = ThisWorkbook.Worksheets(PID_HOUR_OVERRIDE_LOG_SHEET)
+    On Error GoTo SafeExit
+    If wsLog Is Nothing Then Exit Sub
+    
+    lastLogRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row
+    
+    If lastLogRow >= 2 Then
+        logArr = wsLog.Range("A2:E" & lastLogRow).Value
+    End If
+    
+    ' runningF: aktuelle "erwartete" F-Werte per Mitarbeiter-Key (basierend auf altem Log)
+    Set runningF = New Collection
+    
+    ' Initialisierung mit Quellwerten (Mai)
+    Dim r As Long
+    For r = 1 To UBound(sourceData, 1)
+        keyText = PID_BuildEmployeeKey(sourceData(r, 1), sourceData(r, 2))
+        If keyText <> "" Then
+            On Error Resume Next
+            runningF.Remove keyText
+            On Error GoTo SafeExit
+            runningF.Add sourceData(r, 5), keyText   ' F = col 5 in B:N array
+        End If
+    Next r
+    
+    For monthIndex = sourceMonthIndex + 1 To 12
+        ' Schritt 1: Log-Eintraege fuer diesen Monat auf runningF anwenden (nur bestehende!)
+        If lastLogRow >= 2 And Not IsEmpty(logArr) Then
+            For logRow = 1 To UBound(logArr, 1)
+                If IsNumeric(logArr(logRow, 1)) And IsNumeric(logArr(logRow, 2)) Then
+                    If CLng(logArr(logRow, 1)) = workbookYear _
+                       And CLng(logArr(logRow, 2)) = monthIndex _
+                       And UCase$(Trim$(CStr(logArr(logRow, 4)))) = "F" Then
+                        
+                        Dim logEmpKey As String
+                        logEmpKey = Trim$(CStr(logArr(logRow, 3)))
+                        
+                        If logEmpKey <> "" Then
+                            PID_AddOrReplaceCollectionValue runningF, logEmpKey, logArr(logRow, 5)
+                        End If
+                    End If
+                End If
+            Next logRow
+        End If
+        
+        ' Schritt 2: Monatsblatt lesen und mit erwartetem Wert vergleichen
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(monthIndex - 1)))
+        On Error GoTo SafeExit
+        If ws Is Nothing Then GoTo NextReconcileMonth
+        
+        targetData = PID_ReadMonthData(ws)
+        
+        For empRow = 1 To UBound(targetData, 1)
+            keyText = PID_BuildEmployeeKey(targetData(empRow, 1), targetData(empRow, 2))
+            If keyText = "" Then GoTo NextReconcileEmp
+            
+            actualF = targetData(empRow, 5)   ' F = Spalte 5 in B:N-Array
+            
+            If Trim$(CStr(actualF)) = "" Then GoTo NextReconcileEmp
+            
+            ' Erwarteter F-Wert aus runningF (nur von altem Log abgeleitet)
+            On Error Resume Next
+            expectedF = runningF.Item(keyText)
+            If Err.Number <> 0 Then
+                expectedF = PID_GetSourceEFValue(sourceData, keyText, "F")
+            End If
+            Err.Clear
+            On Error GoTo SafeExit
+            
+            sourceF = PID_GetSourceEFValue(sourceData, keyText, "F")
+            
+            ' Nur loggen wenn:
+            ' 1. Tatsaechlicher Wert weicht vom erwarteten ab (Log/Propagation-Basis)
+            ' 2. Tatsaechlicher Wert weicht auch vom Quell-(Mai-)Wert ab
+            If Not PID_CopyDataFieldValuesEqual(actualF, expectedF) Then
+                If Not PID_CopyDataFieldValuesEqual(actualF, sourceF) Then
+                    PID_UpsertHourOverride workbookYear, monthIndex, keyText, "F", actualF
+                    ' WICHTIG: runningF wird hier NICHT aktualisiert!
+                    ' Das verhindert, dass propagierte Zwischenmonate als User-Overrides geloggt werden.
+                End If
+            End If
+
+NextReconcileEmp:
+        Next empRow
+
+NextReconcileMonth:
+    Next monthIndex
+
+SafeExit:
+End Sub
 
 
 Private Sub PID_ClearHourOverrideLogAfterMonth(ByVal workbookYear As Long, _
