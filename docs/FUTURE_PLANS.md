@@ -92,6 +92,7 @@ FP-001 · FP-002 · FP-003 · FP-004 · FP-005 · FP-006 · FP-007 · FP-008 · 
 | 1 | CopyData: E/F-Overrides nur aus Log (`PID_ApplyLoggedHourOverrides`), nicht aus Blatt-Diff |
 | 2 | `PID_LogEFAenderungForSheet`: E + F; nach Upsert Log-Einträge Monate > M löschen |
 | 3 | Nach CopyData: `PID_ReconcileHourOverrideLogFromMonthSheets` (unverändert) |
+| 4 | **Mac-Fix**: `gCopyDataRunning`-Flag (mod_PIDUtils) verhindert Log-Korruption durch Mac-Events |
 
 ### Manuell testen
 

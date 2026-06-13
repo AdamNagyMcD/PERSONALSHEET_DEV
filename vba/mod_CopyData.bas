@@ -107,6 +107,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     Application.DisplayAlerts = False
     Application.Calculation = xlCalculationManual
     Application.StatusBar = "Daten werden kopiert..."
+    gCopyDataRunning = True
     
     sourceData = PID_ReadMonthData(wsSource)
     currentData = sourceData
@@ -142,6 +143,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     PID_HideUnwantedTechnicalSheets
 
 CleanExit:
+    gCopyDataRunning = False
     Application.CutCopyMode = False
     Application.StatusBar = oldStatusBar
     Application.Calculation = oldCalculation
@@ -160,6 +162,7 @@ CleanExit:
 CleanFail:
     On Error Resume Next
     
+    gCopyDataRunning = False
     PID_ResetFollowingMonthSelections sourceMonthIndex, sourceSheetName
     PID_HideUnwantedTechnicalSheets
     
@@ -454,6 +457,12 @@ Public Sub PID_LogEFAenderungForSheet(ByVal wsMonth As Worksheet, ByVal changedR
     Dim workbookYear As Long
     
     On Error GoTo SafeExit
+    
+    ' Mac-Guard: Application.EnableEvents=False unterdrueckt SheetChange auf Mac nicht
+    ' zuverlaessig. Wenn CopyData laeuft, darf der Log nicht veraendert werden — sonst
+    ' loescht PID_ClearHourOverrideLogAfterMonth spaetere Eintraege (z.B. November).
+    ' Windows: EnableEvents=False verhindert Events vollstaendig → dieser Guard wird nie aktiv.
+    If gCopyDataRunning Then Exit Sub
     
     If wsMonth Is Nothing Then Exit Sub
     If changedRange Is Nothing Then Exit Sub
