@@ -25,6 +25,7 @@ Private mSelPrevSheet As String
 Private mSelPrevRow As Long
 Private mSelPrevCol As Long
 Private mSelPrevEValueAtEntry As String
+Private mSelPrevFValueAtEntry As String
 Private mFStundenRefreshRanThisSelection As Boolean
 
 
@@ -251,31 +252,42 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     
     On Error Resume Next
     Application.FormatStaleValues = False
-    On Error GoTo SafeExit
+    Err.Clear
+    
+    ' Recalc-Abschnitt mit Resume Next: ein Mac-Fehler in Dropdown/Lohn-Recalc darf
+    ' das E/F-Logging nicht verhindern. Windows: kein Unterschied, da keine Fehler auftreten.
     
     ' E zuerst: Dropdown in F muss sofort passen (Mac meldet Change oft nicht).
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
         PID_RefreshFStundenDropdownForERows Sh, Target
     End If
+    Err.Clear
     
     ' Einfuege-Schutz:
     ' Beim Einfuegen aus alten Dateien oder anderen Quellen soll nur der Wert uebernommen werden.
     pasteHandled = False
     EnforcePasteValuesOnly Sh, Target, pasteHandled
+    Err.Clear
     
     ' Wenn Spalte E sich aendert:
     ' E = KV-Code / BG -> Dropdown F in der betreffenden Zeile.
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
         PID_RecalculateMonatslohnForChangedRows Sh, Target
     End If
+    Err.Clear
     
     If Not Intersect(Target, Sh.Range("D3:F82,I3:I82")) Is Nothing Then
         PID_RecalculateAktuelleStundenForChangedRows Sh, Target
     End If
+    Err.Clear
     
     If Not Intersect(Target, Sh.Range("D3:D82,I3:I82,K3:K82")) Is Nothing Then
         PID_RecalculateLetztesGehaltForChangedRows Sh, Target
     End If
+    Err.Clear
+    
+    ' Logging ist datenkritisch: ab hier wieder GoTo SafeExit.
+    On Error GoTo SafeExit
     
     If Not Intersect(Target, Sh.Range("E3:F82")) Is Nothing Then
         PID_LogEFAenderungForSheet Sh, Intersect(Target, Sh.Range("E3:F82"))
@@ -324,6 +336,14 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     If mInternalChange Then GoTo UpdateSelectionPrev
     If Not PID_IsWorkerMonthSheet(Sh) Then GoTo UpdateSelectionPrev
     If Target.CountLarge > 1 Then GoTo UpdateSelectionPrev
+    
+    ' Mac-Backup: F-Stunden-Logging via SelectionChange.
+    ' SheetChange kann auf Mac bei Dropdown-Aenderungen ausfallen oder vor dem Logging abbrechen.
+    ' Wenn der Nutzer eine F-Zelle verlaesst und der Wert sich geaendert hat, wird hier geloggt.
+    ' Windows: keine Auswirkung — SheetChange funktioniert zuverlaessig.
+    If PID_IsMacExcel() And Not gCopyDataRunning Then
+        PID_LogFChangeOnMacIfNeeded Sh, Target
+    End If
     
     ' Ausserhalb D3:F82: O45 nur loeschen wenn noetig (leichter Pfad).
     If Intersect(Target, Sh.Range("D3:F82")) Is Nothing Then
@@ -500,6 +520,35 @@ Private Sub PID_UpdateMonthSelectionPrev(ByVal ws As Worksheet, ByVal Target As 
     If Target.Column = 5 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
         mSelPrevEValueAtEntry = NormalizeKVCodeForLookup(CStr(ws.Cells(Target.Row, "E").Value))
     End If
+    
+    If Target.Column = 6 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
+        mSelPrevFValueAtEntry = Trim$(CStr(ws.Cells(Target.Row, "F").Value))
+    End If
+
+SafeExit:
+End Sub
+
+
+Private Sub PID_LogFChangeOnMacIfNeeded(ByVal ws As Worksheet, ByVal Target As Range)
+    Dim currentF As String
+    
+    On Error GoTo SafeExit
+    
+    ' Nur aktiv wenn vorherige Selektion eine F-Zelle in der Mitarbeiter-Range war.
+    If mSelPrevCol <> 6 Then Exit Sub
+    If mSelPrevSheet <> ws.Name Then Exit Sub
+    If mSelPrevRow < PID_FIRST_ROW Or mSelPrevRow > PID_LAST_ROW Then Exit Sub
+    
+    ' Wenn der Nutzer noch auf der gleichen F-Zelle ist, nichts tun.
+    If Target.Row = mSelPrevRow And Target.Column = 6 Then Exit Sub
+    
+    currentF = Trim$(CStr(ws.Cells(mSelPrevRow, "F").Value))
+    
+    ' Nur loggen wenn der Wert sich gegenueber dem Eintritts-Snapshot geaendert hat.
+    If currentF = mSelPrevFValueAtEntry Then Exit Sub
+    If currentF = "" Then Exit Sub
+    
+    PID_LogEFAenderungForSheet ws, ws.Cells(mSelPrevRow, "F")
 
 SafeExit:
 End Sub
