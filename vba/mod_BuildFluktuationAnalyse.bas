@@ -395,7 +395,7 @@ NextDataRow:
         
         .Cells(kpiLabelRow, 1).Value = "Austritte gesamt"
         .Cells(kpiLabelRow, 2).Value = "Jahresfluktuation"
-        .Cells(kpiLabelRow, 3).Value = "Verlust-Score"
+        .Cells(kpiLabelRow, 3).Value = "Verlust-Score (nur Info)"
         .Cells(kpiLabelRow, 4).Value = "Kritische Austritte"
         .Cells(kpiLabelRow, 5).Value = "Daten offen"
         
@@ -562,6 +562,10 @@ NextDataRow:
         PID_WriteFluktuationExplanationRows analyseWs, explanationStartRow
         
         FormatFluktuationSheet analyseWs, statusRow, kpiLabelRow, kpiValueRow, alertsHeaderRow, alertsEndRow, recHeaderRow, recEndRow, chartRow, monthlyTitleRow, headerRow, firstDataRow, outputRow, lastTableCol, explanationStartRow, riskLevel
+        
+        ' FP-FLUKT: Bewertungs-Legende (6 Stufen), Zielwert und Monatswerte-Erklaerung als
+        ' additiver Block unterhalb von "Kurz erklaert" (steht ganz unten, kein Layout-Umbau).
+        PID_WriteFluktuationBewertungLegende analyseWs, explanationStartRow + 10
         
         PID_SyncFluktuationToDisplaySheets monthFluctuation, quarterFluctuation, ytdFluctuation
         
@@ -1224,7 +1228,11 @@ Public Function GetFluktuationManagerSummary(ByVal riskLevel As String, _
     If incompleteExits > 0 Then
         summary = summary & " Hinweis: " & incompleteExits & " Austritt(e) ohne " & PID_FlTxtGueltig() & "en Austrittsgrund - bitte unten erg" & PID_FlTxtAe() & "nzen (beeinflusst die Bewertung nicht)."
     End If
-    
+
+    ' FP-FLUKT: Zielwert + Handlungsbedarf als Teil der Management-Kurzbewertung.
+    summary = summary & " Ziel: unter 20 % Jahresfluktuation (Sehr gut / stabil)."
+    summary = summary & " Handlungsbedarf: " & PID_GetFluctuationActionHint(ytdFluctuation) & "."
+
     GetFluktuationManagerSummary = summary
 End Function
 
@@ -1762,8 +1770,8 @@ Private Sub PID_WriteFluktuationExplanationRows(ByVal ws As Worksheet, ByVal sta
     ws.Range("A" & startRow + 1).Value = "Aktuelle Jahresfluktuation"
     ws.Range("B" & startRow + 1).Value = "Zeigt die Fluktuation vom Jahresbeginn bis zum aktuellen Auswertungsmonat. Der Wert wird nicht auf das ganze Jahr hochgerechnet."
     
-    ws.Range("A" & startRow + 2).Value = "Verlust-Score"
-    ws.Range("B" & startRow + 2).Value = "Der Verlust-Score zeigt, wie schwer ein Austritt f" & PID_FlTxtUe() & "r das Restaurant bewertet wird. Er besteht aus Austrittsgrund und Dauer der Betriebszugeh" & PID_FlTxtOe() & "rigkeit."
+    ws.Range("A" & startRow + 2).Value = "Verlust-Score (nur Info)"
+    ws.Range("B" & startRow + 2).Value = "Bewertet die Auswirkungen der bisherigen Austritte auf Wissen, Erfahrung und F" & PID_FlTxtUe() & "hrungskompetenz (aus Austrittsgrund und Dauer der Betriebszugeh" & PID_FlTxtOe() & "rigkeit). Je h" & PID_FlTxtOe() & "her der Wert, desto gr" & PID_FlTxtOe() & ChrW(223) & "er der potenzielle Verlust f" & PID_FlTxtUe() & "r das Restaurant. Der Verlust-Score beeinflusst NICHT die Fluktuationsbewertung."
     
     ws.Range("A" & startRow + 3).Value = "Durchschnittlicher Verlust-Score"
     ws.Range("B" & startRow + 3).Value = "Durchschnittlicher Verlust-Score pro Austritt. Je h" & PID_FlTxtOe() & "her der Wert, desto schwerer wiegen die Austritte im Durchschnitt."
@@ -1786,6 +1794,67 @@ Private Sub PID_WriteFluktuationExplanationRows(ByVal ws As Worksheet, ByVal sta
     For i = startRow + 1 To startRow + 8
         ws.Range("B" & i & ":E" & i).Merge
     Next i
+End Sub
+
+Private Sub PID_WriteFluktuationBewertungLegende(ByVal ws As Worksheet, ByVal startRow As Long)
+    ' FP-FLUKT: Additiver Anzeige-/Erklaerblock unterhalb von "Kurz erklaert":
+    '   - Zielwert (unter 20 % Jahresfluktuation)
+    '   - Legende der 6 Bewertungsstufen (gelten primaer fuer Jahr/YTD)
+    '   - Erklaerung der Monatswerte
+    ' Beeinflusst keine Berechnung und kein bestehendes Layout (steht ganz unten).
+    Dim r As Long
+    Dim i As Long
+
+    On Error GoTo SafeExit
+
+    ws.Range("A" & startRow).Value = "Bewertung & Ziel"
+    ws.Range("A" & startRow & ":E" & startRow).Merge
+    ws.Rows(startRow).RowHeight = 22
+    PID_StyleApplySubsectionTitle ws.Range("A" & startRow & ":E" & startRow), True
+
+    r = startRow + 1
+    ws.Range("A" & r).Value = "Ziel"
+    ws.Range("B" & r).Value = "unter 20 % Jahresfluktuation (Sehr gut / stabil)."
+    ws.Range("B" & r & ":E" & r).Merge
+
+    r = startRow + 2
+    ws.Range("A" & r).Value = "Bewertungsstufen"
+    ws.Range("B" & r).Value = "Die folgenden Stufen gelten prim" & PID_FlTxtAe() & "r f" & PID_FlTxtUe() & "r Jahr-/YTD-Werte."
+    ws.Range("B" & r & ":E" & r).Merge
+
+    ws.Range("A" & startRow + 3).Value = "0,00 % - 19,99 %"
+    ws.Range("B" & startRow + 3).Value = "Sehr gut / stabil"
+    ws.Range("A" & startRow + 4).Value = "20,00 % - 34,99 %"
+    ws.Range("B" & startRow + 4).Value = "Gut / normal"
+    ws.Range("A" & startRow + 5).Value = "35,00 % - 49,99 %"
+    ws.Range("B" & startRow + 5).Value = "Erh" & PID_FlTxtOe() & "ht / beobachten"
+    ws.Range("A" & startRow + 6).Value = "50,00 % - 69,99 %"
+    ws.Range("B" & startRow + 6).Value = "Hoch / analysieren"
+    ws.Range("A" & startRow + 7).Value = "70,00 % - 99,99 %"
+    ws.Range("B" & startRow + 7).Value = "Sehr hoch / kritisch"
+    ws.Range("A" & startRow + 8).Value = "ab 100,00 %"
+    ws.Range("B" & startRow + 8).Value = "Extrem hoch / akuter Handlungsbedarf"
+
+    For i = startRow + 3 To startRow + 8
+        ws.Range("B" & i & ":E" & i).Merge
+    Next i
+
+    r = startRow + 9
+    ws.Range("A" & r).Value = "Hinweis Monatswerte"
+    ws.Range("B" & r).Value = "Ein einzelner Austritt ergibt monatlich oft nur ca. 1-2 % (Austritte im Monat / durchschnittlicher Personalbestand). Das ist mathematisch korrekt. Die F" & PID_FlTxtUe() & "hrungsbewertung erfolgt haupts" & PID_FlTxtAe() & "chlich " & PID_FlTxtUe() & "ber die Jahresfluktuation (YTD)."
+    ws.Range("B" & r & ":E" & r).Merge
+
+    For i = startRow + 1 To startRow + 9
+        PID_StyleApplyInputGuideLabel ws.Range("A" & i)
+        PID_StyleApplyReadOnlyGuideCell ws.Range("B" & i)
+        ws.Range("B" & i).WrapText = True
+    Next i
+
+    ws.Rows(startRow + 9).RowHeight = 40
+    PID_StyleApplyTableBorders ws.Range("A" & startRow & ":E" & startRow + 9)
+    ws.Range("A" & startRow & ":E" & startRow + 9).VerticalAlignment = xlCenter
+
+SafeExit:
 End Sub
 
 Public Sub PID_RemoveFluktuationPdfExportButtonIfNeeded()

@@ -619,6 +619,9 @@ Private Sub PID_MSApplyRightPanelReferenceStyles(ByVal ws As Worksheet)
     PID_MSApplyStyleToRangeMergedOnce ws.Range("O30:V30"), PID_MS_STYLE_INPUT
     
     PID_MSApplyStyleToRangeMergedOnce ws.Range("O31:R31"), PID_MS_STYLE_READONLY
+    ' FP-FLUKT: Label fuer die Fluktuationsanzeige persistent setzen (Wert steht in Q31,
+    ' der Sync-Pfad ergaenzt das Label zusaetzlich als Sicherheitsnetz).
+    ws.Range("O31").Value = "Fluktuation:"
     PID_MSApplyStyleToRangeMergedOnce ws.Range("S31:V31"), PID_MS_STYLE_INPUT
     
     PID_MSApplyStyleToRangeMergedOnce ws.Range("O32:V32"), PID_MS_STYLE_INPUT

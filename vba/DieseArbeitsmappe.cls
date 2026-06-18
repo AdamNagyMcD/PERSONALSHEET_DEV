@@ -93,6 +93,17 @@ SafeExit:
     ' FP-027: AutoCalc erst nach ScreenUpdating=True — Benutzer sieht das Blatt sofort,
     ' das "Berechnet…" laeuft danach im Hintergrund statt das Open zu blockieren.
     PID_ConfigureDeferredWorkbookCalculationOnOpen
+
+    ' FP-FLUKT: Q31 (+ O31-Label) aller Monatsblaetter deferred synchronisieren - nach
+    ' ScreenUpdating=True, damit das Open nicht blockiert. Events kurz aus, damit die
+    ' Q31-Schreibzugriffe keine Change-/Activate-Events ausloesen.
+    On Error Resume Next
+    Application.EnableEvents = False
+    mInternalChange = True
+    PID_SyncAllMonthSheetsFluctuationQ31
+    mInternalChange = False
+    Application.EnableEvents = True
+    On Error GoTo 0
 End Sub
 
 
@@ -170,6 +181,10 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         PID_ApplyMonthSheetFillHandleGuard
         PID_EnsureWorkerSheetRuntimeReady
         PID_EnsureMonthSheetCopyDataButton Sh
+        
+        ' FP-FLUKT: Q31 dieses Monatsblatts beim Aktivieren mit der zentralen Logik
+        ' (PID_ComputeFluctuationForPeriod) synchronisieren -> identisch zu UBERSICHT/FLUKTUATION.
+        PID_SyncMonthSheetFluctuationQ31 Sh
         
         If gKVDropdownsDirty Or IsKVLohnDirty() Then
             PID_BeginHeavyMaintenance

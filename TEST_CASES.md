@@ -205,3 +205,44 @@ FLUKTUATION-Blatt: oberer Status (B5) und Bewertungszeile (B10) prüfen.
 - Bei fehlenden Austrittsgründen: KEIN „Daten prüfen"-Status-Override; nur ein informativer Hinweis
   (KPI „Daten offen" + Abschnitt „Sofort prüfen" bleiben sichtbar).
 - „Sofort prüfen" und „Empfehlungen" bleiben rein operative Hinweise und überschreiben nichts.
+
+---
+
+## TEST 17 — Q31-Sync auf allen Monatsblättern (FP-Flukt)
+
+### Scenario
+Mappe mit Austritten speichern, schließen und neu öffnen. Danach jedes Monatsblatt aktivieren.
+
+### Expected
+- `Q31` auf JEDEM Monatsblatt zeigt denselben Monatswert wie die FLUKTUATION-Monatstabelle/UBERSICHT
+  (Quelle: `PID_ComputeFluctuationForPeriod`), auch ohne vorheriges Aktivieren des Blatts.
+- Kein 0 % mehr auf einzelnen Monatsblättern, obwohl Austritte vorhanden sind.
+- `O31` zeigt das Label „Fluktuation:" (persistent aus dem Format-Makro, zusätzlich vom Sync abgesichert).
+- Beim Öffnen werden alle Monatsblätter deferred synchronisiert (nach `ScreenUpdating=True`),
+  beim Aktivieren eines Monatsblatts wird dessen `Q31` erneut synchronisiert.
+
+### Negative checks
+- Der Blattschutz ist nach dem Sync wieder aktiv (UserInterfaceOnly, `AllowSorting:=False`).
+- Q31-Schreibzugriffe lösen beim Öffnen keine Change-/Activate-Folgeevents aus (Events temporär aus).
+- Keine Änderung an CopyData, Stundenlogik, Passwortlogik oder Mac-Schutzlogik.
+
+---
+
+## TEST 18 — FLUKTUATION: Legende, Zielwert & Erklärungen (FP-Flukt)
+
+### Scenario
+FLUKTUATION-Blatt öffnen, bis ganz nach unten unter „Kurz erklärt" scrollen sowie KPI-Block prüfen.
+
+### Expected
+- Neuer Block „Bewertung & Ziel" unter „Kurz erklärt" mit:
+  - Zielwert „unter 20 % Jahresfluktuation (Sehr gut / stabil)".
+  - Legende der 6 Bewertungsstufen (0–19,99 % … ab 100 %) mit den HR-Controlling-Texten.
+  - Hinweis „Monatswerte" (einzelner Austritt ≈ 1–2 %/Monat, Führungsbewertung über YTD).
+- KPI-Label heißt „Verlust-Score (nur Info)".
+- Erklärzeile „Verlust-Score (nur Info)" enthält den Hinweis, dass der Score die
+  Fluktuationsbewertung NICHT beeinflusst.
+- Management-Kurzbewertung (`C5`) enthält zusätzlich „Ziel: unter 20 % …" und „Handlungsbedarf: …".
+
+### Negative checks
+- Der Legendenblock ist rein additiv (ganz unten); bestehende Sektionen/Spalten bleiben unverändert.
+- „Aktueller Personalbestand" als KPI ist NICHT umgesetzt (nur dokumentiert, siehe CHANGELOG).

@@ -196,24 +196,73 @@ End Sub
 
 
 Public Sub PID_SyncFluktuationToMonthSheets(ByRef monthFluctuation() As Double)
-    Dim monthNames As Variant
+    ' FP-FLUKT: robust ueber den zentralen Helper. Q31 wird je Monatsblatt aus
+    ' PID_ComputeFluctuationForPeriod geschrieben (identisch zu UBERSICHT/FLUKTUATION) und
+    ' der Blattschutz je Blatt sauber aufgehoben/wiederhergestellt, damit das gesperrte Q31
+    ' nicht lautlos schreibgeschuetzt bleibt (UserInterfaceOnly wird beim Speichern nicht
+    ' persistiert). Parameter bleibt aus Kompatibilitaet erhalten (Werte werden neu berechnet).
+    PID_SyncAllMonthSheetsFluctuationQ31
+End Sub
+
+
+Public Sub PID_SyncAllMonthSheetsFluctuationQ31()
+    ' Synchronisiert O31-Label + Q31-Wert auf allen 12 Monatsblaettern.
     Dim ws As Worksheet
     Dim i As Long
     
-    monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
-    
     For i = 1 To 12
-        On Error Resume Next
-        Set ws = Nothing
-        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i - 1)))
-        
+        Set ws = PID_ResolveMonthSheetForIndex(i)
         If Not ws Is Nothing Then
-            ws.Range("Q31").Value2 = monthFluctuation(i)
-            ws.Range("Q31").NumberFormat = PID_FLUKTUATION_PERCENT_FORMAT
+            PID_SyncMonthSheetFluctuationQ31 ws
         End If
-        
-        On Error GoTo 0
     Next i
+End Sub
+
+
+Public Sub PID_SyncMonthSheetFluctuationQ31(ByVal ws As Worksheet)
+    ' Schreibt O31-Label "Fluktuation:" (falls leer) und Q31 = Monatsfluktuation aus der
+    ' zentralen Logik (PID_ComputeFluctuationForPeriod) - damit ist Q31 identisch zu
+    ' UBERSICHT/FLUKTUATION. O31/Q31 sind gesperrte Zellen; der Schutz wird kurz aufgehoben,
+    ' geschrieben und anschliessend kanonisch (UserInterfaceOnly) wiederhergestellt.
+    Dim monthNumber As Long
+    Dim currentYear As Long
+    Dim fluctuation As Double
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not IsNumeric(ws.Range("A1").Value) Then Exit Sub
+    
+    monthNumber = CLng(ws.Range("A1").Value)
+    If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
+    
+    currentYear = PID_GetWorkbookYear()
+    If currentYear <= 0 Then Exit Sub
+    
+    fluctuation = PID_ComputeFluctuationForPeriod(DateSerial(currentYear, monthNumber, 1), DateSerial(currentYear, monthNumber + 1, 0))
+    
+    ' Schutz aufheben (mit Passwort, Fallback ohne), damit O31/Q31 beschreibbar sind.
+    On Error Resume Next
+    ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+    If ws.ProtectContents Then ws.Unprotect
+    On Error GoTo SafeExit
+    
+    If Len(Trim$(CStr(ws.Range("O31").Value))) = 0 Then
+        ws.Range("O31").Value = "Fluktuation:"
+    End If
+    ws.Range("Q31").Value2 = fluctuation
+    ws.Range("Q31").NumberFormat = PID_FLUKTUATION_PERCENT_FORMAT
+    
+    ' Kanonischer Monatsblatt-Schutz (UserInterfaceOnly, AllowSorting:=False) wiederherstellen.
+    PID_ProtectWorkerMonthSheet ws
+    Exit Sub
+
+SafeExit:
+    ' Best-effort: Schutz im Fehlerfall nicht offen lassen.
+    On Error Resume Next
+    If Not ws Is Nothing Then
+        If Not ws.ProtectContents Then PID_ProtectWorkerMonthSheet ws
+    End If
 End Sub
 
 
@@ -416,6 +465,25 @@ Public Function PID_GetFluctuationStatusShort(ByVal fluctuationRate As Double) A
         PID_GetFluctuationStatusShort = "Kritisch"
     Else
         PID_GetFluctuationStatusShort = "Extrem"
+    End If
+End Function
+
+
+Public Function PID_GetFluctuationActionHint(ByVal fluctuationRate As Double) As String
+    ' Kurzer Handlungsbedarf-Hinweis fuer die Management-Kurzbewertung, abgeleitet aus
+    ' derselben Rate/Logik (Grenzwerte 0.2 / 0.35 / 0.5 / 0.7 / 1.0).
+    If fluctuationRate < 0.2 Then
+        PID_GetFluctuationActionHint = "kein akuter Handlungsbedarf"
+    ElseIf fluctuationRate < 0.35 Then
+        PID_GetFluctuationActionHint = "Entwicklung beobachten"
+    ElseIf fluctuationRate < 0.5 Then
+        PID_GetFluctuationActionHint = "Ursachen pr" & ChrW(252) & "fen"
+    ElseIf fluctuationRate < 0.7 Then
+        PID_GetFluctuationActionHint = "Ma" & ChrW(223) & "nahmen einleiten"
+    ElseIf fluctuationRate < 1 Then
+        PID_GetFluctuationActionHint = "dringend gegensteuern"
+    Else
+        PID_GetFluctuationActionHint = "akuter Handlungsbedarf"
     End If
 End Function
 
