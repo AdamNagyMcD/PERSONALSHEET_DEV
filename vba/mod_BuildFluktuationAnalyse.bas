@@ -10,11 +10,11 @@ Option Explicit
 Private Const PID_FL_LEGACY_PDF_BUTTON_NAME As String = "btn_FluktuationPdfExport"
 
 ' FLUKTUATION Spaltenbreiten (manuell in Personalsheet.xlsm abgestimmt, hier fixiert).
-Private Const PID_FL_COL_A As Single = 16
+Private Const PID_FL_COL_A As Single = 25.4
 Private Const PID_FL_COL_B As Single = 20
 Private Const PID_FL_COL_C As Single = 26
 Private Const PID_FL_COL_D As Single = 26
-Private Const PID_FL_COL_E As Single = 27
+Private Const PID_FL_COL_E As Single = 30.8
 Private Const PID_FL_COL_F As Single = 13.66
 Private Const PID_FL_COL_G As Single = 11.16
 Private Const PID_FL_COL_H As Single = 15.66
@@ -24,6 +24,7 @@ Private Const PID_FL_COL_K As Single = 36.83
 Private Const PID_FL_COL_L As Single = 36.83
 Private Const PID_FL_COL_M As Single = 30.83
 Private Const PID_FL_COL_N As Single = 30.83
+Private Const PID_FL_COL_O As Single = 10.2
 Private Const PID_FL_COL_CHART As Single = 2
 
 
@@ -748,6 +749,7 @@ Private Sub PID_ApplyFluktuationColumnWidths(ByVal ws As Worksheet)
     ws.Columns("L").ColumnWidth = PID_FL_COL_L
     ws.Columns("M").ColumnWidth = PID_FL_COL_M
     ws.Columns("N").ColumnWidth = PID_FL_COL_N
+    ws.Columns("O").ColumnWidth = PID_FL_COL_O
     ws.Columns("P").ColumnWidth = PID_FL_COL_CHART
     ws.Columns("Q").ColumnWidth = PID_FL_COL_CHART
     ws.Columns("R").ColumnWidth = PID_FL_COL_CHART

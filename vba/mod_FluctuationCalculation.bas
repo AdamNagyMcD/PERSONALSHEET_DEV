@@ -220,8 +220,8 @@ End Sub
 
 
 Public Sub PID_SyncMonthSheetFluctuationQ31(ByVal ws As Worksheet)
-    ' Schreibt O31-Label "Fluktuation:" (falls leer) und Q31 = Monatsfluktuation aus der
-    ' zentralen Logik (PID_ComputeFluctuationForPeriod) - damit ist Q31 identisch zu
+    ' Schreibt O31-Label "Fluktuation:" (IMMER, nicht nur wenn leer) und Q31 = Monatsfluktuation
+    ' aus der zentralen Logik (PID_ComputeFluctuationForPeriod) - damit ist Q31 identisch zu
     ' UBERSICHT/FLUKTUATION. O31/Q31 sind gesperrte Zellen; der Schutz wird kurz aufgehoben,
     ' geschrieben und anschliessend kanonisch (UserInterfaceOnly) wiederhergestellt.
     Dim monthNumber As Long
@@ -239,17 +239,19 @@ Public Sub PID_SyncMonthSheetFluctuationQ31(ByVal ws As Worksheet)
     currentYear = PID_GetWorkbookYear()
     If currentYear <= 0 Then Exit Sub
     
-    fluctuation = PID_ComputeFluctuationForPeriod(DateSerial(currentYear, monthNumber, 1), DateSerial(currentYear, monthNumber + 1, 0))
-    
     ' Schutz aufheben (mit Passwort, Fallback ohne), damit O31/Q31 beschreibbar sind.
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
     If ws.ProtectContents Then ws.Unprotect
     On Error GoTo SafeExit
     
-    If Len(Trim$(CStr(ws.Range("O31").Value))) = 0 Then
-        ws.Range("O31").Value = "Fluktuation:"
-    End If
+    ' O31-Label IMMER auf "Fluktuation:" setzen (korrigiert auch falsche/alte Werte).
+    ' Direkt nach dem Unprotect und VOR der Berechnung, damit das Label auch bei einem
+    ' Berechnungsfehler korrekt gesetzt bleibt.
+    ws.Range("O31").Value = "Fluktuation:"
+    
+    ' Q31 = Monatsfluktuation aus der zentralen Logik (unveraendert).
+    fluctuation = PID_ComputeFluctuationForPeriod(DateSerial(currentYear, monthNumber, 1), DateSerial(currentYear, monthNumber + 1, 0))
     ws.Range("Q31").Value2 = fluctuation
     ws.Range("Q31").NumberFormat = PID_FLUKTUATION_PERCENT_FORMAT
     
