@@ -131,3 +131,54 @@ Workbook opened on MacOS Excel.
 ### Diagnostic
 - Run `PID_ShowHourOverrideLog` before/after each CopyData to inspect stored overrides
   (read-only; does not modify data).
+
+---
+
+## TEST 12 — Einheitliche Fluktuation: Monat (FP-Flukt)
+
+### Scenario
+Monatsfluktuation = Austritte des Monats / Durchschnittsbestand des Monats,
+Durchschnittsbestand = (Bestand 1. des Monats + Bestand Monatsende) / 2.
+
+### Expected
+- Beispiel: Bestand 1. Tag = 20, Monatsende = 18, Austritte = 2 → 2 / ((20+18)/2) = 2/19 ≈ 10,53 %.
+- `Q31` (Live nach Austrittsdatum-Eingabe) und Monatswert im FLUKTUATION-Blatt verwenden denselben Nenner.
+- Mitarbeiter mit Austritt genau am Stichtag zählt am Stichtag NICHT mehr zum Bestand.
+
+---
+
+## TEST 13 — Einheitliche Fluktuation: Quartal (FP-Flukt)
+
+### Scenario
+Quartalswert direkt aus Gesamtaustritten des Quartals / ((Bestand Quartalsanfang + Bestand Quartalsende)/2).
+
+### Expected
+- Quartal wird NICHT aus den drei Monatsprozenten gemittelt.
+- Q1 = Austritte Jan–Mär / ((Bestand 01.01. + Bestand 31.03.)/2).
+- Bei Bestand 0 im Zeitraum → 0 % (keine Division durch 0).
+
+---
+
+## TEST 14 — Einheitliche Fluktuation: YTD + Bewertung (FP-Flukt)
+
+### Scenario
+YTD von Januar bis zum aktuellen Auswertungsmonat; zusätzlich Textbewertung neben KPI „Jahresfluktuation".
+
+### Expected
+- YTD = Gesamtaustritte (Jan–aktueller Monat) / ((Bestand 01.01. + Bestand Periodenende)/2).
+- YTD wird NICHT aus Monatsprozenten gemittelt.
+- Bewertungstext laut Grenzwerten: <20 % „Sehr gut / stabil", <35 % „Gut / normal",
+  <50 % „Erhöht / beobachten", <70 % „Hoch / analysieren", <100 % „Sehr hoch / kritisch",
+  ≥100 % „Extrem hoch / akuter Handlungsbedarf".
+
+---
+
+## TEST 15 — Spalte „Ø Verlust-Score" (FP-Flukt)
+
+### Scenario
+Monatstabelle im FLUKTUATION-Blatt prüfen.
+
+### Expected
+- Die frühere Spalte „Durchschnitt" heißt jetzt „Ø Verlust-Score" (= monatlicher Verlust-Score / Austritte).
+- Sie wird NICHT mit dem durchschnittlichen Personalbestand verwechselt.
+- Zielzellen `Q31`, `UBERSICHT` Spalte Q und das FLUKTUATION-Layout bleiben unverändert.

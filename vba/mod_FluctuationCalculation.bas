@@ -15,9 +15,10 @@ Public Sub PID_CalculateFluctuation(ByVal ws As Worksheet)
     Dim currentYear As Long
     Dim monthEndDate As Date
     
-    Dim personalEnde As Long
     Dim austritte As Long
     Dim fluctuation As Double
+    Dim avgHeadcount As Double
+    Dim monthStartDate As Date
     
     Dim r As Long
     Dim employeeID As Variant
@@ -49,7 +50,6 @@ Public Sub PID_CalculateFluctuation(ByVal ws As Worksheet)
     arrExit = ws.Range("I3:I82").Value
     
     austritte = 0
-    personalEnde = 0
     
     For r = 1 To 80
         employeeID = arrID(r, 1)
@@ -67,33 +67,16 @@ Public Sub PID_CalculateFluctuation(ByVal ws As Worksheet)
             End If
         End If
         
-        If PID_FluctuationRowHasEmployee(employeeID, employeeName) Then
-            
-            If IsDate(entryDate) Then
-                If CDate(entryDate) <= monthEndDate Then
-                    
-                    If Not IsDate(exitDate) Then
-                        personalEnde = personalEnde + 1
-                    ElseIf CDate(exitDate) > monthEndDate Then
-                        personalEnde = personalEnde + 1
-                    End If
-                    
-                End If
-            Else
-                
-                If Not IsDate(exitDate) Then
-                    personalEnde = personalEnde + 1
-                ElseIf CDate(exitDate) > monthEndDate Then
-                    personalEnde = personalEnde + 1
-                End If
-                
-            End If
-            
-        End If
     Next r
     
-    If personalEnde > 0 Then
-        fluctuation = austritte / personalEnde
+    ' FP-FLUKT: Nenner = durchschnittlicher Personalbestand (Anfang+Ende)/2 statt nur Monatsende.
+    ' Zaehler bleibt der sofort vom Monatsblatt gezaehlte Austrittswert (Live-Update bei I-Aenderung,
+    ' bevor FLUKTUATION_DATEN neu aufgebaut wird).
+    monthStartDate = DateSerial(currentYear, monthNumber, 1)
+    avgHeadcount = (PID_CountEmployeesAtDate(ws, monthStartDate) + PID_CountEmployeesAtDate(ws, monthEndDate)) / 2#
+    
+    If avgHeadcount > 0 Then
+        fluctuation = austritte / avgHeadcount
     Else
         fluctuation = 0
     End If
@@ -111,29 +94,29 @@ Public Sub PID_FillFluktuationRates(ByRef monthExit() As Long, _
                                     ByRef quarterFluctuation() As Double, _
                                     ByRef ytdFluctuation As Double, _
                                     ByVal currentYear As Long)
+    ' FP-FLUKT: Einheitliche Berechnung fuer Monat, Quartal und YTD.
+    ' Jeder Wert = Austritte im Zeitraum / durchschnittlicher Personalbestand.
+    ' Durchschnittsbestand = (Bestand Periodenanfang + Bestand Periodenende) / 2.
+    ' Quartal und YTD werden NICHT aus Monatsprozenten gemittelt, sondern direkt
+    ' ueber den Gesamtzeitraum (PID_ComputeFluctuationForPeriod) berechnet.
     Dim i As Long
     Dim ytdMonthLimit As Long
-    Dim ytdExits As Long
-    Dim ytdPersonalSum As Long
-    Dim ytdPersonalMonths As Long
     Dim monthNames As Variant
     
     monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
     
     For i = 1 To 12
+        ' Monatsend-Bestand weiterhin als Kennzahl fuellen (Rueckwaertskompatibilitaet).
         monthPersonalEnde(i) = GetPersonalEndeForMonth(CStr(monthNames(i - 1)), currentYear, i)
         
-        If monthPersonalEnde(i) > 0 Then
-            monthFluctuation(i) = monthExit(i) / monthPersonalEnde(i)
-        Else
-            monthFluctuation(i) = 0
-        End If
+        ' Monatsfluktuation nach einheitlichem Standard (Anfang+Ende)/2 als Nenner.
+        monthFluctuation(i) = PID_ComputeFluctuationForPeriod(DateSerial(currentYear, i, 1), DateSerial(currentYear, i + 1, 0))
     Next i
     
-    quarterFluctuation(1) = PID_ComputeFluktuationForMonthRange(monthExit, monthPersonalEnde, 1, 3)
-    quarterFluctuation(2) = PID_ComputeFluktuationForMonthRange(monthExit, monthPersonalEnde, 4, 6)
-    quarterFluctuation(3) = PID_ComputeFluktuationForMonthRange(monthExit, monthPersonalEnde, 7, 9)
-    quarterFluctuation(4) = PID_ComputeFluktuationForMonthRange(monthExit, monthPersonalEnde, 10, 12)
+    quarterFluctuation(1) = PID_ComputeFluctuationForPeriod(DateSerial(currentYear, 1, 1), DateSerial(currentYear, 4, 0))
+    quarterFluctuation(2) = PID_ComputeFluctuationForPeriod(DateSerial(currentYear, 4, 1), DateSerial(currentYear, 7, 0))
+    quarterFluctuation(3) = PID_ComputeFluctuationForPeriod(DateSerial(currentYear, 7, 1), DateSerial(currentYear, 10, 0))
+    quarterFluctuation(4) = PID_ComputeFluctuationForPeriod(DateSerial(currentYear, 10, 1), DateSerial(currentYear, 13, 0))
     
     If currentYear = Year(Date) Then
         ytdMonthLimit = Month(Date)
@@ -143,23 +126,8 @@ Public Sub PID_FillFluktuationRates(ByRef monthExit() As Long, _
         ytdMonthLimit = GetLastMonthWithExit(monthExit)
     End If
     
-    ytdExits = 0
-    ytdPersonalSum = 0
-    ytdPersonalMonths = 0
-    
-    If ytdMonthLimit > 0 Then
-        For i = 1 To ytdMonthLimit
-            ytdExits = ytdExits + monthExit(i)
-            
-            If monthPersonalEnde(i) > 0 Then
-                ytdPersonalSum = ytdPersonalSum + monthPersonalEnde(i)
-                ytdPersonalMonths = ytdPersonalMonths + 1
-            End If
-        Next i
-    End If
-    
-    If ytdPersonalMonths > 0 Then
-        ytdFluctuation = ytdExits / (ytdPersonalSum / ytdPersonalMonths)
+    If ytdMonthLimit >= 1 And ytdMonthLimit <= 12 Then
+        ytdFluctuation = PID_ComputeFluctuationForPeriod(DateSerial(currentYear, 1, 1), DateSerial(currentYear, ytdMonthLimit + 1, 0))
     Else
         ytdFluctuation = 0
     End If
@@ -249,32 +217,202 @@ Public Sub PID_SyncFluktuationToMonthSheets(ByRef monthFluctuation() As Double)
 End Sub
 
 
-Private Function PID_ComputeFluktuationForMonthRange(ByRef monthExit() As Long, _
-                                                     ByRef monthPersonalEnde() As Long, _
-                                                     ByVal startMonth As Long, _
-                                                     ByVal endMonth As Long) As Double
-    Dim i As Long
-    Dim exits As Long
-    Dim personalSum As Long
-    Dim personalMonths As Long
+Private Function PID_FluctuationRowHasEmployee(ByVal employeeID As Variant, ByVal employeeName As Variant) As Boolean
+    PID_FluctuationRowHasEmployee = (Len(Trim$(CStr(employeeID))) > 0 Or Len(Trim$(CStr(employeeName))) > 0)
+End Function
+
+
+'==============================================================================
+' FP-FLUKT: Zentrale Helper fuer einheitliche Fluktuationsberechnung
+' (HR-Controlling-/BDA-Standard). Brutto-Fluktuation:
+'   Fluktuationsrate = Austritte im Zeitraum / durchschnittlicher Personalbestand
+'   Durchschnittsbestand = (Bestand Periodenanfang + Bestand Periodenende) / 2
+' Excel-2016- sowie Windows-/Mac-kompatibel, keine dynamischen Array-Funktionen.
+'==============================================================================
+
+Public Function PID_CountEmployeesAtDate(ByVal ws As Worksheet, ByVal checkDate As Date) As Long
+    ' Zaehlt Mitarbeiter, die am Stichtag checkDate zum Bestand zaehlen:
+    '   (Eintrittsdatum leer ODER Eintritt <= Stichtag)
+    '   UND (Austrittsdatum leer ODER Austritt > Stichtag)
+    ' Austritt genau am Stichtag zaehlt NICHT mehr zum Bestand.
+    Dim r As Long
+    Dim employeeID As Variant
+    Dim employeeName As Variant
+    Dim entryDate As Variant
+    Dim exitDate As Variant
+    Dim countEmployees As Long
     
-    For i = startMonth To endMonth
-        exits = exits + monthExit(i)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    
+    countEmployees = 0
+    
+    For r = 3 To 82
+        employeeID = ws.Cells(r, "B").Value
+        employeeName = ws.Cells(r, "C").Value
+        entryDate = ws.Cells(r, "D").Value
+        exitDate = ws.Cells(r, "I").Value
         
-        If monthPersonalEnde(i) > 0 Then
-            personalSum = personalSum + monthPersonalEnde(i)
-            personalMonths = personalMonths + 1
+        If Trim$(CStr(employeeID)) <> "" Or Trim$(CStr(employeeName)) <> "" Then
+            If IsDate(entryDate) Then
+                If CDate(entryDate) <= checkDate Then
+                    If Not IsDate(exitDate) Then
+                        countEmployees = countEmployees + 1
+                    ElseIf CDate(exitDate) > checkDate Then
+                        countEmployees = countEmployees + 1
+                    End If
+                End If
+            Else
+                If Not IsDate(exitDate) Then
+                    countEmployees = countEmployees + 1
+                ElseIf CDate(exitDate) > checkDate Then
+                    countEmployees = countEmployees + 1
+                End If
+            End If
         End If
-    Next i
+    Next r
     
-    If personalMonths > 0 Then
-        PID_ComputeFluktuationForMonthRange = exits / (personalSum / personalMonths)
+    PID_CountEmployeesAtDate = countEmployees
+    Exit Function
+
+SafeExit:
+    PID_CountEmployeesAtDate = countEmployees
+End Function
+
+
+Public Function PID_CountExitsInPeriod(ByVal startDate As Date, ByVal endDate As Date) As Long
+    ' Zaehlt deduplizierte Austritte mit Austrittsdatum im Zeitraum [startDate; endDate]
+    ' aus FLUKTUATION_DATEN. Gleiche Dedup-Logik (PID_FluctuationExitDedupKey) wie die
+    ' Analyse-Aggregation, damit die KPI-Werte konsistent bleiben.
+    Dim dataWs As Worksheet
+    Dim lastRow As Long
+    Dim r As Long
+    Dim exitDate As Variant
+    Dim exitKey As String
+    Dim seenKeys As Collection
+    Dim cnt As Long
+    
+    On Error GoTo SafeExit
+    
+    On Error Resume Next
+    Set dataWs = ThisWorkbook.Worksheets("FLUKTUATION_DATEN")
+    On Error GoTo SafeExit
+    If dataWs Is Nothing Then Exit Function
+    
+    lastRow = dataWs.Cells(dataWs.Rows.count, "A").End(xlUp).Row
+    If lastRow < 2 Then Exit Function
+    
+    Set seenKeys = New Collection
+    cnt = 0
+    
+    For r = 2 To lastRow
+        exitDate = dataWs.Cells(r, "E").Value
+        If IsDate(exitDate) Then
+            If CDate(exitDate) >= startDate And CDate(exitDate) <= endDate Then
+                exitKey = PID_FluctuationExitDedupKey(dataWs, r)
+                If Len(exitKey) > 0 Then
+                    On Error Resume Next
+                    seenKeys.Add exitKey, exitKey
+                    If Err.Number = 0 Then cnt = cnt + 1
+                    Err.Clear
+                    On Error GoTo SafeExit
+                End If
+            End If
+        End If
+    Next r
+    
+    PID_CountExitsInPeriod = cnt
+    Exit Function
+
+SafeExit:
+    PID_CountExitsInPeriod = cnt
+End Function
+
+
+Public Function PID_GetAverageHeadcountForPeriod(ByVal startDate As Date, ByVal endDate As Date) As Double
+    ' Durchschnittlicher Personalbestand = (Bestand am Periodenanfang + Bestand am Periodenende) / 2.
+    ' Periodenanfang wird auf dem Start-Monatsblatt, Periodenende auf dem End-Monatsblatt gezaehlt.
+    Dim startWs As Worksheet
+    Dim endWs As Worksheet
+    Dim startCount As Long
+    Dim endCount As Long
+    
+    On Error GoTo SafeExit
+    
+    Set startWs = PID_ResolveMonthSheetForIndex(Month(startDate))
+    Set endWs = PID_ResolveMonthSheetForIndex(Month(endDate))
+    
+    If startWs Is Nothing And endWs Is Nothing Then
+        PID_GetAverageHeadcountForPeriod = 0
+        Exit Function
+    ElseIf startWs Is Nothing Then
+        PID_GetAverageHeadcountForPeriod = PID_CountEmployeesAtDate(endWs, endDate)
+        Exit Function
+    ElseIf endWs Is Nothing Then
+        PID_GetAverageHeadcountForPeriod = PID_CountEmployeesAtDate(startWs, startDate)
+        Exit Function
+    End If
+    
+    startCount = PID_CountEmployeesAtDate(startWs, startDate)
+    endCount = PID_CountEmployeesAtDate(endWs, endDate)
+    
+    PID_GetAverageHeadcountForPeriod = (startCount + endCount) / 2#
+    Exit Function
+
+SafeExit:
+    PID_GetAverageHeadcountForPeriod = 0
+End Function
+
+
+Public Function PID_ComputeFluctuationForPeriod(ByVal startDate As Date, ByVal endDate As Date) As Double
+    ' Einheitliche Brutto-Fluktuationsrate fuer einen beliebigen Zeitraum.
+    Dim exits As Long
+    Dim avgHeadcount As Double
+    
+    exits = PID_CountExitsInPeriod(startDate, endDate)
+    avgHeadcount = PID_GetAverageHeadcountForPeriod(startDate, endDate)
+    
+    If avgHeadcount > 0 Then
+        PID_ComputeFluctuationForPeriod = exits / avgHeadcount
     Else
-        PID_ComputeFluktuationForMonthRange = 0
+        PID_ComputeFluctuationForPeriod = 0
     End If
 End Function
 
 
-Private Function PID_FluctuationRowHasEmployee(ByVal employeeID As Variant, ByVal employeeName As Variant) As Boolean
-    PID_FluctuationRowHasEmployee = (Len(Trim$(CStr(employeeID))) > 0 Or Len(Trim$(CStr(employeeName))) > 0)
+Public Function PID_GetFluctuationRating(ByVal fluctuationRate As Double) As String
+    ' HR-Controlling-Einstufung der Brutto-Fluktuationsrate (technische Grenzwerte
+    ' 0.2 / 0.35 / 0.5 / 0.7 / 1.0). Umlaute ASCII-sicher via ChrW (Win/Mac Excel 2016).
+    If fluctuationRate < 0.2 Then
+        PID_GetFluctuationRating = "Sehr gut / stabil"
+    ElseIf fluctuationRate < 0.35 Then
+        PID_GetFluctuationRating = "Gut / normal"
+    ElseIf fluctuationRate < 0.5 Then
+        PID_GetFluctuationRating = "Erh" & ChrW(246) & "ht / beobachten"
+    ElseIf fluctuationRate < 0.7 Then
+        PID_GetFluctuationRating = "Hoch / analysieren"
+    ElseIf fluctuationRate < 1 Then
+        PID_GetFluctuationRating = "Sehr hoch / kritisch"
+    Else
+        PID_GetFluctuationRating = "Extrem hoch / akuter Handlungsbedarf"
+    End If
+End Function
+
+
+Private Function PID_ResolveMonthSheetForIndex(ByVal monthIndex As Long) As Worksheet
+    ' Liefert das Monatsblatt zum Monatsindex (1-12) oder Nothing, falls nicht vorhanden.
+    Dim monthNames As Variant
+    
+    On Error GoTo SafeExit
+    
+    If monthIndex < 1 Or monthIndex > 12 Then Exit Function
+    
+    monthNames = PID_MonthNames()
+    
+    On Error Resume Next
+    Set PID_ResolveMonthSheetForIndex = ThisWorkbook.Worksheets(CStr(monthNames(LBound(monthNames) + monthIndex - 1)))
+    On Error GoTo 0
+
+SafeExit:
 End Function

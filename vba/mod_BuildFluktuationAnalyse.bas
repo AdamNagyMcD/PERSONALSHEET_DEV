@@ -404,6 +404,10 @@ NextDataRow:
         .Cells(kpiValueRow, 4).Value = criticalExits
         .Cells(kpiValueRow, 5).Value = incompleteExits
         
+        ' FP-FLUKT: HR-Controlling-Bewertung der Jahresfluktuation (Textstufe neben den KPIs).
+        .Cells(kpiValueRow + 1, 1).Value = "Bewertung Jahresfluktuation"
+        .Cells(kpiValueRow + 1, 2).Value = PID_GetFluctuationRating(ytdFluctuation)
+        
         alertsHeaderRow = kpiValueRow + 2
         alertsEndRow = WriteFluktuationAlertsSection(analyseWs, dataWs, alertsHeaderRow)
         
@@ -438,7 +442,9 @@ NextDataRow:
         .Cells(headerRow, currentCol).Value = "Verlust-Score"
         currentCol = currentCol + 1
         
-        .Cells(headerRow, currentCol).Value = "Durchschnitt"
+        ' FP-FLUKT: Klarstellung - diese Spalte ist der Ø Verlust-Score je Austritt,
+        ' NICHT der durchschnittliche Personalbestand.
+        .Cells(headerRow, currentCol).Value = ChrW(216) & " Verlust-Score"
         currentCol = currentCol + 1
         
         If showEarly Then
@@ -643,6 +649,17 @@ Public Sub FormatFluktuationSheet(ByVal ws As Worksheet, _
             PID_StyleApplyInputHighlight .Range("E" & kpiValueRow)
         End If
         PID_StyleApplyTableBorders .Range("A" & kpiLabelRow & ":E" & kpiValueRow)
+        
+        ' FP-FLUKT: Formatierung der Bewertungszeile (kpiValueRow + 1) neben den KPIs.
+        .Rows(kpiValueRow + 1).RowHeight = 22
+        PID_StyleApplyInputGuideLabel .Cells(kpiValueRow + 1, 1)
+        .Cells(kpiValueRow + 1, 1).Font.Bold = True
+        .Cells(kpiValueRow + 1, 1).Font.Color = PID_StyleColorNavy()
+        .Range(.Cells(kpiValueRow + 1, 2), .Cells(kpiValueRow + 1, 5)).Merge
+        PID_StyleApplyReadOnlyGuideCell .Range(.Cells(kpiValueRow + 1, 2), .Cells(kpiValueRow + 1, 5))
+        .Range(.Cells(kpiValueRow + 1, 2), .Cells(kpiValueRow + 1, 5)).HorizontalAlignment = xlLeft
+        .Range(.Cells(kpiValueRow + 1, 2), .Cells(kpiValueRow + 1, 5)).Font.Bold = True
+        PID_StyleApplyTableBorders .Range(.Cells(kpiValueRow + 1, 1), .Cells(kpiValueRow + 1, 5))
         
         .Range("A" & alertsHeaderRow & ":E" & alertsHeaderRow).Merge
         .Rows(alertsHeaderRow).RowHeight = 22
