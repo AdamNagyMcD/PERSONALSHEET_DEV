@@ -27,13 +27,13 @@ Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`PERFORMANCE_BASELINE.md`](PE
 
 | ID | Thema | Prio | Plattform |
 |----|--------|------|-----------|
-| [FP-030](#fp-030--copydata-mehrfach-stundenmodifikation) | CopyData: mehrfache Stunden-Änderung | Hoch | Win + Mac |
 | [FP-026](#fp-026--mac-only-f-dropdown-performance) | Mac F-Dropdown Performance | Niedrig | **Nur Mac** (post-release) |
 
 ### 🟡 Erledigt — manuelle Tests / Rest offen
 
 | ID | Thema | Was fehlt noch |
 |----|--------|----------------|
+| FP-030 | CopyData: mehrfache Stunden-Änderung | Manuell prüfen: TEST 9/10/11 (siehe `TEST_CASES.md`) Win + Mac |
 | FP-027 | Open: Flackern / Recalc | Win2016/365 manuell prüfen: Blatt erscheint sofort |
 | FP-029 | Spalte K (Urlaub €): 0 statt leer | Manuell prüfen: leere Zeile K leer, MA+J K korrekt |
 | FP-028 | CopyData Stunden-Override-Log | ✅ Win manuell verifiziert (Juli→CopyData→korrekt) |
@@ -170,24 +170,41 @@ Leere MA-Zeilen (kein Name/ID) zeigen **0,00 €** in K statt leerer Zelle.
 
 ## FP-030 — CopyData: mehrfache Stunden-Änderung
 
-**Status:** 🔴 Offen  
+**Status:** 🟡 Umgesetzt — manueller Test ausstehend (TEST 9/10/11)  
 **Priorität:** Hoch  
 **Plattform:** Win + Mac · `mod_CopyData.bas`
 
 ### Problem
 
-Erster Override (z.B. Juli=150h) funktioniert. Zweiter Override auf denselben Monat (Juli=140h) oder weitere Monate (November=160h) nach einem ersten CopyData-Lauf werden nicht zuverlässig übernommen — der Log bleibt am ersten Wert hängen.
+Erster Override (z.B. Juli=150h) funktioniert. Mehrfache/aufeinanderfolgende Stunden-Änderungen „bleiben am ersten Wert hängen": ein zweiter Wert wird nicht übernommen, und „wenn man es einmal falsch gemacht hat, lässt es sich nicht mehr korrigieren". Reproduzierbar auf Windows **und** Mac.
 
-### Vermutliche Ursachen
+### Ursache (gefunden 2026-06-18)
 
-- `PID_ReconcileUnloggedFChangesForMac`: `runningF`-Invarianz schützt Zwischenmonate korrekt, aber wenn der erste Log-Eintrag (z.B. 150h) noch vorhanden ist und der Nutzer auf 140h ändert, erkennt die Reconcile-Logik den Unterschied nicht mehr zuverlässig
-- `PID_PruneHourOverrideLogForCopy`: möglicherweise zu aggressiv beim Löschen gültiger Einträge
+`PID_LogEFAenderungForSheet` rief nach dem Upsert `PID_ClearHourOverrideLogAfterMonth` auf. Diese Routine löscht **alle** späteren Log-Einträge desselben Mitarbeiters/Feldes.
 
-### Nächste Schritte
+Schlüssel-Erkenntnis: CopyData-**Propagation erzeugt keine Log-Einträge** — nur explizite Benutzer-Edits tun das. Daher ist jeder spätere Eintrag eine **eigenständige Benutzer-Änderung** (z.B. November=160). Beim Editieren eines früheren Monats (z.B. Juli) wurden diese legitimen späteren Overrides vernichtet → mehrstufige Stunden-Pläne kollabierten, Re-Edits wirkten zufällig.
 
-1. Diagnostik: Log-Inhalt vor CopyData sichtbar machen (Admin-Panel oder StatusBar)
-2. Root cause isolieren: Prune-Logik vs. Reconcile-Logik
-3. Fix implementieren
+### Umgesetzt (2026-06-18)
+
+| # | Änderung |
+|---|----------|
+| 1 | `PID_ClearHourOverrideLogAfterMonth`-Aufruf in `PID_LogEFAenderungForSheet` entfernt |
+| 2 | Funktion als **DEPRECATED** markiert (nicht mehr aufrufen) |
+| 3 | `PID_ShowHourOverrideLog` — schreibgeschützte Diagnose (Log-Inhalt anzeigen) |
+
+Redundante Einträge werden weiterhin sauber behandelt — **ohne** späteres Löschen:
+- gleicher Monat erneut geändert → `PID_UpsertHourOverride` überschreibt
+- Wert == Quellwert nach CopyData → `PID_PruneHourOverrideLogForCopy` entfernt
+- Wert == laufender Wert → `PID_ApplyLoggedHourOverrides` dedupliziert
+
+Mac-Schutz unverändert: `gCopyDataRunning`, SelectionChange-Backup, `PID_FlushPendingEFLog`, `PID_ReconcileUnloggedFChangesForMac`.
+
+### Manuell testen
+
+- [ ] TEST 9: Juli 150 → CopyData → Juli 140 → CopyData → 140 propagiert bis Dezember
+- [ ] TEST 10: Juli + November Overrides; Juli-Re-Edit lässt November=160 unberührt
+- [ ] TEST 11: Juli + November gesetzt; September-Edit löscht keinen Nachbar-Override
+- [ ] Win + Mac identisch; FP-028-Verhalten unverändert
 
 ---
 

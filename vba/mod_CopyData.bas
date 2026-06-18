@@ -512,6 +512,10 @@ SafeExit:
 End Sub
 
 
+' DEPRECATED (FP-030): NICHT mehr aufrufen.
+' Diese Routine loescht alle spaeteren Log-Eintraege eines Mitarbeiters/Feldes. Da spaetere
+' Eintraege immer eigenstaendige Benutzer-Overrides sind (Propagation erzeugt keine Eintraege),
+' zerstoerte das mehrstufige Stunden-Plaene. Wird bewusst nicht mehr genutzt — bitte so lassen.
 Private Sub PID_ClearHourOverrideLogAfterMonth(ByVal workbookYear As Long, _
                                                ByVal monthIndex As Long, _
                                                ByVal employeeKey As String, _
@@ -637,8 +641,18 @@ Public Sub PID_LogEFAenderungForSheet(ByVal wsMonth As Worksheet, ByVal changedR
             End If
             
             If fieldCode <> "" Then
+                ' FP-030: NUR den Eintrag fuer genau diesen Monat upserten.
+                ' Frueher wurde hier zusaetzlich PID_ClearHourOverrideLogAfterMonth aufgerufen,
+                ' das ALLE spaeteren Log-Eintraege desselben Mitarbeiters/Feldes geloescht hat.
+                ' Da CopyData-propagierte Monate KEINE Log-Eintraege erzeugen, war jeder spaetere
+                ' Eintrag eine echte, eigenstaendige Benutzer-Aenderung (z.B. November=160) — und
+                ' wurde faelschlich vernichtet, sobald ein frueherer Monat (z.B. Juli) editiert wurde.
+                ' Folge: mehrfache/aufeinanderfolgende Stunden-Aenderungen "blieben am ersten Wert haengen".
+                ' Redundante Eintraege werden weiterhin sauber behandelt:
+                '   - gleicher Monat erneut geaendert  -> PID_UpsertHourOverride ueberschreibt
+                '   - Wert == Quellwert nach CopyData   -> PID_PruneHourOverrideLogForCopy entfernt
+                '   - Wert == laufender Wert            -> PID_ApplyLoggedHourOverrides dedupliziert
                 PID_UpsertHourOverride workbookYear, monthIndex, keyText, fieldCode, c.Value
-                PID_ClearHourOverrideLogAfterMonth workbookYear, monthIndex, keyText, fieldCode
             End If
         End If
     Next c
@@ -919,6 +933,60 @@ Public Sub PID_ResetHourOverrideLog()
     ws.Range("A2:E" & ws.Rows.Count).ClearContents
     ws.Visible = xlSheetVeryHidden
     
+SafeExit:
+End Sub
+
+
+' Diagnose (FP-030): Zeigt den aktuellen Stunden-Override-Log lesbar an.
+' Vor/nach CopyData ausfuehren, um zu pruefen welche Monats-Overrides gespeichert sind.
+' Aendert keine Daten. Hilfreich um "haengende" Werte zu diagnostizieren.
+Public Sub PID_ShowHourOverrideLog()
+    Dim wsLog As Worksheet
+    Dim lastRow As Long
+    Dim r As Long
+    Dim msg As String
+    Dim monthNames As Variant
+    Dim m As Long
+    
+    On Error GoTo SafeExit
+    
+    Set wsLog = Nothing
+    On Error Resume Next
+    Set wsLog = ThisWorkbook.Worksheets(PID_HOUR_OVERRIDE_LOG_SHEET)
+    On Error GoTo SafeExit
+    
+    If wsLog Is Nothing Then
+        MsgBox "Kein Stunden-Override-Log vorhanden.", vbInformation, "Stunden-Log (Diagnose)"
+        Exit Sub
+    End If
+    
+    lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row
+    
+    If lastRow < 2 Then
+        MsgBox "Stunden-Override-Log ist leer (keine Eintraege).", vbInformation, "Stunden-Log (Diagnose)"
+        Exit Sub
+    End If
+    
+    monthNames = PID_MonthNames()
+    msg = "Jahr | Monat | Mitarbeiter | Feld | Wert" & vbCrLf & String(48, "-") & vbCrLf
+    
+    For r = 2 To lastRow
+        m = 0
+        If IsNumeric(wsLog.Cells(r, "B").Value) Then m = CLng(wsLog.Cells(r, "B").Value)
+        
+        msg = msg & CStr(wsLog.Cells(r, "A").Value) & " | "
+        If m >= 1 And m <= 12 Then
+            msg = msg & CStr(monthNames(m - 1))
+        Else
+            msg = msg & CStr(wsLog.Cells(r, "B").Value)
+        End If
+        msg = msg & " | " & CStr(wsLog.Cells(r, "C").Value) & _
+              " | " & CStr(wsLog.Cells(r, "D").Value) & _
+              " | " & CStr(wsLog.Cells(r, "E").Value) & vbCrLf
+    Next r
+    
+    MsgBox msg, vbInformation, "Stunden-Log (Diagnose) — " & (lastRow - 1) & " Eintraege"
+
 SafeExit:
 End Sub
 

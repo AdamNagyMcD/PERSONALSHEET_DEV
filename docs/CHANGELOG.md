@@ -10,6 +10,8 @@ Entwicklungs- und Release-Log.
 - mod_PIDCopyright.bas (FP-027): `PID_CopyrightAlreadyCurrent` — Skip-Guard in `PID_ApplyCopyrightToAllSheets`; kein Unprotect/Write wenn Copyright schon aktuell.
 
 ### Fixed
+- mod_CopyData.bas (FP-030): Mehrfache Stunden-Aenderungen blieben am ersten Wert haengen. `PID_LogEFAenderungForSheet` rief `PID_ClearHourOverrideLogAfterMonth` auf, das ALLE spaeteren Log-Eintraege desselben MA/Feldes loeschte. Da CopyData-Propagation keine Log-Eintraege erzeugt, war jeder spaetere Eintrag eine echte Benutzer-Aenderung — und wurde beim Editieren eines frueheren Monats vernichtet. Aufruf entfernt; Funktion als DEPRECATED markiert. Redundanz wird weiterhin durch Upsert (gleicher Monat), Prune (== Quellwert) und ApplyLogged-Dedup (== laufender Wert) behandelt. Win + Mac. Mac-Schutz (`gCopyDataRunning`, SelectionChange-Backup, `PID_FlushPendingEFLog`, `PID_ReconcileUnloggedFChangesForMac`) unveraendert.
+- mod_CopyData.bas (FP-030): `PID_ShowHourOverrideLog` — schreibgeschuetzte Diagnose, zeigt gespeicherte Monats-Overrides (vor/nach CopyData ausfuehren).
 - DieseArbeitsmappe.cls (FP-027): `PID_ConfigureDeferredWorkbookCalculationOnOpen` wird erst nach `ScreenUpdating=True` aufgerufen — Blatt erscheint sofort, „Berechnet…" laeuft danach sichtbar statt das Open zu blockieren.
 - Modul1.bas / mod_CopyData.bas (FP-029): Spalte K zeigte 0,00 € in leeren MA-Zeilen; neue kanonische Formel liefert leer bei fehlendem MA oder J=leer; CopyData propagiert Formel (nicht mehr vom Quellblatt kopiert).
 - mod_KVLohnLookup.bas + mod_SmokeCheck.bas: TEST 15 erkennt VBA-geschriebene G-Werte (nicht nur G3-Formel); `PID_EnsureMonatslohnFormulas` prueft alle 12 Monate.
