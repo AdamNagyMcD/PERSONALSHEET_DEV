@@ -79,6 +79,45 @@
 
 ---
 
+## CRITICAL BOOTSTRAP MODULES
+
+The following modules are critical bootstrap / infrastructure modules:
+
+* `mod_ResetAndImportVBAFiles`
+* `mod_CopyData`
+
+For these modules the following rules apply:
+
+* Never modify automatically.
+* Never regenerate automatically.
+* Never overwrite automatically.
+* Never re-import automatically.
+* Never refactor automatically.
+* Never optimize automatically.
+* Never rename automatically.
+
+Before any change to these modules:
+
+1. Explain why the change is necessary.
+2. Name the exact affected lines of code.
+3. Explain the risks.
+4. Wait for explicit approval.
+
+Without explicit user approval, these modules must never be changed.
+
+### Script protection (compile / import / repair / test helpers)
+
+* Every compile, import, repair, or test helper (PowerShell or VBA) — including temporary
+  scripts — MUST use the same skip list and never delete or re-import these modules:
+
+  * `mod_ResetAndImportVBAFiles`
+  * `mod_CopyData`
+
+* The skip list must be applied in BOTH the delete step and the import step.
+* `tools/import_vba_and_repair.ps1` is the reference implementation of this skip list.
+
+---
+
 ## Performance Rules
 
 * Avoid unnecessary `Select` / `Activate` usage.
@@ -230,3 +269,6 @@
   * which area was touched,
   * what was intentionally not touched.
 * Do not claim that tests were run unless they were actually run.
+
+NEVER MODIFY mod_ResetAndImportVBAFiles.
+This is a critical bootstrap module.

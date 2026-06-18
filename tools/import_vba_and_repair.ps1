@@ -7,6 +7,11 @@ param(
 $ErrorActionPreference = "Stop"
 $vbaFolder = Join-Path (Split-Path $PSScriptRoot -Parent) "vba"
 
+# CRITICAL BOOTSTRAP MODULES: niemals automatisch loeschen oder re-importieren.
+# Diese Skip-Liste MUSS von jedem Compile-/Import-/Repair-/Test-Helfer verwendet werden
+# (im Lösch- UND im Import-Schritt). Siehe .cursor/rules.md > CRITICAL BOOTSTRAP MODULES.
+$skipModules = @("mod_ResetAndImportVBAFiles", "mod_CopyData")
+
 function Read-VbaCodeWithoutHeader {
     param([string]$FullPath)
     $found = $false
@@ -48,14 +53,20 @@ try {
     for ($i = $vbProj.VBComponents.Count; $i -ge 1; $i--) {
         $comp = $vbProj.VBComponents.Item($i)
         if ($comp.Type -in 1, 2, 3) {
-            if ($comp.Name -ne "mod_ResetAndImportVBAFiles") {
+            if ($skipModules -notcontains $comp.Name) {
                 $vbProj.VBComponents.Remove($comp) | Out-Null
+            } else {
+                Write-Host "Skipped (bootstrap, not deleted): $($comp.Name)"
             }
         }
     }
 
     Get-ChildItem (Join-Path $vbaFolder "*.bas") | Sort-Object Name | ForEach-Object {
-        if ($_.Name -ieq "mod_ResetAndImportVBAFiles.bas") { return }
+        $moduleName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+        if ($skipModules -contains $moduleName) {
+            Write-Host "Skipped (bootstrap, not imported): $($_.Name)"
+            return
+        }
         $vbProj.VBComponents.Import($_.FullName) | Out-Null
         Write-Host "Imported $($_.Name)"
     }
