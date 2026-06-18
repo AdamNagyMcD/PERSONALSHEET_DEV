@@ -182,3 +182,26 @@ Monatstabelle im FLUKTUATION-Blatt prüfen.
 - Die frühere Spalte „Durchschnitt" heißt jetzt „Ø Verlust-Score" (= monatlicher Verlust-Score / Austritte).
 - Sie wird NICHT mit dem durchschnittlichen Personalbestand verwechselt.
 - Zielzellen `Q31`, `UBERSICHT` Spalte Q und das FLUKTUATION-Layout bleiben unverändert.
+
+---
+
+## TEST 16 — Eine einzige Bewertungslogik (Rate, kein Verlust-Score-Status) (FP-Flukt)
+
+### Scenario
+FLUKTUATION-Blatt: oberer Status (B5) und Bewertungszeile (B10) prüfen.
+
+### Expected
+- **Status `B5`** = Kurz-Ampel aus YTD-Rate: „Sehr gut / Gut / Erhöht / Hoch / Kritisch / Extrem"
+  (Grenzwerte 0,2 / 0,35 / 0,5 / 0,7 / 1,0), eingefärbt grün → rot.
+- **Bewertung `B10`** = Langform aus `PID_GetFluctuationRating(ytdFluctuation)`
+  („Sehr gut / stabil" … „Extrem hoch / akuter Handlungsbedarf").
+- Status und Bewertung stammen aus DERSELBEN Rate; B5 und B10 zeigen NICHT denselben Text.
+- Es gibt KEINEN „Kritisch"-Status mehr aus dem Verlust-Score.
+- Der Statustext `C5` bezieht sich auf die YTD-Rate, nicht auf den Verlust-Score.
+
+### Negative checks
+- Verlust-Score, „Ø Verlust-Score" und „Kritische Austritte" bleiben als informative KPIs sichtbar,
+  bestimmen aber Status/Bewertung NICHT.
+- Bei fehlenden Austrittsgründen: KEIN „Daten prüfen"-Status-Override; nur ein informativer Hinweis
+  (KPI „Daten offen" + Abschnitt „Sofort prüfen" bleiben sichtbar).
+- „Sofort prüfen" und „Empfehlungen" bleiben rein operative Hinweise und überschreiben nichts.

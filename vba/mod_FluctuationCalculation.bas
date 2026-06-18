@@ -400,6 +400,26 @@ Public Function PID_GetFluctuationRating(ByVal fluctuationRate As Double) As Str
 End Function
 
 
+Public Function PID_GetFluctuationStatusShort(ByVal fluctuationRate As Double) As String
+    ' Kurz-Ampel fuer den Statustext (B5), abgeleitet aus derselben Rate/Logik wie
+    ' PID_GetFluctuationRating (gleiche Grenzwerte 0.2 / 0.35 / 0.5 / 0.7 / 1.0).
+    ' Langform liefert PID_GetFluctuationRating; hier nur die Management-Kurzform.
+    If fluctuationRate < 0.2 Then
+        PID_GetFluctuationStatusShort = "Sehr gut"
+    ElseIf fluctuationRate < 0.35 Then
+        PID_GetFluctuationStatusShort = "Gut"
+    ElseIf fluctuationRate < 0.5 Then
+        PID_GetFluctuationStatusShort = "Erh" & ChrW(246) & "ht"
+    ElseIf fluctuationRate < 0.7 Then
+        PID_GetFluctuationStatusShort = "Hoch"
+    ElseIf fluctuationRate < 1 Then
+        PID_GetFluctuationStatusShort = "Kritisch"
+    Else
+        PID_GetFluctuationStatusShort = "Extrem"
+    End If
+End Function
+
+
 Private Function PID_ResolveMonthSheetForIndex(ByVal monthIndex As Long) As Worksheet
     ' Liefert das Monatsblatt zum Monatsindex (1-12) oder Nothing, falls nicht vorhanden.
     Dim monthNames As Variant

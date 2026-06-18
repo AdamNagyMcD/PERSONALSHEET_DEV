@@ -364,9 +364,10 @@ NextDataRow:
     ' --- Abschnitt 2: Monatliche Fluktuation und YTD berechnen ---
     PID_FillFluktuationRates monthExit, monthPersonalEnde, monthFluctuation, quarterFluctuation, ytdFluctuation, currentYear
     
-    ' --- Abschnitt 3: Risikobewertung und Manager-Texte ---
+    ' --- Abschnitt 3: Bewertung (EINE Logik = Fluktuationsrate/YTD) und Manager-Texte ---
+    ' criticalExits/totalLoss bleiben nur informative KPIs und bestimmen den Status NICHT mehr.
     criticalExits = earlyExits + experiencedLoss + importantExits
-    riskLevel = GetFluktuationRiskLevel(totalLoss, totalExits, earlyExits, experiencedLoss, importantExits, incompleteExits)
+    riskLevel = PID_GetFluctuationStatusShort(ytdFluctuation)
     managerSummary = GetFluktuationManagerSummary(riskLevel, currentYear, totalExits, incompleteExits, criticalExits, ytdFluctuation, totalLoss)
     recommendationItems = GetFluktuationRecommendationItems(totalExits, neutralExits, earlyExits, experiencedLoss, importantExits, incompleteExits, totalLoss, ytdFluctuation)
     
@@ -1127,6 +1128,11 @@ Public Function GetMonthHint(ByVal exitsCount As Long, _
 End Function
 
 
+' DEPRECATED (FP-FLUKT): NICHT mehr aufrufen.
+' Dieser Status basierte auf dem Verlust-Score (totalLoss/criticalExits) und bildete ein
+' zweites, paralleles Bewertungssystem. Status und Bewertung kommen jetzt ausschliesslich
+' aus der Fluktuationsrate (PID_GetFluctuationStatusShort / PID_GetFluctuationRating).
+' Funktion bleibt nur zur Referenz erhalten - bitte nicht reaktivieren.
 Public Function GetFluktuationRiskLevel(ByVal totalLoss As Double, _
                                         ByVal totalExits As Long, _
                                         ByVal earlyExits As Long, _
@@ -1150,17 +1156,23 @@ End Function
 
 
 Public Sub ApplyRiskFormatting(ByVal targetCell As Range, ByVal riskLevel As String)
+    ' FP-FLUKT: Faerbung der Status-Ampel (B5) entlang der 6 Fluktuationsraten-Stufen
+    ' (Kurzform aus PID_GetFluctuationStatusShort). Gruen -> Rot. Keine Verlust-Score-Stufen mehr.
     With targetCell
         .Font.Bold = True
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
         
         Select Case riskLevel
-            Case "Niedrig"
+            Case "Sehr gut"
                 .Interior.Color = RGB(198, 239, 206)
                 .Font.Color = RGB(0, 97, 0)
             
-            Case "Mittel"
+            Case "Gut"
+                .Interior.Color = RGB(226, 239, 218)
+                .Font.Color = RGB(55, 86, 35)
+            
+            Case "Erh" & ChrW(246) & "ht"
                 .Interior.Color = RGB(255, 235, 156)
                 .Font.Color = RGB(156, 101, 0)
             
@@ -1172,9 +1184,9 @@ Public Sub ApplyRiskFormatting(ByVal targetCell As Range, ByVal riskLevel As Str
                 .Interior.Color = RGB(255, 199, 206)
                 .Font.Color = RGB(156, 0, 6)
             
-            Case PID_FlTxtDatenPruefen()
-                .Interior.Color = RGB(221, 235, 247)
-                .Font.Color = RGB(31, 78, 121)
+            Case "Extrem"
+                .Interior.Color = RGB(192, 0, 0)
+                .Font.Color = RGB(255, 255, 255)
             
             Case Else
                 .Interior.Pattern = xlNone
@@ -1191,19 +1203,29 @@ Public Function GetFluktuationManagerSummary(ByVal riskLevel As String, _
                                               ByVal criticalExits As Long, _
                                               ByVal ytdFluctuation As Double, _
                                               ByVal totalLoss As Double) As String
-    If incompleteExits > 0 Then
-        GetFluktuationManagerSummary = "Die Auswertung ist noch nicht vollst" & PID_FlTxtAe() & "ndig. " & incompleteExits & " Austritt(e) haben keinen " & PID_FlTxtGueltig() & "en Austrittsgrund. Bitte zuerst die markierten F" & PID_FlTxtAe() & "lle unten in den Monatsbl" & PID_FlTxtAe() & "ttern erg" & PID_FlTxtAe() & "nzen."
-    ElseIf totalExits = 0 Then
-        GetFluktuationManagerSummary = "Im Jahr " & currentYear & " sind bisher keine Austritte erfasst. Die Fluktuation ist aktuell unauff" & PID_FlTxtAe() & "llig."
-    ElseIf riskLevel = "Kritisch" Then
-        GetFluktuationManagerSummary = "Die Fluktuation ist kritisch. Es gibt " & totalExits & " Austritte, davon " & criticalExits & " mit " & PID_FlTxtErhoeht() & "em Risiko. Verlust-Score: " & Format(totalLoss, "0.00") & ". Sofort " & PID_FlTxtMassnahmen() & " " & PID_FlTxtPruefen() & "."
-    ElseIf riskLevel = "Hoch" Then
-        GetFluktuationManagerSummary = "Die Fluktuation ist " & PID_FlTxtErhoeht() & " (" & Format(ytdFluctuation, "0.0%") & " bisher im Jahr). " & criticalExits & " Austritt(e) sind besonders relevant. Ursachen und " & PID_FlTxtMassnahmen() & " unten " & PID_FlTxtPruefen() & "."
-    ElseIf riskLevel = "Mittel" Then
-        GetFluktuationManagerSummary = "Es gibt " & totalExits & " Austritte im Jahr " & currentYear & ". Die Lage ist beobachtungsw" & PID_FlTxtUe() & "rdig, aber noch nicht kritisch. Empfehlungen und Monatsdetails unten beachten."
+    ' FP-FLUKT: Statustext ausschliesslich rate-basiert (YTD). Verlust-Score und
+    ' criticalExits bestimmen das Urteil NICHT mehr (Parameter bleiben aus Kompatibilitaet).
+    ' Fehlende Austrittsgruende erscheinen nur als informativer Zusatz und ueberschreiben
+    ' die Bewertung nicht.
+    Dim summary As String
+    Dim ratingText As String
+    Dim ytdText As String
+    
+    ratingText = PID_GetFluctuationRating(ytdFluctuation)
+    ytdText = Format(ytdFluctuation, "0.00%")
+    
+    If totalExits = 0 Then
+        summary = "Im Jahr " & currentYear & " sind bisher keine Austritte erfasst. Jahresfluktuation (YTD): " & ytdText & " - Bewertung: " & ratingText & "."
     Else
-        GetFluktuationManagerSummary = "Es gibt " & totalExits & " Austritte, die Gesamtbewertung ist aktuell stabil. Entwicklung weiter beobachten und Daten aktuell halten."
+        summary = "Jahresfluktuation (YTD): " & ytdText & " - Bewertung: " & ratingText & ". " & _
+                  "Basis: " & totalExits & " Austritt(e) im Jahr " & currentYear & ", bezogen auf den durchschnittlichen Personalbestand."
     End If
+    
+    If incompleteExits > 0 Then
+        summary = summary & " Hinweis: " & incompleteExits & " Austritt(e) ohne " & PID_FlTxtGueltig() & "en Austrittsgrund - bitte unten erg" & PID_FlTxtAe() & "nzen (beeinflusst die Bewertung nicht)."
+    End If
+    
+    GetFluktuationManagerSummary = summary
 End Function
 
 
