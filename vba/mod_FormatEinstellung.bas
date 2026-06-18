@@ -45,7 +45,13 @@ Public Sub PID_FormatEinstellungSheet()
         
         .Rows(3).RowHeight = PID_STYLE_COMPACT_BLOCK_TITLE_HEIGHT
         .Rows(4).RowHeight = PID_STYLE_COMPACT_BLOCK_TITLE_HEIGHT
+        ' B3:F4 als verbundene Titelzelle "Budget" (Calibri 13, weiss, fett).
+        On Error Resume Next
+        .Range("B3:F4").Merge
+        On Error GoTo CleanFail
+        .Range("B3").Value = "Budget"
         PID_StyleApplyTitleBand .Range("B3:F4")
+        .Range("B3:F4").Font.Name = "Calibri"
         PID_StyleApplyTitleBand .Range("H3:I4")
         PID_StyleApplyTitleBand .Range("K3:L4")
         PID_StyleApplyTitleBand .Range("N3:O4")
