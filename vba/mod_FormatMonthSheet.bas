@@ -225,6 +225,51 @@ CleanFail:
 End Sub
 
 
+' Nur fehlende Panel-Rahmen auf allen 12 Monatsblaettern (N43:N50 rechts, O42:V42 unten).
+' Leicht aus Alt+F8 startbar, ohne vollstaendiges FormatAllMonthSheets.
+Public Sub PID_FixMonthSheetPanelBorders()
+    Dim monthName As Variant
+    Dim ws As Worksheet
+    Dim wasProtected As Boolean
+    Dim countDone As Long
+    
+    On Error GoTo CleanFail
+    
+    For Each monthName In PID_MonthNames()
+        Set ws = Nothing
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthName))
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            If PID_IsWorkerMonthSheet(ws) Then
+                wasProtected = ws.ProtectContents
+                
+                On Error Resume Next
+                ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
+                If ws.ProtectContents Then ws.Unprotect
+                On Error GoTo CleanFail
+                
+                PID_MSReinforceEdgeBorder ws.Range("N43:N50"), xlEdgeRight
+                PID_MSReinforceEdgeBorder ws.Range("O42:V42"), xlEdgeBottom
+                
+                If wasProtected Then PID_ReprotectWorksheet ws
+                
+                countDone = countDone + 1
+            End If
+        End If
+    Next monthName
+    
+    MsgBox countDone & " Monatsblaetter: Rahmen N43:N50 (rechts) und O42:V42 (unten) gesetzt.", _
+           vbInformation, "Monatsblatt Rahmen"
+    Exit Sub
+
+CleanFail:
+    MsgBox "Fehler bei PID_FixMonthSheetPanelBorders:" & vbCrLf & _
+           Err.Number & " - " & Err.Description, vbExclamation, "Monatsblatt Rahmen"
+End Sub
+
+
 Private Sub PID_FormatMonthSheetByName(ByVal sheetName As String)
     Dim ws As Worksheet
     Dim wasProtected As Boolean
@@ -533,6 +578,8 @@ Private Sub PID_MSApplyEmployeeBlockStyles(ByVal ws As Worksheet)
     
     PID_MSApplyBlockBorders ws.Range("A1:N2")
     PID_MSApplyBlockBorders ws.Range("A3:N82")
+    ' Austrittsgrund-Spalte N: rechter Rand Zeilen 43-50 wie N42 (sichtbarer Abschluss zum Panel).
+    PID_MSReinforceEdgeBorder ws.Range("N43:N50"), xlEdgeRight
 End Sub
 
 
@@ -645,6 +692,9 @@ Private Sub PID_MSApplyRightPanelReferenceStyles(ByVal ws As Worksheet)
     PID_MSApplyBlockBorders ws.Range("O17:R29")
     PID_MSApplyBlockBorders ws.Range("O31:R31")
     PID_MSApplyBlockBorders ws.Range("O33:V42")
+    
+    ' Panel-Zeile 42: unterer Rand O42:V42 (volle Panel-Zeile, wie O35:O42 Block) — Abschluss zum Eintrittsdatum-Block.
+    PID_MSReinforceEdgeBorder ws.Range("O42:V42"), xlEdgeBottom
     
     PID_MSReinforceEdgeBorder ws.Range("R17:R29"), xlEdgeRight
     PID_MSClearAllBorders ws.Range("O43:V50")
