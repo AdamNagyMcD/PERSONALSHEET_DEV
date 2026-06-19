@@ -493,8 +493,33 @@ Public Function ReasonKey(ByVal textValue As String) As String
     Do While InStr(k, "  ") > 0
         k = Replace(k, "  ", " ")
     Loop
-    
+
     ReasonKey = k
+End Function
+
+
+Public Function PID_IsNeutralFluctuationExitReason(ByVal exitReason As String) As Boolean
+    ' FP-Flukt FIX 2: ZENTRALE Wahrheit fuer neutrale Austrittsgruende.
+    ' Neutrale Gruende (Karenz, Store transfer, Nicht eingetreten, Befoerderung) zaehlen
+    ' NICHT in die Fluktuationsrate, bleiben aber als "Neutrale Bewegung" sichtbar.
+    ' Wird von der Klassifizierung (GetFluctuationCategory) UND vom Zaehler
+    ' (PID_CountExitsInPeriod) genutzt -> keine doppelte Logik.
+    ' Neuer neutraler Grund? NUR hier ergaenzen.
+    '
+    ' Robust gegen Gross-/Kleinschreibung, Umlaute (oe/ae/ue) und Leerzeichen-Unterschiede
+    ' (z.B. "Store transfer" == "Storetransfer"): ReasonKey normalisiert, danach alle
+    ' Leerzeichen entfernen.
+    Dim k As String
+
+    k = ReasonKey(exitReason)
+    k = Replace(k, " ", "")
+
+    Select Case k
+        Case "karenz", "storetransfer", "nichteingetreten", "befoerderung"
+            PID_IsNeutralFluctuationExitReason = True
+        Case Else
+            PID_IsNeutralFluctuationExitReason = False
+    End Select
 End Function
 
 
@@ -597,23 +622,12 @@ Public Function GetFluctuationCategory(ByVal exitReason As String, ByVal daysInC
         Exit Function
     End If
     
-    Select Case normalizedReason
-        Case "Storetransfer"
-            GetFluctuationCategory = "Neutrale Bewegung"
-            Exit Function
-        
-        Case PID_FlDatTxtBefoerderung()
-            GetFluctuationCategory = "Neutrale Bewegung"
-            Exit Function
-        
-        Case "Karenz"
-            GetFluctuationCategory = "Neutrale Bewegung"
-            Exit Function
-        
-        Case "Nicht eingetreten"
-            GetFluctuationCategory = "Neutrale Bewegung"
-            Exit Function
-    End Select
+    ' FP-Flukt FIX 2: neutrale Gruende zentral ueber PID_IsNeutralFluctuationExitReason
+    ' (eine einzige Wahrheit, keine doppelte Reason-Text-Logik).
+    If PID_IsNeutralFluctuationExitReason(exitReason) Then
+        GetFluctuationCategory = "Neutrale Bewegung"
+        Exit Function
+    End If
     
     If reasonWeight < 0 Then
         GetFluctuationCategory = "Austrittsgrund unbekannt"

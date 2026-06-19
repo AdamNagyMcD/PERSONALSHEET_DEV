@@ -275,3 +275,82 @@ Für denselben Mitarbeiter (Feld F, Stunden):
   - Mehrfache Änderung im selben Monat: letzter Wert gewinnt.
   - Unabhängiger späterer Override überlebt eine frühere Editierung.
   - Mittelmonats-Override löscht keine Nachbar-Overrides.
+
+---
+
+## TEST 20 — Neutraler Austritt „Karenz" zählt nicht in die Rate (FP-Flukt FIX 2)
+
+### Scenario
+1. Mitarbeiter mit Austrittsdatum im Zeitraum, Austrittsgrund = „Karenz".
+2. UBERSICHT öffnen, FLUKTUATION neu aufbauen, betroffenes Monatsblatt `Q31` prüfen.
+
+### Expected
+- Die Fluktuationsrate (Monat/Quartal/YTD) steigt durch diesen Austritt NICHT.
+- Der Austritt bleibt in FLUKTUATION als „Neutrale Bewegung" sichtbar (Anzeige unverändert).
+- `Q31` (Monatsblatt), UBERSICHT Spalte Q und FLUKTUATION zeigen denselben Ratenwert.
+
+---
+
+## TEST 21 — Neutraler Austritt „Store transfer" zählt nicht in die Rate (FP-Flukt FIX 2)
+
+### Scenario
+1. Austrittsgrund = „Store transfer" (mit Leerzeichen) bzw. „Storetransfer" (ohne).
+2. FLUKTUATION/UBERSICHT/`Q31` prüfen.
+
+### Expected
+- Beide Schreibweisen werden als neutral erkannt (Helper toleriert Leerzeichen/Groß-/Kleinschreibung).
+- Rate steigt nicht; Eintrag bleibt als „Neutrale Bewegung" sichtbar.
+
+---
+
+## TEST 22 — Neutraler Austritt „Beförderung" zählt nicht in die Rate (FP-Flukt FIX 2)
+
+### Scenario
+1. Austrittsgrund = „Beförderung" (auch „Befoerderung").
+2. FLUKTUATION/UBERSICHT/`Q31` prüfen.
+
+### Expected
+- Mit und ohne Umlaut wird neutral erkannt; Rate steigt nicht.
+- Eintrag bleibt als „Neutrale Bewegung" sichtbar.
+
+---
+
+## TEST 23 — Neutraler Austritt „Nicht eingetreten" zählt nicht in die Rate (FP-Flukt FIX 2)
+
+### Scenario
+1. Austrittsgrund = „Nicht eingetreten".
+2. FLUKTUATION/UBERSICHT/`Q31` prüfen.
+
+### Expected
+- Rate steigt nicht; Eintrag bleibt als „Neutrale Bewegung" sichtbar.
+
+### Negative checks (TEST 20–23 gemeinsam)
+- Ein NICHT-neutraler Austritt (z.B. „Dienstnehmer Kündigung") im selben Zeitraum erhöht die Rate weiterhin korrekt.
+- Es gibt nur EINE zentrale Wahrheit für neutrale Gründe: `PID_IsNeutralFluctuationExitReason`.
+  Sowohl die Klassifizierung (`GetFluctuationCategory` → „Neutrale Bewegung") als auch BEIDE
+  Zähler (`PID_CountExitsInPeriod` und der Live-Pfad `PID_CalculateFluctuation`) nutzen diesen
+  Helper — keine doppelte Logik.
+- **Live-Pfad:** Trägt man auf dem Monatsblatt ein Austrittsdatum für einen neutralen Grund ein
+  (Spalte I gefüllt, Spalte N = z.B. „Beförderung"), zeigt `Q31` sofort 0,00 % — identisch zum
+  späteren Sync und zu UBERSICHT/FLUKTUATION.
+- Nenner (durchschnittlicher Personalbestand) bleibt unverändert.
+
+---
+
+## TEST 24 — Reine Austrittsgrund-Änderung berechnet neu (FP-Flukt FIX 2)
+
+### Scenario
+1. Auf einem Monatsblatt existiert bereits ein Austrittsdatum (Spalte I), Grund = z.B. „Dienstnehmer Kündigung" → `Q31` zeigt einen Wert > 0.
+2. NUR Spalte N (Austrittsgrund) auf „Beförderung" ändern (Austrittsdatum bleibt unverändert).
+
+### Expected
+- `Q31` aktualisiert sich SOFORT auf 0,00 %, wenn dies der einzige Austritt im Monat ist
+  (gleiche Neuberechnung wie bei einer Änderung von Spalte I).
+- Beim Aktivieren von FLUKTUATION/UBERSICHT sind die Werte konsistent (Dirty-Flag wird bei
+  N-Änderung gesetzt — wie bei D/I).
+- Umgekehrt: Grund von „Beförderung" zurück auf einen nicht-neutralen Grund ändern → `Q31` steigt
+  sofort wieder.
+
+### Negative checks
+- Eine N-Änderung in einer Zeile OHNE Austrittsdatum ändert die Rate nicht (kein Austritt).
+- Layout unverändert; nur der unmittelbare Q31-Trigger hört jetzt zusätzlich auf Spalte N.

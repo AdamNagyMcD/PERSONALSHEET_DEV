@@ -30,6 +30,7 @@ Public Sub PID_CalculateFluctuation(ByVal ws As Worksheet)
     Dim arrName As Variant
     Dim arrEntry As Variant
     Dim arrExit As Variant
+    Dim arrReason As Variant
     
     On Error GoTo SafeExit
     
@@ -48,6 +49,7 @@ Public Sub PID_CalculateFluctuation(ByVal ws As Worksheet)
     arrName = ws.Range("C3:C82").Value
     arrEntry = ws.Range("D3:D82").Value
     arrExit = ws.Range("I3:I82").Value
+    arrReason = ws.Range("N3:N82").Value
     
     austritte = 0
     
@@ -61,7 +63,12 @@ Public Sub PID_CalculateFluctuation(ByVal ws As Worksheet)
             If Year(CDate(exitDate)) = currentYear Then
                 If Month(CDate(exitDate)) = monthNumber Then
                     If PID_FluctuationRowHasEmployee(employeeID, employeeName) Then
-                        austritte = austritte + 1
+                        ' FP-Flukt FIX 2: neutrale Austrittsgruende (Spalte N = Austrittsgrund)
+                        ' zaehlen NICHT in die Live-Monatsfluktuation. Zentrale Wahrheit
+                        ' PID_IsNeutralFluctuationExitReason - identisch zu PID_CountExitsInPeriod.
+                        If Not PID_IsNeutralFluctuationExitReason(CStr(arrReason(r, 1))) Then
+                            austritte = austritte + 1
+                        End If
                     End If
                 End If
             End If
@@ -361,13 +368,18 @@ Public Function PID_CountExitsInPeriod(ByVal startDate As Date, ByVal endDate As
         exitDate = dataWs.Cells(r, "E").Value
         If IsDate(exitDate) Then
             If CDate(exitDate) >= startDate And CDate(exitDate) <= endDate Then
-                exitKey = PID_FluctuationExitDedupKey(dataWs, r)
-                If Len(exitKey) > 0 Then
-                    On Error Resume Next
-                    seenKeys.Add exitKey, exitKey
-                    If Err.Number = 0 Then cnt = cnt + 1
-                    Err.Clear
-                    On Error GoTo SafeExit
+                ' FP-Flukt FIX 2: neutrale Austrittsgruende (Karenz, Store transfer,
+                ' Nicht eingetreten, Befoerderung) zaehlen NICHT in die Fluktuationsrate.
+                ' Zentrale Wahrheit = PID_IsNeutralFluctuationExitReason (Spalte F = Austrittsgrund).
+                If Not PID_IsNeutralFluctuationExitReason(CStr(dataWs.Cells(r, "F").Value)) Then
+                    exitKey = PID_FluctuationExitDedupKey(dataWs, r)
+                    If Len(exitKey) > 0 Then
+                        On Error Resume Next
+                        seenKeys.Add exitKey, exitKey
+                        If Err.Number = 0 Then cnt = cnt + 1
+                        Err.Clear
+                        On Error GoTo SafeExit
+                    End If
                 End If
             End If
         End If
