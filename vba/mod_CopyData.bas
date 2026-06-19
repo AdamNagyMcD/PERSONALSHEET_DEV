@@ -80,7 +80,7 @@ Public Sub PID_CopyDataToFollowingMonths()
     On Error GoTo CleanFail
     
     If TypeName(ActiveSheet) <> "Worksheet" Then
-        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen (z.B. Januar, Juli).", _
+        MsgBox "Bitte zuerst ein Monatsblatt " & PID_UTxtAuswaehlen() & " (z.B. Januar, Juli).", _
                vbExclamation, "Daten kopieren"
         Exit Sub
     End If
@@ -980,7 +980,7 @@ Public Sub PID_ShowHourOverrideLog()
     lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row
     
     If lastRow < 2 Then
-        MsgBox "Stunden-Override-Log ist leer (keine Eintraege).", vbInformation, "Stunden-Log (Diagnose)"
+        MsgBox "Stunden-Override-Log ist leer (keine " & PID_UTxtEintraege() & ").", vbInformation, "Stunden-Log (Diagnose)"
         Exit Sub
     End If
     
@@ -1002,7 +1002,7 @@ Public Sub PID_ShowHourOverrideLog()
               " | " & CStr(wsLog.Cells(r, "E").Value) & vbCrLf
     Next r
     
-    MsgBox msg, vbInformation, "Stunden-Log (Diagnose) — " & (lastRow - 1) & " Eintraege"
+    MsgBox msg, vbInformation, "Stunden-Log (Diagnose) — " & (lastRow - 1) & " " & PID_UTxtEintraege()
 
 SafeExit:
 End Sub
@@ -1601,7 +1601,7 @@ Public Function PID_ValidateWorkerMonthSheet(ByVal ws As Worksheet, _
     PID_ValidateWorkerMonthSheet = False
     
     If ws Is Nothing Then
-        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen (z.B. Januar, Juli).", _
+        MsgBox "Bitte zuerst ein Monatsblatt " & PID_UTxtAuswaehlen() & " (z.B. Januar, Juli).", _
                vbExclamation, dialogTitle
         Exit Function
     End If
@@ -1609,14 +1609,14 @@ Public Function PID_ValidateWorkerMonthSheet(ByVal ws As Worksheet, _
     sheetLabel = "'" & ws.Name & "'"
     
     If Not PID_IsWorkerMonthSheet(ws) Then
-        MsgBox "Das aktive Blatt " & sheetLabel & " ist kein gueltiges Monatsblatt." & vbCrLf & vbCrLf & _
-               "Bitte zuerst ein Monatsblatt auswaehlen (Januar bis Dezember).", _
+        MsgBox "Das aktive Blatt " & sheetLabel & " ist kein " & PID_UTxtGueltig() & "es Monatsblatt." & vbCrLf & vbCrLf & _
+               "Bitte zuerst ein Monatsblatt " & PID_UTxtAuswaehlen() & " (Januar bis Dezember).", _
                vbExclamation, dialogTitle
         Exit Function
     End If
     
     If Not IsNumeric(ws.Range("A1").Value2) Then
-        MsgBox "Monatsblatt " & sheetLabel & " hat keinen gueltigen Monatsindex in A1.", _
+        MsgBox "Monatsblatt " & sheetLabel & " hat keinen " & PID_UTxtGueltigen() & " Monatsindex in A1.", _
                vbExclamation, dialogTitle
         Exit Function
     End If
@@ -1624,7 +1624,7 @@ Public Function PID_ValidateWorkerMonthSheet(ByVal ws As Worksheet, _
     monthIndex = CLng(ws.Range("A1").Value2)
     
     If monthIndex < 1 Or monthIndex > 12 Then
-        MsgBox "Monatsindex in A1 auf " & sheetLabel & " ist ungueltig (" & monthIndex & ").", _
+        MsgBox "Monatsindex in A1 auf " & sheetLabel & " ist un" & PID_UTxtGueltig() & " (" & monthIndex & ").", _
                vbExclamation, dialogTitle
         Exit Function
     End If

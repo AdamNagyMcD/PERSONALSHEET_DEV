@@ -29,31 +29,31 @@ Public Sub PID_ClearCurrentMonthData()
     On Error GoTo CleanFail
     
     If TypeName(ActiveSheet) <> "Worksheet" Then
-        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen (z.B. Januar, Juli).", _
-               vbExclamation, "Daten loeschen"
+        MsgBox "Bitte zuerst ein Monatsblatt " & PID_UTxtAuswaehlen() & " (z.B. Januar, Juli).", _
+               vbExclamation, PID_UTxtDatenLoeschen()
         Exit Sub
     End If
     
     Set ws = ActiveSheet
     
-    If Not PID_ValidateWorkerMonthSheet(ws, monthIndex, "Daten loeschen") Then Exit Sub
+    If Not PID_ValidateWorkerMonthSheet(ws, monthIndex, PID_UTxtDatenLoeschen()) Then Exit Sub
     
     monthHint = " (Monat " & monthIndex & ")"
     
     answer = MsgBox( _
-        "Alle Eingabedaten auf dem Monatsblatt '" & ws.Name & "'" & monthHint & " werden geloescht." & vbCrLf & vbCrLf & _
-        "Geloescht werden:" & vbCrLf & _
+        "Alle Eingabedaten auf dem Monatsblatt '" & ws.Name & "'" & monthHint & " werden " & PID_UTxtGeloescht() & "." & vbCrLf & vbCrLf & _
+        PID_UTxtGeloeschtWerdenLabel() & vbCrLf & _
         "- Mitarbeiterdaten B:N" & vbCrLf & _
         "- Monatsinfo O18:Q25" & vbCrLf & _
         "- Hinweis O45" & vbCrLf & _
         "- Fluktuation Q31" & vbCrLf & vbCrLf & _
-        "Nicht geloescht werden:" & vbCrLf & _
+        "Nicht " & PID_UTxtGeloescht() & " werden:" & vbCrLf & _
         "- Formate" & vbCrLf & _
         "- Kopfzeilen" & vbCrLf & _
         "- Grundstruktur" & vbCrLf & vbCrLf & _
         "Fortfahren?", _
         vbQuestion + vbYesNo, _
-        "Monatsdaten loeschen" _
+        PID_UTxtMonatsdatenLoeschen() _
     )
     
     If answer <> vbYes Then Exit Sub
@@ -82,8 +82,8 @@ Public Sub PID_ClearCurrentMonthData()
     
     PID_TryProtectMonthSheet ws
     
-    MsgBox "Die Monatsdaten wurden geloescht.", _
-           vbInformation, "Daten loeschen"
+    MsgBox "Die Monatsdaten wurden " & PID_UTxtGeloescht() & ".", _
+           vbInformation, PID_UTxtDatenLoeschen()
 
 CleanExit:
     Application.Calculation = oldCalculation
@@ -105,7 +105,7 @@ CleanFail:
     
     MsgBox "Fehler bei PID_ClearCurrentMonthData:" & vbCrLf & _
            originalErrNumber & " - " & originalErrDescription, _
-           vbExclamation, "Daten loeschen"
+           vbExclamation, PID_UTxtDatenLoeschen()
 End Sub
 
 
@@ -186,22 +186,22 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     On Error GoTo CleanFail
     
     If TypeName(ActiveSheet) <> "Worksheet" Then
-        MsgBox "Bitte zuerst ein Monatsblatt auswaehlen (z.B. Januar, Juli).", _
-               vbExclamation, "Zeilen loeschen"
+        MsgBox "Bitte zuerst ein Monatsblatt " & PID_UTxtAuswaehlen() & " (z.B. Januar, Juli).", _
+               vbExclamation, PID_UTxtZeilenLoeschen()
         Exit Sub
     End If
     
     Set ws = ActiveSheet
     
-    If Not PID_ValidateWorkerMonthSheet(ws, monthIndex, "Zeilen loeschen") Then Exit Sub
+    If Not PID_ValidateWorkerMonthSheet(ws, monthIndex, PID_UTxtZeilenLoeschen()) Then Exit Sub
     
     monthHint = " (Monat " & monthIndex & ")"
     
     If Selection Is Nothing Then Exit Sub
     
     If TypeName(Selection) <> "Range" Then
-        MsgBox "Bitte zuerst einen gueltigen Zellbereich markieren.", _
-               vbExclamation, "Zeilen loeschen"
+        MsgBox "Bitte zuerst einen " & PID_UTxtGueltigen() & " Zellbereich markieren.", _
+               vbExclamation, PID_UTxtZeilenLoeschen()
         Exit Sub
     End If
     
@@ -209,7 +209,7 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     
     If area Is Nothing Then
         MsgBox "Bitte zuerst eine oder mehrere Mitarbeiterzeilen im Bereich B3:N82 markieren.", _
-               vbExclamation, "Zeilen loeschen"
+               vbExclamation, PID_UTxtZeilenLoeschen()
         Exit Sub
     End If
     
@@ -225,10 +225,10 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     If selectedRows.count = 0 Then Exit Sub
     
     answer = MsgBox( _
-        "Es werden " & selectedRows.count & " Mitarbeiterzeile(n) auf '" & ws.Name & "'" & monthHint & " geloescht." & vbCrLf & vbCrLf & _
+        "Es werden " & selectedRows.count & " Mitarbeiterzeile(n) auf '" & ws.Name & "'" & monthHint & " " & PID_UTxtGeloescht() & "." & vbCrLf & vbCrLf & _
         "Fortfahren?", _
         vbQuestion + vbYesNo, _
-        "Ausgewaehlte Zeilen loeschen" _
+        PID_UTxtAusgewaehlteZeilenLoeschen() _
     )
     
     If answer <> vbYes Then Exit Sub
@@ -256,8 +256,8 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     
     PID_TryProtectMonthSheet ws
     
-    MsgBox "Ausgewaehlte Mitarbeiterzeile(n) wurden geloescht.", _
-           vbInformation, "Zeilen loeschen"
+    MsgBox PID_UTxtAusgewaehlte() & " Mitarbeiterzeile(n) wurden " & PID_UTxtGeloescht() & ".", _
+           vbInformation, PID_UTxtZeilenLoeschen()
 
 CleanExit:
     Application.DisplayAlerts = oldDisplayAlerts
@@ -277,7 +277,7 @@ CleanFail:
     
     MsgBox "Fehler bei PID_ClearOnlySelectedEmployeeRows:" & vbCrLf & _
            originalErrNumber & " - " & originalErrDescription, _
-           vbExclamation, "Zeilen loeschen"
+           vbExclamation, PID_UTxtZeilenLoeschen()
 End Sub
 
 

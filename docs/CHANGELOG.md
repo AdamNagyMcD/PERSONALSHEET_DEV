@@ -4,6 +4,9 @@ Entwicklungs- und Release-Log.
 
 ## Unreleased
 
+### Changed
+- mod_CopyData.bas + mod_PIDUserText.bas (UI Phase 2): MsgBox-Texte in `PID_CopyDataToFollowingMonths`, `PID_ShowHourOverrideLog` und `PID_ValidateWorkerMonthSheet` nutzen zentrale ChrW-Helper (`PID_UTxtAuswaehlen`, `PID_UTxtGueltig`/`Gueltigen`, neuer `PID_UTxtEintraege`) — sichtbare Dialoge zeigen korrekte Umlaute; CopyData-Logik unveraendert.
+
 ### Added
 - mod_PIDAdminSheet.bas: verstecktes Admin-Panel `_ADMIN` (VeryHidden) mit Buttons (Smoke, Full Refresh, VBA Import, Schutz AN/AUS, …); `PID_ToggleAdminSheet`.
 - Modul1.bas (FP-029): `PID_GetUrlaubGeldFormulaR1C1`, `PID_RestoreUrlaubGeldFormulasSilent`, `PID_RestoreUrlaubGeldFormulas` — kanonische Spalte-K-Formel mit B/C-Guard, J-Guard und 0→leer.
