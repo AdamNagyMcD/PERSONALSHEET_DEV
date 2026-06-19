@@ -200,6 +200,10 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
             PID_RecalculateMonthFormulaColumns Sh
         End If
         
+        ' FINANZIELL: deferred dirty sync (E3:L82) auch beim Monatsblatt-Tab,
+        ' nicht nur beim Oeffnen von UEBERSICHT — haelt G/J dort aktuell wie S36/S37.
+        RefreshFinanzSummaryIfDirty
+        
         GoTo SafeExit
     End If
     

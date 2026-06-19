@@ -546,6 +546,8 @@ Private Sub PID_WriteFinanzSummaryMonthRow(ByVal ubersichtWs As Worksheet, _
     If wsMonth Is Nothing Then Exit Sub
     If monthIndex < 1 Or monthIndex > 12 Then Exit Sub
     
+    PID_RefreshMonthFinanzSummaryCells wsMonth
+    
     crewLabor = PID_GetMonthCrewLaborValue(wsMonth)
     crewPct = PID_GetMonthCrewLaborPct(wsMonth, crewLabor)
     
