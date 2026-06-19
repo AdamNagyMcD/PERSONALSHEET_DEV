@@ -1438,7 +1438,7 @@ Public Sub PID_RestoreKVCodeDropdownValidation()
     Next i
     
     MsgBox "KV-Code Dropdown (Spalte E) wurde wiederhergestellt." & vbCrLf & vbCrLf & _
-           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           PID_UTxtMonatsblaetter() & " aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
            "Bereich: E" & PID_FIRST_ROW & ":E" & PID_LAST_ROW, _
            vbInformation, "Spalte E"
 
@@ -1664,7 +1664,7 @@ Public Sub PID_RestoreMonthSheetDropdownsAfterFormat()
     
     MsgBox "Monatsblatt-Dropdowns (E/F) wiederhergestellt." & vbCrLf & vbCrLf & _
            "E = KV-Code, F = Stunden (auch leere Zeilen)." & vbCrLf & _
-           "Nach E-Aenderung aktualisiert sich F automatisch.", _
+           "Nach E-" & PID_UTxtAenderung() & " aktualisiert sich F automatisch.", _
            vbInformation, "Dropdowns"
 End Sub
 

@@ -89,3 +89,33 @@ End Function
 Public Function PID_UTxtEintraege() As String
     PID_UTxtEintraege = "Eintr" & PID_UTxtAe() & "ge"
 End Function
+
+
+Public Function PID_UTxtBlaetter() As String
+    PID_UTxtBlaetter = "Bl" & PID_UTxtAe() & "tter"
+End Function
+
+
+Public Function PID_UTxtMonatsblaetter() As String
+    PID_UTxtMonatsblaetter = "Monatsbl" & PID_UTxtAe() & "tter"
+End Function
+
+
+Public Function PID_UTxtMonatsblaettern() As String
+    PID_UTxtMonatsblaettern = PID_UTxtMonatsblaetter() & "n"
+End Function
+
+
+Public Function PID_UTxtZurueckgesetzt() As String
+    PID_UTxtZurueckgesetzt = "zur" & PID_UTxtUe() & "ckgesetzt"
+End Function
+
+
+Public Function PID_UTxtPruefung() As String
+    PID_UTxtPruefung = "Pr" & PID_UTxtUe() & "fung"
+End Function
+
+
+Public Function PID_UTxtAenderung() As String
+    PID_UTxtAenderung = ChrW(196) & "nderung"
+End Function

@@ -709,10 +709,10 @@ Public Sub PID_RestoreMonatslohnFormulas()
     ClearAllKVLohnDirty
     
     MsgBox "Monatslohn-Formeln (Spalte G) wurden wiederhergestellt." & vbCrLf & vbCrLf & _
-           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           PID_UTxtMonatsblaetter() & " aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
            "Bereich: G" & PID_FIRST_ROW & ":G" & PID_LAST_ROW & vbCrLf & _
            "Lookup aus: " & PID_LOHNTABELLE_SHEET & vbCrLf & vbCrLf & _
-           "Spalte G aktualisiert sich jetzt automatisch bei Aenderung von E/F.", _
+           "Spalte G aktualisiert sich jetzt automatisch bei " & PID_UTxtAenderung() & " von E/F.", _
            vbInformation, "Spalte G"
     
     GoTo CleanExit

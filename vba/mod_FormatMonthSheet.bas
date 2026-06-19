@@ -57,7 +57,7 @@ Public Sub PID_FixDurchrechnungStartMonthPanels()
         End If
     Next monthName
     
-    MsgBox countDone & " Monatsblaetter: Panel O15 als O15:R15 (wie Februar).", _
+    MsgBox countDone & " " & PID_UTxtMonatsblaetter() & ": Panel O15 als O15:R15 (wie Februar).", _
            vbInformation, "Durchrechnung Panel"
     Exit Sub
 
@@ -118,7 +118,7 @@ Public Sub EnsureMonthSheetCopyDataButtons()
         End If
     Next monthName
     
-    MsgBox countDone & " Monatsblaetter: CopyData-Button im LOHNTABELLE-Stil.", _
+    MsgBox countDone & " " & PID_UTxtMonatsblaetter() & ": CopyData-Button im LOHNTABELLE-Stil.", _
            vbInformation, "Monatsblatt Button"
     Exit Sub
 
@@ -190,7 +190,7 @@ Public Sub FormatAllMonthSheets()
     Set wsRef = ThisWorkbook.Worksheets(PID_MS_PILOT_SHEET)
     
     If Not PID_IsWorkerMonthSheet(wsRef) Then
-        MsgBox "Referenzblatt '" & PID_MS_PILOT_SHEET & "' ist kein gueltiges Monatsblatt.", _
+        MsgBox "Referenzblatt '" & PID_MS_PILOT_SHEET & "' ist kein " & PID_UTxtGueltig() & "es Monatsblatt.", _
                vbExclamation, "Monatsblatt Format"
         Exit Sub
     End If
@@ -215,7 +215,7 @@ Public Sub FormatAllMonthSheets()
     
     PID_ApplyCopyrightToAllSheets
     
-    MsgBox countDone & " Monatsblaetter von '" & PID_MS_PILOT_SHEET & "' formatiert.", _
+    MsgBox countDone & " " & PID_UTxtMonatsblaetter() & " von '" & PID_MS_PILOT_SHEET & "' formatiert.", _
            vbInformation, "Monatsblatt Format"
     Exit Sub
 
@@ -260,7 +260,7 @@ Public Sub PID_FixMonthSheetPanelBorders()
         End If
     Next monthName
     
-    MsgBox countDone & " Monatsblaetter: Rahmen N43:N50 (rechts) und O42:V42 (unten) gesetzt.", _
+    MsgBox countDone & " " & PID_UTxtMonatsblaetter() & ": Rahmen N43:N50 (rechts) und O42:V42 (unten) gesetzt.", _
            vbInformation, "Monatsblatt Rahmen"
     Exit Sub
 
@@ -298,7 +298,7 @@ Private Sub PID_FormatMonthSheetByName(ByVal sheetName As String)
     End If
     
     If Not PID_IsWorkerMonthSheet(ws) Then
-        MsgBox "'" & sheetName & "' ist kein gueltiges Monatsblatt.", vbExclamation, "Monatsblatt Format"
+        MsgBox "'" & sheetName & "' ist kein " & PID_UTxtGueltig() & "es Monatsblatt.", vbExclamation, "Monatsblatt Format"
         GoTo CleanExit
     End If
     

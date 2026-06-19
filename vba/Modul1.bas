@@ -263,7 +263,7 @@ Public Sub PID_ResetExcelState()
     
     On Error GoTo 0
     
-    MsgBox "Excel wurde zurueckgesetzt.", _
+    MsgBox "Excel wurde " & PID_UTxtZurueckgesetzt() & ".", _
            vbInformation, "Excel Reset"
 End Sub
 
@@ -277,8 +277,8 @@ Public Sub PID_HideTechnicalSheets()
     
     On Error GoTo 0
     
-    MsgBox "Technische Blaetter wurden ausgeblendet.", _
-           vbInformation, "Technische Blaetter"
+    MsgBox "Technische " & PID_UTxtBlaetter() & " wurden ausgeblendet.", _
+           vbInformation, "Technische " & PID_UTxtBlaetter()
 End Sub
 
 
@@ -290,8 +290,8 @@ Public Sub PID_ShowTechnicalSheets()
     
     On Error GoTo 0
     
-    MsgBox "Technische Blaetter wurden sichtbar gemacht.", _
-           vbInformation, "Technische Blaetter"
+    MsgBox "Technische " & PID_UTxtBlaetter() & " wurden sichtbar gemacht.", _
+           vbInformation, "Technische " & PID_UTxtBlaetter()
 End Sub
 
 
@@ -418,7 +418,7 @@ Public Sub PID_RestoreAktuelleStundenFormulas()
     updatedCount = PID_RestoreAktuelleStundenFormulasSilent
     
     MsgBox "Aktuelle-Stunden-Formeln wurden wiederhergestellt." & vbCrLf & vbCrLf & _
-           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           PID_UTxtMonatsblaetter() & " aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
            "Bereich: H" & PID_FIRST_ROW & ":H" & PID_LAST_ROW & vbCrLf & _
            "Jahr aus: " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL, _
            vbInformation, "Aktuelle Stunden"
@@ -597,7 +597,7 @@ Public Sub RestoreKVStundenDropdownValidation()
     MarkKVDropdownsClean
     
     MsgBox "Stunden-Dropdown (Spalte F) wurde wiederhergestellt." & vbCrLf & vbCrLf & _
-           "Bereich: F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW & " auf allen Monatsblaettern.", _
+           "Bereich: F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW & " auf allen " & PID_UTxtMonatsblaettern() & ".", _
            vbInformation, "Spalte F"
 End Sub
 
@@ -629,7 +629,7 @@ Public Sub PID_RestoreLetztesGehaltFormulas()
     Next i
     
     MsgBox "Letztes-Gehalt-Formeln (Spalte L) wurden wiederhergestellt." & vbCrLf & vbCrLf & _
-           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           PID_UTxtMonatsblaetter() & " aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
            "Bereich: L" & PID_FIRST_ROW & ":L" & PID_LAST_ROW & vbCrLf & _
            "Jahr aus: " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL & vbCrLf & vbCrLf & _
            PID_GetLetztesGehaltRestoreStatusText() & vbCrLf & vbCrLf & _
@@ -1100,8 +1100,8 @@ Public Sub PID_RestoreAustrittsdatumValidation()
         End If
     Next i
     
-    MsgBox "Austrittsdatum-Pruefung wurde wiederhergestellt." & vbCrLf & vbCrLf & _
-           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+    MsgBox "Austrittsdatum-" & PID_UTxtPruefung() & " wurde wiederhergestellt." & vbCrLf & vbCrLf & _
+           PID_UTxtMonatsblaetter() & " aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
            "Spalte I: Datum zwischen AB1 und AB2" & vbCrLf & _
            "Jahr aus: " & PID_EINSTELLUNG_SHEET & "!" & PID_WORKBOOK_YEAR_CELL, _
            vbInformation, "Austrittsdatum"
@@ -1246,7 +1246,7 @@ Public Sub PID_RestoreUrlaubGeldFormulas()
     updatedCount = PID_RestoreUrlaubGeldFormulasSilent
 
     MsgBox "Urlaub-Euro-Formeln (Spalte K) wurden wiederhergestellt." & vbCrLf & vbCrLf & _
-           "Monatsblaetter aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
+           PID_UTxtMonatsblaetter() & " aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
            "Bereich: K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW, _
            vbInformation, "Spalte K"
 End Sub

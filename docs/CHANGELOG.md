@@ -6,6 +6,7 @@ Entwicklungs- und Release-Log.
 
 ### Changed
 - mod_CopyData.bas + mod_PIDUserText.bas (UI Phase 2): MsgBox-Texte in `PID_CopyDataToFollowingMonths`, `PID_ShowHourOverrideLog` und `PID_ValidateWorkerMonthSheet` nutzen zentrale ChrW-Helper (`PID_UTxtAuswaehlen`, `PID_UTxtGueltig`/`Gueltigen`, neuer `PID_UTxtEintraege`) — sichtbare Dialoge zeigen korrekte Umlaute; CopyData-Logik unveraendert.
+- Modul1.bas, mod_FormatMonthSheet.bas, mod_KVStundenDropdown.bas, mod_KVLohnLookup.bas + mod_PIDUserText.bas (UI Phase 3): Restore-/Format-MsgBox-Texte (`Monatsblätter`, `Blätter`, `zurückgesetzt`, `Prüfung`, `Änderung`, `gültiges`) über zentrale ChrW-Helper; Logik und Formeln unveraendert.
 
 ### Added
 - mod_PIDAdminSheet.bas: verstecktes Admin-Panel `_ADMIN` (VeryHidden) mit Buttons (Smoke, Full Refresh, VBA Import, Schutz AN/AUS, …); `PID_ToggleAdminSheet`.
