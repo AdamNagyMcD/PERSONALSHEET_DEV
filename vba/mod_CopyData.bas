@@ -302,15 +302,21 @@ End Sub
 Private Sub PID_PruneHourOverrideLogForCopy(ByVal workbookYear As Long, _
                                             ByVal sourceMonthIndex As Long, _
                                             ByVal sourceData As Variant)
+    ' FP-028: Redundante Log-Eintraege gegen den LAUFENDEN Segmentwert pruefen,
+    ' nicht blind gegen den Quellwert. So bleibt eine bewusste spaetere Aenderung
+    ' erhalten, auch wenn ihr Wert zufaellig dem Quellwert eines frueheren Monats
+    ' entspricht (z.B. April=173, Juli=69, November=173 -> November bleibt 173).
+    ' Monate aufsteigend verarbeiten, damit der laufende Wert korrekt fortgeschrieben wird.
     Dim wsLog As Worksheet
     Dim lastRow As Long
     Dim r As Long
-    Dim logYear As Long
     Dim logMonth As Long
     Dim employeeKey As String
     Dim fieldCode As String
     Dim logValue As Variant
-    Dim sourceValue As Variant
+    Dim runningValue As Variant
+    Dim runningValues As Collection
+    Dim deleteRow() As Boolean
     
     On Error GoTo SafeExit
     
@@ -326,34 +332,44 @@ Private Sub PID_PruneHourOverrideLogForCopy(ByVal workbookYear As Long, _
     lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row
     If lastRow < 2 Then Exit Sub
     
-    For r = lastRow To 2 Step -1
-        If Not IsNumeric(wsLog.Cells(r, "A").Value) Then GoTo NextPruneRow
-        If Not IsNumeric(wsLog.Cells(r, "B").Value) Then GoTo NextPruneRow
-        
-        logYear = CLng(wsLog.Cells(r, "A").Value)
-        logMonth = CLng(wsLog.Cells(r, "B").Value)
-        
-        If logYear <> workbookYear Then GoTo NextPruneRow
-        If logMonth <= sourceMonthIndex Then GoTo NextPruneRow
-        
-        employeeKey = Trim$(CStr(wsLog.Cells(r, "C").Value))
-        fieldCode = Trim$(CStr(wsLog.Cells(r, "D").Value))
-        logValue = wsLog.Cells(r, "E").Value
-        
-        If employeeKey = "" Then GoTo NextPruneRow
-        If fieldCode <> "E" And fieldCode <> "F" Then GoTo NextPruneRow
-        If Trim$(CStr(logValue)) = "" Then GoTo NextPruneRow
-        
-        If Not PID_EmployeeKeyExistsInSourceData(sourceData, employeeKey) Then GoTo NextPruneRow
-        
-        sourceValue = PID_GetSourceEFValue(sourceData, employeeKey, fieldCode)
-        If Trim$(CStr(sourceValue)) = "" Then GoTo NextPruneRow
-        
-        If PID_CopyDataFieldValuesEqual(logValue, sourceValue) Then
-            wsLog.Rows(r).Delete
-        End If
+    Set runningValues = New Collection
+    ReDim deleteRow(2 To lastRow)
+    
+    For logMonth = sourceMonthIndex + 1 To 12
+        For r = 2 To lastRow
+            If Not IsNumeric(wsLog.Cells(r, "A").Value) Then GoTo NextPruneRow
+            If Not IsNumeric(wsLog.Cells(r, "B").Value) Then GoTo NextPruneRow
+            
+            If CLng(wsLog.Cells(r, "A").Value) <> workbookYear Then GoTo NextPruneRow
+            If CLng(wsLog.Cells(r, "B").Value) <> logMonth Then GoTo NextPruneRow
+            
+            employeeKey = Trim$(CStr(wsLog.Cells(r, "C").Value))
+            fieldCode = Trim$(CStr(wsLog.Cells(r, "D").Value))
+            logValue = wsLog.Cells(r, "E").Value
+            
+            If employeeKey = "" Then GoTo NextPruneRow
+            If fieldCode <> "E" And fieldCode <> "F" Then GoTo NextPruneRow
+            If Trim$(CStr(logValue)) = "" Then GoTo NextPruneRow
+            
+            If Not PID_EmployeeKeyExistsInSourceData(sourceData, employeeKey) Then GoTo NextPruneRow
+            
+            runningValue = PID_GetRunningEFValue(runningValues, sourceData, employeeKey, fieldCode)
+            
+            If PID_CopyDataFieldValuesEqual(logValue, runningValue) Then
+                ' Redundant: Wert entspricht dem bereits wirksamen Segmentwert.
+                deleteRow(r) = True
+            Else
+                ' Echte spaetere Aenderung: laufenden Wert fortschreiben, Eintrag behalten.
+                PID_SetRunningEFValue runningValues, employeeKey, fieldCode, logValue
+            End If
 
 NextPruneRow:
+        Next r
+    Next logMonth
+    
+    ' Markierte Zeilen von unten nach oben loeschen, damit die Indizes gueltig bleiben.
+    For r = lastRow To 2 Step -1
+        If deleteRow(r) Then wsLog.Rows(r).Delete
     Next r
 
 SafeExit:
@@ -648,10 +664,11 @@ Public Sub PID_LogEFAenderungForSheet(ByVal wsMonth As Worksheet, ByVal changedR
                 ' Eintrag eine echte, eigenstaendige Benutzer-Aenderung (z.B. November=160) — und
                 ' wurde faelschlich vernichtet, sobald ein frueherer Monat (z.B. Juli) editiert wurde.
                 ' Folge: mehrfache/aufeinanderfolgende Stunden-Aenderungen "blieben am ersten Wert haengen".
-                ' Redundante Eintraege werden weiterhin sauber behandelt:
-                '   - gleicher Monat erneut geaendert  -> PID_UpsertHourOverride ueberschreibt
-                '   - Wert == Quellwert nach CopyData   -> PID_PruneHourOverrideLogForCopy entfernt
-                '   - Wert == laufender Wert            -> PID_ApplyLoggedHourOverrides dedupliziert
+                ' Redundante Eintraege werden weiterhin sauber behandelt (FP-028: Vergleich
+                ' gegen den laufenden Segmentwert, NICHT gegen den Quellwert):
+                '   - gleicher Monat erneut geaendert      -> PID_UpsertHourOverride ueberschreibt
+                '   - Wert == laufender Segmentwert         -> PID_PruneHourOverrideLogForCopy entfernt
+                '   - Wert == laufender Wert beim Anwenden  -> PID_ApplyLoggedHourOverrides dedupliziert
                 PID_UpsertHourOverride workbookYear, monthIndex, keyText, fieldCode, c.Value
             End If
         End If
@@ -678,7 +695,6 @@ Private Sub PID_ApplyLoggedHourOverrides(ByRef futureOverrides As Collection, _
     Dim runningValue As Variant
     Dim runningValues As Collection
     Dim employeeStartMonth As Long
-    Dim sourceValue As Variant
     
     On Error GoTo SafeExit
     
@@ -716,13 +732,14 @@ Private Sub PID_ApplyLoggedHourOverrides(ByRef futureOverrides As Collection, _
             employeeStartMonth = PID_GetFutureNewStartMonth(futureNewStarts, employeeKey)
             If employeeStartMonth > 0 Then
                 If logMonth < employeeStartMonth Then GoTo NextLogRow
-            ElseIf PID_EmployeeKeyExistsInSourceData(sourceData, employeeKey) Then
-                sourceValue = PID_GetSourceEFValue(sourceData, employeeKey, fieldCode)
-                If Trim$(CStr(sourceValue)) <> "" Then
-                    If PID_CopyDataFieldValuesEqual(logValue, sourceValue) Then GoTo NextLogRow
-                End If
             End If
             
+            ' FP-028: Keine Quellwert-Gleichheitspruefung mehr. Eine bewusste spaetere
+            ' Aenderung muss erhalten bleiben, auch wenn ihr Wert dem Quellwert entspricht
+            ' (z.B. November=173 == April-Quelle=173). Die Deduplizierung erfolgt
+            ' ausschliesslich gegen den laufenden Segmentwert (running value):
+            ' der erste Eintrag eines MA/Feldes vergleicht sich ohnehin mit dem Quellwert
+            ' (Seed via PID_GetRunningEFValue), spaetere Eintraege mit dem fortgeschriebenen Wert.
             runningValue = PID_GetRunningEFValue(runningValues, sourceData, employeeKey, fieldCode)
             
             If Not PID_CopyDataFieldValuesEqual(runningValue, logValue) Then

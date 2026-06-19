@@ -246,3 +246,32 @@ FLUKTUATION-Blatt öffnen, bis ganz nach unten unter „Kurz erklärt" scrollen 
 ### Negative checks
 - Der Legendenblock ist rein additiv (ganz unten); bestehende Sektionen/Spalten bleiben unverändert.
 - „Aktueller Personalbestand" als KPI ist NICHT umgesetzt (nur dokumentiert, siehe CHANGELOG).
+
+---
+
+## TEST 19 — Späterer Override == früherer Quellwert (FP-028)
+
+### Scenario
+Für denselben Mitarbeiter (Feld F, Stunden):
+1. April F=173, CopyData ab April.
+2. Juli F=69, CopyData ab Juli.
+3. November F=173 (bewusst zurück auf den Ausgangswert), CopyData.
+4. Zur Sicherheit zusätzlich CopyData **ab April** erneut ausführen (verarbeitet den gesamten Log).
+
+### Expected
+- April–Juni = 173
+- Juli–Oktober = 69
+- November–Dezember = 173
+- Der November-Override (173) bleibt erhalten, obwohl sein Wert dem April-Quellwert (173) entspricht.
+- Auch nach erneutem CopyData ab April bleibt November–Dezember = 173 (Regression-Kern von FP-028).
+
+### Diagnostic
+- `PID_ShowHourOverrideLog` vor/nach jedem CopyData: der Eintrag `(11, F, 173)` darf NICHT
+  durch `PID_PruneHourOverrideLogForCopy` gelöscht werden (Vergleich gegen laufenden
+  Segmentwert 69, nicht gegen Quellwert 173).
+
+### Negative checks
+- TEST 9–11 (FP-030) bleiben unverändert grün:
+  - Mehrfache Änderung im selben Monat: letzter Wert gewinnt.
+  - Unabhängiger späterer Override überlebt eine frühere Editierung.
+  - Mittelmonats-Override löscht keine Nachbar-Overrides.
