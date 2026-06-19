@@ -165,7 +165,7 @@ Public Sub PID_FilterSmokeReviewOnly()
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
     
     If lastRow < 2 Then
-        MsgBox "Keine Smoke-Check Daten vorhanden. Bitte zuerst PID_RunSystemSmokeCheck ausfuehren.", _
+        MsgBox "Keine Smoke-Check Daten vorhanden. Bitte zuerst PID_RunSystemSmokeCheck " & PID_UTxtAusfuehren() & ".", _
                vbInformation, "System Smoke Check"
         Exit Sub
     End If
@@ -178,7 +178,7 @@ Public Sub PID_FilterSmokeReviewOnly()
     
     filterRange.AutoFilter Field:=2, Criteria1:="REVIEW"
     
-    MsgBox "Filter aktiv: Es werden nur REVIEW-Faelle angezeigt.", _
+    MsgBox "Filter aktiv: Es werden nur REVIEW-F" & PID_UTxtAe() & "lle angezeigt.", _
            vbInformation, "System Smoke Check"
     Exit Sub
     
@@ -202,7 +202,7 @@ Public Sub PID_ClearSmokeFilter()
         End If
     End If
     
-    MsgBox "Filter wurde zurueckgesetzt. Alle Smoke-Check Zeilen sind sichtbar.", _
+    MsgBox "Filter wurde " & PID_UTxtZurueckgesetzt() & ". Alle Smoke-Check Zeilen sind sichtbar.", _
            vbInformation, "System Smoke Check"
     Exit Sub
     

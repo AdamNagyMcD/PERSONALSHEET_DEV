@@ -116,7 +116,7 @@ End Sub
 
 Public Sub PID_AdminRunFormatMonths()
     If Not PID_ConfirmAdminAction( _
-        "FormatAllMonthSheets auf allen 12 Monatsblaettern ausfuehren?", _
+        "FormatAllMonthSheets auf allen 12 " & PID_UTxtMonatsblaettern() & " " & PID_UTxtAusfuehren() & "?", _
         "Monatsformat") Then
         Exit Sub
     End If
@@ -138,14 +138,14 @@ End Sub
 
 Public Sub PID_AdminRunProtectAll()
     If Not PID_ConfirmAdminAction( _
-        "Alle Blaetter werden geschuetzt (Monatsblatt-Policy, UEBERSICHT, LOHNTABELLE, ...).", _
+        "Alle " & PID_UTxtBlaetter() & " werden " & PID_UTxtGeschuetzt() & " (Monatsblatt-Policy, UEBERSICHT, LOHNTABELLE, ...).", _
         "Schutz aktivieren") Then
         Exit Sub
     End If
     
     PID_SetupSheetProtectionForMacros
     
-    MsgBox "Schutz auf allen Blaettern aktiv.", vbInformation, "Admin"
+    MsgBox "Schutz auf allen " & PID_UTxtBlaetter() & "n aktiv.", vbInformation, "Admin"
 End Sub
 
 

@@ -241,7 +241,7 @@ CleanFail:
     gFluktuationAnalyseDirty = refreshAnalyse Or gFluktuationAnalyseDirty
     gFluktuationDirty = True
     
-    MsgBox "Die Fluktuation konnte nicht vollstaendig aktualisiert werden." & vbCrLf & vbCrLf & _
+    MsgBox "Die Fluktuation konnte nicht " & PID_UTxtVollstaendig() & " aktualisiert werden." & vbCrLf & vbCrLf & _
            "Fehler " & Err.Number & ": " & Err.Description, _
            vbExclamation, "Fluktuation aktualisieren"
     

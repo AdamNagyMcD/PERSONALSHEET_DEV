@@ -119,3 +119,23 @@ End Function
 Public Function PID_UTxtAenderung() As String
     PID_UTxtAenderung = ChrW(196) & "nderung"
 End Function
+
+
+Public Function PID_UTxtFuer() As String
+    PID_UTxtFuer = "f" & PID_UTxtUe() & "r"
+End Function
+
+
+Public Function PID_UTxtVollstaendig() As String
+    PID_UTxtVollstaendig = "vollst" & PID_UTxtAe() & "ndig"
+End Function
+
+
+Public Function PID_UTxtAusfuehren() As String
+    PID_UTxtAusfuehren = "ausf" & PID_UTxtUe() & "hren"
+End Function
+
+
+Public Function PID_UTxtGeschuetzt() As String
+    PID_UTxtGeschuetzt = "gesch" & PID_UTxtUe() & "tzt"
+End Function

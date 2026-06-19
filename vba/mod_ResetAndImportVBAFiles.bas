@@ -42,7 +42,7 @@ Public Sub ResetAndImportVBAFiles()
     End If
 
     If Not PID_ConfirmAdminAction( _
-        "Alle Standard-VBA-Module werden geloescht und aus dem Ordner ""vba"" neu importiert.", _
+        "Alle Standard-VBA-Module werden " & PID_UTxtGeloescht() & " und aus dem Ordner ""vba"" neu importiert.", _
         "VBA Import") Then
         Exit Sub
     End If
@@ -134,7 +134,7 @@ Public Sub ResetAndImportVBAFiles()
     Application.StatusBar = False
     On Error GoTo ImportError
 
-    MsgBox deleted & " Module geloescht, " & imported & " importiert, " & _
+    MsgBox deleted & " Module " & PID_UTxtGeloescht() & ", " & imported & " importiert, " & _
            updatedCodeModules & " aktualisiert." & vbCrLf & vbCrLf & _
            "Danach: Kompilieren > Speichern > Excel neu starten > FullSystemRefresh", _
            vbInformation, "VBA Import"
@@ -150,7 +150,7 @@ VBProjectBlocked:
            "Unter Windows muss in Excel aktiviert werden:" & vbCrLf & _
            "Datei > Optionen > Trust Center > Trust Center-Einstellungen > " & _
            "Makroeinstellungen > ""Zugriff auf das VBA-Projektobjektmodell vertrauen""" & vbCrLf & vbCrLf & _
-           "Excel danach neu starten und dieses Makro erneut ausfuehren.", _
+           "Excel danach neu starten und dieses Makro erneut " & PID_UTxtAusfuehren() & ".", _
            vbExclamation, "VBA Import"
     Exit Sub
 

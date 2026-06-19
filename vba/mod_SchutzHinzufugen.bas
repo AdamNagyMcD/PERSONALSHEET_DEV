@@ -36,8 +36,8 @@ Public Sub PID_FixUbersichtPlanInputsEditable()
     
     PID_ApplyUbersichtSheetProtection ws
     
-    MsgBox "UEBERSICHT geschuetzt: nur E30 und I30 sind editierbar." & vbCrLf & vbCrLf & _
-           "Weisse Plan-Zellen: Spalte E und I, Zeile 30 — Formeln darunter sind gesperrt.", _
+    MsgBox "UEBERSICHT " & PID_UTxtGeschuetzt() & ": nur E30 und I30 sind editierbar." & vbCrLf & vbCrLf & _
+           "Wei" & PID_UTxtSs() & "e Plan-Zellen: Spalte E und I, Zeile 30 — Formeln darunter sind gesperrt.", _
            vbInformation, "UEBERSICHT"
 
 SafeExit:

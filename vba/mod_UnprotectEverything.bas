@@ -14,7 +14,7 @@ Public Sub UnprotectEverything()
     On Error GoTo CleanFail
     
     If Not PID_ConfirmAdminAction( _
-        "Alle Blatt-Schutz und Workbook-Schutz werden aufgehoben. Alle versteckten Blaetter werden sichtbar.", _
+        "Alle Blatt-Schutz und Workbook-Schutz werden aufgehoben. Alle versteckten " & PID_UTxtBlaetter() & " werden sichtbar.", _
         "Schutz aufheben") Then
         Exit Sub
     End If
@@ -47,7 +47,7 @@ CleanExit:
     Application.EnableEvents = True
     Application.ScreenUpdating = True
     
-    MsgBox "Alle Blaetter wurden entsperrt und sichtbar gemacht." & vbCrLf & _
+    MsgBox "Alle " & PID_UTxtBlaetter() & " wurden entsperrt und sichtbar gemacht." & vbCrLf & _
            "Excel-Events und ScreenUpdating sind wieder aktiv.", _
            vbInformation, "Schutz aufgehoben"
     
@@ -85,8 +85,8 @@ CleanExit:
     Application.EnableEvents = True
     Application.ScreenUpdating = True
     
-    MsgBox "Alle Blaetter wurden sichtbar gemacht.", _
-           vbInformation, "Blaetter sichtbar"
+    MsgBox "Alle " & PID_UTxtBlaetter() & " wurden sichtbar gemacht.", _
+           vbInformation, PID_UTxtBlaetter() & " sichtbar"
     
     Exit Sub
 
@@ -97,5 +97,5 @@ CleanFail:
     
     MsgBox "Fehler bei ShowAllSheets:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
-           vbExclamation, "Blaetter sichtbar"
+           vbExclamation, PID_UTxtBlaetter() & " sichtbar"
 End Sub

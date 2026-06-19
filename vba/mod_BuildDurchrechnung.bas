@@ -202,7 +202,7 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     
     If showMessage Then
         MsgBox "Durchrechnungsblock auf UEBERSICHT wurde erstellt." & vbCrLf & vbCrLf & _
-               "Weisse Felder (manuell editierbar):" & vbCrLf & _
+               "Wei" & PID_UTxtSs() & "e Felder (manuell editierbar):" & vbCrLf & _
                "- " & PID_DRTxtJaenner() & " " & PID_DRTxtVerfuegbar() & " Plan (E30)" & vbCrLf & _
                "- " & PID_DRTxtJaenner() & " Muster Plan (I30)" & vbCrLf & vbCrLf & _
                "Stundenlohn pro Zeile = AVG Bruttolohn/h aus dem Schlussmonat (Q42).", _
@@ -1113,7 +1113,7 @@ Public Sub PID_FormatDurchrechnungUebersicht()
     End If
     
     If Not PID_DurchrechnungBlockExists(ws) Then
-        MsgBox "Kein Durchrechnungsblock auf UEBERSICHT gefunden. Bitte zuerst PID_BuildDurchrechnungUebersicht ausfuehren.", _
+        MsgBox "Kein Durchrechnungsblock auf UEBERSICHT gefunden. Bitte zuerst PID_BuildDurchrechnungUebersicht " & PID_UTxtAusfuehren() & ".", _
                vbExclamation, "Durchrechnung"
         GoTo CleanProtect
     End If

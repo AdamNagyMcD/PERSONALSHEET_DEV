@@ -12,7 +12,7 @@ Public Function PID_ConfirmAdminAction(ByVal actionDescription As String, ByVal 
     Dim answer As VbMsgBoxResult
     
     answer = MsgBox( _
-        "ADMIN-MAKRO — nur fuer Entwickler/Release." & vbCrLf & vbCrLf & _
+        "ADMIN-MAKRO — nur f" & PID_UTxtUe() & "r Entwickler/Release." & vbCrLf & vbCrLf & _
         actionDescription & vbCrLf & vbCrLf & _
         "Fortfahren?", _
         vbExclamation + vbYesNo, _
@@ -25,7 +25,7 @@ End Function
 Public Sub PID_ShowAdminMacroInfo()
     Dim msg As String
     
-    msg = "Admin-/Entwickler-Makros (nicht fuer Restaurant-User):" & vbCrLf & vbCrLf
+    msg = "Admin-/Entwickler-Makros (nicht f" & PID_UTxtUe() & "r Restaurant-User):" & vbCrLf & vbCrLf
     msg = msg & "- PID_ToggleAdminSheet (Admin-Panel ein/aus)" & vbCrLf
     msg = msg & "- ResetAndImportVBAFiles" & vbCrLf
     msg = msg & "- FullSystemRefresh / PID_FullSystemRefresh" & vbCrLf
@@ -44,7 +44,7 @@ End Sub
 Public Sub PID_AdminResetHourOverrideLog()
     If Not PID_ConfirmAdminAction( _
         "Das versteckte Blatt PID_HOUR_OVERRIDES wird geleert." & vbCrLf & _
-        "Nur noetig nach altem CopyData-Log oder FP-028-Tests.", _
+        "Nur n" & PID_UTxtOe() & "tig nach altem CopyData-Log oder FP-028-Tests.", _
         "Stunden-Log leeren") Then
         Exit Sub
     End If
@@ -108,7 +108,7 @@ Public Sub PID_FullSystemRefresh()
     Application.CalculateFull
     On Error GoTo CleanFail
     
-    MsgBox "Personalsheet wurde vollstaendig aktualisiert.", _
+    MsgBox "Personalsheet wurde " & PID_UTxtVollstaendig() & " aktualisiert.", _
            vbInformation, "System Refresh"
 
 CleanExit:
@@ -145,14 +145,14 @@ Public Sub PID_QuickSystemCheck()
     msg = msg & "ScreenUpdating aktiv: " & CStr(Application.ScreenUpdating) & vbCrLf
     msg = msg & "Calculation: " & PID_GetCalculationModeText() & vbCrLf & vbCrLf
     
-    msg = msg & "Pflichtblaetter:" & vbCrLf
+    msg = msg & "Pflichtbl" & PID_UTxtAe() & "tter:" & vbCrLf
     msg = msg & "- EINSTELLUNG: " & PID_YesNoText(PID_WorksheetExists(PID_EINSTELLUNG_SHEET)) & vbCrLf
     msg = msg & "- LOHNTABELLE: " & PID_YesNoText(PID_WorksheetExists(PID_LOHNTABELLE_SHEET)) & vbCrLf
     msg = msg & "- FLUKTUATION: " & PID_YesNoText(PID_WorksheetExists(PID_FLUKTUATION_SHEET)) & vbCrLf
     msg = msg & "- FLUKTUATION_DATEN: " & PID_YesNoText(PID_WorksheetExists("FLUKTUATION_DATEN")) & vbCrLf
     msg = msg & "- KV_DROPDOWN_HELPER: " & PID_YesNoText(PID_WorksheetExists("KV_DROPDOWN_HELPER")) & vbCrLf & vbCrLf
     
-    msg = msg & "Monatsblaetter gefunden: " & CStr(PID_CountMonthSheets()) & " / 12" & vbCrLf
+    msg = msg & PID_UTxtMonatsblaetter() & " gefunden: " & CStr(PID_CountMonthSheets()) & " / 12" & vbCrLf
     
     MsgBox msg, vbInformation, "Personalsheet Systemcheck"
 End Sub
