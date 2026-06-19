@@ -13,7 +13,7 @@ Private mSavedCellDragAndDrop As Variant
 Private mMonthSheetFillHandleGuardActive As Boolean
 
 Private Const PID_MONTH_PANEL_VORMONAT_RANGE As String = "Q12:R12"
-Private Const PID_MONTH_PANEL_FREITEXT_RANGE As String = "O18:Q25"
+Private Const PID_MONTH_PANEL_FREITEXT_RANGE As String = "O18:Q28"
 Private Const PID_UBERSICHT_SHEET As String = "UBERSICHT"
 Private Const PID_UBERSICHT_JAEN_VERF_CELL As String = "E30"
 Private Const PID_UBERSICHT_JAEN_MUST_CELL As String = "I30"
@@ -57,7 +57,7 @@ Public Sub PID_ApplyMonthSheetLockPolicy(ByVal ws As Worksheet)
     ws.Range("E" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Locked = False
     ws.Range("I" & PID_FIRST_ROW & ":J" & PID_LAST_ROW).Locked = False
     ws.Range("M" & PID_FIRST_ROW & ":N" & PID_LAST_ROW).Locked = False
-    ws.Range(PID_MONTH_PANEL_FREITEXT_RANGE).Locked = False
+    PID_UnlockMonthPanelFreitextRange ws
     If PID_IsMonthSheetVormonatInputEditable(ws) Then
         ws.Range(PID_MONTH_PANEL_VORMONAT_RANGE).Locked = False
     End If
@@ -479,3 +479,14 @@ Private Function PID_IsWorkerMonthSheetSafe(ByVal ws As Worksheet) As Boolean
 SafeExit:
     PID_IsWorkerMonthSheetSafe = False
 End Function
+
+
+Private Sub PID_UnlockMonthPanelFreitextRange(ByVal ws As Worksheet)
+    Dim r As Long
+    
+    ' O18:Q28 — merge-safe (O:P und Q:R je Zeile), siehe PID_MONTH_PANEL_FREITEXT_RANGE.
+    For r = 18 To 28
+        ws.Range("O" & r & ":P" & r).Locked = False
+        ws.Range("Q" & r & ":R" & r).Locked = False
+    Next r
+End Sub

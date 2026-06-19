@@ -123,6 +123,16 @@
       background: var(--warn-bg);
     }
 
+    .warn-important {
+      border: 2px solid var(--warn-border);
+      border-left-width: 6px;
+      background: var(--warn-bg);
+    }
+
+    .warn-important strong.title {
+      color: var(--warn-border);
+    }
+
     .ok {
       border-color: var(--ok-border);
       background: var(--ok-bg);
@@ -559,7 +569,7 @@
     <tr>
       <td><strong>Vormonat +/- Stunden</strong></td>
       <td>Vormonat (manuell übernehmen)</td>
-      <td><strong>Du trägst den Wert ein</strong> — aus dem Vormonat übernommen. Siehe Schritt-für-Schritt unten.</td>
+      <td><strong>Du trägst den Wert ein</strong> — <strong>Gegenteil</strong> der Stunden-Differenz aus dem Vormonat (manuell). Siehe Warnbox unten.</td>
     </tr>
     <tr>
       <td><strong>Stunden-Differenz</strong></td>
@@ -573,6 +583,28 @@
     </tr>
   </table>
 
+  <div class="box warn-important">
+    <strong class="title">WICHTIG: Feld „Vormonat +/- Stunden“</strong>
+    <p>Dieses Feld wird aktuell <strong>manuell gepflegt</strong> — es ist eine der häufigsten Fehlerquellen für neue Benutzer.</p>
+    <p><strong>Regel:</strong></p>
+    <ul>
+      <li>War die <strong>Stunden-Differenz im Vormonat positiv (+)</strong>, muss hier <strong>dasselbe Zahl mit negativem Vorzeichen (−)</strong> eingetragen werden.</li>
+      <li>War die <strong>Stunden-Differenz im Vormonat negativ (−)</strong>, muss hier <strong>dasselbe Zahl mit positivem Vorzeichen (+)</strong> eingetragen werden.</li>
+    </ul>
+    <p><strong>Beispiele:</strong></p>
+    <table>
+      <tr>
+        <th>Vormonat Stunden-Differenz</th>
+        <th>→ Vormonat +/- Stunden (aktueller Monat)</th>
+      </tr>
+      <tr><td>+15</td><td><strong>−15</strong></td></tr>
+      <tr><td>−15</td><td><strong>+15</strong></td></tr>
+      <tr><td>+8,5</td><td><strong>−8,5</strong></td></tr>
+      <tr><td>−8,5</td><td><strong>+8,5</strong></td></tr>
+    </table>
+    <p><strong>Merkhilfe:</strong> Das Feld „Vormonat +/- Stunden“ enthält <strong>immer das Gegenteil</strong> der Stunden-Differenz des Vormonats.</p>
+  </div>
+
   <div class="box warn">
     <strong class="title">Vormonat +/- Stunden — Schritt für Schritt</strong>
     <p>Das ist ein <strong>zentraler Bestandteil der Durchrechnung</strong>. Der Wert wird <strong>nicht automatisch</strong> übernommen — du musst ihn eintragen.</p>
@@ -580,7 +612,7 @@
       <li><strong>Vormonat öffnen</strong> (z.&nbsp;B. März).</li>
       <li>Auf der <strong>rechten Seite</strong> den Wert bei <strong>„Stunden-Differenz“</strong> ablesen. Das ist dein Plus/Minus aus dem abgelaufenen Monat.</li>
       <li><strong>Aktuellen Monat öffnen</strong> (z.&nbsp;B. April).</li>
-      <li>Rechte Seite, Feld <strong>„Vormonat +/- Stunden“</strong> (oben im Panel) — den abgelesenen Wert <strong>eintragen</strong>.</li>
+      <li>Rechte Seite, Feld <strong>„Vormonat +/- Stunden“</strong> (oben im Panel) — das <strong>Gegenteil</strong> des abgelesenen Werts eintragen (siehe Warnbox oben).</li>
       <li>Speichern.</li>
     </ol>
     <p><strong>Warum wichtig?</strong> So entsteht eine fortlaufende Plus/Minus-Bilanz über die Monate. Du siehst, ob sich Stunden ansammeln und ob Überstunden-Risiko entsteht. Dieselbe Logik findest du in <strong>UBERSICHT</strong> (Durchrechnung).</p>
