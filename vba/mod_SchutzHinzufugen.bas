@@ -179,9 +179,11 @@ End Sub
 
 Public Sub PID_SetupSheetProtectionForOpen()
     Dim ws As Worksheet
+    Dim oldScreenUpdating As Boolean
     
     On Error GoTo SafeExit
     
+    oldScreenUpdating = Application.ScreenUpdating
     Application.ScreenUpdating = False
     Set mSessionProtectedSheets = New Collection
     
@@ -203,7 +205,7 @@ Public Sub PID_SetupSheetProtectionForOpen()
     End If
 
 SafeExit:
-    Application.ScreenUpdating = True
+    Application.ScreenUpdating = oldScreenUpdating
 End Sub
 
 

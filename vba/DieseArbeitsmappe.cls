@@ -40,6 +40,7 @@ End Sub
 
 Private Sub Workbook_Open()
     Dim wsUbersicht As Worksheet
+    Dim oldScreenUpdating As Boolean
     
     On Error GoTo SafeExit
     
@@ -97,12 +98,16 @@ SafeExit:
     ' FP-FLUKT: Q31 (+ O31-Label) aller Monatsblaetter deferred synchronisieren - nach
     ' ScreenUpdating=True, damit das Open nicht blockiert. Events kurz aus, damit die
     ' Q31-Schreibzugriffe keine Change-/Activate-Events ausloesen.
+    ' ScreenUpdating kurz aus waehrend des Syncs, um sichtbares Flackern zu reduzieren.
     On Error Resume Next
+    oldScreenUpdating = Application.ScreenUpdating
+    Application.ScreenUpdating = False
     Application.EnableEvents = False
     mInternalChange = True
     PID_SyncAllMonthSheetsFluctuationQ31
     mInternalChange = False
     Application.EnableEvents = True
+    Application.ScreenUpdating = oldScreenUpdating
     On Error GoTo 0
 End Sub
 
