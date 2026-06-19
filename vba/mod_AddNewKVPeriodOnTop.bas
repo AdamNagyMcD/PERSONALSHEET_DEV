@@ -169,7 +169,7 @@ Public Sub AddNewKVPeriodOnTop()
     templateLastRow = FindLastRowOfPeriod(wsKV, templatePeriod, firstDataRow)
     
     If templateFirstRow = 0 Or templateLastRow = 0 Then
-        MsgBox "Die Vorlage fuer den neuen KV-Zeitraum konnte nicht gefunden werden.", _
+        MsgBox "Die Vorlage f" & PID_KVTxtUe() & "r den neuen KV-Zeitraum konnte nicht gefunden werden.", _
                vbExclamation, "Neuer KV-Zeitraum"
         GoTo CleanExit
     End If
@@ -177,7 +177,7 @@ Public Sub AddNewKVPeriodOnTop()
     templateRowCount = templateLastRow - templateFirstRow + 1
     
     If templateRowCount <= 0 Then
-        MsgBox "Die Vorlage enthaelt keine gueltigen Datenzeilen.", _
+        MsgBox "Die Vorlage enth" & PID_KVTxtAe() & "lt keine g" & PID_KVTxtUe() & "ltigen Datenzeilen.", _
                vbExclamation, "Neuer KV-Zeitraum"
         GoTo CleanExit
     End If
@@ -536,7 +536,7 @@ Public Sub DeleteCustomKVMonatsstunden()
         confirmText = confirmText & vbCrLf & _
             "Hinweis: Diese Stunden sind auf " & CStr(usageCount) & _
             " Monatszeile(n) noch eingetragen." & vbCrLf & _
-            "Nach dem Loeschen dort ggf. F anpassen." & vbCrLf
+            "Nach dem L" & PID_KVTxtOe() & "schen dort ggf. F anpassen." & vbCrLf
     End If
     
     confirmText = confirmText & vbCrLf & _
@@ -639,35 +639,35 @@ Public Sub DeleteSelectedKVPeriods()
     
     Set allPeriods = PID_CollectKVPeriods(wsKV, firstDataRow)
     If allPeriods Is Nothing Or allPeriods.Count = 0 Then
-        MsgBox "Keine KV-Zeitraeume gefunden.", vbExclamation, "Alte Periode loeschen"
+        MsgBox "Keine KV-Zeitr" & PID_KVTxtAe() & "ume gefunden.", vbExclamation, "Alte Periode " & PID_KVTxtLoeschen()
         Exit Sub
     End If
     
     If allPeriods.Count <= 1 Then
         MsgBox "Es ist nur ein KV-Zeitraum vorhanden." & vbCrLf & vbCrLf & _
-               "Mindestens ein Zeitraum muss erhalten bleiben. Loeschen ist nicht moeglich.", _
-               vbInformation, "Alte Periode loeschen"
+               "Mindestens ein Zeitraum muss erhalten bleiben. L" & PID_KVTxtOe() & "schen ist nicht m" & PID_KVTxtOe() & "glich.", _
+               vbInformation, "Alte Periode " & PID_KVTxtLoeschen()
         Exit Sub
     End If
     
     periodToDelete = AskForKVPeriodSelection( _
         wsKV, firstDataRow, _
-        "Alte Periode loeschen", _
+        "Alte Periode " & PID_KVTxtLoeschen(), _
         "Schritt 1 von 2 - Welche Periode?", _
         "Nur EINE Nummer eingeben (z.B. 2)." & vbCrLf & _
-        "Nur sehr alte Perioden loeschen, die niemand mehr braucht." & vbCrLf & _
-        "Abbrechen oder leer lassen = nichts aendern.")
+        "Nur sehr alte Perioden " & PID_KVTxtLoeschen() & ", die niemand mehr braucht." & vbCrLf & _
+        "Abbrechen oder leer lassen = nichts " & PID_KVTxtAe() & "ndern.")
     
     If periodToDelete = "" Then Exit Sub
     
-    confirmText = "Wirklich loeschen?" & vbCrLf & vbCrLf & _
+    confirmText = "Wirklich " & PID_KVTxtLoeschen() & "?" & vbCrLf & vbCrLf & _
                   periodToDelete & vbCrLf & vbCrLf & _
                   "NEIN = abbrechen (empfohlen bei Unsicherheit)." & vbCrLf & _
-                  "JA = endgueltig loeschen."
+                  "JA = endg" & PID_KVTxtUe() & "ltig " & PID_KVTxtLoeschen() & "."
     
-    answer = MsgBox(confirmText, vbCritical + vbYesNo, "Schritt 2 von 2 - Letzte Rueckfrage")
+    answer = MsgBox(confirmText, vbCritical + vbYesNo, "Schritt 2 von 2 - Letzte R" & PID_KVTxtUe() & "ckfrage")
     If answer <> vbYes Then
-        MsgBox "Loeschen abgebrochen. Es wurde nichts geaendert.", vbInformation, "Alte Periode loeschen"
+        MsgBox "L" & PID_KVTxtOe() & "schen abgebrochen. Es wurde nichts ge" & PID_KVTxtAe() & "ndert.", vbInformation, "Alte Periode " & PID_KVTxtLoeschen()
         Exit Sub
     End If
     
@@ -675,7 +675,7 @@ Public Sub DeleteSelectedKVPeriods()
     periodLastRow = FindLastRowOfPeriod(wsKV, periodToDelete, firstDataRow)
     
     If periodFirstRow <= 0 Or periodLastRow < periodFirstRow Then
-        MsgBox "Der gewaehlte Zeitraum konnte nicht gefunden werden.", vbExclamation, "Alte Periode loeschen"
+        MsgBox "Der gew" & PID_KVTxtAe() & "hlte Zeitraum konnte nicht gefunden werden.", vbExclamation, "Alte Periode " & PID_KVTxtLoeschen()
         Exit Sub
     End If
     
@@ -731,9 +731,9 @@ CleanFail:
         Application.EnableEvents = oldEnableEvents
     End If
     
-    MsgBox "Fehler beim Loeschen:" & vbCrLf & _
+    MsgBox "Fehler beim L" & PID_KVTxtOe() & "schen:" & vbCrLf & _
            Err.Number & " - " & Err.Description, _
-           vbExclamation, "Alte Periode loeschen"
+           vbExclamation, "Alte Periode " & PID_KVTxtLoeschen()
 End Sub
 
 
@@ -1071,7 +1071,7 @@ Public Sub FixLOHNTABELLE_StatusFormulas()
     
     FormatKVPeriodArea wsKV
     
-    MsgBox "Status- und Pruefungsformeln in LOHNTABELLE wurden wiederhergestellt.", _
+    MsgBox "Status- und " & PID_KVTxtPruefung() & "sformeln in LOHNTABELLE wurden wiederhergestellt.", _
            vbInformation, "LOHNTABELLE"
     
 CleanExit:
@@ -1123,7 +1123,7 @@ Public Sub RebuildLOHNTABELLE()
     
     keepPeriod = GetBottomKVPeriod(wsKV, firstDataRow)
     If keepPeriod = "" Then
-        MsgBox "Kein gueltiger KV-Zeitraum in Spalte A gefunden.", vbExclamation, "LOHNTABELLE neu aufbauen"
+        MsgBox "Kein g" & PID_KVTxtUe() & "ltiger KV-Zeitraum in Spalte A gefunden.", vbExclamation, "LOHNTABELLE neu aufbauen"
         Exit Sub
     End If
     
@@ -1142,7 +1142,7 @@ Public Sub RebuildLOHNTABELLE()
         "LOHNTABELLE wird neu aufgebaut." & vbCrLf & vbCrLf & _
         "Behalten wird nur der unterste Zeitraum:" & vbCrLf & _
         keepPeriod & vbCrLf & vbCrLf & _
-        "Alle weiteren Test-Zeitraeume werden geloescht." & vbCrLf & vbCrLf & _
+        "Alle weiteren Test-Zeitr" & PID_KVTxtAe() & "ume werden gel" & PID_KVTxtOe() & "scht." & vbCrLf & vbCrLf & _
         "Fortfahren?", _
         vbQuestion + vbYesNo, _
         "LOHNTABELLE neu aufbauen" _
@@ -1252,7 +1252,7 @@ Public Sub RestoreLOHNTABELLEBase2025_2026()
     If periodRowCount <= 0 Then Exit Sub
     
     answer = MsgBox( _
-        "LOHNTABELLE wird auf den Basiszeitraum zurueckgesetzt:" & vbCrLf & vbCrLf & _
+        "LOHNTABELLE wird auf den Basiszeitraum zur" & PID_KVTxtUe() & "ckgesetzt:" & vbCrLf & vbCrLf & _
         targetPeriod & vbCrLf & vbCrLf & _
         "Fortfahren?", _
         vbQuestion + vbYesNo, _
@@ -1601,7 +1601,7 @@ Private Function AskForKVStartYear(ByVal defaultYear As Long) As Long
     If inputText = "" Then Exit Function
     
     If Not IsNumeric(inputText) Then
-        MsgBox "Ungueltige Eingabe. Bitte nur das Startjahr eingeben (z.B. 2026).", _
+        MsgBox "Ung" & PID_KVTxtUe() & "ltige Eingabe. Bitte nur das Startjahr eingeben (z.B. 2026).", _
                vbExclamation, "Neuer KV-Zeitraum"
         Exit Function
     End If
@@ -1609,7 +1609,7 @@ Private Function AskForKVStartYear(ByVal defaultYear As Long) As Long
     AskForKVStartYear = CLng(inputText)
     
     If AskForKVStartYear < 2000 Or AskForKVStartYear > 2100 Then
-        MsgBox "Das Startjahr liegt ausserhalb des erlaubten Bereichs (2000-2100).", _
+        MsgBox "Das Startjahr liegt au" & PID_KVTxtSs() & "erhalb des erlaubten Bereichs (2000-2100).", _
                vbExclamation, "Neuer KV-Zeitraum"
         AskForKVStartYear = 0
     End If
@@ -1620,7 +1620,7 @@ Private Function AskForSchemaCount(ByVal defaultCount As Long) As Long
     Dim inputText As String
     
     inputText = InputBox( _
-        Prompt:="Wie viele Vertraege/Monatsstunden-Zeilen pro KV-Code sollen erzeugt werden?" & vbCrLf & vbCrLf & _
+        Prompt:="Wie viele Vertr" & PID_KVTxtAe() & "ge/Monatsstunden-Zeilen pro KV-Code sollen erzeugt werden?" & vbCrLf & vbCrLf & _
                 "Beispiel: 13 (wie bisher).", _
         Title:="Vertragsanzahl pro KV-Code", _
         Default:=CStr(defaultCount) _
@@ -1630,7 +1630,7 @@ Private Function AskForSchemaCount(ByVal defaultCount As Long) As Long
     If inputText = "" Then Exit Function
     
     If Not IsNumeric(inputText) Then
-        MsgBox "Ungueltige Eingabe. Bitte eine ganze Zahl eingeben (z.B. 13).", _
+        MsgBox "Ung" & PID_KVTxtUe() & "ltige Eingabe. Bitte eine ganze Zahl eingeben (z.B. 13).", _
                vbExclamation, "Vertragsanzahl"
         Exit Function
     End If
@@ -2647,7 +2647,7 @@ Private Function AskForKVPeriodSelection(ByVal wsKV As Worksheet, _
     
     If periods Is Nothing Then Exit Function
     If periods.Count = 0 Then
-        MsgBox "Kein gueltiger KV-Zeitraum gefunden.", vbExclamation, dialogTitle
+        MsgBox "Kein g" & PID_KVTxtUe() & "ltiger KV-Zeitraum gefunden.", vbExclamation, dialogTitle
         Exit Function
     End If
     
@@ -2674,7 +2674,7 @@ Private Function AskForKVPeriodSelection(ByVal wsKV As Worksheet, _
     If inputText = "" Then Exit Function
     
     If Not IsNumeric(inputText) Then
-        MsgBox "Das war keine gueltige Nummer." & vbCrLf & _
+        MsgBox "Das war keine g" & PID_KVTxtUe() & "ltige Nummer." & vbCrLf & _
                "Bitte nur die Zahl aus der Liste eingeben (z.B. 1).", _
                vbExclamation, dialogTitle
         Exit Function
@@ -2728,7 +2728,7 @@ Private Function AskForKVCodeSelection(Optional ByVal dialogTitle As String = "E
     If inputText = "" Then Exit Function
     
     If Not IsNumeric(inputText) Then
-        MsgBox "Das war keine gueltige Nummer." & vbCrLf & _
+        MsgBox "Das war keine g" & PID_KVTxtUe() & "ltige Nummer." & vbCrLf & _
                "Bitte nur die Zahl aus der Liste eingeben (z.B. 1).", _
                vbExclamation, dialogTitle
         Exit Function
@@ -2762,7 +2762,7 @@ Private Function AskForCustomMonatsstunden(ByRef outHours As Double) As Boolean
     If inputText = "" Then Exit Function
     
     If Not PID_TryReadDouble(inputText, outHours) Then
-        MsgBox "Das war keine gueltige Zahl." & vbCrLf & _
+        MsgBox "Das war keine g" & PID_KVTxtUe() & "ltige Zahl." & vbCrLf & _
                "Bitte nur Stunden eingeben (z.B. 64).", _
                vbExclamation, "Eigene Stunden"
         Exit Function
@@ -2794,7 +2794,7 @@ Private Function AskForOptionalMonatslohn(ByRef outLohn As Variant) As Boolean
     If inputText = "" Then Exit Function
     
     If Not PID_TryReadDouble(inputText, lohnValue) Then
-        MsgBox "Ungueltiger Monatslohn. Bitte eine Zahl eingeben oder leer lassen.", _
+        MsgBox "Ung" & PID_KVTxtUe() & "ltiger Monatslohn. Bitte eine Zahl eingeben oder leer lassen.", _
                vbExclamation, "Individuelle Monatsstunden"
         Exit Function
     End If
@@ -3400,7 +3400,7 @@ Private Function AskForKVHoursInBlockSelection(ByVal wsKV As Worksheet, _
     If inputText = "" Then Exit Function
     
     If Not IsNumeric(inputText) Then
-        MsgBox "Das war keine gueltige Nummer.", vbExclamation, dialogTitle
+        MsgBox "Das war keine g" & PID_KVTxtUe() & "ltige Nummer.", vbExclamation, dialogTitle
         Exit Function
     End If
     
