@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Personalsheet 2026/2027 – Entwicklungsverlauf</title>
+  <style>
+    :root {
+      --navy: #1F4E79;
+      --header-bg: #DDEBF7;
+      --accent: #FFF2CC;
+      --zebra: #F8F8F8;
+      --text: #1a1a1a;
+      --muted: #555;
+      --border: #b0c4d8;
+      --ok-border: #2d6a2d;
+      --ok-bg: #f4faf4;
+    }
+
+    @page { size: A4; margin: 14mm 16mm; }
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Calibri, "Helvetica Neue", Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.5;
+      color: var(--text);
+      max-width: 180mm;
+      margin: 0 auto;
+      padding: 8mm 0;
+    }
+
+    h1 {
+      font-size: 17pt;
+      margin: 0 0 2mm;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 9.5pt;
+      color: var(--muted);
+      margin-bottom: 6mm;
+    }
+
+    h2 {
+      font-size: 11.5pt;
+      margin: 7mm 0 3mm;
+      padding: 2.5mm 3.5mm;
+      background: var(--header-bg);
+      color: var(--navy);
+      border-left: 4px solid var(--navy);
+      page-break-after: avoid;
+    }
+
+    h3 {
+      font-size: 10.5pt;
+      margin: 3mm 0 2mm;
+      color: var(--navy);
+    }
+
+    p { margin: 0 0 2.5mm; }
+    ul { margin: 1mm 0 3mm; padding-left: 5mm; }
+    li { margin-bottom: 1.5mm; }
+
+    .box {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 3mm 3.5mm;
+      margin: 3mm 0;
+    }
+
+    .box strong.title {
+      display: block;
+      margin-bottom: 2mm;
+      font-size: 10.5pt;
+      color: var(--navy);
+    }
+
+    .intro {
+      border-left: 4px solid var(--navy);
+      background: var(--zebra);
+      padding: 3mm 3.5mm;
+      margin: 3mm 0 4mm;
+    }
+
+    .accent {
+      border-color: var(--navy);
+      background: var(--accent);
+    }
+
+    .ok {
+      border-color: var(--ok-border);
+      background: var(--ok-bg);
+    }
+
+    /* Timeline */
+    .timeline {
+      margin: 4mm 0 2mm;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin: 0 0 5mm 0;
+      padding: 0 0 0 10mm;
+      page-break-inside: avoid;
+    }
+
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: 2.5mm;
+      top: 1.5mm;
+      width: 4mm;
+      height: 4mm;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 2px solid var(--header-bg);
+    }
+
+    .timeline-item::after {
+      content: "";
+      position: absolute;
+      left: 4.2mm;
+      top: 6mm;
+      bottom: -4mm;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .timeline-item:last-child::after { display: none; }
+
+    .timeline-phase {
+      font-size: 8.5pt;
+      font-weight: bold;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 1mm;
+    }
+
+    .timeline-title {
+      font-weight: bold;
+      color: var(--navy);
+      font-size: 10.5pt;
+      margin-bottom: 1.5mm;
+    }
+
+    .timeline-body {
+      font-size: 10pt;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--navy);
+      color: #fff;
+      font-size: 8.5pt;
+      font-weight: bold;
+      padding: 0.8mm 2.5mm;
+      border-radius: 2px;
+      margin-right: 2mm;
+      vertical-align: middle;
+    }
+
+    .footer {
+      margin-top: 8mm;
+      padding-top: 3mm;
+      border-top: 1px solid var(--border);
+      font-size: 9pt;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media print {
+      body { padding: 0; }
+      h2 { break-after: avoid; }
+      .timeline-item { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Personalsheet 2026/2027 – Entwicklungsverlauf</h1>
+  <p class="subtitle">Verständliche Übersicht für Restaurant Manager und Vorgesetzte · Stand: Juni 2026</p>
+
+  <div class="intro">
+    <p>Dieses Dokument erklärt <strong>warum</strong> das Personalsheet weiterentwickelt wurde und <strong>welche Verbesserungen</strong> Schritt für Schritt eingebaut wurden. Es richtet sich an Menschen, die das Sheet im Restaurant nutzen — nicht an Techniker.</p>
+  </div>
+
+  <!-- 2. Ausgangslage -->
+  <h2>1. Ausgangslage — Warum wurde weiterentwickelt?</h2>
+  <p>Die frühere Version des Personalsheets war <strong>funktional und im Alltag nutzbar</strong>. Sie half bei der Personalplanung, aber mit wachsenden Anforderungen zeigten sich Grenzen:</p>
+  <ul>
+    <li><strong>Viele manuelle Schritte</strong> — Änderungen mussten oft Monat für Monat nachgepflegt werden.</li>
+    <li><strong>Risiko bei Monatsübertragungen</strong> — Stundenänderungen, neue Mitarbeiter oder Austritte konnten in Folgemonaten falsch ankommen oder verloren gehen.</li>
+    <li><strong>Wenig Jahresüberblick</strong> — Fluktuation und Durchrechnung waren schwer auf einen Blick zu beurteilen.</li>
+    <li><strong>Fehleranfälligkeit</strong> — Wichtige Felder konnten versehentlich verändert werden; Formeln und Eingabefelder waren nicht immer klar getrennt.</li>
+    <li><strong>Unübersichtliches Layout</strong> — Für neue Restaurant Manager war der Einstieg anspruchsvoll.</li>
+  </ul>
+  <div class="box accent">
+    <strong class="title">Ziel der Weiterentwicklung</strong>
+    <p>Ein <strong>professionelleres, sichereres und verständlicheres</strong> Personalsheet — das im Restaurant zuverlässig funktioniert, Fehler reduziert und Führungskräften schneller zeigt, wo Handlungsbedarf besteht.</p>
+  </div>
+
+  <!-- Timeline overview -->
+  <h2>2. Entwicklung im Überblick — Zeitstrahl</h2>
+  <ol class="timeline">
+
+    <li class="timeline-item">
+      <div class="timeline-phase">Phase 1</div>
+      <div class="timeline-title">Erste große Überarbeitung — Design und Struktur</div>
+      <div class="timeline-body">
+        Einheitliches Erscheinungsbild (Navy, Hellblau, Hellgelb), klarere Blattstruktur, bessere Lesbarkeit auf allen Monatsblättern. Eingabefelder und geschützte Bereiche wurden optisch und inhaltlich voneinander getrennt.
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="timeline-phase">Phase 2</div>
+      <div class="timeline-title">LOHNTABELLE und EINSTELLUNG — solide Grundlage</div>
+      <div class="timeline-body">
+        Die Lohntabelle wurde übersichtlicher und einheitlicher gestaltet. Die Einstellungsseite bildet Budget, Urlaub, Krank, Feiertag und Musterdienstplan klarer ab — als Basis für korrekte Monatsberechnungen.
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="timeline-phase">Phase 3</div>
+      <div class="timeline-title">Monatsblätter — Schutz, Eingabe, Fluktuation</div>
+      <div class="timeline-body">
+        Monatsblätter erhielten ein einheitliches Layout, bessere Schutzbereiche (Löhne und Formeln geschützt, Eingaben frei) und eine sichtbare Fluktuationsanzeige pro Monat.
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="timeline-phase">Phase 4</div>
+      <div class="timeline-title">Datenübernahme in Folgemonate — weniger Nacharbeit</div>
+      <div class="timeline-body">
+        Die Übernahme von Änderungen ab einem Monat in die Zukunft wurde deutlich verbessert: mehrere Stundenänderungen im Jahr, bewusste Sonderwerte und unabhängige spätere Anpassungen bleiben erhalten.
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="timeline-phase">Phase 5</div>
+      <div class="timeline-title">UBERSICHT — Jahresüberblick und Durchrechnung</div>
+      <div class="timeline-body">
+        Die Jahresübersicht wurde erweitert: Finanzübersicht, Budget-Ist-Vergleiche und Durchrechnungszeiträume auf einen Blick. Aktualisierung der Kennzahlen beim Wechsel zwischen Monatsblättern.
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="timeline-phase">Phase 6</div>
+      <div class="timeline-title">FLUKTUATION — professionelle Personalanalyse</div>
+      <div class="timeline-body">
+        Das Fluktuationsblatt wurde komplett überarbeitet: einheitliche Bewertung nach HR-Standard, klare Ampel, Hinweise bei offenen Daten, Berücksichtigung neutraler Austrittsgründe (z.&nbsp;B. Beförderung, Karenz).
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="timeline-phase">Phase 7</div>
+      <div class="timeline-title">Anleitung und Benutzerfreundlichkeit</div>
+      <div class="timeline-body">
+        Neue Kurzanleitung für Restaurant Manager: häufige Aufgaben, Datenquellen, Monatsabschluss, Vormonat-+/−-Regel mit Warnhinweisen.
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="timeline-phase">Aktuell</div>
+      <div class="timeline-title">Test-Release v0.9.0-test</div>
+      <div class="timeline-body">
+        Erste Version für ausgewählte Restaurant Manager — Feedback, Fehlersuche und Verbesserung der Bedienung vor dem breiteren Rollout 2027.
+      </div>
+    </li>
+
+  </ol>
+
+  <!-- 3. Erste große Überarbeitung -->
+  <h2>3. Erste große Überarbeitung</h2>
+  <p>Der sichtbarste Schritt war ein <strong>neues, einheitliches Design</strong> über alle wichtigen Blätter:</p>
+  <ul>
+    <li>Klare Farben: dunkelblau für Überschriften, hellblau für Tabellenköpfe, hellgelb für Hinweise und Eingabefelder</li>
+    <li>Einheitliche Monatsblätter — jedes Monat sieht gleich aufgebaut aus</li>
+    <li>Bessere Lesbarkeit: Zeilenhöhen, Spaltenbreiten und Beschriftungen angepasst</li>
+    <li>Weniger Verwechslungsgefahr zwischen Eingabe, Berechnung und Schutz</li>
+  </ul>
+  <p><strong>Gelöst:</strong> Das Sheet wirkte vorher „gewachsen“. Jetzt erkennen neue Nutzer schneller, wo sie etwas eintragen dürfen und was automatisch berechnet wird.</p>
+
+  <!-- 4. LOHNTABELLE und EINSTELLUNG -->
+  <h2>4. LOHNTABELLE und EINSTELLUNG</h2>
+  <h3>LOHNTABELLE</h3>
+  <ul>
+    <li>Übersichtlichere Darstellung der KV-Lohnwerte und Vertragsstunden</li>
+    <li>Einheitliches Layout bei neuen KV-Perioden</li>
+    <li>Schnellere Reaktion nach Änderungen an der Lohntabelle (Dropdowns auf Monatsblättern aktualisieren sich zuverlässiger)</li>
+    <li>Möglichkeit, eigene Sonderstunden zu pflegen und wieder zu entfernen</li>
+  </ul>
+  <h3>EINSTELLUNG</h3>
+  <ul>
+    <li>Klarere Trennung: gelbe Bereiche = Planwerte (Budget, Urlaub, Krank, Feiertag, Musterdienstplan)</li>
+    <li>Bessere Grundlage für die rechte Seite der Monatsblätter</li>
+    <li>Weniger Fehler, wenn Planwerte einmal sauber gepflegt sind</li>
+  </ul>
+  <p><strong>Gelöst:</strong> Wenn LOHNTABELLE oder EINSTELLUNG nicht aktuell sind, stimmen Löhne und Planzahlen auf den Monatsblättern nicht — die Überarbeitung macht die Pflege einfacher und die Folgefehler seltener.</p>
+
+  <!-- 5. Monatsblätter -->
+  <h2>5. Monatsblätter (Januar bis Dezember)</h2>
+  <p>Jedes Monatsblatt ist das <strong>Herzstück der täglichen Arbeit</strong>. Hier wurde viel verbessert:</p>
+  <ul>
+    <li><strong>Schutzkonzept:</strong> Löhne und Formeln sind geschützt — sie können nicht versehentlich überschrieben werden. Name, KV-Gruppe, Stunden, Austrittsdatum und Personalnotizen bleiben editierbar.</li>
+    <li><strong>Freitext-Bereich rechts (O18–Q28):</strong> Für Notizen und Zusatzinformationen — bewusst beschreibbar, auch bei aktivem Blattschutz.</li>
+    <li><strong>Vormonat +/− Stunden:</strong> Auf den meisten Monaten manuell pflegbar; in Startmonaten (Februar, Mai, August, November) gesperrt, weil dort eine neue Durchrechnungsperiode beginnt.</li>
+    <li><strong>Fluktuation pro Monat:</strong> Unten rechts sichtbar — sofort erkennbar, wie sich Austritte im Monat auswirken.</li>
+    <li><strong>Dropdowns für KV-Gruppe und Stunden:</strong> Weniger Tippfehler, passende Auswahl je nach Vertrag.</li>
+    <li><strong>Kein Sortieren, kein versehentliches Verschieben</strong> von Formelzeilen durch Drag-and-Drop in geschützten Bereichen.</li>
+  </ul>
+  <p><strong>Gelöst:</strong> Typische Fehler wie „Lohn von Hand geändert“, „Formel zerstört“ oder „falsche Stundenliste nach KV-Wechsel“ treten seltener auf.</p>
+
+  <!-- 6. Datenübernahme -->
+  <h2>6. Datenübernahme in Folgemonate</h2>
+  <p>Eine der wichtigsten Verbesserungen betrifft die <strong>Übernahme von Änderungen ab einem Monat in die Zukunft</strong> (über den Button „Aktualisierung des restlichen Jahres“ auf dem Monatsblatt).</p>
+
+  <div class="box">
+    <strong class="title">Was funktioniert jetzt zuverlässiger?</strong>
+    <ul>
+      <li><strong>Stundenänderung</strong> — gilt ab dem gewählten Monat für alle folgenden Monate</li>
+      <li><strong>Mehrere Stundenänderungen im Jahr</strong> — eine spätere Änderung überschreibt nicht mehr still die erste</li>
+      <li><strong>Unabhängige spätere Anpassungen</strong> — wer im November andere Stunden hat als im Juli, behält seinen Wert auch wenn früher ein Monat nochmals geändert wird</li>
+      <li><strong>Neue Mitarbeiter</strong> — können in späteren Monaten eingetragen und bei rückwärtiger Übernahme nicht versehentlich gelöscht werden</li>
+      <li><strong>Austritte</strong> — Mitarbeiter verschwinden ab dem Folgemonat des Austrittsdatums aus den späteren Monaten</li>
+      <li><strong>Personalnotizen rechts</strong> — der Freitext-Bereich wird mit übernommen</li>
+    </ul>
+  </div>
+
+  <p><strong>Früheres Problem:</strong> Mehrfache Stundenänderungen „hingen“ manchmal am ersten Wert. Spätere bewusste Abweichungen gingen bei einer erneuten Übernahme aus einem früheren Monat verloren. Das wurde behoben.</p>
+  <p><strong>Ziel:</strong> Deutlich weniger manuelle Nacharbeit Monat für Monat.</p>
+
+  <!-- 7. UBERSICHT -->
+  <h2>7. UBERSICHT — Jahresüberblick</h2>
+  <p>Die Übersichtsseite bündelt das Jahr auf einen Blick:</p>
+  <ul>
+    <li><strong>Finanzübersicht</strong> — Budget und Ist-Werte je Monat, Quartal und Gesamtjahr</li>
+    <li><strong>Crew Labor und Personalstunden</strong> — Verknüpfung mit den Monatsblättern; Aktualisierung beim Öffnen und Wechseln der Monate</li>
+    <li><strong>Durchrechnungszeiträume</strong> — Vier 3-Monats-Blöcke plus Planung für den Jänner des Folgejahres</li>
+    <li><strong>Fluktuation je Monat</strong> — in der Jahresübersicht sichtbar</li>
+    <li><strong>Planfelder E30/I30</strong> — nur dort manuell editierbar (Jänner-Plan fürs nächste Jahr); Rest geschützt</li>
+  </ul>
+  <p><strong>Gelöst:</strong> Früher konnten Kennzahlen in der Übersicht veraltet wirken, obwohl das Monatsblatt schon stimmte. Die Aktualisierung beim Monatswechsel wurde verbessert.</p>
+
+  <!-- 8. FLUKTUATION -->
+  <h2>8. FLUKTUATION — erweitert und verständlicher</h2>
+  <p>Das Fluktuationsblatt wurde von einer einfachen Zusammenstellung zu einem <strong>Führungsinstrument</strong> ausgebaut:</p>
+  <ul>
+    <li><strong>Einheitliche Berechnung</strong> — Monat, Quartal und Jahr nach dem gleichen HR-Standard (Austritte im Zeitraum ÷ durchschnittlicher Personalbestand)</li>
+    <li><strong>Klare Bewertung</strong> — Ampel von „Sehr gut / stabil“ bis „Extrem hoch“ mit Zielwert unter 20&nbsp;% Jahresfluktuation</li>
+    <li><strong>Neutrale Austritte</strong> — Beförderung, Karenz, Umzug in anderes Restaurant oder „nicht angetreten“ zählen nicht fälschlich als negative Fluktuation</li>
+    <li><strong>Offene Daten sichtbar</strong> — fehlende Austrittsgründe werden angezeigt; Hinweis „Sofort prüfen“ mit konkretem Monat und Name</li>
+    <li><strong>Empfehlungen</strong> — operative Hinweise je nach Situation (z.&nbsp;B. Onboarding prüfen, Exit-Gespräch auswerten)</li>
+    <li><strong>Konsistenz</strong> — Monatsblatt, Jahresübersicht und Fluktuationsblatt zeigen dieselbe Rate</li>
+  </ul>
+  <p><strong>Gelöst:</strong> Früher wirkten Zahlen zwischen Blättern manchmal unterschiedlich. Neutrale Austritte trieben die Rate künstlich nach oben. Beides wurde korrigiert.</p>
+
+  <!-- 9. Anleitung -->
+  <h2>9. Anleitung und Benutzerfreundlichkeit</h2>
+  <p>Für den Test-Release liegt eine <strong>neue Kurzanleitung</strong> bei (<em>Kurzanleitung_Personalsheet_A4.html</em>):</p>
+  <ul>
+    <li>2-Minuten-Checkliste für den Monatsstart</li>
+    <li>Drei Grundregeln (was man darf, was man nicht darf)</li>
+    <li>Fünf häufigste Aufgaben Schritt für Schritt (neuer MA, Austritt, Stundenänderung, Vormonat +/−, Monatsabschluss)</li>
+    <li>Tabellen: Woher kommen welche Daten? (Restaurant, Payroll, Zentrale, Musterdienstplan)</li>
+    <li>Blatt-für-Blatt-Erklärung in normaler Sprache</li>
+    <li><strong>Warnbox Vormonat +/−:</strong> immer das Gegenteil der Stunden-Differenz des Vormonats eintragen — eine der häufigsten Fehlerquellen</li>
+    <li>Alle Meldungen und Texte im Sheet mit korrekten Umlauten (ä, ö, ü, ß)</li>
+  </ul>
+
+  <!-- 10. Test-Release -->
+  <h2>10. Test-Release v0.9.0-test</h2>
+  <div class="box ok">
+    <p><span class="badge">TEST</span> <strong>Erste Version für ausgewählte Restaurant Manager</strong></p>
+    <p>Dies ist <strong>noch keine endgültige Produktivversion</strong>, sondern ein kontrollierter Test mit zwei Restaurant Managern.</p>
+  </div>
+
+  <h3>Was ist in diesem Test-Release enthalten?</h3>
+  <ul>
+    <li>Aktuelles Personalsheet (<em>Personalsheet.xlsm</em>) mit allen beschriebenen Verbesserungen</li>
+    <li>Neue Kurzanleitung für Restaurant Manager</li>
+    <li>Verbesserter Schutz auf Monatsblättern inkl. beschreibbarem Bereich O18–Q28</li>
+    <li>Korrigierte Jahresübersicht (aktualisiert sich beim Monatswechsel)</li>
+    <li>Überarbeitetes Fluktuationsblatt mit einheitlicher Bewertung</li>
+    <li>Zuverlässigere Datenübernahme in Folgemonate</li>
+  </ul>
+
+  <h3>Was wird vom Test erwartet?</h3>
+  <ul>
+    <li><strong>Feedback</strong> — Was ist unklar? Was fehlt in der Anleitung?</li>
+    <li><strong>Fehler finden</strong> — Unerwartetes Verhalten im Restaurant-Alltag melden</li>
+    <li><strong>Bedienung prüfen</strong> — Sind die Abläufe (CopyData, Austritt, Vormonat +/−) verständlich?</li>
+    <li><strong>Keine Experimente</strong> mit Admin-Funktionen (VBA-Import, alles entsperren) — das bleibt der Entwicklung vorbehalten</li>
+  </ul>
+
+  <!-- 11. Was kommt später -->
+  <h2>11. Was kommt später?</h2>
+  <ul>
+    <li><strong>Feedback einarbeiten</strong> aus dem Test mit zwei Restaurant Managern</li>
+    <li><strong>Weitere Testpersonen</strong> — schrittweise Ausweitung vor breitem Rollout</li>
+    <li><strong>Vorbereitung auf 2027</strong> — stabile Version für alle Restaurants</li>
+    <li><strong>Mögliche Erweiterungen</strong> — z.&nbsp;B. separates Urlaubsblatt, weitere Automatisierung bei Vormonat +/− (derzeit bewusst manuell)</li>
+    <li><strong>Offene Punkte aus dem Test</strong> — z.&nbsp;B. alte Werte in Startmonaten (Februar/Mai/August/November) bereinigen, falls nötig</li>
+  </ul>
+
+  <div class="box accent">
+    <strong class="title">Kurz gesagt</strong>
+    <p>Das Personalsheet wurde von einer <strong>funktionalen Excel-Lösung</strong> zu einem <strong>geführten Führungsinstrument</strong> weiterentwickelt: sicherer im Alltag, verständlicher für neue Nutzer, transparenter bei Fluktuation und Durchrechnung — mit dem Ziel, dass Restaurant Manager <strong>weniger Zeit mit Nacharbeit</strong> und <strong>mehr Zeit mit dem Team</strong> verbringen.</p>
+  </div>
+
+  <p class="footer">
+    Personalsheet 2026/2027 · Entwicklungsverlauf · McOpCo / Adam Nagy · Juni 2026<br>
+    Ergänzung zur Kurzanleitung für Restaurant Manager — nicht für technische Wartung.
+  </p>
+
+</body>
+</html>

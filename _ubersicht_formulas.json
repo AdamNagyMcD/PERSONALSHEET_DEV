@@ -1,0 +1,1910 @@
+﻿[
+    {
+        "Addr":  "B2",
+        "Row":  2,
+        "Col":  2,
+        "Formula":  "= \"FINANZIELL ÜBERSICHT \" \u0026 EINSTELLUNG!C35"
+    },
+    {
+        "Addr":  "B7",
+        "Row":  7,
+        "Col":  2,
+        "Formula":  "[VALUE] Jänner"
+    },
+    {
+        "Addr":  "C7",
+        "Row":  7,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C6"
+    },
+    {
+        "Addr":  "D7",
+        "Row":  7,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C22"
+    },
+    {
+        "Addr":  "E7",
+        "Row":  7,
+        "Col":  5,
+        "Formula":  "=D7-C7"
+    },
+    {
+        "Addr":  "F7",
+        "Row":  7,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D6"
+    },
+    {
+        "Addr":  "G7",
+        "Row":  7,
+        "Col":  7,
+        "Formula":  "[VALUE] 92487.1885"
+    },
+    {
+        "Addr":  "H7",
+        "Row":  7,
+        "Col":  8,
+        "Formula":  "=G7-F7"
+    },
+    {
+        "Addr":  "I7",
+        "Row":  7,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E6"
+    },
+    {
+        "Addr":  "J7",
+        "Row":  7,
+        "Col":  10,
+        "Formula":  "[VALUE] 9.24871885"
+    },
+    {
+        "Addr":  "K7",
+        "Row":  7,
+        "Col":  11,
+        "Formula":  "=J7-I7"
+    },
+    {
+        "Addr":  "L7",
+        "Row":  7,
+        "Col":  12,
+        "Formula":  "=Januar!S40"
+    },
+    {
+        "Addr":  "M7",
+        "Row":  7,
+        "Col":  13,
+        "Formula":  "=Januar!S41"
+    },
+    {
+        "Addr":  "N7",
+        "Row":  7,
+        "Col":  14,
+        "Formula":  "=Januar!O5"
+    },
+    {
+        "Addr":  "O7",
+        "Row":  7,
+        "Col":  15,
+        "Formula":  "=Januar!P5"
+    },
+    {
+        "Addr":  "P7",
+        "Row":  7,
+        "Col":  16,
+        "Formula":  "=O7-N7"
+    },
+    {
+        "Addr":  "Q7",
+        "Row":  7,
+        "Col":  17,
+        "Formula":  "[VALUE] 0.0388349514563107"
+    },
+    {
+        "Addr":  "B8",
+        "Row":  8,
+        "Col":  2,
+        "Formula":  "[VALUE] Febuar"
+    },
+    {
+        "Addr":  "C8",
+        "Row":  8,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C7"
+    },
+    {
+        "Addr":  "D8",
+        "Row":  8,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C23"
+    },
+    {
+        "Addr":  "E8",
+        "Row":  8,
+        "Col":  5,
+        "Formula":  "=D8-C8"
+    },
+    {
+        "Addr":  "F8",
+        "Row":  8,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D7"
+    },
+    {
+        "Addr":  "G8",
+        "Row":  8,
+        "Col":  7,
+        "Formula":  "[VALUE] 109503.4129"
+    },
+    {
+        "Addr":  "H8",
+        "Row":  8,
+        "Col":  8,
+        "Formula":  "=G8-F8"
+    },
+    {
+        "Addr":  "I8",
+        "Row":  8,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E7"
+    },
+    {
+        "Addr":  "J8",
+        "Row":  8,
+        "Col":  10,
+        "Formula":  "[VALUE] 5.475170645"
+    },
+    {
+        "Addr":  "K8",
+        "Row":  8,
+        "Col":  11,
+        "Formula":  "=J8-I8"
+    },
+    {
+        "Addr":  "L8",
+        "Row":  8,
+        "Col":  12,
+        "Formula":  "=Februar!S40"
+    },
+    {
+        "Addr":  "M8",
+        "Row":  8,
+        "Col":  13,
+        "Formula":  "=Februar!S41"
+    },
+    {
+        "Addr":  "N8",
+        "Row":  8,
+        "Col":  14,
+        "Formula":  "=Februar!O5"
+    },
+    {
+        "Addr":  "O8",
+        "Row":  8,
+        "Col":  15,
+        "Formula":  "=Februar!P5"
+    },
+    {
+        "Addr":  "P8",
+        "Row":  8,
+        "Col":  16,
+        "Formula":  "=O8-N8"
+    },
+    {
+        "Addr":  "B9",
+        "Row":  9,
+        "Col":  2,
+        "Formula":  "[VALUE] März"
+    },
+    {
+        "Addr":  "C9",
+        "Row":  9,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C8"
+    },
+    {
+        "Addr":  "D9",
+        "Row":  9,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C24"
+    },
+    {
+        "Addr":  "E9",
+        "Row":  9,
+        "Col":  5,
+        "Formula":  "=D9-C9"
+    },
+    {
+        "Addr":  "F9",
+        "Row":  9,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D8"
+    },
+    {
+        "Addr":  "G9",
+        "Row":  9,
+        "Col":  7,
+        "Formula":  "[VALUE] 112051.0342"
+    },
+    {
+        "Addr":  "H9",
+        "Row":  9,
+        "Col":  8,
+        "Formula":  "=G9-F9"
+    },
+    {
+        "Addr":  "I9",
+        "Row":  9,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E8"
+    },
+    {
+        "Addr":  "J9",
+        "Row":  9,
+        "Col":  10,
+        "Formula":  "[VALUE] 3.73503447333333"
+    },
+    {
+        "Addr":  "K9",
+        "Row":  9,
+        "Col":  11,
+        "Formula":  "=J9-I9"
+    },
+    {
+        "Addr":  "L9",
+        "Row":  9,
+        "Col":  12,
+        "Formula":  "=Marz!S40"
+    },
+    {
+        "Addr":  "M9",
+        "Row":  9,
+        "Col":  13,
+        "Formula":  "=Marz!S41"
+    },
+    {
+        "Addr":  "N9",
+        "Row":  9,
+        "Col":  14,
+        "Formula":  "=Marz!O5"
+    },
+    {
+        "Addr":  "O9",
+        "Row":  9,
+        "Col":  15,
+        "Formula":  "=Marz!P5"
+    },
+    {
+        "Addr":  "P9",
+        "Row":  9,
+        "Col":  16,
+        "Formula":  "=O9-N9"
+    },
+    {
+        "Addr":  "Q9",
+        "Row":  9,
+        "Col":  17,
+        "Formula":  "[VALUE] 0.0161290322580645"
+    },
+    {
+        "Addr":  "B10",
+        "Row":  10,
+        "Col":  2,
+        "Formula":  "[VALUE] Q1"
+    },
+    {
+        "Addr":  "C10",
+        "Row":  10,
+        "Col":  3,
+        "Formula":  "=SUM(C7:C9)"
+    },
+    {
+        "Addr":  "D10",
+        "Row":  10,
+        "Col":  4,
+        "Formula":  "=SUM(D7:D9)"
+    },
+    {
+        "Addr":  "E10",
+        "Row":  10,
+        "Col":  5,
+        "Formula":  "=D10-C10"
+    },
+    {
+        "Addr":  "F10",
+        "Row":  10,
+        "Col":  6,
+        "Formula":  "=SUM(F7:F9)"
+    },
+    {
+        "Addr":  "G10",
+        "Row":  10,
+        "Col":  7,
+        "Formula":  "=SUM(G7:G9)"
+    },
+    {
+        "Addr":  "H10",
+        "Row":  10,
+        "Col":  8,
+        "Formula":  "=G10-F10"
+    },
+    {
+        "Addr":  "I10",
+        "Row":  10,
+        "Col":  9,
+        "Formula":  "=AVERAGE(I7:I9)"
+    },
+    {
+        "Addr":  "J10",
+        "Row":  10,
+        "Col":  10,
+        "Formula":  "=AVERAGE(J7:J9)"
+    },
+    {
+        "Addr":  "K10",
+        "Row":  10,
+        "Col":  11,
+        "Formula":  "=J10-I10"
+    },
+    {
+        "Addr":  "L10",
+        "Row":  10,
+        "Col":  12,
+        "Formula":  "=AVERAGE(L7:L9)"
+    },
+    {
+        "Addr":  "M10",
+        "Row":  10,
+        "Col":  13,
+        "Formula":  "=AVERAGE(M7:M9)"
+    },
+    {
+        "Addr":  "N10",
+        "Row":  10,
+        "Col":  14,
+        "Formula":  "=SUM(N7:N9)"
+    },
+    {
+        "Addr":  "O10",
+        "Row":  10,
+        "Col":  15,
+        "Formula":  "=SUM(O7:O9)"
+    },
+    {
+        "Addr":  "P10",
+        "Row":  10,
+        "Col":  16,
+        "Formula":  "=O10-N10"
+    },
+    {
+        "Addr":  "Q10",
+        "Row":  10,
+        "Col":  17,
+        "Formula":  "[VALUE] 0.0526315789473684"
+    },
+    {
+        "Addr":  "B11",
+        "Row":  11,
+        "Col":  2,
+        "Formula":  "[VALUE] April"
+    },
+    {
+        "Addr":  "C11",
+        "Row":  11,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C9"
+    },
+    {
+        "Addr":  "D11",
+        "Row":  11,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C25"
+    },
+    {
+        "Addr":  "E11",
+        "Row":  11,
+        "Col":  5,
+        "Formula":  "=D11-C11"
+    },
+    {
+        "Addr":  "F11",
+        "Row":  11,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D9"
+    },
+    {
+        "Addr":  "G11",
+        "Row":  11,
+        "Col":  7,
+        "Formula":  "[VALUE] 109601.0267"
+    },
+    {
+        "Addr":  "H11",
+        "Row":  11,
+        "Col":  8,
+        "Formula":  "=G11-F11"
+    },
+    {
+        "Addr":  "I11",
+        "Row":  11,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E9"
+    },
+    {
+        "Addr":  "J11",
+        "Row":  11,
+        "Col":  10,
+        "Formula":  "[VALUE] 2.7400256675"
+    },
+    {
+        "Addr":  "K11",
+        "Row":  11,
+        "Col":  11,
+        "Formula":  "=J11-I11"
+    },
+    {
+        "Addr":  "L11",
+        "Row":  11,
+        "Col":  12,
+        "Formula":  "=April!S40"
+    },
+    {
+        "Addr":  "M11",
+        "Row":  11,
+        "Col":  13,
+        "Formula":  "=April!S41"
+    },
+    {
+        "Addr":  "N11",
+        "Row":  11,
+        "Col":  14,
+        "Formula":  "=April!O5"
+    },
+    {
+        "Addr":  "O11",
+        "Row":  11,
+        "Col":  15,
+        "Formula":  "=April!P5"
+    },
+    {
+        "Addr":  "P11",
+        "Row":  11,
+        "Col":  16,
+        "Formula":  "=O11-N11"
+    },
+    {
+        "Addr":  "Q11",
+        "Row":  11,
+        "Col":  17,
+        "Formula":  "[VALUE] 0.0333333333333333"
+    },
+    {
+        "Addr":  "B12",
+        "Row":  12,
+        "Col":  2,
+        "Formula":  "[VALUE] Mai"
+    },
+    {
+        "Addr":  "C12",
+        "Row":  12,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C10"
+    },
+    {
+        "Addr":  "D12",
+        "Row":  12,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C26"
+    },
+    {
+        "Addr":  "E12",
+        "Row":  12,
+        "Col":  5,
+        "Formula":  "=D12-C12"
+    },
+    {
+        "Addr":  "F12",
+        "Row":  12,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D10"
+    },
+    {
+        "Addr":  "G12",
+        "Row":  12,
+        "Col":  7,
+        "Formula":  "[VALUE] 104844.8723"
+    },
+    {
+        "Addr":  "H12",
+        "Row":  12,
+        "Col":  8,
+        "Formula":  "=G12-F12"
+    },
+    {
+        "Addr":  "I12",
+        "Row":  12,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E10"
+    },
+    {
+        "Addr":  "J12",
+        "Row":  12,
+        "Col":  10,
+        "Formula":  "[VALUE] 2.096897446"
+    },
+    {
+        "Addr":  "K12",
+        "Row":  12,
+        "Col":  11,
+        "Formula":  "=J12-I12"
+    },
+    {
+        "Addr":  "L12",
+        "Row":  12,
+        "Col":  12,
+        "Formula":  "=Mai!S40"
+    },
+    {
+        "Addr":  "M12",
+        "Row":  12,
+        "Col":  13,
+        "Formula":  "=Mai!S41"
+    },
+    {
+        "Addr":  "N12",
+        "Row":  12,
+        "Col":  14,
+        "Formula":  "=Mai!O5"
+    },
+    {
+        "Addr":  "O12",
+        "Row":  12,
+        "Col":  15,
+        "Formula":  "=Mai!P5"
+    },
+    {
+        "Addr":  "P12",
+        "Row":  12,
+        "Col":  16,
+        "Formula":  "=O12-N12"
+    },
+    {
+        "Addr":  "Q12",
+        "Row":  12,
+        "Col":  17,
+        "Formula":  "[VALUE] 0.0170940170940171"
+    },
+    {
+        "Addr":  "B13",
+        "Row":  13,
+        "Col":  2,
+        "Formula":  "[VALUE] Juni"
+    },
+    {
+        "Addr":  "C13",
+        "Row":  13,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C11"
+    },
+    {
+        "Addr":  "D13",
+        "Row":  13,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C27"
+    },
+    {
+        "Addr":  "E13",
+        "Row":  13,
+        "Col":  5,
+        "Formula":  "=D13-C13"
+    },
+    {
+        "Addr":  "F13",
+        "Row":  13,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D11"
+    },
+    {
+        "Addr":  "G13",
+        "Row":  13,
+        "Col":  7,
+        "Formula":  "[VALUE] 108328.5067"
+    },
+    {
+        "Addr":  "H13",
+        "Row":  13,
+        "Col":  8,
+        "Formula":  "=G13-F13"
+    },
+    {
+        "Addr":  "I13",
+        "Row":  13,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E11"
+    },
+    {
+        "Addr":  "J13",
+        "Row":  13,
+        "Col":  10,
+        "Formula":  "[VALUE] 1.80547511166667"
+    },
+    {
+        "Addr":  "K13",
+        "Row":  13,
+        "Col":  11,
+        "Formula":  "=J13-I13"
+    },
+    {
+        "Addr":  "L13",
+        "Row":  13,
+        "Col":  12,
+        "Formula":  "=Juni!S40"
+    },
+    {
+        "Addr":  "M13",
+        "Row":  13,
+        "Col":  13,
+        "Formula":  "=Juni!S41"
+    },
+    {
+        "Addr":  "N13",
+        "Row":  13,
+        "Col":  14,
+        "Formula":  "=Juni!O5"
+    },
+    {
+        "Addr":  "O13",
+        "Row":  13,
+        "Col":  15,
+        "Formula":  "=Juni!P5"
+    },
+    {
+        "Addr":  "P13",
+        "Row":  13,
+        "Col":  16,
+        "Formula":  "=O13-N13"
+    },
+    {
+        "Addr":  "B14",
+        "Row":  14,
+        "Col":  2,
+        "Formula":  "[VALUE] Q2"
+    },
+    {
+        "Addr":  "C14",
+        "Row":  14,
+        "Col":  3,
+        "Formula":  "=SUM(C11:C13)"
+    },
+    {
+        "Addr":  "D14",
+        "Row":  14,
+        "Col":  4,
+        "Formula":  "=SUM(D11:D13)"
+    },
+    {
+        "Addr":  "E14",
+        "Row":  14,
+        "Col":  5,
+        "Formula":  "=D14-C14"
+    },
+    {
+        "Addr":  "F14",
+        "Row":  14,
+        "Col":  6,
+        "Formula":  "=SUM(F11:F13)"
+    },
+    {
+        "Addr":  "G14",
+        "Row":  14,
+        "Col":  7,
+        "Formula":  "=SUM(G11:G13)"
+    },
+    {
+        "Addr":  "H14",
+        "Row":  14,
+        "Col":  8,
+        "Formula":  "=G14-F14"
+    },
+    {
+        "Addr":  "I14",
+        "Row":  14,
+        "Col":  9,
+        "Formula":  "=AVERAGE(I11:I13)"
+    },
+    {
+        "Addr":  "J14",
+        "Row":  14,
+        "Col":  10,
+        "Formula":  "=AVERAGE(J11:J13)"
+    },
+    {
+        "Addr":  "K14",
+        "Row":  14,
+        "Col":  11,
+        "Formula":  "=J14-I14"
+    },
+    {
+        "Addr":  "L14",
+        "Row":  14,
+        "Col":  12,
+        "Formula":  "=AVERAGE(L11:L13)"
+    },
+    {
+        "Addr":  "M14",
+        "Row":  14,
+        "Col":  13,
+        "Formula":  "=AVERAGE(M11:M13)"
+    },
+    {
+        "Addr":  "N14",
+        "Row":  14,
+        "Col":  14,
+        "Formula":  "=SUM(N11:N13)"
+    },
+    {
+        "Addr":  "O14",
+        "Row":  14,
+        "Col":  15,
+        "Formula":  "=SUM(O11:O13)"
+    },
+    {
+        "Addr":  "P14",
+        "Row":  14,
+        "Col":  16,
+        "Formula":  "=O14-N14"
+    },
+    {
+        "Addr":  "Q14",
+        "Row":  14,
+        "Col":  17,
+        "Formula":  "[VALUE] 0.0504201680672269"
+    },
+    {
+        "Addr":  "B15",
+        "Row":  15,
+        "Col":  2,
+        "Formula":  "[VALUE] Juli"
+    },
+    {
+        "Addr":  "C15",
+        "Row":  15,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C12"
+    },
+    {
+        "Addr":  "D15",
+        "Row":  15,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C28"
+    },
+    {
+        "Addr":  "E15",
+        "Row":  15,
+        "Col":  5,
+        "Formula":  "=D15-C15"
+    },
+    {
+        "Addr":  "F15",
+        "Row":  15,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D12"
+    },
+    {
+        "Addr":  "G15",
+        "Row":  15,
+        "Col":  7,
+        "Formula":  "[VALUE] 101129.89"
+    },
+    {
+        "Addr":  "H15",
+        "Row":  15,
+        "Col":  8,
+        "Formula":  "=G15-F15"
+    },
+    {
+        "Addr":  "I15",
+        "Row":  15,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E12"
+    },
+    {
+        "Addr":  "J15",
+        "Row":  15,
+        "Col":  10,
+        "Formula":  "[VALUE] 1.44471271428571"
+    },
+    {
+        "Addr":  "K15",
+        "Row":  15,
+        "Col":  11,
+        "Formula":  "=J15-I15"
+    },
+    {
+        "Addr":  "L15",
+        "Row":  15,
+        "Col":  12,
+        "Formula":  "=Juli!S40"
+    },
+    {
+        "Addr":  "M15",
+        "Row":  15,
+        "Col":  13,
+        "Formula":  "=Juli!S41"
+    },
+    {
+        "Addr":  "N15",
+        "Row":  15,
+        "Col":  14,
+        "Formula":  "=Juli!O5"
+    },
+    {
+        "Addr":  "O15",
+        "Row":  15,
+        "Col":  15,
+        "Formula":  "=Juli!P5"
+    },
+    {
+        "Addr":  "P15",
+        "Row":  15,
+        "Col":  16,
+        "Formula":  "=O15-N15"
+    },
+    {
+        "Addr":  "B16",
+        "Row":  16,
+        "Col":  2,
+        "Formula":  "[VALUE] August"
+    },
+    {
+        "Addr":  "C16",
+        "Row":  16,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C13"
+    },
+    {
+        "Addr":  "D16",
+        "Row":  16,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C29"
+    },
+    {
+        "Addr":  "E16",
+        "Row":  16,
+        "Col":  5,
+        "Formula":  "=D16-C16"
+    },
+    {
+        "Addr":  "F16",
+        "Row":  16,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D13"
+    },
+    {
+        "Addr":  "G16",
+        "Row":  16,
+        "Col":  7,
+        "Formula":  "[VALUE] 101029.84"
+    },
+    {
+        "Addr":  "H16",
+        "Row":  16,
+        "Col":  8,
+        "Formula":  "=G16-F16"
+    },
+    {
+        "Addr":  "I16",
+        "Row":  16,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E13"
+    },
+    {
+        "Addr":  "J16",
+        "Row":  16,
+        "Col":  10,
+        "Formula":  "[VALUE] 1.262873"
+    },
+    {
+        "Addr":  "K16",
+        "Row":  16,
+        "Col":  11,
+        "Formula":  "=J16-I16"
+    },
+    {
+        "Addr":  "L16",
+        "Row":  16,
+        "Col":  12,
+        "Formula":  "=August!S40"
+    },
+    {
+        "Addr":  "M16",
+        "Row":  16,
+        "Col":  13,
+        "Formula":  "=August!S41"
+    },
+    {
+        "Addr":  "N16",
+        "Row":  16,
+        "Col":  14,
+        "Formula":  "=August!O5"
+    },
+    {
+        "Addr":  "O16",
+        "Row":  16,
+        "Col":  15,
+        "Formula":  "=August!P5"
+    },
+    {
+        "Addr":  "P16",
+        "Row":  16,
+        "Col":  16,
+        "Formula":  "=O16-N16"
+    },
+    {
+        "Addr":  "B17",
+        "Row":  17,
+        "Col":  2,
+        "Formula":  "[VALUE] September"
+    },
+    {
+        "Addr":  "C17",
+        "Row":  17,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C14"
+    },
+    {
+        "Addr":  "D17",
+        "Row":  17,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C30"
+    },
+    {
+        "Addr":  "E17",
+        "Row":  17,
+        "Col":  5,
+        "Formula":  "=D17-C17"
+    },
+    {
+        "Addr":  "F17",
+        "Row":  17,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D14"
+    },
+    {
+        "Addr":  "G17",
+        "Row":  17,
+        "Col":  7,
+        "Formula":  "[VALUE] 99447.7233"
+    },
+    {
+        "Addr":  "H17",
+        "Row":  17,
+        "Col":  8,
+        "Formula":  "=G17-F17"
+    },
+    {
+        "Addr":  "I17",
+        "Row":  17,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E14"
+    },
+    {
+        "Addr":  "J17",
+        "Row":  17,
+        "Col":  10,
+        "Formula":  "[VALUE] 1.10497470333333"
+    },
+    {
+        "Addr":  "K17",
+        "Row":  17,
+        "Col":  11,
+        "Formula":  "=J17-I17"
+    },
+    {
+        "Addr":  "L17",
+        "Row":  17,
+        "Col":  12,
+        "Formula":  "=September!S40"
+    },
+    {
+        "Addr":  "M17",
+        "Row":  17,
+        "Col":  13,
+        "Formula":  "=September!S41"
+    },
+    {
+        "Addr":  "N17",
+        "Row":  17,
+        "Col":  14,
+        "Formula":  "=September!O5"
+    },
+    {
+        "Addr":  "O17",
+        "Row":  17,
+        "Col":  15,
+        "Formula":  "=September!P5"
+    },
+    {
+        "Addr":  "P17",
+        "Row":  17,
+        "Col":  16,
+        "Formula":  "=O17-N17"
+    },
+    {
+        "Addr":  "Q17",
+        "Row":  17,
+        "Col":  17,
+        "Formula":  "[VALUE] 0.0176991150442478"
+    },
+    {
+        "Addr":  "B18",
+        "Row":  18,
+        "Col":  2,
+        "Formula":  "[VALUE] Q3"
+    },
+    {
+        "Addr":  "C18",
+        "Row":  18,
+        "Col":  3,
+        "Formula":  "=SUM(C15:C17)"
+    },
+    {
+        "Addr":  "D18",
+        "Row":  18,
+        "Col":  4,
+        "Formula":  "=SUM(D15:D17)"
+    },
+    {
+        "Addr":  "E18",
+        "Row":  18,
+        "Col":  5,
+        "Formula":  "=D18-C18"
+    },
+    {
+        "Addr":  "F18",
+        "Row":  18,
+        "Col":  6,
+        "Formula":  "=SUM(F15:F17)"
+    },
+    {
+        "Addr":  "G18",
+        "Row":  18,
+        "Col":  7,
+        "Formula":  "=SUM(G15:G17)"
+    },
+    {
+        "Addr":  "H18",
+        "Row":  18,
+        "Col":  8,
+        "Formula":  "=G18-F18"
+    },
+    {
+        "Addr":  "I18",
+        "Row":  18,
+        "Col":  9,
+        "Formula":  "=AVERAGE(I15:I17)"
+    },
+    {
+        "Addr":  "J18",
+        "Row":  18,
+        "Col":  10,
+        "Formula":  "=AVERAGE(J15:J17)"
+    },
+    {
+        "Addr":  "K18",
+        "Row":  18,
+        "Col":  11,
+        "Formula":  "=J18-I18"
+    },
+    {
+        "Addr":  "L18",
+        "Row":  18,
+        "Col":  12,
+        "Formula":  "=AVERAGE(L15:L17)"
+    },
+    {
+        "Addr":  "M18",
+        "Row":  18,
+        "Col":  13,
+        "Formula":  "=AVERAGE(M15:M17)"
+    },
+    {
+        "Addr":  "N18",
+        "Row":  18,
+        "Col":  14,
+        "Formula":  "=SUM(N15:N17)"
+    },
+    {
+        "Addr":  "O18",
+        "Row":  18,
+        "Col":  15,
+        "Formula":  "=SUM(O15:O17)"
+    },
+    {
+        "Addr":  "P18",
+        "Row":  18,
+        "Col":  16,
+        "Formula":  "=O18-N18"
+    },
+    {
+        "Addr":  "Q18",
+        "Row":  18,
+        "Col":  17,
+        "Formula":  "[VALUE] 0.0176991150442478"
+    },
+    {
+        "Addr":  "B19",
+        "Row":  19,
+        "Col":  2,
+        "Formula":  "[VALUE] Oktober"
+    },
+    {
+        "Addr":  "C19",
+        "Row":  19,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C15"
+    },
+    {
+        "Addr":  "D19",
+        "Row":  19,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C31"
+    },
+    {
+        "Addr":  "E19",
+        "Row":  19,
+        "Col":  5,
+        "Formula":  "=D19-C19"
+    },
+    {
+        "Addr":  "F19",
+        "Row":  19,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D15"
+    },
+    {
+        "Addr":  "G19",
+        "Row":  19,
+        "Col":  7,
+        "Formula":  "[VALUE] 97667.2755"
+    },
+    {
+        "Addr":  "H19",
+        "Row":  19,
+        "Col":  8,
+        "Formula":  "=G19-F19"
+    },
+    {
+        "Addr":  "I19",
+        "Row":  19,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E15"
+    },
+    {
+        "Addr":  "J19",
+        "Row":  19,
+        "Col":  10,
+        "Formula":  "[VALUE] 0.976672755"
+    },
+    {
+        "Addr":  "K19",
+        "Row":  19,
+        "Col":  11,
+        "Formula":  "=J19-I19"
+    },
+    {
+        "Addr":  "L19",
+        "Row":  19,
+        "Col":  12,
+        "Formula":  "=Oktober!S40"
+    },
+    {
+        "Addr":  "M19",
+        "Row":  19,
+        "Col":  13,
+        "Formula":  "=Oktober!S41"
+    },
+    {
+        "Addr":  "N19",
+        "Row":  19,
+        "Col":  14,
+        "Formula":  "=Oktober!O5"
+    },
+    {
+        "Addr":  "O19",
+        "Row":  19,
+        "Col":  15,
+        "Formula":  "=Oktober!P5"
+    },
+    {
+        "Addr":  "P19",
+        "Row":  19,
+        "Col":  16,
+        "Formula":  "=O19-N19"
+    },
+    {
+        "Addr":  "B20",
+        "Row":  20,
+        "Col":  2,
+        "Formula":  "[VALUE] November"
+    },
+    {
+        "Addr":  "C20",
+        "Row":  20,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C16"
+    },
+    {
+        "Addr":  "D20",
+        "Row":  20,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C32"
+    },
+    {
+        "Addr":  "E20",
+        "Row":  20,
+        "Col":  5,
+        "Formula":  "=D20-C20"
+    },
+    {
+        "Addr":  "F20",
+        "Row":  20,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D16"
+    },
+    {
+        "Addr":  "G20",
+        "Row":  20,
+        "Col":  7,
+        "Formula":  "[VALUE] 94490.09"
+    },
+    {
+        "Addr":  "H20",
+        "Row":  20,
+        "Col":  8,
+        "Formula":  "=G20-F20"
+    },
+    {
+        "Addr":  "I20",
+        "Row":  20,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E16"
+    },
+    {
+        "Addr":  "J20",
+        "Row":  20,
+        "Col":  10,
+        "Formula":  "[VALUE] 0.859000818181818"
+    },
+    {
+        "Addr":  "K20",
+        "Row":  20,
+        "Col":  11,
+        "Formula":  "=J20-I20"
+    },
+    {
+        "Addr":  "L20",
+        "Row":  20,
+        "Col":  12,
+        "Formula":  "=November!S40"
+    },
+    {
+        "Addr":  "M20",
+        "Row":  20,
+        "Col":  13,
+        "Formula":  "=November!S41"
+    },
+    {
+        "Addr":  "N20",
+        "Row":  20,
+        "Col":  14,
+        "Formula":  "=November!O5"
+    },
+    {
+        "Addr":  "O20",
+        "Row":  20,
+        "Col":  15,
+        "Formula":  "=November!P5"
+    },
+    {
+        "Addr":  "P20",
+        "Row":  20,
+        "Col":  16,
+        "Formula":  "=O20-N20"
+    },
+    {
+        "Addr":  "B21",
+        "Row":  21,
+        "Col":  2,
+        "Formula":  "[VALUE] Dezember"
+    },
+    {
+        "Addr":  "C21",
+        "Row":  21,
+        "Col":  3,
+        "Formula":  "=EINSTELLUNG!C17"
+    },
+    {
+        "Addr":  "D21",
+        "Row":  21,
+        "Col":  4,
+        "Formula":  "=EINSTELLUNG!C33"
+    },
+    {
+        "Addr":  "E21",
+        "Row":  21,
+        "Col":  5,
+        "Formula":  "=D21-C21"
+    },
+    {
+        "Addr":  "F21",
+        "Row":  21,
+        "Col":  6,
+        "Formula":  "=EINSTELLUNG!D17"
+    },
+    {
+        "Addr":  "G21",
+        "Row":  21,
+        "Col":  7,
+        "Formula":  "[VALUE] 94491.09"
+    },
+    {
+        "Addr":  "H21",
+        "Row":  21,
+        "Col":  8,
+        "Formula":  "=G21-F21"
+    },
+    {
+        "Addr":  "I21",
+        "Row":  21,
+        "Col":  9,
+        "Formula":  "=EINSTELLUNG!E17"
+    },
+    {
+        "Addr":  "J21",
+        "Row":  21,
+        "Col":  10,
+        "Formula":  "[VALUE] 0.78742575"
+    },
+    {
+        "Addr":  "K21",
+        "Row":  21,
+        "Col":  11,
+        "Formula":  "=J21-I21"
+    },
+    {
+        "Addr":  "L21",
+        "Row":  21,
+        "Col":  12,
+        "Formula":  "=Dezember!S40"
+    },
+    {
+        "Addr":  "M21",
+        "Row":  21,
+        "Col":  13,
+        "Formula":  "=Dezember!S41"
+    },
+    {
+        "Addr":  "N21",
+        "Row":  21,
+        "Col":  14,
+        "Formula":  "=Dezember!O5"
+    },
+    {
+        "Addr":  "O21",
+        "Row":  21,
+        "Col":  15,
+        "Formula":  "=Dezember!P5"
+    },
+    {
+        "Addr":  "P21",
+        "Row":  21,
+        "Col":  16,
+        "Formula":  "=O21-N21"
+    },
+    {
+        "Addr":  "B22",
+        "Row":  22,
+        "Col":  2,
+        "Formula":  "[VALUE] Q4"
+    },
+    {
+        "Addr":  "C22",
+        "Row":  22,
+        "Col":  3,
+        "Formula":  "=SUM(C19:C21)"
+    },
+    {
+        "Addr":  "D22",
+        "Row":  22,
+        "Col":  4,
+        "Formula":  "=SUM(D19:D21)"
+    },
+    {
+        "Addr":  "E22",
+        "Row":  22,
+        "Col":  5,
+        "Formula":  "=D22-C22"
+    },
+    {
+        "Addr":  "F22",
+        "Row":  22,
+        "Col":  6,
+        "Formula":  "=SUM(F19:F21)"
+    },
+    {
+        "Addr":  "G22",
+        "Row":  22,
+        "Col":  7,
+        "Formula":  "=SUM(G19:G21)"
+    },
+    {
+        "Addr":  "H22",
+        "Row":  22,
+        "Col":  8,
+        "Formula":  "=G22-F22"
+    },
+    {
+        "Addr":  "I22",
+        "Row":  22,
+        "Col":  9,
+        "Formula":  "=AVERAGE(I19:I21)"
+    },
+    {
+        "Addr":  "J22",
+        "Row":  22,
+        "Col":  10,
+        "Formula":  "=AVERAGE(J19:J21)"
+    },
+    {
+        "Addr":  "K22",
+        "Row":  22,
+        "Col":  11,
+        "Formula":  "=J22-I22"
+    },
+    {
+        "Addr":  "L22",
+        "Row":  22,
+        "Col":  12,
+        "Formula":  "=AVERAGE(L19:L21)"
+    },
+    {
+        "Addr":  "M22",
+        "Row":  22,
+        "Col":  13,
+        "Formula":  "=AVERAGE(M19:M21)"
+    },
+    {
+        "Addr":  "N22",
+        "Row":  22,
+        "Col":  14,
+        "Formula":  "=SUM(N19:N21)"
+    },
+    {
+        "Addr":  "O22",
+        "Row":  22,
+        "Col":  15,
+        "Formula":  "=SUM(O19:O21)"
+    },
+    {
+        "Addr":  "P22",
+        "Row":  22,
+        "Col":  16,
+        "Formula":  "=O22-N22"
+    },
+    {
+        "Addr":  "B23",
+        "Row":  23,
+        "Col":  2,
+        "Formula":  "= \"GESAMT \" \u0026 EINSTELLUNG!C35"
+    },
+    {
+        "Addr":  "C23",
+        "Row":  23,
+        "Col":  3,
+        "Formula":  "=SUM(C10,C14,C18,C22)"
+    },
+    {
+        "Addr":  "D23",
+        "Row":  23,
+        "Col":  4,
+        "Formula":  "=SUM(D10,D14,D18,D22)"
+    },
+    {
+        "Addr":  "E23",
+        "Row":  23,
+        "Col":  5,
+        "Formula":  "=D23-C23"
+    },
+    {
+        "Addr":  "F23",
+        "Row":  23,
+        "Col":  6,
+        "Formula":  "=SUM(F10,F14,F18,F22)"
+    },
+    {
+        "Addr":  "G23",
+        "Row":  23,
+        "Col":  7,
+        "Formula":  "=SUM(G10,G14,G18,G22)"
+    },
+    {
+        "Addr":  "H23",
+        "Row":  23,
+        "Col":  8,
+        "Formula":  "=G23-F23"
+    },
+    {
+        "Addr":  "I23",
+        "Row":  23,
+        "Col":  9,
+        "Formula":  "=AVERAGE(I10,I14,I18,I22)"
+    },
+    {
+        "Addr":  "J23",
+        "Row":  23,
+        "Col":  10,
+        "Formula":  "=AVERAGE(J10,J14,J18,J22)"
+    },
+    {
+        "Addr":  "K23",
+        "Row":  23,
+        "Col":  11,
+        "Formula":  "=J23-I23"
+    },
+    {
+        "Addr":  "L23",
+        "Row":  23,
+        "Col":  12,
+        "Formula":  "=AVERAGE(L22,L18,L14,L10)"
+    },
+    {
+        "Addr":  "M23",
+        "Row":  23,
+        "Col":  13,
+        "Formula":  "=AVERAGE(M10,M14,M18,M22)"
+    },
+    {
+        "Addr":  "N23",
+        "Row":  23,
+        "Col":  14,
+        "Formula":  "=SUM(N10,N14,N18,N22)"
+    },
+    {
+        "Addr":  "O23",
+        "Row":  23,
+        "Col":  15,
+        "Formula":  "=SUM(O10,O14,O18,O22)"
+    },
+    {
+        "Addr":  "P23",
+        "Row":  23,
+        "Col":  16,
+        "Formula":  "=O23-N23"
+    },
+    {
+        "Addr":  "Q23",
+        "Row":  23,
+        "Col":  17,
+        "Formula":  "[VALUE] 0.110091743119266"
+    },
+    {
+        "Addr":  "B24",
+        "Row":  24,
+        "Col":  2,
+        "Formula":  "[VALUE] © Adam Nagy · McOpCo · Personalsheet 2026"
+    },
+    {
+        "Addr":  "B28",
+        "Row":  28,
+        "Col":  2,
+        "Formula":  "= \"DURCHRECHNUNGSSTUNDEN - \" \u0026 EINSTELLUNG!C35"
+    },
+    {
+        "Addr":  "B29",
+        "Row":  29,
+        "Col":  2,
+        "Formula":  "[VALUE] Jede Zeile = 3 Monate bis zum Schlussmonat. Differenz rot = zu wenig Stunden (Überstunden-Risiko), gelb = Reserve. Überstunden-EUR nutzt den AVG Bruttolohn/h aus dem Schlussmonat (Monatsblatt Q42). Nur Jänner-Plan (nächstes Jahr) sind die weissen Felder (E30, I30) manuell editierbar."
+    },
+    {
+        "Addr":  "B30",
+        "Row":  30,
+        "Col":  2,
+        "Formula":  "[VALUE] Jänner Verfügbar Plan (nächstes Jahr):"
+    },
+    {
+        "Addr":  "E30",
+        "Row":  30,
+        "Col":  5,
+        "Formula":  "[VALUE] 7000"
+    },
+    {
+        "Addr":  "F30",
+        "Row":  30,
+        "Col":  6,
+        "Formula":  "[VALUE] Jänner Muster Plan (nächstes Jahr):"
+    },
+    {
+        "Addr":  "I30",
+        "Row":  30,
+        "Col":  9,
+        "Formula":  "[VALUE] 5600"
+    },
+    {
+        "Addr":  "B31",
+        "Row":  31,
+        "Col":  2,
+        "Formula":  "[VALUE] Zeitraum"
+    },
+    {
+        "Addr":  "C31",
+        "Row":  31,
+        "Col":  3,
+        "Formula":  "[VALUE] Endmonat"
+    },
+    {
+        "Addr":  "D31",
+        "Row":  31,
+        "Col":  4,
+        "Formula":  "[VALUE] Verfügbar"
+    },
+    {
+        "Addr":  "E31",
+        "Row":  31,
+        "Col":  5,
+        "Formula":  "[VALUE] Muster"
+    },
+    {
+        "Addr":  "F31",
+        "Row":  31,
+        "Col":  6,
+        "Formula":  "[VALUE] Differenz"
+    },
+    {
+        "Addr":  "G31",
+        "Row":  31,
+        "Col":  7,
+        "Formula":  "[VALUE] Lohn/h"
+    },
+    {
+        "Addr":  "H31",
+        "Row":  31,
+        "Col":  8,
+        "Formula":  "[VALUE] Std"
+    },
+    {
+        "Addr":  "I31",
+        "Row":  31,
+        "Col":  9,
+        "Formula":  "[VALUE] EUR"
+    },
+    {
+        "Addr":  "J31",
+        "Row":  31,
+        "Col":  10,
+        "Formula":  "[VALUE] Status / Hinweis"
+    },
+    {
+        "Addr":  "B32",
+        "Row":  32,
+        "Col":  2,
+        "Formula":  "[VALUE] Feb-Mär-Apr"
+    },
+    {
+        "Addr":  "C32",
+        "Row":  32,
+        "Col":  3,
+        "Formula":  "[VALUE] April"
+    },
+    {
+        "Addr":  "D32",
+        "Row":  32,
+        "Col":  4,
+        "Formula":  "=Februar!Q12+Marz!Q13+April!Q13"
+    },
+    {
+        "Addr":  "E32",
+        "Row":  32,
+        "Col":  5,
+        "Formula":  "=EINSTELLUNG!L7+EINSTELLUNG!L8+EINSTELLUNG!L9"
+    },
+    {
+        "Addr":  "F32",
+        "Row":  32,
+        "Col":  6,
+        "Formula":  "=April!Q15"
+    },
+    {
+        "Addr":  "G32",
+        "Row":  32,
+        "Col":  7,
+        "Formula":  "=April!Q42"
+    },
+    {
+        "Addr":  "H32",
+        "Row":  32,
+        "Col":  8,
+        "Formula":  "=MAX(0,-F32)"
+    },
+    {
+        "Addr":  "I32",
+        "Row":  32,
+        "Col":  9,
+        "Formula":  "=IF(OR(G32=0,H32=0),\"\",H32*G32*3/2)"
+    },
+    {
+        "Addr":  "J32",
+        "Row":  32,
+        "Col":  10,
+        "Formula":  "=IF(F32\u003c0,\"ACHTUNG: Überstunden\",IF(F32\u003e0,\"Reserve möglich\",\"OK\"))"
+    },
+    {
+        "Addr":  "B33",
+        "Row":  33,
+        "Col":  2,
+        "Formula":  "[VALUE] Mai-Jun-Jul"
+    },
+    {
+        "Addr":  "C33",
+        "Row":  33,
+        "Col":  3,
+        "Formula":  "[VALUE] Juli"
+    },
+    {
+        "Addr":  "D33",
+        "Row":  33,
+        "Col":  4,
+        "Formula":  "=Mai!Q12+Juni!Q13+Juli!Q13"
+    },
+    {
+        "Addr":  "E33",
+        "Row":  33,
+        "Col":  5,
+        "Formula":  "=EINSTELLUNG!L10+EINSTELLUNG!L11+EINSTELLUNG!L12"
+    },
+    {
+        "Addr":  "F33",
+        "Row":  33,
+        "Col":  6,
+        "Formula":  "=Juli!Q15"
+    },
+    {
+        "Addr":  "G33",
+        "Row":  33,
+        "Col":  7,
+        "Formula":  "=Juli!Q42"
+    },
+    {
+        "Addr":  "H33",
+        "Row":  33,
+        "Col":  8,
+        "Formula":  "=MAX(0,-F33)"
+    },
+    {
+        "Addr":  "I33",
+        "Row":  33,
+        "Col":  9,
+        "Formula":  "=IF(OR(G33=0,H33=0),\"\",H33*G33*3/2)"
+    },
+    {
+        "Addr":  "J33",
+        "Row":  33,
+        "Col":  10,
+        "Formula":  "=IF(F33\u003c0,\"ACHTUNG: Überstunden\",IF(F33\u003e0,\"Reserve möglich\",\"OK\"))"
+    },
+    {
+        "Addr":  "B34",
+        "Row":  34,
+        "Col":  2,
+        "Formula":  "[VALUE] Aug-Sep-Okt"
+    },
+    {
+        "Addr":  "C34",
+        "Row":  34,
+        "Col":  3,
+        "Formula":  "[VALUE] Oktober"
+    },
+    {
+        "Addr":  "D34",
+        "Row":  34,
+        "Col":  4,
+        "Formula":  "=August!Q12+September!Q13+Oktober!Q13"
+    },
+    {
+        "Addr":  "E34",
+        "Row":  34,
+        "Col":  5,
+        "Formula":  "=EINSTELLUNG!L13+EINSTELLUNG!L14+EINSTELLUNG!L15"
+    },
+    {
+        "Addr":  "F34",
+        "Row":  34,
+        "Col":  6,
+        "Formula":  "=Oktober!Q15"
+    },
+    {
+        "Addr":  "G34",
+        "Row":  34,
+        "Col":  7,
+        "Formula":  "=Oktober!Q42"
+    },
+    {
+        "Addr":  "H34",
+        "Row":  34,
+        "Col":  8,
+        "Formula":  "=MAX(0,-F34)"
+    },
+    {
+        "Addr":  "I34",
+        "Row":  34,
+        "Col":  9,
+        "Formula":  "=IF(OR(G34=0,H34=0),\"\",H34*G34*3/2)"
+    },
+    {
+        "Addr":  "J34",
+        "Row":  34,
+        "Col":  10,
+        "Formula":  "=IF(F34\u003c0,\"ACHTUNG: Überstunden\",IF(F34\u003e0,\"Reserve möglich\",\"OK\"))"
+    },
+    {
+        "Addr":  "B35",
+        "Row":  35,
+        "Col":  2,
+        "Formula":  "[VALUE] Nov-Dez-Jän"
+    },
+    {
+        "Addr":  "C35",
+        "Row":  35,
+        "Col":  3,
+        "Formula":  "[VALUE] Jän (Plan)"
+    },
+    {
+        "Addr":  "D35",
+        "Row":  35,
+        "Col":  4,
+        "Formula":  "=November!Q12+Dezember!Q13+E30"
+    },
+    {
+        "Addr":  "E35",
+        "Row":  35,
+        "Col":  5,
+        "Formula":  "=EINSTELLUNG!L16+EINSTELLUNG!L17+I30"
+    },
+    {
+        "Addr":  "F35",
+        "Row":  35,
+        "Col":  6,
+        "Formula":  "=D35-E35"
+    },
+    {
+        "Addr":  "G35",
+        "Row":  35,
+        "Col":  7,
+        "Formula":  "=Dezember!Q42"
+    },
+    {
+        "Addr":  "H35",
+        "Row":  35,
+        "Col":  8,
+        "Formula":  "=MAX(0,-F35)"
+    },
+    {
+        "Addr":  "I35",
+        "Row":  35,
+        "Col":  9,
+        "Formula":  "=IF(OR(G35=0,H35=0),\"\",H35*G35*3/2)"
+    },
+    {
+        "Addr":  "J35",
+        "Row":  35,
+        "Col":  10,
+        "Formula":  "=IF(F35\u003c0,\"ACHTUNG: Überstunden\",IF(F35\u003e0,\"Reserve möglich\",\"OK\"))"
+    },
+    {
+        "Addr":  "B36",
+        "Row":  36,
+        "Col":  2,
+        "Formula":  "[VALUE] Überstunden EUR = Überstunden Std x AVG Lohn/h x 1,5 (Spalte G aus Schlussmonat Q42). Nur bei negativem Schluss (rote Differenz). Positive Differenz = Reserve ohne EUR-Kosten."
+    }
+]
