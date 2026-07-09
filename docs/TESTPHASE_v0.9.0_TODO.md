@@ -1,9 +1,16 @@
 # Test-Release v0.9.0-test — TODO (1. nagy tesztfázis visszajelzés)
 
 **Forrás:** Restaurant-Manager teszt, első nagy tesztfázis  
-**Dátum:** 2026-06-19  
+**Dátum:** 2026-06-19 (utolsó frissítés: 2026-07-09)  
 **Verzió:** Personalsheet Test-Release v0.9.0-test  
-**Státusz:** Nyitott — implementáció még nem kezdődött el
+**Státusz:** Gyűjtés folyamatban — implementáció a következő napokban indul  
+**Teljes release:** 2027 (addig több kolléga tesztel)
+
+### Teszt összkép (2026-07-09)
+
+- Általános visszajelzés: **jó, stabilan működik** a sheet a gyakorlati használatban.
+- Ismert problémák: TR-01 … TR-04 (lásd alább) + TR-05 áttekintés.
+- Új észrevételek: folyamatosan ide kerülnek; commit/push csak kérésre.
 
 ---
 
@@ -12,6 +19,7 @@
 | ID | Prioritás | Típus | Rövid név | Státusz |
 |----|-----------|-------|-----------|---------|
 | TR-01 | 🔴 Magas | Bug | Personal ID beragad CopyData után | ⬜ Nyitott |
+| TR-05 | 🟡 Közepes | Review | Alap gyorsítás & egyszerűsítés áttekintés | ⬜ Nyitott |
 | TR-02 | 🟡 Közepes | Bug | Bemásolás nem mindig sima TEXT | ⬜ Nyitott |
 | TR-03 | 🟡 Közepes | Feature (1. fázis) | Minden adat törlése gomb | ⬜ Nyitott |
 | TR-04 | 🟢 Alacsony (2. fázis) | Feature | Új év indítása | ⬜ Nyitott |
@@ -62,6 +70,61 @@
 1. Admin: Stunden-Log leeren (`PID_AdminResetHourOverrideLog`).
 2. Érintett későbbi hónapok: `DataClear` (egyenként).
 3. Javított forráshónapból CopyData újra.
+4. Vagy: minden érintett hónapon kézi B javítás (lásd chat 2026-07-09).
+
+---
+
+## TR-05 — Alap gyorsítás & egyszerűsítés áttekintés
+
+**Státusz:** ⬜ Nyitott  
+**Prioritás:** 🟡 Közepes — TR-01 után, TR-02 előtt  
+**Típus:** Review + mérés; csak kis, biztonságos finomítások  
+**Modul(ok):** első körben nincs kötelező kód — `mod_PerformanceBaseline.bas`, `docs/PERFORMANCE_BASELINE.md`, `docs/FUTURE_PLANS.md`
+
+### Cél
+
+- Összhangban a teszt visszajelzéssel: a sheet **jó**, de érdemes tudni, hol lehet még finomítani (sebesség, UX, kevesebb kattintás).
+- **Nem** nagy refactor; **nem** CopyData logika (az TR-01).
+
+### 1. fázis — mérés és gyűjtés
+
+- [ ] **FP-010 MANU** lépések teszt gépen (stoppóra):
+  - Cold Open → első hónap használható
+  - CopyData (forrás hónap → december)
+  - Save után várakozás
+  - LOHNTABELLE → első hónap F-dropdown
+- [ ] Admin: `PID_RunPerformanceBaseline` — log: `PID_PERFORMANCE_LOG`
+- [ ] Tesztelői kérdés: *„Mi érződik lassúnak?”* (megnyitás, CopyData, KV, Fluktuation tab, Full Refresh)
+- [ ] Eredmények rögzítése: `docs/PERFORMANCE_BASELINE.md` táblák
+
+### 2. fázis — finomítási jelöltek (csak ha mérés indokolja)
+
+| Terület | Lehetséges lépés | Kapcsolat |
+|---------|------------------|-----------|
+| CopyData formátum | B/C `@` másoláskor (opcionális) | TR-02 |
+| Open | FP-027 manuális Win/Mac lezárása | FUTURE_PLANS |
+| UX | TR-03 nullázás gomb — kevesebb workaround | TR-03 |
+| Full Refresh | Mikor kell admin refresh vs. automatikus dirty | Admin |
+| Mac F-dropdown | FP-026 — post-release, alacsony prio | FUTURE_PLANS |
+
+### Amit most **nem** csinálunk
+
+- CopyData override/propagáció átírása (TR-01)
+- `mod_ResetAndImportVBAFiles` érintése
+- Cél nélküli „minden gyorsabb” refaktor
+
+### Elfogadási kritériumok
+
+- [ ] MANU baseline kitöltve legalább 1 Win gépen (opcionálisan Mac)
+- [ ] Rövid lista: top 3 „érzett lassúság” vagy UX súrlódás
+- [ ] Döntés: mely finomítások mennek implementációba (külön FP/TR)
+
+### Meglévő alap (már kész — ne törjük el)
+
+- FP-005 scoped KV refresh (~0,15 s)
+- FP-007/008 SheetChange / SelectionChange
+- FP-009 Fluktuation deferred
+- CopyData: `PID_APPLY_FORMATS_DURING_COPY = False`, `PID_CALCULATE_FLUCTUATION_DURING_COPY = False`
 
 ---
 
@@ -181,9 +244,10 @@ Ezeket a teszt során érdemes figyelni; külön ticket, ha előjönnek:
 ## Implementációs sorrend (javaslat)
 
 1. **TR-01** — reprodukció + fix (legkritikusabb tesztblokkoló)
-2. **TR-02** — paste + formátum (gyakori user friction)
-3. **TR-03** — nullázás gomb (gyorsítja a tesztelést és az újraindítást)
-4. **TR-04** — új év (önálló release feature)
+2. **TR-05** — perf/UX áttekintés + FP-010 mérés (párhuzamosan gyűjtéssel is mehet)
+3. **TR-02** — paste + formátum (gyakori user friction)
+4. **TR-03** — nullázás gomb (gyorsítja a tesztelést és az újraindítást)
+5. **TR-04** — új év (önálló release feature, 2027 release előtt)
 
 ---
 
@@ -200,6 +264,7 @@ Ezeket a teszt során érdemes figyelni; külön ticket, ha előjönnek:
 | TR ID | Tervezett FP/TR kód | CHANGELOG szekció |
 |-------|---------------------|-------------------|
 | TR-01 | FP-031 | Fixed |
+| TR-05 | FP-035 | Changed / docs |
 | TR-02 | FP-032 | Fixed |
 | TR-03 | FP-033 | Added |
 | TR-04 | FP-034 | Added |
