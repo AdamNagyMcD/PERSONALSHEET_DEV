@@ -4,6 +4,9 @@ Entwicklungs- und Release-Log.
 
 ## Unreleased
 
+### Fixed
+- DieseArbeitsmappe.cls + mod_FormatMonthSheet.bas (FP-032 / TR-02): Paste in Monatsblaettern — B/C (Personal-ID/Name) und M/N werden nach Einfuegen wieder als Text (`@`) geschrieben (Anzeigetext vor Undo gesichert, damit fuehrende Nullen erhalten bleiben). Paste-Allowlist Panel `O18:Q25` → `O18:Q28`. `IsProbablyPaste` erkennt zusaetzlich FR/IT/ES/NL sowie AutoFill; Textformat wird auch bei Tastatur-Aenderung in B/C/M/N nachgezogen. `PID_ApplyMonthSheetTextInputFormats` setzt B/C/M/N beim Monatsblatt-Format. Normale Eingabe in D/E/F/I/J unveraendert.
+
 ### Changed
 - mod_CopyData.bas + mod_PIDUserText.bas (UI Phase 2): MsgBox-Texte in `PID_CopyDataToFollowingMonths`, `PID_ShowHourOverrideLog` und `PID_ValidateWorkerMonthSheet` nutzen zentrale ChrW-Helper (`PID_UTxtAuswaehlen`, `PID_UTxtGueltig`/`Gueltigen`, neuer `PID_UTxtEintraege`) — sichtbare Dialoge zeigen korrekte Umlaute; CopyData-Logik unveraendert.
 - Modul1.bas, mod_FormatMonthSheet.bas, mod_KVStundenDropdown.bas, mod_KVLohnLookup.bas + mod_PIDUserText.bas (UI Phase 3): Restore-/Format-MsgBox-Texte (`Monatsblätter`, `Blätter`, `zurückgesetzt`, `Prüfung`, `Änderung`, `gültiges`) über zentrale ChrW-Helper; Logik und Formeln unveraendert.

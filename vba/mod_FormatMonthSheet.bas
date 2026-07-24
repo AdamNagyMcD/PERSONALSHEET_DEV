@@ -451,6 +451,7 @@ Public Sub PID_ApplyMonthSheetEmployeeRowLayout(ByVal ws As Worksheet)
     PID_MSRestoreEmployeeRowIndexColumn ws
     ws.Rows(PID_FIRST_ROW & ":" & PID_LAST_ROW).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
     PID_ApplyMonthSheetAustrittsgrundLayout ws
+    PID_ApplyMonthSheetTextInputFormats ws
 End Sub
 
 
@@ -576,10 +577,23 @@ Private Sub PID_MSApplyEmployeeBlockStyles(ByVal ws As Worksheet)
     ws.Range("B3:C82").HorizontalAlignment = xlLeft
     ws.Range("M3:N82").HorizontalAlignment = xlLeft
     
+    ' FP-032 / TR-02: Personal-ID/Name und Freitext-Spalten immer Textformat.
+    PID_ApplyMonthSheetTextInputFormats ws
+    
     PID_MSApplyBlockBorders ws.Range("A1:N2")
     PID_MSApplyBlockBorders ws.Range("A3:N82")
     ' Austrittsgrund-Spalte N: rechter Rand Zeilen 43-50 wie N42 (sichtbarer Abschluss zum Panel).
     PID_MSReinforceEdgeBorder ws.Range("N43:N50"), xlEdgeRight
+End Sub
+
+
+' FP-032 / TR-02: B/C (Personal-ID, Name) und M/N als Text (@) — keine Zahl-/Datumsformatierung.
+Public Sub PID_ApplyMonthSheetTextInputFormats(ByVal ws As Worksheet)
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    ws.Range("B3:C82").NumberFormat = "@"
+    ws.Range("M3:N82").NumberFormat = "@"
 End Sub
 
 
