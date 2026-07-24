@@ -131,9 +131,9 @@ Ergebnisse in die Tabellen unten eintragen. Ziel: **Sekunden (s)**, eine Dezimal
 
 ### 7 — FullSystemRefresh (AUTO, Admin-Referenz)
 
-**AUTO:** gleiche Schritte wie `PID_FullSystemRefresh`, ohne Abschluss-Dialog.
+**AUTO:** gleiche Schritte wie `PID_FullSystemRefresh` (ohne Confirm-/Abschluss-Dialog).
 
-Nicht Alltags-KPI — nur Vergleich nach grossen Aenderungen.
+Nicht Alltags-KPI — nur Vergleich nach grossen Aenderungen. Ab FP-035 verlangt der echte Admin-Aufruf eine Bestaetigung („wann noetig“).
 
 | Lauf | Dauer (s) |
 |------|-----------|
@@ -163,11 +163,70 @@ Nach dem Lauf: Werte aus MsgBox oder Log-Blatt in diese Datei kopieren.
 - [x] `docs/PERFORMANCE_BASELINE.md` — AUTO-Spalten ausgefuellt.
 - [x] Baseline Schritt 2 (KV-Refresh 1 Blatt): **0,51 s** — Referenz fuer FP-005.
 - [x] Nach FP-005 Schritt 2b (scoped BG1): **0,15 s** — Ziel erreicht.
-- [ ] MANU-Schritte 1, 2 (real), 4 (CopyData), 6 (Save) noch offen.
+- [ ] MANU-Schritte 1, 2 (real), 4 (CopyData), 6 (Save) noch offen — TR-05 Checkliste unten.
+
+---
+
+## TR-05 Review (2026-07-24) — FP-035
+
+Review + Entscheidungsprotokoll. **Kein** Performance-Refactor, **kein** CopyData-Override-Umbau.
+
+### AUTO-Lage (bereits gemessen)
+
+| Pfad | Wert | Bewertung Alltag |
+|------|------|------------------|
+| KV scoped (FP-005) | **0,15 s** | OK — Alltags-Pfad |
+| KV Voll-Refresh | ~0,52 s | OK — selten |
+| G-Recalc 1 Zeile | 0,02 s | OK |
+| FINANZ-Sync | ~0,10 s | OK |
+| Fluktuation Save-Daten | ~1,27 s | akzeptabel (dirty, nur bei Bedarf) |
+| FullSystemRefresh | ~8 s | **nur Admin** — nicht Alltag |
+
+### Top 3 „empfundene“ Reibung (aus Testphase + AUTO)
+
+1. **UX / Test-Restart** — „alles leeren“ fehlt → Workaround DataClear ×12 + Log — **TR-03** (naechste Feature).
+2. **Open-Gefuehl** — Code FP-027 fertig; MANU Win2016/365/Mac noch offen — **kein neuer Code**, nur Spot-Check.
+3. **Full Refresh Missbrauch** — ~8 s wenn unnoetig geklickt; Alltag reicht dirty/auto — **FP-035 Confirm + Hinweis** (umgesetzt).
+
+Weitere Kandidaten **bewusst nicht** jetzt:
+
+| Kandidat | Entscheidung |
+|----------|--------------|
+| CopyData B/C `@` waehrend Copy | → TR-02/Paste-Pfad; CopyData-Bootstrap unangetastet; `PID_APPLY_FORMATS_DURING_COPY=False` bleibt (Speed) |
+| Mac F-Dropdown FP-026 | post-v1.0, niedrig |
+| Fluktuation Save weiter optimieren | kein Mess-Beleg fuer Alltagsschmerz; FP-009 dirty belassen |
+| „Alles schneller“-Refactor | abgelehnt (TR-05 Scope) |
+
+### Entscheidungen — was als naechstes
+
+| Prio | Massnahme | Ticket |
+|------|-----------|--------|
+| 1 | Personal-ID / CopyData Bug | **TR-01** |
+| 2 | MANU FP-010 + FP-027 Spot-Check (Win) | Checkliste unten |
+| 3 | „Alles loeschen“-Button | **TR-03** |
+| 4 | Paste-Text (falls noch offen) | **TR-02** |
+| — | Kein weiterer Perf-Code bis MANU sagt etwas anderes | — |
+
+### MANU-Checkliste fuer Tester (1× Win, optional Mac)
+
+Werte in die Tabellen oben eintragen; Frage beantworten: *„Was fuehlt sich langsam an?“*
+
+- [ ] 1 Cold Open → erster Monats-Tab nutzbar
+- [ ] 2 LOHNTABELLE → Eigene Stunden → F-Dropdown sichtbar
+- [ ] 4 CopyData (Testkopie) Januar → Dezember
+- [ ] 6 Save mit Fluktuation dirty
+- [ ] Admin: `PID_RunPerformanceBaseline` → Log `PID_PERFORMANCE_LOG` → AUTO-Werte hierher kopieren
+- [ ] Kurznotiz: Top 1 gefuehlte Langsamkeit (oder „nichts Stoerendes“)
+
+### Umgesetzt in Code (FP-035, klein)
+
+- `PID_FullSystemRefresh`: Bestaetigung + Wann-noetig / Wann-nicht
+- `PID_ShowAdminMacroInfo` + Baseline-Footer: TR-05 / MANU-Hinweise
 
 ---
 
 ## Verknuepfung
 
-- Backlog: `docs/FUTURE_PLANS.md` → FP-010, FP-005–FP-009
+- Backlog: `docs/FUTURE_PLANS.md` → FP-010, FP-005–FP-009, FP-035
+- Testphase: `docs/TESTPHASE_v0.9.0_TODO.md` → TR-05
 - Release: `docs/RELEASE.md` (optional Kurzverweis)

@@ -25,7 +25,7 @@ Public Sub PID_RunPerformanceBaseline()
     Dim oldCalculation As XlCalculation
     
     If Not PID_ConfirmAdminAction( _
-        "Misst nicht-destruktive Performance-Schritte (FP-010)." & vbCrLf & _
+        "Misst nicht-destruktive Performance-Schritte (FP-010 / TR-05)." & vbCrLf & _
         "CopyData und Cold Open: manuell laut docs/PERFORMANCE_BASELINE.md", _
         "Performance Baseline") Then
         Exit Sub
@@ -278,11 +278,13 @@ End Sub
 Private Function PID_PerfManualStepsFooter() As String
     Dim footer As String
     
-    footer = vbCrLf & "MANUELL (Stoppuhr, docs/PERFORMANCE_BASELINE.md):" & vbCrLf
+    footer = vbCrLf & "MANUELL (Stoppuhr, docs/PERFORMANCE_BASELINE.md — TR-05):" & vbCrLf
     footer = footer & "1 Cold Open -> Monats-Tab" & vbCrLf
     footer = footer & "2 LOHNTABELLE -> Eigene Stunden -> Monats-Tab (real)" & vbCrLf
     footer = footer & "4 CopyData Januar -> Dezember (Testkopie!)" & vbCrLf
     footer = footer & "6 Save mit Fluktuation dirty (Strg+S)" & vbCrLf
+    footer = footer & vbCrLf & "Tester-Frage: Was f" & ChrW(252) & "hlt sich langsam an?" & vbCrLf
+    footer = footer & "(Open / CopyData / KV / Fluktuation-Tab / Full Refresh)" & vbCrLf
     
     PID_PerfManualStepsFooter = footer
 End Function
