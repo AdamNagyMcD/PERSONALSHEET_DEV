@@ -37,7 +37,8 @@ Verknüpfungen: [`CHANGELOG.md`](CHANGELOG.md) · [`PERFORMANCE_BASELINE.md`](PE
 | FP-027 | Open: Flackern / Recalc | Win2016/365 manuell prüfen: Blatt erscheint sofort |
 | FP-029 | Spalte K (Urlaub €): 0 statt leer | Manuell prüfen: leere Zeile K leer, MA+J K korrekt |
 | FP-028 | CopyData Stunden-Override-Log | ✅ Win manuell verifiziert (Juli→CopyData→korrekt) |
-| FP-010 | Performance-Messprotokoll | MANU: Cold Open, CopyData, Save (Stoppuhr) |
+| FP-010 | Performance-Messprotokoll | MANU: Cold Open, CopyData, Save (Stoppuhr) — TR-05 Checkliste |
+| FP-035 | TR-05 Perf/UX-Review | MANU Spot-Check Win; Review + Full-Refresh-Confirm erledigt |
 | FP-016 | Schutz-Smoke | Sort/Fill-Handle bei jedem Release manuell |
 | FP-018 | KV-Periode → erster Monats-Tab | Akzeptable Zeit nach neuer Periode messen |
 | FP-001–004, 006, 011, 013, 017, 019–024 | diverse Fixes | Einzelne Mac/Win-Spot-Checks in Akzeptanzkriterien |
@@ -61,9 +62,13 @@ FP-001 · FP-002 · FP-003 · FP-004 · FP-005 · FP-006 · FP-007 · FP-008 · 
 
 ## Empfohlene Reihenfolge (nächste Schritte)
 
-1. **FP-027** — Open manuell prüfen (Win2016 + Win365 + Mac)
-2. **FP-029** — K-Spalte manuell prüfen (leere Zeile, MA+J, CopyData)
-3. **FP-026** — erst nach v1.0-Release, Mac-only
+1. **TR-01 / FP-031** — Personal-ID bleibt nach CopyData-Korrektur haengen (Testblocker)
+2. **FP-027** — Open manuell prüfen (Win2016 + Win365 + Mac) — TR-05 MANU-Checkliste
+3. **TR-03 / FP-033** — „Alles loeschen“-Button (UX / Test-Restart)
+4. **FP-029** — K-Spalte manuell prüfen (leere Zeile, MA+J, CopyData)
+5. **FP-026** — erst nach v1.0-Release, Mac-only
+
+**TR-05 / FP-035 (2026-07-24):** Review abgeschlossen — kein weiterer Perf-Refactor bis MANU etwas anderes zeigt. Details: [`PERFORMANCE_BASELINE.md`](PERFORMANCE_BASELINE.md#tr-05-review-2026-07-24--fp-035).
 
 ---
 

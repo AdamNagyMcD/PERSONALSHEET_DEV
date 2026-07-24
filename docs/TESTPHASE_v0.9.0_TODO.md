@@ -1,15 +1,15 @@
 # Test-Release v0.9.0-test — TODO (1. nagy tesztfázis visszajelzés)
 
 **Forrás:** Restaurant-Manager teszt, első nagy tesztfázis  
-**Dátum:** 2026-06-19 (utolsó frissítés: 2026-07-09)  
+**Dátum:** 2026-06-19 (utolsó frissítés: 2026-07-24)  
 **Verzió:** Personalsheet Test-Release v0.9.0-test  
-**Státusz:** Gyűjtés folyamatban — implementáció a következő napokban indul  
+**Státusz:** Gyűjtés folyamatban — TR-05 (FP-035) review kész; MANU Spot-Check nyitott  
 **Teljes release:** 2027 (addig több kolléga tesztel)
 
-### Teszt összkép (2026-07-09)
+### Teszt összkép (2026-07-09 / update 2026-07-24)
 
 - Általános visszajelzés: **jó, stabilan működik** a sheet a gyakorlati használatban.
-- Ismert problémák: TR-01 … TR-04 (lásd alább) + TR-05 áttekintés.
+- Ismert problémák: TR-01, TR-02, TR-03, TR-04; **TR-05** → review + FP-035 kis UX (Full Refresh Confirm).
 - Új észrevételek: folyamatosan ide kerülnek; commit/push csak kérésre.
 
 ---
@@ -19,7 +19,7 @@
 | ID | Prioritás | Típus | Rövid név | Státusz |
 |----|-----------|-------|-----------|---------|
 | TR-01 | 🔴 Magas | Bug | Personal ID beragad CopyData után | ⬜ Nyitott |
-| TR-05 | 🟡 Közepes | Review | Alap gyorsítás & egyszerűsítés áttekintés | ⬜ Nyitott |
+| TR-05 | 🟡 Közepes | Review | Alap gyorsítás & egyszerűsítés áttekintés | ✅ Kész (FP-035) |
 | TR-02 | 🟡 Közepes | Bug | Bemásolás nem mindig sima TEXT | ⬜ Nyitott |
 | TR-03 | 🟡 Közepes | Feature (1. fázis) | Minden adat törlése gomb | ⬜ Nyitott |
 | TR-04 | 🟢 Alacsony (2. fázis) | Feature | Új év indítása | ⬜ Nyitott |
@@ -76,10 +76,10 @@
 
 ## TR-05 — Alap gyorsítás & egyszerűsítés áttekintés
 
-**Státusz:** ⬜ Nyitott  
-**Prioritás:** 🟡 Közepes — TR-01 után, TR-02 előtt  
+**Státusz:** ✅ Kész (FP-035, 2026-07-24) — MANU Spot-Check Win még nyitott (nem blokkolja a review-t)  
+**Prioritás:** 🟡 Közepes  
 **Típus:** Review + mérés; csak kis, biztonságos finomítások  
-**Modul(ok):** első körben nincs kötelező kód — `mod_PerformanceBaseline.bas`, `docs/PERFORMANCE_BASELINE.md`, `docs/FUTURE_PLANS.md`
+**Modul(ok):** `mod_PIDAdmin.bas`, `mod_PerformanceBaseline.bas`, `docs/PERFORMANCE_BASELINE.md`, `docs/FUTURE_PLANS.md`
 
 ### Cél
 
@@ -88,24 +88,27 @@
 
 ### 1. fázis — mérés és gyűjtés
 
-- [ ] **FP-010 MANU** lépések teszt gépen (stoppóra):
-  - Cold Open → első hónap használható
-  - CopyData (forrás hónap → december)
-  - Save után várakozás
-  - LOHNTABELLE → első hónap F-dropdown
-- [ ] Admin: `PID_RunPerformanceBaseline` — log: `PID_PERFORMANCE_LOG`
-- [ ] Tesztelői kérdés: *„Mi érződik lassúnak?”* (megnyitás, CopyData, KV, Fluktuation tab, Full Refresh)
-- [ ] Eredmények rögzítése: `docs/PERFORMANCE_BASELINE.md` táblák
+- [x] AUTO FP-010 kiértékelve (meglévő Win baseline 2026-06-12) — lásd `PERFORMANCE_BASELINE.md` TR-05.
+- [ ] **FP-010 MANU** lépések teszt gépen (stoppóra) — checklist a baseline fájlban (Adam/Win).
+- [x] Admin: `PID_RunPerformanceBaseline` — footer + Confirm szöveg TR-05-re frissítve.
+- [x] Tesztelői kérdés rögzítve a baseline footerben / MANU checklistben.
+- [x] Eredmények / döntések: `docs/PERFORMANCE_BASELINE.md` → szekció **TR-05 Review**.
 
-### 2. fázis — finomítási jelöltek (csak ha mérés indokolja)
+### 2. fázis — finomítási jelöltek (döntés)
 
-| Terület | Lehetséges lépés | Kapcsolat |
-|---------|------------------|-----------|
-| CopyData formátum | B/C `@` másoláskor (opcionális) | TR-02 |
-| Open | FP-027 manuális Win/Mac lezárása | FUTURE_PLANS |
-| UX | TR-03 nullázás gomb — kevesebb workaround | TR-03 |
-| Full Refresh | Mikor kell admin refresh vs. automatikus dirty | Admin |
-| Mac F-dropdown | FP-026 — post-release, alacsony prio | FUTURE_PLANS |
+| Terület | Döntés | Kapcsolat |
+|---------|--------|-----------|
+| CopyData formátum B/C `@` | **Nem most** — Bootstrap érintetlen; Paste → TR-02 | TR-02 |
+| Open | **Csak MANU** FP-027 lezárás | FUTURE_PLANS |
+| UX nullázás | **Következő feature** | TR-03 |
+| Full Refresh vs dirty | **FP-035** Confirm + Admin-Hinweis | Admin ✅ |
+| Mac F-dropdown | post-release | FP-026 |
+
+### Top 3 súrlódás (review)
+
+1. Teszt/nullázás UX → **TR-03**
+2. Open MANU (FP-027 kód kész) → Spot-Check
+3. Full Refresh ~8 s félreértés → **FP-035** Confirm
 
 ### Amit most **nem** csinálunk
 
@@ -115,9 +118,9 @@
 
 ### Elfogadási kritériumok
 
-- [ ] MANU baseline kitöltve legalább 1 Win gépen (opcionálisan Mac)
-- [ ] Rövid lista: top 3 „érzett lassúság” vagy UX súrlódás
-- [ ] Döntés: mely finomítások mennek implementációba (külön FP/TR)
+- [ ] MANU baseline kitöltve legalább 1 Win gépen (opcionálisan Mac) — **nyitott**, nem blokkol
+- [x] Rövid lista: top 3 „érzett lassúság” vagy UX súrlódás
+- [x] Döntés: mely finomítások mennek implementációba (TR-01 / TR-03 / FP-027 MANU; FP-035 Confirm kész)
 
 ### Meglévő alap (már kész — ne törjük el)
 
@@ -244,7 +247,7 @@ Ezeket a teszt során érdemes figyelni; külön ticket, ha előjönnek:
 ## Implementációs sorrend (javaslat)
 
 1. **TR-01** — reprodukció + fix (legkritikusabb tesztblokkoló)
-2. **TR-05** — perf/UX áttekintés + FP-010 mérés (párhuzamosan gyűjtéssel is mehet)
+2. ~~**TR-05**~~ — ✅ FP-035 review (2026-07-24); MANU Spot-Check opcionális
 3. **TR-02** — paste + formátum (gyakori user friction)
 4. **TR-03** — nullázás gomb (gyorsítja a tesztelést és az újraindítást)
 5. **TR-04** — új év (önálló release feature, 2027 release előtt)

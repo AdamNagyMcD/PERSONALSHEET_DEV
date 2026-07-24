@@ -36,7 +36,7 @@ Verknüpfungen: [`FUTURE_PLANS.md`](FUTURE_PLANS.md) · [`CHANGELOG.md`](CHANGEL
 2. VBA-Editor → **Debug → VBAProject kompilieren** (Fehler = STOP)
 3. Workbook speichern
 4. Excel neu starten (nach Import empfohlen)
-5. **Alt+F8** → `FullSystemRefresh`
+5. **Alt+F8** → `FullSystemRefresh` (ab FP-035: Bestaetigungsdialog — nur nach Import/Restore noetig)
 6. **Alt+F8** → `PID_RunSystemSmokeCheck`
    - TEST 7 = **PASS** (Pflicht)
    - TEST 9–16 = strukturell **PASS**, wo automatisch (Jahr, A1, UEBERSICHT, KV, Monatslohn)

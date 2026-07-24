@@ -29,13 +29,15 @@ Public Sub PID_ShowAdminMacroInfo()
     msg = msg & "- PID_ToggleAdminSheet (Admin-Panel ein/aus)" & vbCrLf
     msg = msg & "- ResetAndImportVBAFiles" & vbCrLf
     msg = msg & "- FullSystemRefresh / PID_FullSystemRefresh" & vbCrLf
+    msg = msg & "    -> nur nach VBA-Import / Formel-Restore / gro" & PID_UTxtSs() & "en Layout-" & _
+          PID_UTxtAe() & "nderungen (~8 s). Alltag: dirty/automatisch." & vbCrLf
     msg = msg & "- PID_QuickSystemCheck" & vbCrLf
     msg = msg & "- PID_RunSystemSmokeCheck" & vbCrLf
-    msg = msg & "- PID_RunPerformanceBaseline (FP-010)" & vbCrLf
+    msg = msg & "- PID_RunPerformanceBaseline (FP-010 / TR-05)" & vbCrLf
     msg = msg & "- PID_AdminResetHourOverrideLog (Stunden-Log leeren)" & vbCrLf
     msg = msg & "- RebuildLOHNTABELLE" & vbCrLf
     msg = msg & "- UnprotectEverything" & vbCrLf & vbCrLf
-    msg = msg & "Siehe docs/RELEASE.md"
+    msg = msg & "Siehe docs/RELEASE.md und docs/PERFORMANCE_BASELINE.md (TR-05)"
     
     MsgBox msg, vbInformation, "Admin Makros"
 End Sub
@@ -67,6 +69,17 @@ Public Sub PID_FullSystemRefresh()
     Dim oldCalculation As XlCalculation
     
     On Error GoTo CleanFail
+    
+    ' FP-035 / TR-05: Klarstellung — nicht Alltags-Klick; dirty-Pfade reichen normalerweise.
+    If Not PID_ConfirmAdminAction( _
+        "Vollst" & PID_UTxtAe() & "ndiger System-Refresh (~8 s, Admin-Referenz)." & vbCrLf & vbCrLf & _
+        "N" & PID_UTxtOe() & "tig nach: VBA-Import, Formel-Restore, gro" & PID_UTxtSs() & "en Layout-/Schutz-" & _
+        PID_UTxtAe() & "nderungen." & vbCrLf & vbCrLf & _
+        "NICHT n" & PID_UTxtOe() & "tig im Alltag: KV-/Stunden-" & PID_UTxtAenderung() & _
+        "en, Fluktuation und FINANZ aktualisieren sich dirty/automatisch.", _
+        "Full System Refresh") Then
+        Exit Sub
+    End If
     
     oldEnableEvents = Application.EnableEvents
     oldScreenUpdating = Application.ScreenUpdating
