@@ -276,6 +276,11 @@ Public Sub PID_ResetExcelState()
     mViewPreserveDepth = 0
     Set mViewPreserveSheet = Nothing
     
+    ' TR-02: bleibt der Zaehler nach einem Abbruch stehen, greift der Einfuege-Schutz
+    ' nicht mehr. Gleichzeitig die Strg+V-Belegung neu setzen.
+    PID_ResetManagedPasteState
+    PID_InstallPasteHooks
+    
     On Error GoTo 0
     
     MsgBox "Excel wurde " & PID_UTxtZurueckgesetzt() & ".", _
@@ -1259,5 +1264,79 @@ Public Sub PID_RestoreUrlaubGeldFormulas()
            PID_UTxtMonatsblaetter() & " aktualisiert: " & CStr(updatedCount) & " / 12" & vbCrLf & _
            "Bereich: K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW, _
            vbInformation, "Spalte K"
+End Sub
+
+
+' Eingabespalten einer Mitarbeiterzeile: B-F, I-J und M-N.
+' G (Monatslohn), H (Aktuelle Stunden), K (Urlaub Euro) und L (Letztes Gehalt) enthalten
+' Formeln und gehoeren zur Struktur des Blattes - sie duerfen beim Loeschen eines
+' Mitarbeiters nicht mitgeleert werden. Ihr B/C-Guard sorgt von selbst dafuer, dass die
+' Zelle leer aussieht, sobald kein Mitarbeiter mehr in der Zeile steht.
+Public Function PID_GetEmployeeInputCellsForRows(ByVal ws As Worksheet, _
+                                                 ByVal firstRow As Long, _
+                                                 ByVal lastRow As Long) As Range
+    On Error GoTo SafeExit
+
+    If ws Is Nothing Then Exit Function
+
+    If firstRow < PID_FIRST_ROW Then firstRow = PID_FIRST_ROW
+    If lastRow > PID_LAST_ROW Then lastRow = PID_LAST_ROW
+    If lastRow < firstRow Then Exit Function
+
+    Set PID_GetEmployeeInputCellsForRows = ws.Range( _
+        "B" & firstRow & ":F" & lastRow & "," & _
+        "I" & firstRow & ":J" & lastRow & "," & _
+        "M" & firstRow & ":N" & lastRow)
+
+SafeExit:
+End Function
+
+
+' Reparaturnetz fuer Zeilen, in denen eine aeltere Version die Formeln beim Loeschen
+' mitgenommen hat: fehlt in G, H, K oder L die Formel, wird sie fuer diese Zeile neu
+' gesetzt. Vorhandene Formeln bleiben unangetastet. Das Blatt muss entsperrt sein.
+Public Sub PID_RestoreFormulaColumnsForRows(ByVal ws As Worksheet, _
+                                            ByVal firstRow As Long, _
+                                            ByVal lastRow As Long)
+    Dim r As Long
+    Dim formulaG As String
+    Dim formulaH As String
+    Dim formulaK As String
+    Dim formulaL As String
+
+    On Error GoTo SafeExit
+
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+
+    If firstRow < PID_FIRST_ROW Then firstRow = PID_FIRST_ROW
+    If lastRow > PID_LAST_ROW Then lastRow = PID_LAST_ROW
+    If lastRow < firstRow Then Exit Sub
+
+    formulaG = PID_GetMonatslohnFormulaR1C1()
+    formulaH = PID_GetAktuelleStundenFormulaR1C1()
+    formulaK = PID_GetUrlaubGeldFormulaR1C1()
+    formulaL = PID_GetLetztesGehaltFormulaR1C1()
+
+    For r = firstRow To lastRow
+        PID_EnsureCellFormula ws.Cells(r, "G"), formulaG
+        PID_EnsureCellFormula ws.Cells(r, "H"), formulaH
+        PID_EnsureCellFormula ws.Cells(r, "K"), formulaK
+        PID_EnsureCellFormula ws.Cells(r, "L"), formulaL
+    Next r
+
+SafeExit:
+End Sub
+
+
+Private Sub PID_EnsureCellFormula(ByVal targetCell As Range, ByVal formulaR1C1 As String)
+    On Error GoTo SafeExit
+
+    If targetCell Is Nothing Then Exit Sub
+    If targetCell.HasFormula Then Exit Sub
+
+    targetCell.FormulaR1C1 = formulaR1C1
+
+SafeExit:
 End Sub
 

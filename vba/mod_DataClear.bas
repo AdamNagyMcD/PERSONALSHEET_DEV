@@ -43,11 +43,12 @@ Public Sub PID_ClearCurrentMonthData()
     answer = MsgBox( _
         "Alle Eingabedaten auf dem Monatsblatt '" & ws.Name & "'" & monthHint & " werden " & PID_UTxtGeloescht() & "." & vbCrLf & vbCrLf & _
         PID_UTxtGeloeschtWerdenLabel() & vbCrLf & _
-        "- Mitarbeiterdaten B:N" & vbCrLf & _
+        "- Mitarbeiterdaten B:F, I:J, M:N" & vbCrLf & _
         "- Monatsinfo O18:Q25" & vbCrLf & _
         "- Hinweis O45" & vbCrLf & _
         "- Fluktuation Q31" & vbCrLf & vbCrLf & _
         "Nicht " & PID_UTxtGeloescht() & " werden:" & vbCrLf & _
+        "- Formelspalten G, H, K, L" & vbCrLf & _
         "- Formate" & vbCrLf & _
         "- Kopfzeilen" & vbCrLf & _
         "- Grundstruktur" & vbCrLf & vbCrLf & _
@@ -82,6 +83,8 @@ Public Sub PID_ClearCurrentMonthData()
     
     PID_TryProtectMonthSheet ws
     
+    PID_TrackAction "DataClear", ws.Name & ": Monatsdaten " & PID_UTxtGeloescht()
+    
     MsgBox "Die Monatsdaten wurden " & PID_UTxtGeloescht() & ".", _
            vbInformation, PID_UTxtDatenLoeschen()
 
@@ -110,14 +113,18 @@ End Sub
 
 
 Private Sub PID_ClearMonthInputAreas(ByVal ws As Worksheet)
+    Dim inputCells As Range
+    
     On Error GoTo SafeExit
     
     If ws Is Nothing Then Exit Sub
     
-    ' Hauptbereich:
-    ' B:N = Mitarbeiterdaten.
-    ' L ist Monatsinfo, wird hier ebenfalls geloescht, weil es nur diesen Monat betrifft.
-    ws.Range("B" & PID_FIRST_ROW & ":N" & PID_LAST_ROW).ClearContents
+    ' Hauptbereich: nur die Eingabespalten (B-F, I-J, M-N).
+    ' G, H, K und L bleiben stehen - dort stehen die Formeln.
+    Set inputCells = PID_GetEmployeeInputCellsForRows(ws, PID_FIRST_ROW, PID_LAST_ROW)
+    If Not inputCells Is Nothing Then inputCells.ClearContents
+    
+    PID_RestoreFormulaColumnsForRows ws, PID_FIRST_ROW, PID_LAST_ROW
     
     ' Monatsinfo / Zusatzbereich.
     ws.Range("O18:Q25").ClearContents
@@ -170,6 +177,7 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     Dim ws As Worksheet
     Dim selectedRows As Collection
     Dim area As Range
+    Dim inputCells As Range
     Dim c As Range
     Dim rowKey As String
     Dim rowNumber As Variant
@@ -244,7 +252,11 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     PID_TryUnprotectMonthSheet ws
     
     For Each rowNumber In selectedRows
-        ws.Range("B" & CLng(rowNumber) & ":N" & CLng(rowNumber)).ClearContents
+        Set inputCells = PID_GetEmployeeInputCellsForRows(ws, CLng(rowNumber), CLng(rowNumber))
+        If Not inputCells Is Nothing Then inputCells.ClearContents
+        
+        ' Repariert Zeilen, in denen eine aeltere Version die Formeln mitgeloescht hat.
+        PID_RestoreFormulaColumnsForRows ws, CLng(rowNumber), CLng(rowNumber)
     Next rowNumber
     
     RefreshKVStundenDropdownForSheet ws
@@ -255,6 +267,8 @@ Public Sub PID_ClearOnlySelectedEmployeeRows()
     MarkAllKVDropdownsDirty
     
     PID_TryProtectMonthSheet ws
+    
+    PID_TrackAction "Zeilen loeschen", ws.Name & ": " & selectedRows.count & " Zeile(n)"
     
     MsgBox PID_UTxtAusgewaehlte() & " Mitarbeiterzeile(n) wurden " & PID_UTxtGeloescht() & ".", _
            vbInformation, PID_UTxtZeilenLoeschen()

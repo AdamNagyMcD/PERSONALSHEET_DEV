@@ -15,7 +15,7 @@ Private Const PID_ADMIN_BTN_HEIGHT As Double = 30#
 Private Const PID_ADMIN_BTN_GAP_H As Double = 14#
 Private Const PID_ADMIN_BTN_GAP_V As Double = 10#
 Private Const PID_ADMIN_BTN_COLS As Long = 2
-Private Const PID_ADMIN_BTN_COUNT As Long = 14
+Private Const PID_ADMIN_BTN_COUNT As Long = 18
 
 
 Public Sub PID_EnsureAdminSheet()
@@ -353,6 +353,14 @@ Private Sub PID_AdminGetButtonSpec(ByVal index As Long, _
             btnKey = "ResetHours": btnLabel = "Stunden-Log": btnMacro = "PID_AdminResetHourOverrideLog": btnStyle = 2
         Case 12
             btnKey = "SmokeSheet": btnLabel = "SYSTEM_CHECK": btnMacro = "PID_AdminOpenSmokeSheet": btnStyle = 3
+        Case 13
+            btnKey = "FixPID": btnLabel = "Personal-ID fix": btnMacro = "PID_AdminKorrigierePersonalId": btnStyle = 2
+        Case 14
+            btnKey = "DelMA": btnLabel = "MA entfernen": btnMacro = "PID_AdminMitarbeiterEntfernen": btnStyle = 2
+        Case 15
+            btnKey = "Feedback": btnLabel = "Fehler melden": btnMacro = "PID_AdminFehlerMelden": btnStyle = 1
+        Case 16
+            btnKey = "ActionLog": btnLabel = "Aktionsprotokoll": btnMacro = "PID_AdminShowActionLog": btnStyle = 3
         Case Else
             btnKey = "Hide": btnLabel = "Admin verbergen": btnMacro = "PID_AdminHidePanel": btnStyle = 3
     End Select

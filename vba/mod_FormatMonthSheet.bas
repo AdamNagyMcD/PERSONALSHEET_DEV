@@ -24,6 +24,18 @@ Private Const PID_MS_COPYDATA_BUTTON_WIDTH As Double = 275
 Private Const PID_MS_COPYDATA_BUTTON_HEIGHT As Double = 24
 Private Const PID_MS_COPYDATA_BUTTON_OFFSET_LEFT As Double = 6
 Private Const PID_MS_COPYDATA_BUTTON_OFFSET_TOP As Double = 4
+' TR-06/TR-08: Pflege-Buttons in der freien Panelzeile 7 (O7:P7 und Q7:R7).
+Private Const PID_MS_REMOVEMA_BUTTON_NAME As String = "btn_MitarbeiterEntfernen"
+Private Const PID_MS_REMOVEMA_BUTTON_TEXT As String = "Mitarbeiter entfernen"
+Private Const PID_MS_REMOVEMA_BUTTON_RANGE As String = "O7:P7"
+Private Const PID_MS_FIXPID_BUTTON_NAME As String = "btn_PersonalIdKorrigieren"
+Private Const PID_MS_FIXPID_BUTTON_TEXT As String = "Personal-ID korrigieren"
+Private Const PID_MS_FIXPID_BUTTON_RANGE As String = "Q7:R7"
+Private Const PID_MS_FEEDBACK_BUTTON_NAME As String = "btn_FehlerMelden"
+Private Const PID_MS_FEEDBACK_BUTTON_TEXT As String = "Fehler melden"
+Private Const PID_MS_FEEDBACK_BUTTON_RANGE As String = "S7:T7"
+Private Const PID_MS_PANEL_BUTTON_MARGIN As Double = 2
+Private Const PID_MS_PANEL_BUTTON_MIN_HEIGHT As Double = 14
 ' FP-017: dd.mm.yyyy in D (Eintritt) und I (Austritt) — breiter als Default (~11).
 Private Const PID_MS_DATE_COLUMN_WIDTH As Double = 13
 Private Const PID_MS_AUSTRITTSGRUND_COL_WIDTH As Double = 34
@@ -155,17 +167,27 @@ End Function
 
 
 Private Function PID_MSCopyDataButtonExists(ByVal ws As Worksheet) As Boolean
-    Dim btn As Shape
+    If Not PID_MSShapeExists(ws, PID_MS_COPYDATA_BUTTON_NAME) Then Exit Function
+    If Not PID_MSShapeExists(ws, PID_MS_REMOVEMA_BUTTON_NAME) Then Exit Function
+    If Not PID_MSShapeExists(ws, PID_MS_FIXPID_BUTTON_NAME) Then Exit Function
+    If Not PID_MSShapeExists(ws, PID_MS_FEEDBACK_BUTTON_NAME) Then Exit Function
+    
+    PID_MSCopyDataButtonExists = True
+End Function
+
+
+Private Function PID_MSShapeExists(ByVal ws As Worksheet, ByVal shapeName As String) As Boolean
+    Dim shp As Shape
     
     On Error GoTo NotFound
     
-    Set btn = ws.Shapes(PID_MS_COPYDATA_BUTTON_NAME)
+    Set shp = ws.Shapes(shapeName)
     
-    PID_MSCopyDataButtonExists = Not btn Is Nothing
+    PID_MSShapeExists = Not shp Is Nothing
     Exit Function
 
 NotFound:
-    PID_MSCopyDataButtonExists = False
+    PID_MSShapeExists = False
 End Function
 
 
@@ -903,6 +925,9 @@ Private Function PID_MSEnsureAktualisierungButtonOnSheet(ByVal ws As Worksheet) 
     Dim shapeIndex As Long
     Dim shp As Shape
     Dim oldScreenUpdating As Boolean
+    Dim removeGeometry(1 To 4) As Double
+    Dim fixGeometry(1 To 4) As Double
+    Dim feedbackGeometry(1 To 4) As Double
     
     On Error GoTo SafeExit
     
@@ -919,6 +944,9 @@ Private Function PID_MSEnsureAktualisierungButtonOnSheet(ByVal ws As Worksheet) 
     ' Position von O1: bei ScreenUpdating=False sonst falsche Left/Top-Werte.
     Application.ScreenUpdating = True
     PID_MSGetCopyDataButtonTargetGeometry ws, btnLeft, btnTop, btnWidth, btnHeight
+    PID_MSGetPanelButtonGeometry ws, PID_MS_REMOVEMA_BUTTON_RANGE, removeGeometry
+    PID_MSGetPanelButtonGeometry ws, PID_MS_FIXPID_BUTTON_RANGE, fixGeometry
+    PID_MSGetPanelButtonGeometry ws, PID_MS_FEEDBACK_BUTTON_RANGE, feedbackGeometry
     Application.ScreenUpdating = oldScreenUpdating
     
     For shapeIndex = ws.Shapes.Count To 1 Step -1
@@ -941,6 +969,13 @@ Private Function PID_MSEnsureAktualisierungButtonOnSheet(ByVal ws As Worksheet) 
     End If
     
     PID_MSApplyCopyDataButtonRuntimeState btn, btnLeft, btnTop, btnWidth, btnHeight
+    
+    PID_MSEnsurePanelButton ws, PID_MS_REMOVEMA_BUTTON_NAME, PID_MS_REMOVEMA_BUTTON_TEXT, _
+                            "MitarbeiterEntfernen", removeGeometry, PID_StyleColorAccent()
+    PID_MSEnsurePanelButton ws, PID_MS_FIXPID_BUTTON_NAME, PID_MS_FIXPID_BUTTON_TEXT, _
+                            "PersonalIdKorrigieren", fixGeometry, PID_StyleColorHeaderBg()
+    PID_MSEnsurePanelButton ws, PID_MS_FEEDBACK_BUTTON_NAME, PID_MS_FEEDBACK_BUTTON_TEXT, _
+                            "FehlerMelden", feedbackGeometry, PID_StyleColorZebra()
     
     PID_MSEnsureAktualisierungButtonOnSheet = True
 
@@ -983,6 +1018,72 @@ Private Sub PID_MSApplyCopyDataButtonRuntimeState(ByVal btn As Shape, _
     PID_StyleApplyToolbarButton btn, PID_StyleColorNavy(), PID_StyleColorBtnPrimaryLine(), RGB(255, 255, 255)
     On Error GoTo 0
 End Sub
+
+
+' Pflege-Buttons (Mitarbeiter entfernen / Personal-ID korrigieren) in Panelzeile 7.
+' Die Zeile ist im Panel leer, gehoert aber links zum Mitarbeiterblock - deshalb wird
+' die Zeilenhoehe NICHT veraendert, der Button passt sich an.
+Private Sub PID_MSGetPanelButtonGeometry(ByVal ws As Worksheet, _
+                                         ByVal rangeAddress As String, _
+                                         ByRef geometry() As Double)
+    Dim target As Range
+    
+    Set target = ws.Range(rangeAddress)
+    
+    geometry(1) = target.Left + PID_MS_PANEL_BUTTON_MARGIN
+    geometry(2) = target.Top + PID_MS_PANEL_BUTTON_MARGIN
+    geometry(3) = target.Width - 2 * PID_MS_PANEL_BUTTON_MARGIN
+    geometry(4) = target.Height - 2 * PID_MS_PANEL_BUTTON_MARGIN
+    
+    If geometry(3) < 1 Then geometry(3) = 1
+    If geometry(4) < PID_MS_PANEL_BUTTON_MIN_HEIGHT Then geometry(4) = PID_MS_PANEL_BUTTON_MIN_HEIGHT
+End Sub
+
+
+Private Function PID_MSEnsurePanelButton(ByVal ws As Worksheet, _
+                                         ByVal shapeName As String, _
+                                         ByVal buttonText As String, _
+                                         ByVal macroName As String, _
+                                         ByRef geometry() As Double, _
+                                         ByVal fillColor As Long) As Boolean
+    Dim btn As Shape
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If geometry(3) <= 1 Then Exit Function
+    
+    Set btn = Nothing
+    On Error Resume Next
+    Set btn = ws.Shapes(shapeName)
+    On Error GoTo SafeExit
+    
+    If btn Is Nothing Then
+        Set btn = ws.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                     Left:=geometry(1), _
+                                     Top:=geometry(2), _
+                                     Width:=geometry(3), _
+                                     Height:=geometry(4))
+        btn.Name = shapeName
+    End If
+    
+    On Error Resume Next
+    btn.Placement = xlFreeFloating
+    btn.Left = geometry(1)
+    btn.Top = geometry(2)
+    btn.Width = geometry(3)
+    btn.Height = geometry(4)
+    btn.Visible = msoTrue
+    btn.TextFrame.Characters.Text = buttonText
+    btn.OnAction = macroName
+    btn.ZOrder msoBringToFront
+    PID_StyleApplyToolbarButton btn, fillColor, PID_StyleColorNavy(), PID_StyleColorNavy()
+    On Error GoTo SafeExit
+    
+    PID_MSEnsurePanelButton = True
+
+SafeExit:
+End Function
 
 
 Private Sub PID_MSGetCopyDataButtonTargetGeometry(ByVal ws As Worksheet, _

@@ -48,6 +48,20 @@ A `_xlsm_*` es `_einstellung_probe` mappak **lokalis fejlesztoi probe** celokra 
 | `CopyData` | Honap adatainak masolasa a kovetkezo honapokba |
 | `DataClear` | Aktualis honap adatainak torlese (megerosites kell) |
 | `RefreshFluktuationNow` | Fluktuacio ujraszamolas |
+| `PersonalIdKorrigieren` | Personal ID / nev javitasa mind a 12 honapon + Stunden-Log |
+| `MitarbeiterEntfernen` | Dolgozo torlese minden honaprol vagy egy valasztott honaptol |
+| `FehlerMelden` | Hibabejelentes: kontext + 2 kerdes → txt fajl a Feedback mappaba + vagolap |
+
+Harom gomb minden honaplapon: „Mitarbeiter entfernen" (O7:P7),
+„Personal-ID korrigieren" (Q7:R7) es „Fehler melden" (S7:T7).
+
+Egy dolgozo = egy Personal ID: ugyanaz az ID egy honaplapon belul nem irhato be ketszer
+(a masodik bevitel torlodik), es figyelmeztetes jon, ha az ID mas honapban mas nevhez tartozik.
+
+Bemasolas mindig csak ertekkent: a Ctrl+V (es a menuszalag / jobbklikk beillesztes) sosem
+hozza at a forras formazasat. Zarolt formulaoszlopot nem lehet vele felulirni, es a
+Ctrl+X + beillesztes le van tiltva. A Ctrl+V atallitas csak addig el, amig ez a fajl az
+aktiv — mas Excel fajlban valtozatlan marad.
 
 Reszletek: Kurzanleitung HTML.
 

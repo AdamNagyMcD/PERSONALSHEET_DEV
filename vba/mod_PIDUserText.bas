@@ -139,3 +139,18 @@ End Function
 Public Function PID_UTxtGeschuetzt() As String
     PID_UTxtGeschuetzt = "gesch" & PID_UTxtUe() & "tzt"
 End Function
+
+
+Public Function PID_UTxtGeaendert() As String
+    PID_UTxtGeaendert = "ge" & PID_UTxtAe() & "ndert"
+End Function
+
+
+Public Function PID_UTxtUnveraendert() As String
+    PID_UTxtUnveraendert = "unver" & PID_UTxtAe() & "ndert"
+End Function
+
+
+Public Function PID_UTxtMoeglich() As String
+    PID_UTxtMoeglich = "m" & PID_UTxtOe() & "glich"
+End Function

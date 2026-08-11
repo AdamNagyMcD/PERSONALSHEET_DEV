@@ -33,6 +33,10 @@ Public Sub PID_ShowAdminMacroInfo()
     msg = msg & "- PID_RunSystemSmokeCheck" & vbCrLf
     msg = msg & "- PID_RunPerformanceBaseline (FP-010)" & vbCrLf
     msg = msg & "- PID_AdminResetHourOverrideLog (Stunden-Log leeren)" & vbCrLf
+    msg = msg & "- PID_AdminKorrigierePersonalId (Personal-ID/Name korrigieren)" & vbCrLf
+    msg = msg & "- PID_AdminMitarbeiterEntfernen (Mitarbeiter aus Monaten entfernen)" & vbCrLf
+    msg = msg & "- PID_AdminFehlerMelden (Fehlermeldung mit Kontext erstellen)" & vbCrLf
+    msg = msg & "- PID_AdminShowActionLog (letzte Aktionen anzeigen)" & vbCrLf
     msg = msg & "- RebuildLOHNTABELLE" & vbCrLf
     msg = msg & "- UnprotectEverything" & vbCrLf & vbCrLf
     msg = msg & "Siehe docs/RELEASE.md"

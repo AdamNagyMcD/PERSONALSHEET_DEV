@@ -144,6 +144,10 @@ Public Sub PID_CopyDataToFollowingMonths()
     MarkFluktuationDirty
     MarkFinanzSummaryDirty
     PID_HideUnwantedTechnicalSheets
+    
+    ' TR-09 (mit ausdruecklicher Freigabe): nur Protokollzeile fuer die Fehlermeldung.
+    ' mod_PIDActionLog verschluckt jeden Fehler, die Kopierlogik bleibt unberuehrt.
+    PID_TrackAction "CopyData", sourceSheetName & " -> Dezember (" & (12 - sourceMonthIndex) & " Monate)"
 
 CleanExit:
     gCopyDataRunning = False

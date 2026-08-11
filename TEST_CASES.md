@@ -354,3 +354,314 @@ Für denselben Mitarbeiter (Feld F, Stunden):
 ### Negative checks
 - Eine N-Änderung in einer Zeile OHNE Austrittsdatum ändert die Rate nicht (kein Austritt).
 - Layout unverändert; nur der unmittelbare Q31-Trigger hört jetzt zusätzlich auf Spalte N.
+
+---
+
+## TEST 25 — Personal-ID / Name korrigieren (TR-06)
+
+Modul: `mod_MitarbeiterPflege.bas`.
+Makro: `PersonalIdKorrigieren` — Button **„Personal-ID korrigieren" (Q7:R7)** auf jedem
+Monatsblatt, Alt+F8, oder Admin-Button „Personal-ID fix".
+
+### Scenario A — falsche ID auf allen Monaten korrigieren
+1. Auf Januar einen Mitarbeiter mit falscher Personal-ID anlegen, CopyData bis Dezember.
+2. Auf einem beliebigen Monatsblatt die Zeile des Mitarbeiters markieren.
+3. Makro starten, neue (richtige) ID eingeben, Namen leer lassen, bestätigen.
+
+### Expected A
+- Bestätigungsdialog listet ALT/NEU und die betroffenen Monate mit Zeilenzahl.
+- Nach dem Lauf steht in ALLEN 12 Monatsblättern die richtige ID.
+- Anschliessendes CopyData ab Januar bringt die falsche ID NICHT zurück
+  (keine zusätzliche „Geister"-Zeile).
+
+### Scenario B — Stunden-Override überlebt die Korrektur
+1. Für denselben Mitarbeiter in einem Monat (z.B. Juli) die Stunden (F) abweichend setzen.
+2. ID über das Makro korrigieren.
+3. CopyData ab einem früheren Monat ausführen.
+
+### Expected B
+- Der Juli-Override bleibt erhalten (das Log `PID_HOUR_OVERRIDES` wurde mit umgeschlüsselt).
+- Die Abschlussmeldung nennt die Anzahl der geänderten Log-Einträge.
+
+### Scenario C — Konflikt: Ziel-ID gehört schon jemandem
+1. Zwei Mitarbeiter A und B mit unterschiedlichen IDs.
+2. Für A die ID von B eintragen wollen.
+
+### Expected C
+- Meldung „Korrektur nicht möglich - es wurde nichts geändert" mit Blatt und Zeile.
+- KEIN Blatt wurde verändert (Abbruch vor dem ersten Schreibvorgang).
+
+### Scenario D — nur Namensänderung
+1. Zeile markieren, ID leer lassen, neuen Namen eingeben.
+
+### Expected D
+- Name auf allen Monaten geändert, Log-Schlüssel angepasst, Stunden-Overrides intakt.
+
+### Negative checks
+- Start ohne markierte Mitarbeiterzeile (z.B. vom Admin-Panel): Makro fragt per InputBox
+  nach der aktuellen ID; bei mehreren Namen zu einer ID bricht es mit Hinweis ab.
+- ID mit führender Null (`00123`) bleibt nach der Korrektur als Text erhalten.
+- Blattschutz ist nach dem Lauf auf allen berührten Monatsblättern wieder aktiv.
+- Berechnungsmodus steht nach dem Lauf wieder auf dem Ausgangswert (nicht „Manuell").
+
+---
+
+## TEST 26 — Mitarbeiter aus Monaten entfernen (TR-08)
+
+Modul: `mod_MitarbeiterPflege.bas`.
+Makro: `MitarbeiterEntfernen` — Button **„Mitarbeiter entfernen" (O7:P7)** auf jedem
+Monatsblatt, Alt+F8, oder Admin-Button „MA entfernen".
+
+### Scenario A — aus allen 12 Monaten entfernen
+1. Mitarbeiter in Januar anlegen, CopyData bis Dezember.
+2. Zeile des Mitarbeiters markieren, Makro starten.
+3. Bei der Frage nach dem Zeitraum **JA** wählen (alle 12 Monate), bestätigen.
+
+### Expected A
+- Bestätigungsdialog listet die betroffenen Monate mit Zeilenzahl und weist auf das
+  Austrittsdatum (Spalte I) als Alternative hin.
+- Nach dem Lauf ist die Zeile in ALLEN 12 Monaten leer (B:N ohne Inhalt).
+- Zeilen wurden NICHT gelöscht: Zeilenanzahl, Zebra-Formatierung und Struktur unverändert.
+- Andere Mitarbeiter sind unverändert.
+
+### Scenario B — erst ab einem bestimmten Monat entfernen
+1. Mitarbeiter existiert Januar–Dezember.
+2. Makro starten, **NEIN** wählen, Monatsnummer `7` eingeben.
+
+### Expected B
+- Januar–Juni bleiben unverändert (Mitarbeiter weiterhin vorhanden).
+- Juli–Dezember sind geleert.
+- Die Abschlussmeldung nennt „Juli bis Dezember".
+
+### Scenario C — Stunden-Log wird mit bereinigt
+1. Für den Mitarbeiter in Oktober abweichende Stunden (F) setzen (Override entsteht).
+2. Mitarbeiter ab Juli entfernen.
+3. `PID_ShowHourOverrideLog` prüfen.
+
+### Expected C
+- Der Oktober-Override dieses Mitarbeiters ist weg (Monate >= Startmonat).
+- Overrides ANDERER Mitarbeiter sind unverändert.
+- Ein späteres erneutes Anlegen desselben Mitarbeiters bringt die alten Stunden NICHT zurück.
+
+### Scenario D — CopyData nach dem Entfernen
+1. Mitarbeiter ab Juli entfernen.
+2. CopyData ab Juni ausführen.
+
+### Expected D
+- Der Mitarbeiter erscheint ab Juli NICHT wieder (er existiert ab Juni nicht mehr in der Quelle
+  bzw. wird nicht als Neuzugang erkannt).
+- Hinweis: CopyData ab einem Monat VOR dem Entfernen (z.B. ab Januar) verteilt den Mitarbeiter
+  bewusst wieder nach vorne — das ist erwartetes CopyData-Verhalten, kein Fehler.
+
+### Negative checks
+- Abbrechen im Zeitraum-Dialog ändert nichts.
+- Ungültige Monatsnummer (0, 13, Text) wird abgelehnt, ohne etwas zu ändern.
+- Mitarbeiter im gewählten Zeitraum nicht vorhanden → Meldung, keine Änderung.
+- Blattschutz nach dem Lauf auf allen berührten Monatsblättern wieder aktiv.
+- Berechnungsmodus steht wieder auf dem Ausgangswert (nicht „Manuell").
+- G/H/K/L in der geleerten Zeile zeigen keine Fehlerwerte; nach erneutem Befüllen der Zeile
+  rechnen sie wieder korrekt.
+
+---
+
+## TEST 27 — Personal-ID Eindeutigkeit (TR-07)
+
+Modul: `mod_PersonalIdUnique.bas`, ausgelöst aus `Workbook_SheetChange`.
+
+### Scenario A — doppelte ID von Hand eingeben
+1. Auf einem Monatsblatt hat Zeile 5 die ID `10457` (Max Mustermann).
+2. In Zeile 12 dieselbe ID `10457` eintippen.
+
+### Expected A
+- Meldung „Personal-ID bereits vergeben" nennt Zeile 12, die ID und Zeile 5 mit Namen.
+- **B12 ist leer** — die neue Eingabe wurde zurückgewiesen.
+- **B5 bleibt unverändert** — der Bestand wird nie angefasst.
+
+### Scenario B — Einfügen mehrerer Zeilen mit derselben ID
+1. Zwei Zeilen mit identischer Personal-ID in den Bereich B3:B82 einfügen.
+
+### Expected B
+- Die erste eingefügte Zeile behält die ID, jede weitere wird geleert.
+- Eine einzige Sammelmeldung (nicht ein Popup pro Zeile).
+- Bei mehr als 8 Konflikten endet die Liste mit „… und N weitere".
+
+### Scenario C — weicher Hinweis bei abweichendem Namen
+1. In Januar existiert ID `10457` = „Max Mustermann".
+2. In März in einer freien Zeile ID `10457` und Name „Maxi Muster" eintragen.
+
+### Expected C
+- Kein Zurückweisen (im März ist die ID eindeutig).
+- Info „Personal-ID prüfen" listet `Januar: Max Mustermann` und verweist auf das Makro
+  `Personal-ID korrigieren`.
+- Gleicher Name in beiden Monaten → **keine** Meldung.
+
+### Scenario D — Makros werden nicht blockiert
+1. CopyData über mehrere Monate laufen lassen.
+2. `PersonalIdKorrigieren` und `MitarbeiterEntfernen` ausführen.
+
+### Expected D
+- Keine Eindeutigkeits-Meldung während dieser Makros (`EnableEvents = False`).
+- Kein Datenverlust, keine geleerten B-Zellen durch die Prüfung.
+
+### Negative checks
+- Leere B-Zellen lösen nichts aus (mehrere leere Zeilen sind erlaubt).
+- Führende Nullen: `00123` und `123` gelten als verschiedene IDs (bekannte Grenze, TR-02).
+- Änderung in anderen Spalten (C, E, F …) löst die Prüfung nicht aus.
+- Nach dem Zurückweisen ist der Blattschutz unverändert aktiv.
+
+---
+
+## TEST 28 — Fehler melden + Aktionsprotokoll (TR-09)
+
+Module: `mod_PIDFeedback.bas`, `mod_PIDActionLog.bas`.
+Makro: `FehlerMelden` — Button **„Fehler melden" (S7:T7)** auf jedem Monatsblatt,
+Alt+F8, oder Admin-Button „Fehler melden".
+
+### Scenario A — Meldung erstellen
+1. Auf einem Monatsblatt eine Zelle markieren (z.B. `B12`).
+2. Button „Fehler melden" klicken.
+3. Beide Fragen beantworten.
+
+### Expected A
+- Datei `Feedback\Fehlermeldung_JJJJ-MM-TT_hhmmss.txt` liegt neben der Mappe,
+  der Pfad steht in der Abschlussmeldung.
+- Inhalt enthält Version, Datei, Ordner, Excel-Version, Benutzer, Jahr,
+  **Blatt und Auswahl `B12`** (also den Stand VOR den Dialogen), Rechenmodus.
+- Strg+V in einer E-Mail oder im Notepad fügt denselben Text ein.
+
+### Scenario B — letzte Aktionen landen im Bericht
+1. `MitarbeiterEntfernen` oder `DataClear` ausführen.
+2. Danach „Fehler melden".
+
+### Expected B
+- Abschnitt „Letzte Aktionen" listet die eben ausgeführte Aktion mit Zeitpunkt,
+  Blatt und Detail (z.B. Zeilenzahl).
+- Admin-Button „Aktionsprotokoll" zeigt dieselben Einträge.
+- Das Blatt `PID_ACTION_LOG` bleibt **sehr versteckt** und die vorher aktive
+  Registerkarte bleibt aktiv (kein Blattwechsel beim ersten Protokolleintrag).
+
+### Scenario C — Abbrechen
+1. „Fehler melden" starten und die erste Frage abbrechen.
+
+### Expected C
+- Keine Datei, keine Meldung, keine Änderung an der Mappe.
+
+### Scenario D — E-Mail an Adam
+1. Meldung erstellen und die Frage nach der E-Mail mit **Ja** beantworten.
+
+### Expected D
+- Outlook öffnet ein **neues, nicht abgesendetes** Mailfenster.
+- Empfänger `adam.nagy@at.mcd.com`, Betreff mit Version, Bericht im Text,
+  die Textdatei als Anhang.
+- Ohne Outlook: das Standard-Mailprogramm öffnet sich über `mailto` (gekürzter Text).
+- Bei **Nein**: nichts passiert, Datei und Zwischenablage bleiben erhalten.
+
+### Negative checks
+- Beide Fragen leer lassen → Hinweis, keine Datei.
+- Nach CopyData steht ein Eintrag `CopyData | <Quellmonat> -> Dezember (N Monate)` im Protokoll,
+  und CopyData selbst läuft unverändert durch (Bootstrap-Modul, nur diese eine Zeile).
+- Nach 500 Protokolleinträgen werden die ältesten entfernt, die Datei wächst nicht weiter.
+- Ist kein Protokoll vorhanden, steht im Bericht „(keine aufgezeichnet)" statt eines Fehlers.
+- Der Rechenmodus im Bericht zeigt „Automatisch", solange kein Makro hängen geblieben ist.
+
+---
+
+## TEST 29 — Einfügen immer nur als Wert (TR-02)
+
+Module: `mod_PIDPasteValues.bas`, `DieseArbeitsmappe.cls`.
+Kein Makroaufruf nötig — der Schutz läuft über `Strg+V` und über `Workbook_SheetChange`.
+
+### Scenario A — externe Quelle (Word / Browser)
+1. In Word einen **farbigen, fetten** Namen schreiben und kopieren.
+2. Auf einem Monatsblatt in `C12` mit **Strg+V** einfügen.
+
+### Expected A
+- Nur der Text steht in der Zelle.
+- Schriftart, Farbe, Rahmen und Zahlenformat der Zelle bleiben wie im Blatt definiert.
+- Das Dropdown in derselben Zeile (Spalte F) funktioniert weiterhin.
+
+### Scenario B — andere Excel-Datei
+1. In einer anderen Excel-Datei einen Block `B:C` mit eigener Formatierung kopieren.
+2. Im Monatsblatt `B12` markieren und **Strg+V**.
+
+### Expected B
+- Nur Werte, keine Quellformatierung.
+- Bei doppelter Personal-ID greift zusätzlich die Prüfung aus TEST 27.
+
+### Scenario C — Menüband und Rechtsklick
+1. Denselben Inhalt über **Start → Einfügen** und über **Rechtsklick → Einfügen** einfügen.
+
+### Expected C
+- Ergebnis identisch zu Scenario A (das Netz in `Workbook_SheetChange` räumt nach).
+- Auch beim Einfügen in **Spalte E** bleibt nichts von der Quellformatierung stehen
+  (das war der alte Fehlerfall: der Dropdown-Neuaufbau hatte die Undo-Historie geleert).
+
+### Scenario D — geschützte Formelspalten
+1. Einen 6 Spalten breiten Block kopieren.
+2. In `B12` einfügen, sodass die Formelspalten G/H erreicht würden.
+
+### Expected D
+- Hinweis „… würde geschützte Zellen … überschreiben", **nichts** wird eingefügt.
+- Die Formeln in G/H/K/L sind unverändert.
+
+### Scenario E — Ausschneiden
+1. Eine Zeile mit **Strg+X** ausschneiden und **Strg+V** drücken.
+
+### Expected E
+- Hinweis, dass Ausschneiden + Einfügen nicht vorgesehen ist; keine Änderung im Blatt.
+
+### Negative checks
+- **Andere Datei:** zweite Excel-Datei öffnen, dorthin wechseln, formatiert kopieren und
+  einfügen → dort funktioniert **Strg+V wie gewohnt** (mit Formatierung). Zurück zum
+  Personalsheet wechseln → dort wieder nur Werte.
+- Nach dem Schließen der Mappe ist `Strg+V` in Excel wieder Excel-Standard.
+- Normale Eingabe über die Tastatur und die Dropdowns verhalten sich unverändert.
+- Löschen einer Mehrfachauswahl (Strg-Klick, dann Entf) löscht wie gewohnt.
+- Einfügen einer sehr langen Liste (> 20 000 Zellen) wird mit Hinweis abgelehnt,
+  es gehen keine Daten verloren.
+
+---
+
+## TEST 30 — Formeln überleben das Löschen (TR-10)
+
+Module: `mod_DataClear.bas`, `mod_MitarbeiterPflege.bas`, `Modul1.bas`.
+Betroffene Spalten: **G** (Monatslohn), **H** (Aktuelle Stunden), **K** (Urlaub Euro),
+**L** (Letztes Gehalt).
+
+### Scenario A — Mitarbeiter entfernen
+1. Auf einem Monatsblatt eine gefüllte Mitarbeiterzeile markieren (z.B. Zeile 12).
+2. Button „Mitarbeiter entfernen", alle Monate wählen, bestätigen.
+3. In jedem Monatsblatt Zeile 12 anklicken und `G12`, `H12`, `K12`, `L12` in der
+   Bearbeitungsleiste prüfen.
+
+### Expected A
+- B:F, I:J und M:N sind leer.
+- **In G, H, K und L steht weiterhin die Formel**, die Zellen sehen leer aus
+  (B/C-Guard), zeigen aber keine 0 und kein `#WERT!`.
+- Wird danach in dieselbe Zeile ein neuer Mitarbeiter eingetragen (ID, Name, Eintritt,
+  KV-Gruppe, Stunden), rechnen G, H, K und L sofort wieder.
+
+### Scenario B — Zeilen löschen und Monat löschen
+1. `PID_ClearOnlySelectedEmployeeRows` auf zwei markierten Zeilen ausführen.
+2. `DataClear` auf einem Monatsblatt ausführen.
+
+### Expected B
+- Gleiches Ergebnis wie A; nach `DataClear` haben **alle** Zeilen 3–82 in G/H/K/L Formeln.
+- Der Bestätigungsdialog nennt „Formelspalten G, H, K, L" als „bleibt erhalten".
+
+### Scenario C — Selbstheilung alter Schäden
+1. Eine Zeile suchen, in der eine ältere Version die Formeln bereits gelöscht hat
+   (G/H/K/L leer, keine Formel).
+2. Dort einen Mitarbeiter eintragen und ihn danach wieder entfernen.
+
+### Expected C
+- Nach dem Entfernen stehen in G, H, K und L wieder Formeln
+  (`PID_RestoreFormulaColumnsForRows` setzt fehlende Formeln zeilengenau neu).
+
+### Negative checks
+- Bereits beschädigte Blätter komplett reparieren: **Admin → Full Refresh**
+  (`PID_FullSystemRefresh`) setzt G/H/K/L auf allen 12 Monatsblättern neu.
+- Eine vorhandene, bewusst abweichende Formel in G/H/K/L wird beim Löschen **nicht**
+  überschrieben (nur fehlende Formeln werden ergänzt).
+- Zeilenhöhe, Zebra-Streifen, Rahmen und Zahlenformate bleiben unverändert.
+- Nach dem Entfernen bleibt das Blatt geschützt.

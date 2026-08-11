@@ -15,6 +15,9 @@ Attribute VB_Exposed = True
 
 Option Explicit
 
+' Obergrenze fuer das zellweise Nachschreiben beim Einfuege-Schutz (TR-02).
+Private Const PID_MAX_PASTE_CELLS As Long = 20000
+
 Private mInternalChange As Boolean
 
 
@@ -108,12 +111,33 @@ SafeExit:
     Application.EnableEvents = True
     Application.ScreenUpdating = oldScreenUpdating
     On Error GoTo 0
+
+    ' TR-02: Strg+V auf "nur Werte" umlenken.
+    PID_ResetManagedPasteState
+    PID_InstallPasteHooks
+End Sub
+
+
+' Die Tastenbelegung aus PID_InstallPasteHooks gilt fuer die ganze Excel-Anwendung.
+' Deshalb wird sie nur gesetzt, solange diese Mappe aktiv ist - andere Dateien sollen
+' ihr normales Strg+V behalten.
+Private Sub Workbook_Activate()
+    On Error Resume Next
+    PID_ResetManagedPasteState
+    PID_InstallPasteHooks
+End Sub
+
+
+Private Sub Workbook_Deactivate()
+    On Error Resume Next
+    PID_RemovePasteHooks
 End Sub
 
 
 Private Sub Workbook_BeforeClose(Cancel As Boolean)
     On Error Resume Next
     Application.Calculation = xlCalculationAutomatic
+    PID_RemovePasteHooks
 End Sub
 
 
@@ -267,6 +291,17 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     If mInternalChange Then Exit Sub
     If Not TypeOf Sh Is Worksheet Then Exit Sub
     
+    ' Einfuege-Schutz (TR-02): beim Einfuegen aus anderen Dateien oder Programmen soll nur
+    ' der Wert uebernommen werden, ohne Formatierung - auf jedem Blatt der Mappe.
+    ' Muss als Erstes laufen: EnforcePasteValuesOnly setzt auf Application.Undo auf, und
+    ' jeder VBA-Schreibzugriff davor (z. B. der F-Dropdown-Neuaufbau) leert die Undo-Historie.
+    mInternalChange = True
+    Application.EnableEvents = False
+    pasteHandled = False
+    EnforcePasteValuesOnly Sh, Target, pasteHandled
+    Application.EnableEvents = True
+    mInternalChange = False
+    
     ' Wenn die KV-Basistabelle geaendert wird, wird die Dropdown-Liste spaeter neu aufgebaut.
     If Sh.Name = PID_LOHNTABELLE_SHEET Then
         If Not Intersect(Target, Sh.Range("D4:J500")) Is Nothing Then
@@ -308,10 +343,11 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     End If
     Err.Clear
     
-    ' Einfuege-Schutz:
-    ' Beim Einfuegen aus alten Dateien oder anderen Quellen soll nur der Wert uebernommen werden.
-    pasteHandled = False
-    EnforcePasteValuesOnly Sh, Target, pasteHandled
+    ' TR-07: Personal-ID (B) muss pro Monatsblatt eindeutig bleiben. Erst nach dem
+    ' Einfuege-Schutz pruefen, damit der gepruefte Wert schon der endgueltige ist.
+    If Not Intersect(Target, Sh.Range("B3:B82")) Is Nothing Then
+        PID_CheckPersonalIdUniqueness Sh, Target
+    End If
     Err.Clear
     
     ' Wenn Spalte E sich aendert:
@@ -591,7 +627,6 @@ End Sub
 
 
 Private Sub EnforcePasteValuesOnly(ByVal Sh As Object, ByVal Target As Range, ByRef pasteHandled As Boolean)
-    Dim inputRange As Range
     Dim affectedRange As Range
     Dim pastedValues As Variant
     Dim c As Range
@@ -605,14 +640,19 @@ Private Sub EnforcePasteValuesOnly(ByVal Sh As Object, ByVal Target As Range, By
     
     pasteHandled = False
     
-    Set inputRange = Union(Sh.Range("B3:C82"), Sh.Range("D3:D82"), Sh.Range("E3:F82"), Sh.Range("I3:J82"), Sh.Range("M3:N82"), Sh.Range("O18:Q25"))
+    ' Strg+V laeuft schon ueber PID_PasteValuesOnly - dort sind die Werte bereits sauber.
+    If PID_IsManagedPasteRunning() Then Exit Sub
     
-    If PID_IsWorkerMonthSheet(Sh) And PID_IsMonthSheetVormonatInputEditable(Sh) Then
-        Set inputRange = Union(inputRange, Sh.Range("Q12:R12"))
-    End If
+    ' Ein echtes Einfuegen betrifft immer genau einen zusammenhaengenden Bereich.
+    ' Bei mehreren Bereichen (z. B. Loeschen einer Mehrfachauswahl) liefert Target.Value
+    ' nur den ersten Bereich - dann lieber gar nicht eingreifen.
+    If Target.Areas.Count > 1 Then Exit Sub
     
-    Set affectedRange = Intersect(Target, inputRange)
-    If affectedRange Is Nothing Then Exit Sub
+    ' Sicherheitsnetz gegen das Einfuegen ganzer Spalten: der Wert-fuer-Wert-Aufbau
+    ' waere dort zu langsam. Vor Application.Undo abbrechen, damit nichts verloren geht.
+    If Target.CountLarge > PID_MAX_PASTE_CELLS Then Exit Sub
+    
+    Set affectedRange = Target
     
     If Not IsProbablyPaste(Target) Then Exit Sub
     
