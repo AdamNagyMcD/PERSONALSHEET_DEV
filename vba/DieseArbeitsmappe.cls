@@ -24,8 +24,6 @@ Private mWorkerSheetRuntimeReady As Boolean
 Private mSelPrevSheet As String
 Private mSelPrevRow As Long
 Private mSelPrevCol As Long
-Private mSelPrevEValueAtEntry As String
-Private mSelPrevFValueAtEntry As String
 Private mFStundenRefreshRanThisSelection As Boolean
 
 
@@ -138,6 +136,14 @@ Private Sub Workbook_BeforeSave(ByVal SaveAsUI As Boolean, Cancel As Boolean)
     On Error GoTo SafeExit
 
 SafeExit:
+    ' Nie im Manual-Modus speichern: Excel merkt sich den Rechenmodus in der Datei
+    ' und die Mappe wuerde beim naechsten Oeffnen wieder manuell rechnen.
+    On Error Resume Next
+    If Application.Calculation <> xlCalculationAutomatic Then
+        Application.Calculation = xlCalculationAutomatic
+    End If
+    Err.Clear
+    
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
@@ -145,6 +151,8 @@ End Sub
 
 
 Private Sub Workbook_SheetActivate(ByVal Sh As Object)
+    Dim heavyStarted As Boolean
+    
     On Error GoTo SafeExit
     
     If mInternalChange Then Exit Sub
@@ -192,9 +200,13 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
         PID_SyncMonthSheetFluctuationQ31 Sh
         
         If gKVDropdownsDirty Or IsKVLohnDirty() Then
+            ' heavyStarted stellt sicher, dass SafeExit die Wartung auch bei einem
+            ' Fehler beendet — sonst bleibt der Rechenmodus dauerhaft auf Manuell.
+            heavyStarted = True
             PID_BeginHeavyMaintenance
             RefreshKVDropdownsIfDirtyForSheet Sh
             RefreshKVLohnIfDirty Sh
+            heavyStarted = False
             PID_EndHeavyMaintenance Sh
         Else
             PID_RecalculateMonthFormulaColumns Sh
@@ -210,6 +222,11 @@ Private Sub Workbook_SheetActivate(ByVal Sh As Object)
     PID_ClearMonthSheetFillHandleGuard
 
 SafeExit:
+    If heavyStarted Then
+        heavyStarted = False
+        PID_EndHeavyMaintenance Sh
+    End If
+    
     Application.ScreenUpdating = True
     Application.EnableEvents = True
     mInternalChange = False
@@ -278,10 +295,10 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     Application.FormatStaleValues = False
     Err.Clear
     
-    ' Recalc-Abschnitt mit Resume Next: ein Mac-Fehler in Dropdown/Lohn-Recalc darf
-    ' das E/F-Logging nicht verhindern. Windows: kein Unterschied, da keine Fehler auftreten.
+    ' Recalc-Abschnitt mit Resume Next: ein Fehler in Dropdown/Lohn-Recalc darf
+    ' das E/F-Logging nicht verhindern.
     
-    ' E zuerst: Dropdown in F muss sofort passen (Mac meldet Change oft nicht).
+    ' E zuerst: Dropdown in F muss sofort passen.
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
         PID_RefreshFStundenDropdownForERows Sh, Target
     End If
@@ -363,14 +380,6 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     If mInternalChange Then GoTo UpdateSelectionPrev
     If Not PID_IsWorkerMonthSheet(Sh) Then GoTo UpdateSelectionPrev
     If Target.CountLarge > 1 Then GoTo UpdateSelectionPrev
-    
-    ' Mac-Backup: F-Stunden-Logging via SelectionChange.
-    ' SheetChange kann auf Mac bei Dropdown-Aenderungen ausfallen oder vor dem Logging abbrechen.
-    ' Wenn der Nutzer eine F-Zelle verlaesst und der Wert sich geaendert hat, wird hier geloggt.
-    ' Windows: keine Auswirkung — SheetChange funktioniert zuverlaessig.
-    If PID_IsMacExcel() And Not gCopyDataRunning Then
-        PID_LogFChangeOnMacIfNeeded Sh, Target
-    End If
     
     ' Ausserhalb D3:F82: O45 nur loeschen wenn noetig (leichter Pfad).
     If Intersect(Target, Sh.Range("D3:F82")) Is Nothing Then
@@ -458,7 +467,6 @@ End Sub
 
 Private Sub PID_RefreshFStundenOnSelectionChange(ByVal ws As Worksheet, ByVal Target As Range)
     Dim shouldRefresh As Boolean
-    Dim currentE As String
     
     On Error GoTo SafeExit
     
@@ -467,43 +475,19 @@ Private Sub PID_RefreshFStundenOnSelectionChange(ByVal ws As Worksheet, ByVal Ta
     If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
     If Target.CountLarge <> 1 Then Exit Sub
     
-    ' Mac: SheetChange bei E-Dropdown oft aus — Refresh bei E-Wechsel / F-Fokus erzwingen.
-    If PID_IsMacExcel() Then
-        shouldRefresh = False
-        
-        If mSelPrevSheet = ws.Name And mSelPrevCol = 5 Then
-            If mSelPrevRow >= PID_FIRST_ROW And mSelPrevRow <= PID_LAST_ROW Then
-                If Not (Target.Row = mSelPrevRow And Target.Column = 5) Then
-                    shouldRefresh = True
-                    
-                    currentE = NormalizeKVCodeForLookup(CStr(ws.Cells(mSelPrevRow, "E").Value))
-                    If Len(mSelPrevEValueAtEntry) > 0 Then
-                        If StrComp(currentE, mSelPrevEValueAtEntry, vbBinaryCompare) <> 0 Then
-                            shouldRefresh = True
-                        End If
-                    End If
-                End If
+    shouldRefresh = False
+    
+    If mSelPrevSheet = ws.Name And mSelPrevCol = 5 Then
+        If mSelPrevRow >= PID_FIRST_ROW And mSelPrevRow <= PID_LAST_ROW Then
+            If Not (Target.Row = mSelPrevRow And Target.Column = 5) Then
+                shouldRefresh = True
             End If
         End If
-        
+    End If
+    
+    If Not shouldRefresh Then
         If Target.Column = 6 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
-            shouldRefresh = True
-        End If
-    Else
-        shouldRefresh = False
-        
-        If mSelPrevSheet = ws.Name And mSelPrevCol = 5 Then
-            If mSelPrevRow >= PID_FIRST_ROW And mSelPrevRow <= PID_LAST_ROW Then
-                If Not (Target.Row = mSelPrevRow And Target.Column = 5) Then
-                    shouldRefresh = True
-                End If
-            End If
-        End If
-        
-        If Not shouldRefresh Then
-            If Target.Column = 6 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
-                shouldRefresh = Not PID_RowHasValidFStundenDropdown(ws, Target.Row)
-            End If
+            shouldRefresh = Not PID_RowHasValidFStundenDropdown(ws, Target.Row)
         End If
     End If
     
@@ -543,14 +527,6 @@ Private Sub PID_UpdateMonthSelectionPrev(ByVal ws As Worksheet, ByVal Target As 
     mSelPrevSheet = ws.Name
     mSelPrevRow = Target.Row
     mSelPrevCol = Target.Column
-    
-    If Target.Column = 5 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
-        mSelPrevEValueAtEntry = NormalizeKVCodeForLookup(CStr(ws.Cells(Target.Row, "E").Value))
-    End If
-    
-    If Target.Column = 6 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
-        mSelPrevFValueAtEntry = Trim$(CStr(ws.Cells(Target.Row, "F").Value))
-    End If
 
 SafeExit:
 End Sub
@@ -558,78 +534,9 @@ End Sub
 
 Public Sub PID_ResetInternalChangeFlag()
     ' Wird von CopyData am Anfang aufgerufen, um einen moeglichen haengengebliebenen
-    ' mInternalChange=True-Zustand zu bereinigen (kann auf Mac passieren wenn ein
-    ' Event-Handler durch einen Mac-spezifischen Fehler ohne SafeExit beendet wurde).
-    ' Windows: harmlos (mInternalChange ist bereits False).
+    ' mInternalChange=True-Zustand zu bereinigen (z. B. wenn ein Event-Handler durch
+    ' einen Laufzeitfehler ohne SafeExit beendet wurde).
     mInternalChange = False
-End Sub
-
-
-Public Sub PID_FlushPendingEFLog()
-    ' Wird von CopyData vor dem Starten aufgerufen.
-    ' Problem: Wenn der Nutzer auf Mac eine F-Zelle aendert und sofort den CopyData-Button
-    ' drueckt (ohne eine andere Zelle zu klicken), feuert SelectionChange nicht mehr.
-    ' => Die Aenderung waere nie in den Log gelangt.
-    ' Loesung: CopyData ruft diese Funktion auf, die den aktuellen F-Wert mit dem
-    ' Eintritts-Snapshot (mSelPrevFValueAtEntry) vergleicht und bei Abweichung loggt.
-    ' Windows: PID_IsMacExcel()=False => sofortiger Exit, kein Unterschied.
-    
-    Dim ws As Worksheet
-    Dim currentVal As String
-    
-    On Error GoTo SafeExit
-    
-    If Not PID_IsMacExcel() Then Exit Sub
-    If mSelPrevCol <> 6 And mSelPrevCol <> 5 Then Exit Sub
-    If mSelPrevSheet = "" Then Exit Sub
-    If mSelPrevRow < PID_FIRST_ROW Or mSelPrevRow > PID_LAST_ROW Then Exit Sub
-    
-    Set ws = Nothing
-    On Error Resume Next
-    Set ws = ThisWorkbook.Worksheets(mSelPrevSheet)
-    On Error GoTo SafeExit
-    
-    If ws Is Nothing Then Exit Sub
-    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
-    
-    currentVal = Trim$(CStr(ws.Cells(mSelPrevRow, mSelPrevCol).Value))
-    
-    If mSelPrevCol = 6 Then
-        If currentVal = mSelPrevFValueAtEntry Then Exit Sub
-    ElseIf mSelPrevCol = 5 Then
-        If NormalizeKVCodeForLookup(currentVal) = mSelPrevEValueAtEntry Then Exit Sub
-    End If
-    
-    If currentVal = "" Then Exit Sub
-    
-    PID_LogEFAenderungForSheet ws, ws.Cells(mSelPrevRow, mSelPrevCol)
-
-SafeExit:
-End Sub
-
-
-Private Sub PID_LogFChangeOnMacIfNeeded(ByVal ws As Worksheet, ByVal Target As Range)
-    Dim currentF As String
-    
-    On Error GoTo SafeExit
-    
-    ' Nur aktiv wenn vorherige Selektion eine F-Zelle in der Mitarbeiter-Range war.
-    If mSelPrevCol <> 6 Then Exit Sub
-    If mSelPrevSheet <> ws.Name Then Exit Sub
-    If mSelPrevRow < PID_FIRST_ROW Or mSelPrevRow > PID_LAST_ROW Then Exit Sub
-    
-    ' Wenn der Nutzer noch auf der gleichen F-Zelle ist, nichts tun.
-    If Target.Row = mSelPrevRow And Target.Column = 6 Then Exit Sub
-    
-    currentF = Trim$(CStr(ws.Cells(mSelPrevRow, "F").Value))
-    
-    ' Nur loggen wenn der Wert sich gegenueber dem Eintritts-Snapshot geaendert hat.
-    If currentF = mSelPrevFValueAtEntry Then Exit Sub
-    If currentF = "" Then Exit Sub
-    
-    PID_LogEFAenderungForSheet ws, ws.Cells(mSelPrevRow, "F")
-
-SafeExit:
 End Sub
 
 

@@ -14,7 +14,7 @@ Excel-alapu szemelyzeti es labor-planning rendszer ettermek szamara.
 ## Kompatibilitas
 
 - Excel 2016+
-- Windows es macOS
+- Csak Windows (macOS nem tamogatott)
 - Nincs XLOOKUP, LET, FILTER, dinamikus tombok
 
 ## Projektstruktura

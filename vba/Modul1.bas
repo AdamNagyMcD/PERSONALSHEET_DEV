@@ -65,12 +65,20 @@ Public Sub PID_EndHeavyMaintenance(Optional ByVal wsMonth As Worksheet = Nothing
         End If
     End If
     
-    Application.Calculation = mHeavyMaintOldCalculation
+    ' Ein ungueltiger Merkwert (z. B. 0, wenn End ohne passendes Begin laeuft) wuerde
+    ' lautlos fehlschlagen und die Mappe im Manual-Modus stehen lassen.
+    Select Case mHeavyMaintOldCalculation
+        Case xlCalculationAutomatic, xlCalculationManual, xlCalculationSemiautomatic
+            Application.Calculation = mHeavyMaintOldCalculation
+        Case Else
+            Application.Calculation = xlCalculationAutomatic
+    End Select
+    
     Err.Clear
 End Sub
 
 
-' Aktives Blatt + Scrollposition waehrend Hintergrund-Refresh (z. B. Mac Monatsloop) sichern.
+' Aktives Blatt + Scrollposition waehrend Hintergrund-Refresh (z. B. Monatsloop) sichern.
 Public Sub PID_BeginPreserveWorkbookView()
     On Error Resume Next
     
@@ -261,6 +269,13 @@ Public Sub PID_ResetExcelState()
     Application.CutCopyMode = False
     Application.Calculation = xlCalculationAutomatic
     
+    ' Verwaiste Tiefenzaehler zuruecksetzen: bleibt einer nach einem abgebrochenen
+    ' Durchlauf stehen, wird der Rechenmodus danach nie wieder zurueckgestellt.
+    mHeavyMaintDepth = 0
+    mHeavyMaintOldCalculation = xlCalculationAutomatic
+    mViewPreserveDepth = 0
+    Set mViewPreserveSheet = Nothing
+    
     On Error GoTo 0
     
     MsgBox "Excel wurde " & PID_UTxtZurueckgesetzt() & ".", _
@@ -309,11 +324,6 @@ Public Function PID_GetWorkbookYear() As Long
 
 Fallback:
     PID_GetWorkbookYear = Year(Date)
-End Function
-
-
-Public Function PID_IsMacExcel() As Boolean
-    PID_IsMacExcel = (InStr(1, Application.OperatingSystem, "Mac", vbTextCompare) > 0)
 End Function
 
 

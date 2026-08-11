@@ -19,7 +19,7 @@ Private Const PID_UBERSICHT_JAEN_VERF_CELL As String = "E30"
 Private Const PID_UBERSICHT_JAEN_MUST_CELL As String = "I30"
 Private Const PID_UBERSICHT_AER_VERF_TITLE As String = "PID_Plan_Verfuegbar"
 Private Const PID_UBERSICHT_AER_MUST_TITLE As String = "PID_Plan_Muster"
-' XlEnableSelection — numerisch fuer Excel 2016 Mac (xlUnlockedCell = 1).
+' XlEnableSelection — bewusst numerisch (xlUnlockedCell = 1).
 Private Const PID_XL_ENABLE_SELECTION_UNLOCKED As Long = 1
 
 
@@ -129,7 +129,7 @@ Public Sub PID_ApplyUbersichtSheetProtection(ByVal ws As Worksheet)
     ' Nur E30/I30 anklickbar — Formeln (FINANZ, Durchrechnung) nicht auswaehlbar.
     ws.EnableSelection = PID_XL_ENABLE_SELECTION_UNLOCKED
     
-    ' AllowSelectingLockedCells: in Excel 2016 Mac Protect nicht verfuegbar (Compile-Fehler).
+    ' AllowSelectingLockedCells wird bewusst nicht gesetzt — Auswahl steuert EnableSelection.
     ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                UserInterfaceOnly:=True, _
                AllowFiltering:=True, _

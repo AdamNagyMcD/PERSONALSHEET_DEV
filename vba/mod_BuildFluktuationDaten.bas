@@ -8,7 +8,7 @@ Attribute VB_Name = "mod_BuildFluktuationDaten"
 Option Explicit
 
 
-' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Win/Mac Excel 2016).
+' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Excel 2016).
 Private Function PID_FlDatTxtAe() As String
     PID_FlDatTxtAe = ChrW(228)
 End Function

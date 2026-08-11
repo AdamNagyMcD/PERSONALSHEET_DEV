@@ -8,9 +8,8 @@ Attribute VB_Name = "mod_PIDUtils"
 Option Explicit
 
 ' True waehrend PID_CopyDataToFollowingMonths laeuft.
-' Schuetzt den Hour-Override-Log davor, dass Mac Excel Worksheet_Change-Events
-' auch bei Application.EnableEvents=False feuert und dabei spaeteren Log-Eintraege loescht.
-' Windows: EnableEvents=False unterdrueckt Events zuverlaessig → Guard wird nie aktiv.
+' Schutz-Guard fuer den Hour-Override-Log. Unter Windows nicht wirksam, da
+' Application.EnableEvents=False die Worksheet_Change-Events zuverlaessig unterdrueckt.
 Public gCopyDataRunning As Boolean
 
 

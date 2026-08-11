@@ -28,7 +28,7 @@ Private Const PID_FL_COL_O As Single = 10.2
 Private Const PID_FL_COL_CHART As Single = 2
 
 
-' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Win/Mac Excel 2016).
+' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Excel 2016).
 Private Function PID_FlTxtAe() As String
     PID_FlTxtAe = ChrW(228)
 End Function

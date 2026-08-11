@@ -28,7 +28,7 @@ Private Const PID_FU_DATA_END_ROW As Long = 22
 Private Const PID_FU_TOTAL_ROW As Long = 23
 
 
-' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Win/Mac Excel 2016).
+' Anzeigetexte mit Umlauten (ChrW = ASCII-sichere Quelle, Excel 2016).
 Private Function PID_DRTxtVerfuegbar() As String
     PID_DRTxtVerfuegbar = "Verf" & ChrW(252) & "gbar"
 End Function
@@ -407,7 +407,7 @@ End Sub
 
 
 Private Function PID_GetEuroFormula(ByVal dataRow As Long) As String
-    ' 3/2 statt 1,5 wegen Excel-2016/Mac Dezimal-Trennzeichen.
+    ' 3/2 statt 1,5 wegen Dezimal-Trennzeichen im deutschen Excel.
     PID_GetEuroFormula = "=IF(OR(G" & dataRow & "=0,H" & dataRow & "=0),"""",H" & dataRow & "*G" & dataRow & "*3/2)"
 End Function
 

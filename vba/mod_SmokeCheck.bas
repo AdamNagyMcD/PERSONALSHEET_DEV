@@ -73,7 +73,7 @@ Public Sub PID_RunSystemSmokeCheck()
     
     statusText = PID_EvaluateTest8(details)
     manualSteps = PID_GetManualStepsForTest(8, statusText)
-    PID_WriteSmokeResult ws, nextRow, "TEST 8 - Mac Compatibility", statusText, details, manualSteps
+    PID_WriteSmokeResult ws, nextRow, "TEST 8 - Windows Platform", statusText, details, manualSteps
     PID_TrackSmokeStatus statusText, passCount, failCount, reviewCount
     nextRow = nextRow + 1
     
@@ -304,18 +304,13 @@ End Function
 
 
 Private Function PID_EvaluateTest8(ByRef details As String) As String
-    If PID_HasWindowsOnlyApiDeclarations() Then
-        details = "Windows-only API Declare-Anweisungen in exportierten VBA-Dateien gefunden."
-        PID_EvaluateTest8 = "FAIL"
-        Exit Function
-    End If
-    
-    If InStr(1, Application.OperatingSystem, "Mac", vbTextCompare) > 0 Then
-        details = "Makro auf Mac gestartet. Keine Windows-only API Muster gefunden."
+    ' Die Datei ist ausschliesslich fuer Excel unter Windows freigegeben.
+    If InStr(1, Application.OperatingSystem, "Windows", vbTextCompare) > 0 Then
+        details = "Windows Excel erkannt (" & Application.OperatingSystem & ")."
         PID_EvaluateTest8 = "PASS"
     Else
-        details = "Keine Windows-only API Muster gefunden. Finale Laufzeitpruefung auf Mac bleibt manuell."
-        PID_EvaluateTest8 = "REVIEW"
+        details = "Kein Windows Excel erkannt (" & Application.OperatingSystem & "). Diese Datei ist nur fuer Windows freigegeben."
+        PID_EvaluateTest8 = "FAIL"
     End If
 End Function
 
@@ -771,93 +766,6 @@ SafeExit:
 End Function
 
 
-Private Function PID_HasWindowsOnlyApiDeclarations() As Boolean
-    Dim folderPath As String
-    Dim vbaFolder As String
-    Dim fileName As String
-    Dim fullPath As String
-    Dim lineText As String
-    Dim fileNumber As Integer
-    Dim filePatterns As Variant
-    Dim patternIndex As Long
-    
-    On Error GoTo SafeExit
-    
-    folderPath = ThisWorkbook.Path
-    If folderPath = "" Then Exit Function
-    
-    filePatterns = Array("*.bas", "*.cls")
-    vbaFolder = folderPath & Application.PathSeparator & "vba" & Application.PathSeparator
-    
-    For patternIndex = LBound(filePatterns) To UBound(filePatterns)
-        fileName = Dir(vbaFolder & CStr(filePatterns(patternIndex)))
-        
-        Do While fileName <> ""
-            If Not PID_IsSmokeCheckExportFile(fileName) Then
-                fullPath = vbaFolder & fileName
-                
-                fileNumber = FreeFile
-                Open fullPath For Input As #fileNumber
-                
-                Do While Not EOF(fileNumber)
-                    Line Input #fileNumber, lineText
-                    
-                    If PID_LineContainsApiDeclare(lineText) Then
-                        PID_HasWindowsOnlyApiDeclarations = True
-                        Close #fileNumber
-                        Exit Function
-                    End If
-                Loop
-                
-                Close #fileNumber
-                fileNumber = 0
-            End If
-            
-            fileName = Dir()
-        Loop
-    Next patternIndex
-    
-SafeExit:
-    On Error Resume Next
-    If fileNumber > 0 Then Close #fileNumber
-End Function
-
-
-Private Function PID_IsSmokeCheckExportFile(ByVal fileName As String) As Boolean
-    PID_IsSmokeCheckExportFile = (StrComp(fileName, "mod_SmokeCheck.bas", vbTextCompare) = 0)
-End Function
-
-
-Private Function PID_LineContainsApiDeclare(ByVal lineText As String) As Boolean
-    Dim codePart As String
-    Dim commentPos As Long
-    
-    codePart = Trim$(lineText)
-    If Len(codePart) = 0 Then Exit Function
-    If Left$(codePart, 1) = "'" Then Exit Function
-    
-    commentPos = InStr(1, codePart, "'")
-    If commentPos > 0 Then
-        codePart = Trim$(Left$(codePart, commentPos - 1))
-        If Len(codePart) = 0 Then Exit Function
-    End If
-    
-    If StrComp(Left$(codePart, 15), "Private Declare", vbTextCompare) = 0 Then
-        PID_LineContainsApiDeclare = True
-        Exit Function
-    End If
-    
-    If StrComp(Left$(codePart, 14), "Public Declare", vbTextCompare) = 0 Then
-        PID_LineContainsApiDeclare = True
-        Exit Function
-    End If
-    
-    If StrComp(Left$(codePart, 8), "Declare ", vbTextCompare) = 0 Then
-        PID_LineContainsApiDeclare = True
-    End If
-End Function
-
-
 Private Function PID_GetOrCreateSmokeCheckSheet() As Worksheet
     Dim ws As Worksheet
     
@@ -939,7 +847,7 @@ Private Function PID_GetManualStepsForTest(ByVal testNumber As Long, ByVal statu
         Case 7
             PID_GetManualStepsForTest = "1) Workbook in Excel 2016 oeffnen. 2) PID_QuickSystemCheck und PID_FullSystemRefresh ausfuehren. 3) Pruefen: keine Compile- oder Formel-Fehler."
         Case 8
-            PID_GetManualStepsForTest = "1) Workbook in Excel fuer Mac oeffnen. 2) PID_QuickSystemCheck, CopyData und PID_RunSystemSmokeCheck ausfuehren. 3) Pruefen: keine plattformspezifischen Fehler."
+            PID_GetManualStepsForTest = "1) Workbook in Excel fuer Windows oeffnen. 2) PID_QuickSystemCheck, CopyData und PID_RunSystemSmokeCheck ausfuehren. 3) Pruefen: keine plattformspezifischen Fehler."
         Case 16
             PID_GetManualStepsForTest = "1) Excel-Optionen -> Vertrauensstellungscenter -> Makroeinstellungen. 2) 'Zugriff auf das VBA-Projektobjektmodell' aktivieren. 3) Nur fuer Dev/Import noetig."
         Case Else

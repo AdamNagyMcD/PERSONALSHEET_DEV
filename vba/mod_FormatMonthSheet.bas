@@ -852,7 +852,7 @@ Private Function PID_MSEnsureAktualisierungButtonOnSheet(ByVal ws As Worksheet) 
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
     On Error GoTo SafeExit
     
-    ' Position von O1: bei ScreenUpdating=False auf Mac sonst falsche Left/Top-Werte.
+    ' Position von O1: bei ScreenUpdating=False sonst falsche Left/Top-Werte.
     Application.ScreenUpdating = True
     PID_MSGetCopyDataButtonTargetGeometry ws, btnLeft, btnTop, btnWidth, btnHeight
     Application.ScreenUpdating = oldScreenUpdating

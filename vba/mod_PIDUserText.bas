@@ -7,7 +7,7 @@ Attribute VB_Name = "mod_PIDUserText"
 
 Option Explicit
 
-' Zentrale Benutzertexte mit Umlauten (ChrW = ASCII-sichere Quelle, Win/Mac Excel 2016).
+' Zentrale Benutzertexte mit Umlauten (ChrW = ASCII-sichere Quelle, Excel 2016).
 ' Nur fuer sichtbare Dialoge/Meldungen — keine Literal-Umlaute in .bas-Dateien.
 
 

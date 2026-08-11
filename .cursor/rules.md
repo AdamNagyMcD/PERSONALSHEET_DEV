@@ -15,7 +15,7 @@
 
 * Never change business logic unless explicitly requested.
 * Always preserve Excel 2016 compatibility.
-* Always preserve macOS compatibility.
+* Target platform is Windows only (Excel for Windows). Do not preserve, add, or restore macOS compatibility.
 * Never use XLOOKUP / XVERWEIS.
 * Never use LET, FILTER, UNIQUE or dynamic array formulas.
 * Never delete future employee data.
@@ -184,7 +184,7 @@ Without explicit user approval, these modules must never be changed.
   * D/E hour overrides,
   * formula preservation,
   * Excel 2016 compatibility,
-  * macOS compatibility where relevant.
+  * Windows Excel behavior (macOS is out of scope).
 * Do not run or inspect unrelated test cases unless the affected logic requires it.
 * Respect `TEST_CASES.md` when the task touches documented tested behavior.
 

@@ -79,15 +79,15 @@ Workbook opened on Excel 2016.
 
 ---
 
-## TEST 8 — Mac Compatibility
+## TEST 8 — Windows Platform
 
 ### Scenario
-Workbook opened on MacOS Excel.
+Workbook opened on Excel for Windows.
 
 ### Expected
 - Macros function correctly
 - No path issues
-- No Windows-only dependencies
+- Smoke check reports PASS for the Windows platform test
 
 ---
 

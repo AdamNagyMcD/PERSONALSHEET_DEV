@@ -3,8 +3,7 @@
 ## Core Requirements
 
 - Excel 2016 compatible
-- MacOS compatible
-- Windows compatible
+- Windows only (macOS not supported)
 - No XLOOKUP usage
 - Stable performance on large datasets
 - No business logic changes without approval
@@ -48,7 +47,7 @@
 
 - Must work on Excel 2016
 - Must work on latest Excel
-- Must work on Mac and Windows
+- Must work on Windows (macOS is out of scope)
 
 ---
 

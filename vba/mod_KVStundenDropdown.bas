@@ -107,77 +107,16 @@ Public Sub RefreshKVDropdownsIfDirty()
 End Sub
 
 
-' Mac-only: nach LOHNTABELLE-Aenderung betroffene Monatsblaetter sofort neu aufbauen
-' (scoped dirty refresh — Windows-Pfad unveraendert lazy via SheetActivate).
-Public Sub PID_MacRefreshKVDropdownsForKVPeriodChange(Optional ByVal targetPeriod As String = "")
-    Dim monthNames As Variant
-    Dim i As Long
-    Dim ws As Worksheet
-    Dim monthNum As Long
-    Dim workbookYear As Long
-    Dim periodForMonth As String
-    Dim normalizedTarget As String
-    
-    If Not PID_IsMacExcel() Then Exit Sub
-    If Not gKVDropdownsDirty Then Exit Sub
-    
-    normalizedTarget = NormalizeKVPeriodForLookup(targetPeriod)
-    workbookYear = PID_GetWorkbookYear()
-    monthNames = Array("Januar", "Februar", "Marz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember")
-    
-    PID_BeginPreserveWorkbookView
-    PID_BeginHeavyMaintenance
-    
-    For i = LBound(monthNames) To UBound(monthNames)
-        monthNum = i + 1
-        
-        If normalizedTarget <> "" Then
-            periodForMonth = NormalizeKVPeriodForLookup(GetKVPeriodForWorkbookYear(workbookYear, monthNum))
-            If periodForMonth <> normalizedTarget Then GoTo NextMonthMacRefresh
-        End If
-        
-        Set ws = Nothing
-        On Error Resume Next
-        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
-        On Error GoTo 0
-        
-        If Not ws Is Nothing Then
-            RefreshKVStundenDropdownForSheet ws, , True
-            
-            On Error Resume Next
-            If mKVDropdownRefreshedSheets Is Nothing Then Set mKVDropdownRefreshedSheets = New Collection
-            If Not CollectionHasKey_KVDropdown(mKVDropdownRefreshedSheets, ws.Name) Then
-                mKVDropdownRefreshedSheets.Add ws.Name, ws.Name
-            End If
-            Err.Clear
-        End If
-        
-NextMonthMacRefresh:
-    Next i
-    
-    PID_EndHeavyMaintenance
-    PID_EndPreserveWorkbookView
-    
-    ' Betroffene Monate sind neu aufgebaut — globaler Dirty-Zustand nicht offen lassen.
-    MarkKVDropdownsClean
-End Sub
-
-
 Public Sub RefreshKVDropdownsIfDirtyForSheet(ByVal wsMonth As Worksheet)
     If wsMonth Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
     If Not gKVDropdownsDirty Then Exit Sub
     
-    ' Windows: pro Monat einmal pro Dirty-Zyklus (Performance). Mac: SheetActivate
-    ' ist unzuverlaessig — nie ueber "bereits frisch" ueberspringen.
-    If Not PID_IsMacExcel() Then
-        If Not mKVDropdownRefreshedSheets Is Nothing Then
-            If CollectionHasKey_KVDropdown(mKVDropdownRefreshedSheets, wsMonth.Name) Then Exit Sub
-        End If
-        RefreshKVStundenDropdownForSheet wsMonth
-    Else
-        RefreshKVStundenDropdownForSheet wsMonth, , True
+    ' Pro Monat einmal pro Dirty-Zyklus (Performance).
+    If Not mKVDropdownRefreshedSheets Is Nothing Then
+        If CollectionHasKey_KVDropdown(mKVDropdownRefreshedSheets, wsMonth.Name) Then Exit Sub
     End If
+    RefreshKVStundenDropdownForSheet wsMonth
     
     On Error Resume Next
     If mKVDropdownRefreshedSheets Is Nothing Then Set mKVDropdownRefreshedSheets = New Collection
@@ -217,7 +156,7 @@ Public Sub RefreshAllMonthKVStundenDropdowns()
         On Error GoTo CleanFail
         
         If Not ws Is Nothing Then
-            RefreshKVStundenDropdownForSheet ws, , PID_IsMacExcel()
+            RefreshKVStundenDropdownForSheet ws
         End If
     Next i
     
@@ -478,14 +417,6 @@ Private Sub PID_ForceDeleteAllFStundenValidations(ByVal wsMonth As Worksheet)
         wsMonth.Cells(r, "F").Validation.Delete
     Next r
     
-    If PID_IsMacExcel() Then
-        DoEvents
-        wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Validation.Delete
-        For r = PID_FIRST_ROW To PID_LAST_ROW
-            wsMonth.Cells(r, "F").Validation.Delete
-        Next r
-    End If
-    
     Err.Clear
     On Error GoTo 0
 End Sub
@@ -506,8 +437,6 @@ Private Sub PID_ApplyFStundenListValidation(ByVal wsMonth As Worksheet, _
     Err.Clear
     
     If listRange Is Nothing Then Exit Sub
-    
-    If PID_IsMacExcel() Then GoTo ApplyDirectAddress
     
     On Error GoTo ApplyFailed
     With wsMonth.Cells(rowNumber, "F").Validation
@@ -747,18 +676,15 @@ Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode
     
     cacheKey = CStr(monthNumber) & "|" & kvCode
     
-    ' Mac: kein Stunden-Cache — LOHNTABELLE-Aenderungen (Eigene Stunden) sonst oft veraltet.
-    If Not PID_IsMacExcel() Then
-        If Not mStundenValuesCache Is Nothing Then
-            On Error Resume Next
-            Set cachedValues = mStundenValuesCache(cacheKey)
-            If Err.Number = 0 Then
-                Set GetKVMonatsstundenValues = PID_CloneStundenValuesCollection(cachedValues)
-                Exit Function
-            End If
-            Err.Clear
-            On Error GoTo SafeExit
+    If Not mStundenValuesCache Is Nothing Then
+        On Error Resume Next
+        Set cachedValues = mStundenValuesCache(cacheKey)
+        If Err.Number = 0 Then
+            Set GetKVMonatsstundenValues = PID_CloneStundenValuesCollection(cachedValues)
+            Exit Function
         End If
+        Err.Clear
+        On Error GoTo SafeExit
     End If
     
     Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
@@ -775,9 +701,7 @@ Public Function GetKVMonatsstundenValues(ByVal monthNumber As Long, ByVal kvCode
         AddMonatsstundenValuesFromPeriod wsKV, previousPeriod, kvCode, values
     End If
     
-    If Not PID_IsMacExcel() Then
-        PID_StoreStundenValuesInCache cacheKey, values
-    End If
+    PID_StoreStundenValuesInCache cacheKey, values
     Set GetKVMonatsstundenValues = PID_CloneStundenValuesCollection(values)
     Exit Function
 
@@ -814,6 +738,7 @@ Public Sub PID_ForceRefreshFStundenDropdownForSheet(ByVal wsMonth As Worksheet)
     PID_ClearStundenValuesCache
     RefreshKVStundenDropdownForSheet wsMonth, , True
     PID_EndHeavyMaintenance wsMonth
+    Exit Sub
     
 SafeExit:
     On Error Resume Next
@@ -1542,7 +1467,7 @@ Public Function PID_RowHasValidFStundenDropdown(ByVal wsMonth As Worksheet, ByVa
     dropdownKey = PID_GetDropdownKeyForRow(wsMonth, rowNumber)
     expectedListName = UCase$(GetDropdownNameForKVCode(wsMonth.Name, dropdownKey))
     
-    ' Exakter Named-Range-Vergleich (inkl. Workbook-Praefix auf Mac).
+    ' Exakter Named-Range-Vergleich (inkl. Workbook-Praefix).
     If PID_ValidationFormulaRefersToListName(normalizedFormula, expectedListName) Then
         PID_RowHasValidFStundenDropdown = True
         Exit Function

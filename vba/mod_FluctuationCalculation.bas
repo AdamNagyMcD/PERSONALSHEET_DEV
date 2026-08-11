@@ -285,7 +285,7 @@ End Function
 ' (HR-Controlling-/BDA-Standard). Brutto-Fluktuation:
 '   Fluktuationsrate = Austritte im Zeitraum / durchschnittlicher Personalbestand
 '   Durchschnittsbestand = (Bestand Periodenanfang + Bestand Periodenende) / 2
-' Excel-2016- sowie Windows-/Mac-kompatibel, keine dynamischen Array-Funktionen.
+' Excel-2016-kompatibel (Windows), keine dynamischen Array-Funktionen.
 '==============================================================================
 
 Public Function PID_CountEmployeesAtDate(ByVal ws As Worksheet, ByVal checkDate As Date) As Long
@@ -446,7 +446,7 @@ End Function
 
 Public Function PID_GetFluctuationRating(ByVal fluctuationRate As Double) As String
     ' HR-Controlling-Einstufung der Brutto-Fluktuationsrate (technische Grenzwerte
-    ' 0.2 / 0.35 / 0.5 / 0.7 / 1.0). Umlaute ASCII-sicher via ChrW (Win/Mac Excel 2016).
+    ' 0.2 / 0.35 / 0.5 / 0.7 / 1.0). Umlaute ASCII-sicher via ChrW (Excel 2016).
     If fluctuationRate < 0.2 Then
         PID_GetFluctuationRating = "Sehr gut / stabil"
     ElseIf fluctuationRate < 0.35 Then
