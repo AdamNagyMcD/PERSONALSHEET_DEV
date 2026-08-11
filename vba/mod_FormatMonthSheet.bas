@@ -35,6 +35,9 @@ Private Const PID_MS_EMPLOYEE_HEADER_FIRST_COL As Long = 1
 Private Const PID_MS_EMPLOYEE_HEADER_LAST_COL As Long = 14
 Private Const PID_MS_PANEL_MESSAGE_ROW As Long = 15
 
+' Blaetter, deren CopyData-Button in dieser Sitzung bereits voll geprueft wurde.
+Private mMSCopyDataButtonReadySheets As Collection
+
 
 Public Sub PID_FixDurchrechnungStartMonthPanels()
     Dim monthName As Variant
@@ -128,9 +131,70 @@ CleanFail:
 End Sub
 
 
+' Aufrufpfad Workbook_SheetActivate. Der volle Ensure-Lauf hebt den Blattschutz auf,
+' schaltet ScreenUpdating fuer die O1-Geometrie um, laeuft ueber alle Shapes und stylt
+' den Button neu — das lief bisher bei jedem Tabwechsel. Pro Blatt genuegt das einmal
+' je Sitzung; danach reicht die billige Existenzpruefung ohne Unprotect. Die Format-
+' und Admin-Pfade rufen weiterhin direkt den vollen Lauf auf und bleiben unveraendert.
 Public Function PID_EnsureMonthSheetCopyDataButton(ByVal ws As Worksheet) As Boolean
+    If ws Is Nothing Then Exit Function
+    
+    If PID_MSCopyDataButtonReady(ws.Name) Then
+        If PID_MSCopyDataButtonExists(ws) Then
+            PID_EnsureMonthSheetCopyDataButton = True
+            Exit Function
+        End If
+    End If
+    
     PID_EnsureMonthSheetCopyDataButton = PID_MSEnsureAktualisierungButtonOnSheet(ws)
+    
+    If PID_EnsureMonthSheetCopyDataButton Then
+        PID_MSMarkCopyDataButtonReady ws.Name
+    End If
 End Function
+
+
+Private Function PID_MSCopyDataButtonExists(ByVal ws As Worksheet) As Boolean
+    Dim btn As Shape
+    
+    On Error GoTo NotFound
+    
+    Set btn = ws.Shapes(PID_MS_COPYDATA_BUTTON_NAME)
+    
+    PID_MSCopyDataButtonExists = Not btn Is Nothing
+    Exit Function
+
+NotFound:
+    PID_MSCopyDataButtonExists = False
+End Function
+
+
+Private Function PID_MSCopyDataButtonReady(ByVal sheetName As String) As Boolean
+    Dim tmp As Variant
+    
+    On Error GoTo NotFound
+    
+    If mMSCopyDataButtonReadySheets Is Nothing Then Exit Function
+    If sheetName = "" Then Exit Function
+    
+    tmp = mMSCopyDataButtonReadySheets.item(sheetName)
+    
+    PID_MSCopyDataButtonReady = True
+    Exit Function
+
+NotFound:
+    PID_MSCopyDataButtonReady = False
+End Function
+
+
+Private Sub PID_MSMarkCopyDataButtonReady(ByVal sheetName As String)
+    On Error Resume Next
+    
+    If sheetName = "" Then Exit Sub
+    If mMSCopyDataButtonReadySheets Is Nothing Then Set mMSCopyDataButtonReadySheets = New Collection
+    
+    mMSCopyDataButtonReadySheets.Add sheetName, sheetName
+End Sub
 
 
 ' FP-017: Spalten D und I auf allen Monatsblaettern (FullSystemRefresh, Format-Lauf).

@@ -294,6 +294,10 @@ Public Function PID_CountEmployeesAtDate(ByVal ws As Worksheet, ByVal checkDate 
     '   UND (Austrittsdatum leer ODER Austritt > Stichtag)
     ' Austritt genau am Stichtag zaehlt NICHT mehr zum Bestand.
     Dim r As Long
+    Dim arrID As Variant
+    Dim arrName As Variant
+    Dim arrEntry As Variant
+    Dim arrExit As Variant
     Dim employeeID As Variant
     Dim employeeName As Variant
     Dim entryDate As Variant
@@ -306,11 +310,19 @@ Public Function PID_CountEmployeesAtDate(ByVal ws As Worksheet, ByVal checkDate 
     
     countEmployees = 0
     
-    For r = 3 To 82
-        employeeID = ws.Cells(r, "B").Value
-        employeeName = ws.Cells(r, "C").Value
-        entryDate = ws.Cells(r, "D").Value
-        exitDate = ws.Cells(r, "I").Value
+    ' Vier Bereichslesevorgaenge statt 320 Einzelzugriffen: die Funktion laeuft bei
+    ' jedem Monatsblatt-Tabwechsel zweimal (Monatsanfang und -ende) ueber Q31.
+    ' Gleiches Muster wie in PID_CalculateFluctuation.
+    arrID = ws.Range("B3:B82").Value
+    arrName = ws.Range("C3:C82").Value
+    arrEntry = ws.Range("D3:D82").Value
+    arrExit = ws.Range("I3:I82").Value
+    
+    For r = 1 To 80
+        employeeID = arrID(r, 1)
+        employeeName = arrName(r, 1)
+        entryDate = arrEntry(r, 1)
+        exitDate = arrExit(r, 1)
         
         If Trim$(CStr(employeeID)) <> "" Or Trim$(CStr(employeeName)) <> "" Then
             If IsDate(entryDate) Then

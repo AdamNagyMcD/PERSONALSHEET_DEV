@@ -24,6 +24,7 @@ Private mWorkerSheetRuntimeReady As Boolean
 Private mSelPrevSheet As String
 Private mSelPrevRow As Long
 Private mSelPrevCol As Long
+Private mSelPrevEValueAtEntry As String
 Private mFStundenRefreshRanThisSelection As Boolean
 
 
@@ -301,6 +302,9 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     ' E zuerst: Dropdown in F muss sofort passen.
     If Not Intersect(Target, Sh.Range("E3:E82")) Is Nothing Then
         PID_RefreshFStundenDropdownForERows Sh, Target
+        ' Snapshot nachziehen, damit das spaetere Verlassen der Zelle denselben
+        ' Neuaufbau nicht ein zweites Mal ausloest.
+        PID_SyncPrevEValueSnapshot Sh
     End If
     Err.Clear
     
@@ -367,6 +371,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     Dim eDropdownInvalid As Boolean
     Dim fDropdownInvalid As Boolean
     Dim needsDropdownRepair As Boolean
+    Dim appStateTouched As Boolean
     
     On Error GoTo SafeExit
     
@@ -386,6 +391,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
         If Len(Trim$(CStr(Sh.Range("O45").Value))) = 0 Then GoTo UpdateSelectionPrev
         
         mInternalChange = True
+        appStateTouched = True
         Application.EnableEvents = False
         Sh.Range("O45").Value = ""
         GoTo UpdateSelectionPrev
@@ -394,6 +400,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     If Target.Row < PID_FIRST_ROW Or Target.Row > PID_LAST_ROW Then
         If Len(Trim$(CStr(Sh.Range("O45").Value))) > 0 Then
             mInternalChange = True
+            appStateTouched = True
             Application.EnableEvents = False
             Sh.Range("O45").Value = ""
         End If
@@ -403,6 +410,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     ' D: Beschaeftigungsdauer — ohne ScreenUpdating-Off.
     If Not Intersect(Target, Sh.Range("D3:D82")) Is Nothing Then
         mInternalChange = True
+        appStateTouched = True
         Application.EnableEvents = False
         PID_ShowEmploymentDuration Sh, Target
         GoTo UpdateSelectionPrev
@@ -424,6 +432,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     ' O45 leeren beim Wechsel von D nach E/F (leichter Pfad).
     If Len(Trim$(CStr(Sh.Range("O45").Value))) > 0 Then
         mInternalChange = True
+        appStateTouched = True
         Application.EnableEvents = False
         Sh.Range("O45").Value = ""
         Application.EnableEvents = True
@@ -435,6 +444,7 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     If mFStundenRefreshRanThisSelection Then GoTo UpdateSelectionPrev
     
     mInternalChange = True
+    appStateTouched = True
     Application.EnableEvents = False
     Application.ScreenUpdating = False
     
@@ -459,14 +469,26 @@ UpdateSelectionPrev:
 
 SafeExit:
     On Error Resume Next
-    Application.ScreenUpdating = True
-    Application.EnableEvents = True
+    ' Die beiden Application-Properties nur zurueckstellen, wenn dieser Handler sie
+    ' auch wirklich abgeschaltet hat. Der haeufigste Fall — ein simpler Klick, der
+    ' keinen der Zweige oben trifft — schrieb sie bisher bei jeder Auswahl neu, und
+    ' ein Schreibzugriff auf ScreenUpdating erzwingt jedes Mal ein Neuzeichnen.
+    If appStateTouched Then
+        Application.ScreenUpdating = True
+        Application.EnableEvents = True
+    ElseIf Not Application.ScreenUpdating Then
+        ' Heilnetz beibehalten: hat ein anderes Makro ScreenUpdating haengen lassen,
+        ' stellt die naechste Auswahl es weiterhin zurueck. Der Lesezugriff ist
+        ' billig, nur der bisher bedingungslose Schreibzugriff entfaellt.
+        Application.ScreenUpdating = True
+    End If
     mInternalChange = False
 End Sub
 
 
 Private Sub PID_RefreshFStundenOnSelectionChange(ByVal ws As Worksheet, ByVal Target As Range)
     Dim shouldRefresh As Boolean
+    Dim currentEValue As String
     
     On Error GoTo SafeExit
     
@@ -480,7 +502,15 @@ Private Sub PID_RefreshFStundenOnSelectionChange(ByVal ws As Worksheet, ByVal Ta
     If mSelPrevSheet = ws.Name And mSelPrevCol = 5 Then
         If mSelPrevRow >= PID_FIRST_ROW And mSelPrevRow <= PID_LAST_ROW Then
             If Not (Target.Row = mSelPrevRow And Target.Column = 5) Then
-                shouldRefresh = True
+                ' Nur neu aufbauen, wenn der KV-Code beim Verlassen der Zelle wirklich
+                ' anders ist als beim Betreten. Reines Navigieren durch Spalte E hat
+                ' sonst jedes Mal alle 80 F-Dropdowns neu aufgebaut. Der Neuaufbau
+                ' bleibt sheetweit, weil sich die Helper-Spalten-Slots verschieben
+                ' koennen, sobald sich die Menge der KV-Codes auf dem Blatt aendert.
+                currentEValue = NormalizeKVCodeForLookup(CStr(ws.Cells(mSelPrevRow, "E").Value))
+                If StrComp(currentEValue, mSelPrevEValueAtEntry, vbBinaryCompare) <> 0 Then
+                    shouldRefresh = True
+                End If
             End If
         End If
     End If
@@ -517,6 +547,20 @@ SafeExit:
 End Sub
 
 
+Private Sub PID_SyncPrevEValueSnapshot(ByVal ws As Worksheet)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If mSelPrevSheet <> ws.Name Then Exit Sub
+    If mSelPrevCol <> 5 Then Exit Sub
+    If mSelPrevRow < PID_FIRST_ROW Or mSelPrevRow > PID_LAST_ROW Then Exit Sub
+    
+    mSelPrevEValueAtEntry = NormalizeKVCodeForLookup(CStr(ws.Cells(mSelPrevRow, "E").Value))
+
+SafeExit:
+End Sub
+
+
 Private Sub PID_UpdateMonthSelectionPrev(ByVal ws As Worksheet, ByVal Target As Range)
     On Error GoTo SafeExit
     
@@ -527,6 +571,12 @@ Private Sub PID_UpdateMonthSelectionPrev(ByVal ws As Worksheet, ByVal Target As 
     mSelPrevSheet = ws.Name
     mSelPrevRow = Target.Row
     mSelPrevCol = Target.Column
+    
+    If Target.Column = 5 And Target.Row >= PID_FIRST_ROW And Target.Row <= PID_LAST_ROW Then
+        mSelPrevEValueAtEntry = NormalizeKVCodeForLookup(CStr(Target.Value))
+    Else
+        mSelPrevEValueAtEntry = ""
+    End If
 
 SafeExit:
 End Sub

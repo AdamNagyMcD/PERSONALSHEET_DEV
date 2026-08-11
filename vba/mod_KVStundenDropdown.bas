@@ -406,16 +406,11 @@ End Function
 
 
 Private Sub PID_ForceDeleteAllFStundenValidations(ByVal wsMonth As Worksheet)
-    Dim r As Long
-    
     On Error Resume Next
     
+    ' Der Bereichs-Delete erfasst F3:F82 vollstaendig; die frueher zusaetzliche
+    ' Schleife ueber alle 80 Zellen war reine Wiederholung derselben Arbeit.
     wsMonth.Range("F" & PID_FIRST_ROW & ":F" & PID_LAST_ROW).Validation.Delete
-    DoEvents
-    
-    For r = PID_FIRST_ROW To PID_LAST_ROW
-        wsMonth.Cells(r, "F").Validation.Delete
-    Next r
     
     Err.Clear
     On Error GoTo 0
@@ -429,10 +424,9 @@ Private Sub PID_ApplyFStundenListValidation(ByVal wsMonth As Worksheet, _
     If wsMonth Is Nothing Then Exit Sub
     If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Sub
     
+    ' Ein Delete genuegt; der frueher doppelte Delete plus DoEvents lief pro Zeile
+    ' und kostete beim Voll-Neuaufbau 80 Message-Pump-Wechsel.
     On Error Resume Next
-    wsMonth.Cells(rowNumber, "F").Validation.Delete
-    Err.Clear
-    DoEvents
     wsMonth.Cells(rowNumber, "F").Validation.Delete
     Err.Clear
     
@@ -721,7 +715,6 @@ Public Sub PID_RefreshFStundenDropdownForERows(ByVal wsMonth As Worksheet, ByVal
     Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:E82"))
     If rowsToCheck Is Nothing Then Exit Sub
     
-    DoEvents
     PID_ForceRefreshFStundenDropdownForSheet wsMonth
 
 SafeExit:
