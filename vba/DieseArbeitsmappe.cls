@@ -306,8 +306,11 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     
     ' Einfuege-Schutz:
     ' Beim Einfuegen aus alten Dateien oder anderen Quellen soll nur der Wert uebernommen werden.
+    ' FP-032 / TR-02: danach B/C/M/N auf Textformat (@) absichern (auch ohne Paste-Erkennung).
     pasteHandled = False
     EnforcePasteValuesOnly Sh, Target, pasteHandled
+    Err.Clear
+    EnsureMonthSheetTextInputFormats Sh, Target
     Err.Clear
     
     ' Wenn Spalte E sich aendert:
@@ -543,19 +546,26 @@ End Sub
 Private Sub EnforcePasteValuesOnly(ByVal Sh As Object, ByVal Target As Range, ByRef pasteHandled As Boolean)
     Dim inputRange As Range
     Dim affectedRange As Range
+    Dim textFormatRange As Range
+    Dim textAffected As Range
     Dim pastedValues As Variant
+    Dim textByAddress As Collection
     Dim c As Range
+    Dim writeCell As Range
     Dim relRow As Long
     Dim relCol As Long
     Dim valueToWrite As Variant
     Dim handledMerges As Collection
     Dim mergeKey As String
+    Dim addrKey As String
+    Dim forceText As Boolean
     
     On Error GoTo SafeExit
     
     pasteHandled = False
     
-    Set inputRange = Union(Sh.Range("B3:C82"), Sh.Range("D3:D82"), Sh.Range("E3:F82"), Sh.Range("I3:J82"), Sh.Range("M3:N82"), Sh.Range("O18:Q25"))
+    ' FP-032 / TR-02: Panel-Allowlist O18:Q28 (Lock-Policy / Freitext-Panel).
+    Set inputRange = Union(Sh.Range("B3:C82"), Sh.Range("D3:D82"), Sh.Range("E3:F82"), Sh.Range("I3:J82"), Sh.Range("M3:N82"), Sh.Range("O18:Q28"))
     
     If PID_IsWorkerMonthSheet(Sh) And PID_IsMonthSheetVormonatInputEditable(Sh) Then
         Set inputRange = Union(inputRange, Sh.Range("Q12:R12"))
@@ -565,6 +575,26 @@ Private Sub EnforcePasteValuesOnly(ByVal Sh As Object, ByVal Target As Range, By
     If affectedRange Is Nothing Then Exit Sub
     
     If Not IsProbablyPaste(Target) Then Exit Sub
+    
+    ' Anzeigetext vor Undo sichern (fuehrende Nullen / Text-IDs in B/C/M/N).
+    Set textFormatRange = Union(Sh.Range("B3:C82"), Sh.Range("M3:N82"))
+    Set textAffected = Intersect(Target, textFormatRange)
+    Set textByAddress = New Collection
+    
+    If Not textAffected Is Nothing Then
+        For Each c In textAffected.Cells
+            If c.MergeCells Then
+                Set writeCell = c.mergeArea.Cells(1, 1)
+            Else
+                Set writeCell = c
+            End If
+            
+            addrKey = writeCell.Address(False, False)
+            If Not PID_CollectionHasKey(textByAddress, addrKey) Then
+                textByAddress.Add CStr(writeCell.Text), addrKey
+            End If
+        Next c
+    End If
     
     pastedValues = Target.Value
     
@@ -582,19 +612,81 @@ Private Sub EnforcePasteValuesOnly(ByVal Sh As Object, ByVal Target As Range, By
             valueToWrite = pastedValues(relRow, relCol)
         End If
         
+        forceText = (c.Column = 2 Or c.Column = 3 Or c.Column = 13 Or c.Column = 14)
+        
         If c.MergeCells Then
             mergeKey = c.mergeArea.Address
+            Set writeCell = c.mergeArea.Cells(1, 1)
             
             If Not PID_CollectionHasKey(handledMerges, mergeKey) Then
                 handledMerges.Add mergeKey, mergeKey
-                c.mergeArea.Cells(1, 1).Value = valueToWrite
+                
+                If forceText Then
+                    addrKey = writeCell.Address(False, False)
+                    If PID_CollectionHasKey(textByAddress, addrKey) Then
+                        valueToWrite = textByAddress.Item(addrKey)
+                    End If
+                    c.mergeArea.NumberFormat = "@"
+                    writeCell.Value = CStr(valueToWrite)
+                Else
+                    writeCell.Value = valueToWrite
+                End If
             End If
         Else
-            c.Value = valueToWrite
+            If forceText Then
+                addrKey = c.Address(False, False)
+                If PID_CollectionHasKey(textByAddress, addrKey) Then
+                    valueToWrite = textByAddress.Item(addrKey)
+                End If
+                c.NumberFormat = "@"
+                c.Value = CStr(valueToWrite)
+            Else
+                c.Value = valueToWrite
+            End If
         End If
     Next c
     
     pasteHandled = True
+    
+SafeExit:
+End Sub
+
+
+' FP-032 / TR-02: B/C (Personal-ID/Name) und M/N immer Textformat — auch bei Tastatur-Eingabe.
+Private Sub EnsureMonthSheetTextInputFormats(ByVal Sh As Object, ByVal Target As Range)
+    Dim textRange As Range
+    Dim affected As Range
+    Dim c As Range
+    Dim handledMerges As Collection
+    Dim mergeKey As String
+    
+    On Error GoTo SafeExit
+    
+    If Sh Is Nothing Then Exit Sub
+    If Target Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(Sh) Then Exit Sub
+    
+    Set textRange = Union(Sh.Range("B3:C82"), Sh.Range("M3:N82"))
+    Set affected = Intersect(Target, textRange)
+    If affected Is Nothing Then Exit Sub
+    
+    Set handledMerges = New Collection
+    
+    For Each c In affected.Cells
+        If c.MergeCells Then
+            mergeKey = c.mergeArea.Address
+            If Not PID_CollectionHasKey(handledMerges, mergeKey) Then
+                handledMerges.Add mergeKey, mergeKey
+                If c.mergeArea.NumberFormat <> "@" Then
+                    c.mergeArea.NumberFormat = "@"
+                End If
+            End If
+        Else
+            If c.NumberFormat <> "@" Then
+                c.NumberFormat = "@"
+            End If
+        End If
+    Next c
     
 SafeExit:
 End Sub
@@ -609,27 +701,50 @@ Private Function IsProbablyPaste(ByVal Target As Range) As Boolean
     
     undoText = LCase$(Trim$(CStr(undoText)))
     
+    ' Umlaute/Akzente normalisieren (DE/FR Undo-Texte).
+    undoText = Replace$(undoText, ChrW(252), "u")
+    undoText = Replace$(undoText, ChrW(220), "u")
+    undoText = Replace$(undoText, ChrW(233), "e")
+    undoText = Replace$(undoText, ChrW(232), "e")
+    
+    ' Mehrzellen-Aenderung: typisch Paste / Drag-Fill.
     If Target.CountLarge > 1 Then
         IsProbablyPaste = True
         Exit Function
     End If
     
+    ' EN
     If InStr(undoText, "paste") > 0 Then
         IsProbablyPaste = True
         Exit Function
     End If
     
-    If InStr(undoText, "einf" & Chr(252) & "gen") > 0 Then
+    ' DE: einfuegen / einfugen (nach Umlaut-Normalisierung)
+    If InStr(undoText, "einfugen") > 0 Or InStr(undoText, "einfuegen") > 0 Then
         IsProbablyPaste = True
         Exit Function
     End If
     
-    If InStr(undoText, "einfuegen") > 0 Then
-        IsProbablyPaste = True
-        Exit Function
-    End If
-    
+    ' HU
     If InStr(undoText, "beilleszt") > 0 Then
+        IsProbablyPaste = True
+        Exit Function
+    End If
+    
+    ' FR / IT / ES / NL
+    If InStr(undoText, "coller") > 0 _
+       Or InStr(undoText, "incolla") > 0 _
+       Or InStr(undoText, "pegar") > 0 _
+       Or InStr(undoText, "plakken") > 0 Then
+        IsProbablyPaste = True
+        Exit Function
+    End If
+    
+    ' Drag-Fill / AutoFill (EN/DE) — sonst bleibt Quellformat oft haengen.
+    If InStr(undoText, "fill") > 0 _
+       Or InStr(undoText, "autofill") > 0 _
+       Or InStr(undoText, "ausfullen") > 0 _
+       Or InStr(undoText, "ausfuellen") > 0 Then
         IsProbablyPaste = True
         Exit Function
     End If

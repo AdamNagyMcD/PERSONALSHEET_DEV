@@ -354,3 +354,23 @@ Für denselben Mitarbeiter (Feld F, Stunden):
 ### Negative checks
 - Eine N-Änderung in einer Zeile OHNE Austrittsdatum ändert die Rate nicht (kein Austritt).
 - Layout unverändert; nur der unmittelbare Q31-Trigger hört jetzt zusätzlich auf Spalte N.
+
+---
+
+## TEST 25 — Paste als Text in B/C/M/N + Panel O18:Q28 (FP-032 / TR-02)
+
+### Scenario
+1. Monatsblatt: in B3 eine Personal-ID mit führenden Nullen aus einer anderen Zelle/Datei einfügen (z.B. `00123`).
+2. In C3 einen namenähnlichen Text mit Datums-/Zahlenoptik einfügen (z.B. `01.02.Muster`).
+3. Optional: M/N Freitext einfügen; Panelzelle in O18:Q28 (inkl. Zeile 26–28) aus formatierter Quelle einfügen.
+4. Mehrzellen-Paste über B3:C4.
+5. Normale Tastatur-Eingabe in D3 (Datum) und F3 (Stunden) — Kontrolle, dass Zahl-/Datumsformat erhalten bleibt.
+
+### Expected
+- B/C (und M/N) haben nach Paste `NumberFormat = @` (Text); Wert unverändert, führende Nullen erhalten.
+- Panel O18:Q28: nur Werte übernommen (kein Quell-Zahlen-/Währungsformat „kleben“).
+- D/F unverändert nutzbar (Datum bzw. Zahl), kein erzwungenes `@`.
+
+### Negative checks
+- Ein-Zellen-Tipp in B/C setzt/hält Textformat, ohne bestehende Werte zu löschen.
+- CopyData / E-F-Logging / Fluktuation durch diesen Paste-Pfad nicht beeinträchtigt.

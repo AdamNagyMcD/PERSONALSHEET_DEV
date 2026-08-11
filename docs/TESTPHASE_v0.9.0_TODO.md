@@ -3,13 +3,13 @@
 **Forrás:** Restaurant-Manager teszt, első nagy tesztfázis  
 **Dátum:** 2026-06-19 (utolsó frissítés: 2026-07-09)  
 **Verzió:** Personalsheet Test-Release v0.9.0-test  
-**Státusz:** Gyűjtés folyamatban — implementáció a következő napokban indul  
+**Státusz:** Gyűjtés folyamatban — TR-02 (FP-032) kód kész, manuális spot-check nyitott  
 **Teljes release:** 2027 (addig több kolléga tesztel)
 
 ### Teszt összkép (2026-07-09)
 
 - Általános visszajelzés: **jó, stabilan működik** a sheet a gyakorlati használatban.
-- Ismert problémák: TR-01 … TR-04 (lásd alább) + TR-05 áttekintés.
+- Ismert problémák: TR-01, TR-03, TR-04 + TR-05 áttekintés; **TR-02** → FP-032 implementálva (2026-07-24).
 - Új észrevételek: folyamatosan ide kerülnek; commit/push csak kérésre.
 
 ---
@@ -20,7 +20,7 @@
 |----|-----------|-------|-----------|---------|
 | TR-01 | 🔴 Magas | Bug | Personal ID beragad CopyData után | ⬜ Nyitott |
 | TR-05 | 🟡 Közepes | Review | Alap gyorsítás & egyszerűsítés áttekintés | ⬜ Nyitott |
-| TR-02 | 🟡 Közepes | Bug | Bemásolás nem mindig sima TEXT | ⬜ Nyitott |
+| TR-02 | 🟡 Közepes | Bug | Bemásolás nem mindig sima TEXT | ✅ Kész (FP-032) |
 | TR-03 | 🟡 Közepes | Feature (1. fázis) | Minden adat törlése gomb | ⬜ Nyitott |
 | TR-04 | 🟢 Alacsony (2. fázis) | Feature | Új év indítása | ⬜ Nyitott |
 
@@ -130,9 +130,9 @@
 
 ## TR-02 — Bemásolás nem mindig sima TEXT formátum
 
-**Státusz:** ⬜ Nyitott  
+**Státusz:** ✅ Kész (FP-032, 2026-07-24) — manuális Win/Mac spot-check nyitott  
 **Prioritás:** 🟡 Közepes  
-**Modul(ok):** `DieseArbeitsmappe.cls`, esetleg `mod_FormatMonthSheet.bas`
+**Modul(ok):** `DieseArbeitsmappe.cls`, `mod_FormatMonthSheet.bas`
 
 ### Tünet (teszt visszajelzés)
 
@@ -148,17 +148,24 @@
 
 ### Teendők
 
-- [ ] Paste handler: B/C (esetleg M/N) mindig `NumberFormat = "@"` beillesztés után.
-- [ ] `IsProbablyPaste` erősítése (több nyelv, Mac).
-- [ ] Allowlist frissítése: `O18:Q25` → `O18:Q28`.
-- [ ] Opcionális: engedélyezett tartományban **minden** SheetChange után formátum-ellenőrzés, nem csak paste-nél.
-- [ ] Teszt: Personal ID `00123`, dátum-szerű szöveg, több cellás paste, Mac + Win.
+- [x] Paste handler: B/C (és M/N) mindig `NumberFormat = "@"` beillesztés után (Anzeigetext vor Undo).
+- [x] `IsProbablyPaste` erősítése (EN/DE/HU/FR/IT/ES/NL, AutoFill).
+- [x] Allowlist frissítése: `O18:Q25` → `O18:Q28`.
+- [x] Engedélyezett tartományban B/C/M/N SheetChange után formátum-ellenőrzés (`EnsureMonthSheetTextInputFormats`).
+- [ ] Teszt: Personal ID `00123`, dátum-szerű szöveg, több cellás paste, Mac + Win (TEST 25).
 
 ### Elfogadási kritériumok
 
-- [ ] B/C bemásolás után mindig szöveg formátum, érték változatlan.
-- [ ] O18:Q28 panel paste szintén values-only.
-- [ ] Normál kézi beírás nem tör el.
+- [x] B/C bemásolás után mindig szöveg formátum, érték változatlan (kód).
+- [x] O18:Q28 panel paste szintén values-only (kód).
+- [x] Normál kézi beírás nem tör el (csak `@` a B/C/M/N-en; D/E/F/I/J érintetlen).
+- [ ] Manuális Win + Mac spot-check (TEST 25).
+
+### Implementáció (2026-07-24)
+
+- `EnforcePasteValuesOnly`: Panel `O18:Q28`; B/C/M/N Text vor Undo → `@` + Wert zurück.
+- `EnsureMonthSheetTextInputFormats` nach jedem SheetChange auf B/C/M/N.
+- `PID_ApplyMonthSheetTextInputFormats` in FormatMonthSheet (Layout/Employee-Block).
 
 ---
 
