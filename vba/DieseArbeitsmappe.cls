@@ -52,9 +52,7 @@ Private Sub Workbook_Open()
     Application.EnableEvents = False
     Application.Calculation = xlCalculationManual
     
-    On Error Resume Next
-    Application.FormatStaleValues = False
-    Err.Clear
+    PID_DisableStaleValueFormatting
     
     PID_EnsureKVCodeListNamedRange
     
@@ -328,8 +326,6 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     Application.ScreenUpdating = False
     
     On Error Resume Next
-    Application.FormatStaleValues = False
-    Err.Clear
     
     ' Recalc-Abschnitt mit Resume Next: ein Fehler in Dropdown/Lohn-Recalc darf
     ' das E/F-Logging nicht verhindern.

@@ -27,13 +27,34 @@ Private mViewPreserveScrollRow As Long
 Private mViewPreserveScrollCol As Long
 Private mViewPreserveDepth As Long
 
+Private mStaleValueFormattingChecked As Boolean
+
+
+' Application.FormatStaleValues gibt es erst ab Microsoft 365. Frueh gebunden
+' (Application.FormatStaleValues = ...) meldet Excel 2016 beim Kompilieren
+' "Methode oder Datenobjekt nicht gefunden" — On Error hilft dort nicht, weil der
+' Fehler schon beim Kompilieren entsteht. Ueber ein Object laeuft die Aufloesung
+' erst zur Laufzeit; in Excel 2016 schlaegt der Aufruf still fehl.
+' Die Eigenschaft gilt fuer die ganze Excel-Anwendung, deshalb genuegt einmal
+' je Sitzung statt bei jeder Zellaenderung.
+Public Sub PID_DisableStaleValueFormatting()
+    Dim excelApp As Object
+    
+    If mStaleValueFormattingChecked Then Exit Sub
+    
+    On Error Resume Next
+    mStaleValueFormattingChecked = True
+    Set excelApp = Application
+    excelApp.FormatStaleValues = False
+    Err.Clear
+End Sub
+
 
 ' Frueher: Manual fuer schnelles Oeffnen — Endanwender sahen leere H/K/L-Formeln.
 ' Jetzt: Automatisch + EnableCalculation; Open bleibt kurz Manual nur in Workbook_Open.
 Public Sub PID_ConfigureDeferredWorkbookCalculationOnOpen()
     On Error Resume Next
-    Application.FormatStaleValues = False
-    Err.Clear
+    PID_DisableStaleValueFormatting
     PID_EnableCalculationForAllSheets
     Application.Calculation = xlCalculationAutomatic
 End Sub
@@ -155,12 +176,6 @@ Public Sub PID_RecalculateMonthFormulaColumns(ByVal wsMonth As Worksheet)
 End Sub
 
 
-Public Sub PID_EnsureWorksheetCalculationEnabled(ByVal ws As Worksheet)
-    On Error Resume Next
-    Application.FormatStaleValues = False
-End Sub
-
-
 Public Sub PID_EnableCalculationForAllSheets()
     Dim ws As Worksheet
     
@@ -169,11 +184,6 @@ Public Sub PID_EnableCalculationForAllSheets()
         ws.EnableCalculation = True
         Err.Clear
     Next ws
-End Sub
-
-
-Public Sub PID_RecalculateAllMonthFluctuation()
-    RefreshFluktuationAll
 End Sub
 
 
