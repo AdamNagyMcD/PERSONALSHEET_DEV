@@ -164,3 +164,13 @@ End Function
 Public Function PID_UTxtErgaenzt() As String
     PID_UTxtErgaenzt = "erg" & PID_UTxtAe() & "nzt"
 End Function
+
+
+Public Function PID_UTxtAlleDatenLoeschen() As String
+    PID_UTxtAlleDatenLoeschen = "Alle Daten " & PID_UTxtLoeschen()
+End Function
+
+
+Public Function PID_UTxtRueckgaengig() As String
+    PID_UTxtRueckgaengig = "r" & PID_UTxtUe() & "ckg" & PID_UTxtAe() & "ngig"
+End Function

@@ -39,6 +39,7 @@ Public Sub PID_ShowAdminMacroInfo()
     msg = msg & "- PID_AdminShowActionLog (letzte Aktionen anzeigen)" & vbCrLf
     msg = msg & "- PID_PruefeFormelspalten (Formeln G/H/K/L pr" & PID_UTxtUe() & "fen)" & vbCrLf
     msg = msg & "- PID_FormelspaltenReparieren (fehlende Formeln " & PID_UTxtErgaenzt() & ")" & vbCrLf
+    msg = msg & "- AlleDatenLoeschen / PID_ClearAllWorkbookData (alle 12 Monate leeren)" & vbCrLf
     msg = msg & "- RebuildLOHNTABELLE" & vbCrLf
     msg = msg & "- UnprotectEverything" & vbCrLf & vbCrLf
     msg = msg & "Siehe docs/RELEASE.md"
