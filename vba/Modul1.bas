@@ -834,7 +834,10 @@ Private Sub PID_ApplyLetztesGehaltFormulaToSheet(ByVal ws As Worksheet, _
         firstCell.FormulaR1C1 = formulaR1C1
     ElseIf Len(existingFormula) > 3 And InStr(1, existingFormula, "#REF", vbTextCompare) = 0 Then
         If Left$(existingFormula, 1) = "=" Then existingFormula = Mid$(existingFormula, 2)
-        wrappedFormula = "=IF(OR($B" & CStr(rowNum) & "="",$C" & CStr(rowNum) & "=""),""""," & _
+        ' Vier Anfuehrungszeichen ergeben in der Formel den leeren Text "".
+        ' Mit zwei Zeichen entstand frueher OR($B3=",$C3=") - ein Textvergleich,
+        ' der immer FALSCH ist, statt des gewollten B/C-Schutzes.
+        wrappedFormula = "=IF(OR($B" & CStr(rowNum) & "="""",$C" & CStr(rowNum) & "=""""),""""," & _
             "IF(" & existingFormula & "=0,""""," & existingFormula & "))"
         firstCell.Formula = wrappedFormula
     Else
@@ -1208,7 +1211,6 @@ Public Function PID_RestoreUrlaubGeldFormulasSilent() As Long
     Dim ws As Worksheet
     Dim i As Long
     Dim formulaR1C1 As String
-    Dim wasProtected As Boolean
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
 
@@ -1232,26 +1234,45 @@ Public Function PID_RestoreUrlaubGeldFormulasSilent() As Long
         On Error GoTo SafeExit
 
         If Not ws Is Nothing Then
-            wasProtected = ws.ProtectContents
-            If Not PID_TryUnprotectMonthSheetForMacro(ws) Then GoTo NextSheet
-
-            ws.Range("K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW).FormulaR1C1 = formulaR1C1
-
-            On Error Resume Next
-            ws.Range("K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW).Calculate
-            Err.Clear
-            On Error GoTo SafeExit
-
-            If wasProtected Then PID_ReprotectWorksheet ws
-            PID_RestoreUrlaubGeldFormulasSilent = PID_RestoreUrlaubGeldFormulasSilent + 1
+            If PID_RestoreUrlaubGeldFormulasOnSheet(ws, formulaR1C1) Then
+                PID_RestoreUrlaubGeldFormulasSilent = PID_RestoreUrlaubGeldFormulasSilent + 1
+            End If
         End If
-
-NextSheet:
     Next i
 
 SafeExit:
     Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEnableEvents
+End Function
+
+
+' TR-10: pro Blatt eigene Fehlerbehandlung. Vorher hat ein Fehler auf Januar die
+' restlichen elf Monate uebersprungen und das Blatt entsperrt zurueckgelassen.
+Private Function PID_RestoreUrlaubGeldFormulasOnSheet(ByVal ws As Worksheet, _
+                                                      ByVal formulaR1C1 As String) As Boolean
+    Dim wasProtected As Boolean
+    Dim unprotected As Boolean
+
+    On Error GoTo SafeExit
+
+    If ws Is Nothing Then Exit Function
+
+    wasProtected = ws.ProtectContents
+    If Not PID_TryUnprotectMonthSheetForMacro(ws) Then Exit Function
+    unprotected = wasProtected
+
+    ws.Range("K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW).FormulaR1C1 = formulaR1C1
+
+    On Error Resume Next
+    ws.Range("K" & PID_FIRST_ROW & ":K" & PID_LAST_ROW).Calculate
+    Err.Clear
+    On Error GoTo SafeExit
+
+    PID_RestoreUrlaubGeldFormulasOnSheet = True
+
+SafeExit:
+    On Error Resume Next
+    If unprotected Then PID_ReprotectWorksheet ws
 End Function
 
 

@@ -15,7 +15,7 @@ Private Const PID_ADMIN_BTN_HEIGHT As Double = 30#
 Private Const PID_ADMIN_BTN_GAP_H As Double = 14#
 Private Const PID_ADMIN_BTN_GAP_V As Double = 10#
 Private Const PID_ADMIN_BTN_COLS As Long = 2
-Private Const PID_ADMIN_BTN_COUNT As Long = 18
+Private Const PID_ADMIN_BTN_COUNT As Long = 20
 
 
 Public Sub PID_EnsureAdminSheet()
@@ -361,6 +361,10 @@ Private Sub PID_AdminGetButtonSpec(ByVal index As Long, _
             btnKey = "Feedback": btnLabel = "Fehler melden": btnMacro = "PID_AdminFehlerMelden": btnStyle = 1
         Case 16
             btnKey = "ActionLog": btnLabel = "Aktionsprotokoll": btnMacro = "PID_AdminShowActionLog": btnStyle = 3
+        Case 17
+            btnKey = "CheckFormulas": btnLabel = "Formeln pr" & PID_UTxtUe() & "fen": btnMacro = "PID_PruefeFormelspalten": btnStyle = 1
+        Case 18
+            btnKey = "FixFormulas": btnLabel = "Formeln reparieren": btnMacro = "PID_FormelspaltenReparieren": btnStyle = 2
         Case Else
             btnKey = "Hide": btnLabel = "Admin verbergen": btnMacro = "PID_AdminHidePanel": btnStyle = 3
     End Select

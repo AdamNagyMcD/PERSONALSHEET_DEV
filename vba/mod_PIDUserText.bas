@@ -154,3 +154,13 @@ End Function
 Public Function PID_UTxtMoeglich() As String
     PID_UTxtMoeglich = "m" & PID_UTxtOe() & "glich"
 End Function
+
+
+Public Function PID_UTxtGeprueft() As String
+    PID_UTxtGeprueft = "Gepr" & PID_UTxtUe() & "ft"
+End Function
+
+
+Public Function PID_UTxtErgaenzt() As String
+    PID_UTxtErgaenzt = "erg" & PID_UTxtAe() & "nzt"
+End Function

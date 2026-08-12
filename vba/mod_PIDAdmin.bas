@@ -37,6 +37,8 @@ Public Sub PID_ShowAdminMacroInfo()
     msg = msg & "- PID_AdminMitarbeiterEntfernen (Mitarbeiter aus Monaten entfernen)" & vbCrLf
     msg = msg & "- PID_AdminFehlerMelden (Fehlermeldung mit Kontext erstellen)" & vbCrLf
     msg = msg & "- PID_AdminShowActionLog (letzte Aktionen anzeigen)" & vbCrLf
+    msg = msg & "- PID_PruefeFormelspalten (Formeln G/H/K/L pr" & PID_UTxtUe() & "fen)" & vbCrLf
+    msg = msg & "- PID_FormelspaltenReparieren (fehlende Formeln " & PID_UTxtErgaenzt() & ")" & vbCrLf
     msg = msg & "- RebuildLOHNTABELLE" & vbCrLf
     msg = msg & "- UnprotectEverything" & vbCrLf & vbCrLf
     msg = msg & "Siehe docs/RELEASE.md"
@@ -70,6 +72,11 @@ Public Sub PID_FullSystemRefresh()
     Dim oldDisplayAlerts As Boolean
     Dim oldCalculation As XlCalculation
     
+    Dim checkedSheets As Long
+    Dim repairedCells As Long
+    Dim repairedSheets As Long
+    Dim fixedIndexSheets As Long
+    
     On Error GoTo CleanFail
     
     oldEnableEvents = Application.EnableEvents
@@ -93,6 +100,11 @@ Public Sub PID_FullSystemRefresh()
     PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty
     
+    ' TR-10: Sicherheitsnetz nach den vier Spalten-Wiederherstellungen. Diese
+    ' ueberspringen ein Monatsblatt still, wenn der Monatsindex in A1 fehlt oder
+    ' nicht passt - hier werden A1 und einzelne fehlende Formeln zeilenweise ergaenzt.
+    checkedSheets = PID_RepairFormulaColumnsSilent(repairedCells, repairedSheets, fixedIndexSheets)
+    
     RefreshFluktuationAll
     
     PID_RestoreFinanzSummaryOnUbersicht
@@ -112,7 +124,10 @@ Public Sub PID_FullSystemRefresh()
     Application.CalculateFull
     On Error GoTo CleanFail
     
-    MsgBox "Personalsheet wurde " & PID_UTxtVollstaendig() & " aktualisiert.", _
+    MsgBox "Personalsheet wurde " & PID_UTxtVollstaendig() & " aktualisiert." & vbCrLf & vbCrLf & _
+           "Formelspalten G/H/K/L " & PID_UTxtGeprueft() & ": " & checkedSheets & " " & PID_UTxtMonatsblaetter() & vbCrLf & _
+           "Fehlende Formeln " & PID_UTxtErgaenzt() & ": " & repairedCells & " Zellen" & vbCrLf & _
+           "Monatsindex A1 korrigiert: " & fixedIndexSheets, _
            vbInformation, "System Refresh"
 
 CleanExit:
