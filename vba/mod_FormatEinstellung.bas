@@ -110,7 +110,9 @@ Public Sub PID_FormatEinstellungSheet()
         .Range("E22:E33").NumberFormat = "0.00%"
         .Range("H6:I17").NumberFormat = "0.00"
         .Range("K6:L17").NumberFormat = "0.00"
-        .Range("N6:O17").NumberFormat = "0.00"
+        ' N6:N17 sind Monatsbeschriftungen, nur O6:O17 traegt den Nachtzuschlag-Betrag.
+        .Range("N6:N17").NumberFormat = "0.00"
+        PID_ApplyEuroNumberFormat .Range("O6:O17")
         .Range("H22:I33").NumberFormat = "0.00"
         .Range("K22:L33").NumberFormat = "0.00"
         .Range("C35").NumberFormat = "0"

@@ -81,6 +81,27 @@ Ráadásul mindegyik Silent változat elnyeli a hibát, így semmilyen visszajel
 
 **Windows-on ellenőrizendő:** TEST 31 (A–D forgatókönyv).
 
+### 3. „Formeln reparieren" lefutott, az L mégis üres maradt — a valódi gyökérok (2026-08-12)
+
+A 2. pont javításai után is üres maradt `Februar!L3:L5`. Az ok nem a visszaállító
+logikában volt, hanem magában a képletben: a `PID_GetLetztesGehaltFormulaR1C1()` által
+összefűzött szövegben **két záró zárójellel több** volt a kelleténél (a mag képlet
+zárójel-mérlege −2, a duplázás miatt a teljesé −4). Ez érvénytelen képlet, ezért minden
+`.FormulaR1C1 = …` írás 1004-es hibát dobott, amit a `PID_EnsureCellFormula` és a Silent
+visszaállítók hibakezelése elnyelt. Emiatt:
+
+- a hiányzó L cellák soha nem kaptak képletet (a javító „lefutott", de nem írt semmit);
+- a többi L cellában bennragadt a régi, hibás wrapperes képlet, mert a felülírás
+  ugyanígy elbukott.
+
+**Javítás:** `Modul1.bas`, `PID_GetLetztesGehaltFormulaR1C1()` — a két
+`…+RC[-1])))),` szegmens `…+RC[-1])))` -re javítva. Ellenőrizve: a generált képlet
+karakterre azonos a munkafüzetben ténylegesen működő `Januar!L3` maggal (720 karakter,
+zárójel-mérleg 0).
+
+**Teendő Windows-on:** `ResetAndImportVBAFiles` → „Formeln reparieren" → az L oszlop
+minden hónapban kiszámol.
+
 ---
 
 ## Prioritás összefoglaló

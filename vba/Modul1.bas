@@ -927,12 +927,12 @@ Public Function PID_GetLetztesGehaltFormulaR1C1() As String
         "IF(YEAR(RC[-8])<" & yearRef & "," & _
         "IF(ISNUMBER(RC[-3]),IF(YEAR(RC[-3])<" & yearRef & ",0," & _
         "IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
-        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1]))))," & _
+        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1])))," & _
         "RC[-5]+RC[-1])," & _
         "IF(YEAR(RC[-8])=" & yearRef & "," & _
         "IF(MONTH(RC[-8])<R1C1,IF(ISNUMBER(RC[-3]),IF(YEAR(RC[-3])<" & yearRef & ",0," & _
         "IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
-        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1])))),RC[-5])," & _
+        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1]))),RC[-5])," & _
         "IF(MONTH(RC[-8])=R1C1,IF(ISNUMBER(RC[-3]),IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
         "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(RC[-3]-RC[-8]+1)+RC[-1])," & _
         "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(DAY(EOMONTH(RC[-8],0))-DAY(RC[-8])+1)+RC[-1]),0)),0))),0)"

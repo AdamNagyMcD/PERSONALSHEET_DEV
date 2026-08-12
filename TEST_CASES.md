@@ -762,3 +762,41 @@ oder `_ADMIN` → **„Alle Daten löschen"**.
   Overrides mehr; ein früher überschriebener Monatswert kehrt nicht zurück.
 - Das Aktionsprotokoll enthält den Eintrag „Alle Daten loeschen".
 - Formate, Zebra-Streifen, Kopfzeilen, Buttons und Dropdowns bleiben erhalten.
+
+---
+
+## TEST 33 — Einheitliches Layout der Monatsblätter
+
+Module: `mod_FormatMonthSheet.bas`, `mod_FormatEinstellung.bas`.
+Einstieg: **Alt+F8** → `ADMIN_30_Format_Alle_Monate`, danach `ADMIN_32_Format_EINSTELLUNG`.
+
+### Scenario A — Zeilenhöhe
+1. `ADMIN_30_Format_Alle_Monate` ausführen.
+2. Auf mehreren Monatsblättern die Zeilen 3 bis 82 markieren und die Höhe ablesen
+   (Rechtsklick auf den Zeilenkopf → *Zeilenhöhe*).
+
+### Expected A
+- Jede Zeile 3–82 ist **22** hoch, auf allen zwölf Blättern einschließlich Januar.
+- Die Höhe bleibt gleich, auch in Zeilen mit ausgefülltem Austrittsgrund (Spalte N).
+
+### Scenario B — Zeilenhöhe bleibt nach CopyData
+1. In einer Zeile einen Austrittsgrund aus dem Dropdown in Spalte N wählen.
+2. `CopyData` starten.
+
+### Expected B
+- Die betroffene Zeile ist weiterhin 22 hoch — vorher wurde sie auf 18 zusammengezogen.
+
+### Scenario C — Ausrichtung und Schriftgröße
+1. Beliebige Zellen in `A3:N82` anklicken und Ausrichtung sowie Schriftgröße prüfen.
+
+### Expected C
+- Alle Spalten A bis N sind vertikal **mittig** ausgerichtet.
+- Spalten B bis N stehen auf **11 Punkt** (vorher B und N auf 12), Spalte A bleibt bei 8.
+- Die horizontale Ausrichtung ist unverändert: B, C, M, N links, der Rest zentriert.
+
+### Scenario D — EINSTELLUNG Nachtzuschläge
+1. `ADMIN_32_Format_EINSTELLUNG` ausführen, dann `O6:O17` ansehen.
+
+### Expected D
+- Die Beträge erscheinen als Eurowert (z. B. `€ 2.860,00`), nicht als `2860,00`.
+- `N6:N17` zeigt weiterhin die Monatsbeschriftungen.

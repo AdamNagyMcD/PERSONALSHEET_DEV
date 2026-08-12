@@ -39,8 +39,9 @@ Private Const PID_MS_PANEL_BUTTON_MIN_HEIGHT As Double = 14
 ' FP-017: dd.mm.yyyy in D (Eintritt) und I (Austritt) — breiter als Default (~11).
 Private Const PID_MS_DATE_COLUMN_WIDTH As Double = 13
 Private Const PID_MS_AUSTRITTSGRUND_COL_WIDTH As Double = 34
-Private Const PID_MS_AUSTRITTSGRUND_MIN_ROW_HEIGHT As Single = 18
-Private Const PID_MS_AUSTRITTSGRUND_MAX_ROW_HEIGHT As Single = 72
+' Einheitliche Schriftgroesse im Mitarbeiterblock B bis N; Spalte A bleibt bewusst
+' kleiner, dort steht nur die laufende Nummer.
+Private Const PID_MS_EMPLOYEE_FONT_SIZE As Single = 11
 Private Const PID_MS_ROW_INDEX_COL_WIDTH As Double = 3.82
 Private Const PID_MS_ROW_INDEX_NUMBER_FORMAT As String = "@"
 Private Const PID_MS_EMPLOYEE_HEADER_FIRST_COL As Long = 1
@@ -229,9 +230,11 @@ Public Sub PID_ApplyMonthSheetDateColumnWidths(ByVal ws As Worksheet)
 End Sub
 
 
-' Spalte N (Austrittsgrund): Umbruch + Zeilenhoehe, damit lange Dropdown-Texte lesbar bleiben.
+' Spalte N (Austrittsgrund): breite Spalte und Umbruch, damit der Dropdown-Text in die
+' Zelle passt und nicht in den Panelbereich ueberlaeuft. Die Zeilenhoehe bleibt fest —
+' frueher hat ein AutoFit je Zeile mit Austrittsgrund die Hoehe auf 18 gezogen, wodurch
+' einzelne Mitarbeiterzeilen sichtbar flacher waren als der Rest.
 Public Sub PID_ApplyMonthSheetAustrittsgrundLayout(ByVal ws As Worksheet)
-    Dim r As Long
     Dim dataRange As Range
     
     On Error GoTo SafeExit
@@ -241,20 +244,25 @@ Public Sub PID_ApplyMonthSheetAustrittsgrundLayout(ByVal ws As Worksheet)
     
     ws.Columns("N").ColumnWidth = PID_MS_AUSTRITTSGRUND_COL_WIDTH
     
-    Set dataRange = ws.Range("N3:N82")
+    Set dataRange = ws.Range("N" & PID_FIRST_ROW & ":N" & PID_LAST_ROW)
     dataRange.WrapText = True
-    dataRange.VerticalAlignment = xlTop
+    dataRange.VerticalAlignment = xlCenter
     
-    For r = PID_FIRST_ROW To PID_LAST_ROW
-        If Len(Trim$(CStr(ws.Cells(r, "N").Value))) > 0 Then
-            ws.Rows(r).AutoFit
-            If ws.Rows(r).RowHeight < PID_MS_AUSTRITTSGRUND_MIN_ROW_HEIGHT Then
-                ws.Rows(r).RowHeight = PID_MS_AUSTRITTSGRUND_MIN_ROW_HEIGHT
-            ElseIf ws.Rows(r).RowHeight > PID_MS_AUSTRITTSGRUND_MAX_ROW_HEIGHT Then
-                ws.Rows(r).RowHeight = PID_MS_AUSTRITTSGRUND_MAX_ROW_HEIGHT
-            End If
-        End If
-    Next r
+    PID_ApplyMonthSheetUniformRowHeight ws
+    
+SafeExit:
+End Sub
+
+
+' Alle Mitarbeiterzeilen gleich hoch. Bewusst eine eigene Prozedur, damit jeder Pfad,
+' der an den Zeilen arbeitet (Format, CopyData, Geldspalten), die Hoehe wiederherstellt.
+Public Sub PID_ApplyMonthSheetUniformRowHeight(ByVal ws As Worksheet)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    ws.Rows(PID_FIRST_ROW & ":" & PID_LAST_ROW).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
     
 SafeExit:
 End Sub
@@ -280,6 +288,10 @@ Public Sub FormatAllMonthSheets()
                vbExclamation, "Monatsblatt Format"
         Exit Sub
     End If
+    
+    ' Das Referenzblatt ueberspringt die Schleife, Zeilenhoehe, Ausrichtung und
+    ' Schriftgroesse braucht es trotzdem — sonst bleibt genau Januar abweichend.
+    PID_ApplyMonthSheetEmployeeRowLayout wsRef
     
     For Each monthName In PID_MonthNames()
         If StrComp(CStr(monthName), PID_MS_PILOT_SHEET, vbTextCompare) <> 0 Then
@@ -528,15 +540,33 @@ Private Sub PID_MSApplyReferenceLayout(ByVal ws As Worksheet)
 End Sub
 
 
-' Sorszahlen in Spalte A (1., 2., ...) und einheitliche Datenzeilenhoehe.
+' Sorszahlen in Spalte A (1., 2., ...), einheitliche Datenzeilenhoehe, Ausrichtung
+' und Schriftgroesse im Mitarbeiterblock.
 Public Sub PID_ApplyMonthSheetEmployeeRowLayout(ByVal ws As Worksheet)
     If ws Is Nothing Then Exit Sub
     If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
     
     PID_ApplyMonthSheetRowIndexColumnLayout ws
     PID_MSRestoreEmployeeRowIndexColumn ws
-    ws.Rows(PID_FIRST_ROW & ":" & PID_LAST_ROW).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
+    PID_ApplyMonthSheetEmployeeTextLayout ws
+    PID_ApplyMonthSheetUniformRowHeight ws
     PID_ApplyMonthSheetAustrittsgrundLayout ws
+End Sub
+
+
+' A bis N vertikal mittig und einheitliche Schriftgroesse in B bis N. Ohne das standen
+' B-F, I, J und M am unteren Zellenrand, N oben und der Rest mittig; B und N waren
+' ausserdem 12 statt 11 Punkt gross.
+Public Sub PID_ApplyMonthSheetEmployeeTextLayout(ByVal ws As Worksheet)
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Sub
+    If Not PID_IsWorkerMonthSheet(ws) Then Exit Sub
+    
+    ws.Range("A" & PID_FIRST_ROW & ":N" & PID_LAST_ROW).VerticalAlignment = xlCenter
+    ws.Range("B" & PID_FIRST_ROW & ":N" & PID_LAST_ROW).Font.Size = PID_MS_EMPLOYEE_FONT_SIZE
+    
+SafeExit:
 End Sub
 
 
@@ -652,7 +682,7 @@ Private Sub PID_MSApplyEmployeeBlockStyles(ByVal ws As Worksheet)
     Next col
     
     PID_MSRestoreEmployeeRowIndexColumn ws
-    ws.Rows(PID_FIRST_ROW & ":" & PID_LAST_ROW).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
+    PID_ApplyMonthSheetUniformRowHeight ws
     
     PID_ApplyMonthSheetRowIndexColumnLayout ws
     PID_ApplyMonthEmployeeZebraRows ws
@@ -661,6 +691,7 @@ Private Sub PID_MSApplyEmployeeBlockStyles(ByVal ws As Worksheet)
     ws.Range("B3:N82").HorizontalAlignment = xlCenter
     ws.Range("B3:C82").HorizontalAlignment = xlLeft
     ws.Range("M3:N82").HorizontalAlignment = xlLeft
+    PID_ApplyMonthSheetEmployeeTextLayout ws
     
     PID_MSApplyBlockBorders ws.Range("A1:N2")
     PID_MSApplyBlockBorders ws.Range("A3:N82")
