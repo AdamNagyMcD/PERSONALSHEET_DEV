@@ -174,3 +174,13 @@ End Function
 Public Function PID_UTxtRueckgaengig() As String
     PID_UTxtRueckgaengig = "r" & PID_UTxtUe() & "ckg" & PID_UTxtAe() & "ngig"
 End Function
+
+
+Public Function PID_UTxtUebersicht() As String
+    PID_UTxtUebersicht = ChrW(220) & "bersicht"
+End Function
+
+
+Public Function PID_UTxtUebersprungen() As String
+    PID_UTxtUebersprungen = ChrW(252) & "bersprungen"
+End Function

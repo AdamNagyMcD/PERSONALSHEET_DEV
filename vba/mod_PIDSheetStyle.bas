@@ -156,15 +156,6 @@ Public Sub PID_StyleApplyInputHighlight(ByVal target As Range)
 End Sub
 
 
-Public Sub PID_StyleApplyEditableCell(ByVal target As Range)
-    With target
-        .Interior.Color = PID_StyleColorAccent()
-        .Font.Color = PID_StyleColorNavy()
-        .Font.Bold = False
-    End With
-End Sub
-
-
 Public Sub PID_StyleApplyInputCell(ByVal target As Range)
     With target
         .Interior.Color = vbWhite
@@ -207,15 +198,6 @@ Public Sub PID_StyleApplyReadOnlyGuideCell(ByVal target As Range)
         .Font.Bold = False
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
-    End With
-End Sub
-
-
-Public Sub PID_StyleApplyReadOnlyCell(ByVal target As Range)
-    With target
-        .Interior.Color = PID_StyleColorHeaderBg()
-        .Font.Color = PID_StyleColorNavy()
-        .Font.Bold = False
     End With
 End Sub
 

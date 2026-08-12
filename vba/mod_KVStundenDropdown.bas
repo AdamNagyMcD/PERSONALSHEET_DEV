@@ -739,28 +739,6 @@ SafeExit:
 End Sub
 
 
-Public Sub PID_InvalidateFStundenDropdownForRows(ByVal wsMonth As Worksheet, ByVal changedRange As Range)
-    Dim rowsToCheck As Range
-    Dim c As Range
-    
-    On Error GoTo SafeExit
-    
-    If wsMonth Is Nothing Then Exit Sub
-    If changedRange Is Nothing Then Exit Sub
-    
-    Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:E82"))
-    If rowsToCheck Is Nothing Then Exit Sub
-    
-    For Each c In rowsToCheck.Cells
-        On Error Resume Next
-        wsMonth.Cells(c.Row, "F").Validation.Delete
-        Err.Clear
-    Next c
-
-SafeExit:
-End Sub
-
-
 Public Sub PID_ClearStundenValuesCache()
     Set mStundenValuesCache = Nothing
 End Sub
@@ -1385,24 +1363,6 @@ CleanFail:
 End Sub
 
 
-Public Sub PID_EnsureKVCodeDropdownValidation()
-    PID_RestoreKVCodeDropdownValidationSilent
-End Sub
-
-
-Public Sub PID_EnsureKVCodeDropdownOnSheet(ByVal wsMonth As Worksheet)
-    On Error GoTo SafeExit
-    
-    If wsMonth Is Nothing Then Exit Sub
-    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
-    If PID_MonthSheetHasValidKVCodeDropdown(wsMonth) Then Exit Sub
-    
-    PID_RestoreKVCodeDropdownOnSheet wsMonth
-
-SafeExit:
-End Sub
-
-
 Public Sub PID_RestoreKVCodeDropdownValidationSilent()
     Dim monthNames As Variant
     Dim ws As Worksheet
@@ -1545,18 +1505,6 @@ Private Function PID_GetExcelColumnLetters(ByVal columnNumber As Long) As String
     
     PID_GetExcelColumnLetters = letters
 End Function
-
-
-Public Sub PID_RestoreFStundenDropdownOnSheet(ByVal wsMonth As Worksheet)
-    On Error GoTo SafeExit
-    
-    If wsMonth Is Nothing Then Exit Sub
-    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
-    
-    RefreshKVStundenDropdownForSheet wsMonth
-
-SafeExit:
-End Sub
 
 
 Public Function PID_RestoreKVCodeDropdownOnSheet(ByVal ws As Worksheet) As Boolean

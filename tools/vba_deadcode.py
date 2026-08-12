@@ -32,7 +32,9 @@ PROC_RE = re.compile(
     re.IGNORECASE,
 )
 IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
-EVENT_PREFIXES = ("workbook_", "worksheet_", "auto_", "app_")
+# Names that are entry points by definition: Excel event handlers and the numbered
+# developer macros from mod_ADMIN, which are started by hand from the macro list.
+EVENT_PREFIXES = ("workbook_", "worksheet_", "auto_", "app_", "admin_")
 
 
 def strip_line(line: str):

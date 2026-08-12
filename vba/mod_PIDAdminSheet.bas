@@ -15,7 +15,7 @@ Private Const PID_ADMIN_BTN_HEIGHT As Double = 30#
 Private Const PID_ADMIN_BTN_GAP_H As Double = 14#
 Private Const PID_ADMIN_BTN_GAP_V As Double = 10#
 Private Const PID_ADMIN_BTN_COLS As Long = 2
-Private Const PID_ADMIN_BTN_COUNT As Long = 21
+Private Const PID_ADMIN_BTN_COUNT As Long = 22
 
 
 Public Sub PID_EnsureAdminSheet()
@@ -367,6 +367,8 @@ Private Sub PID_AdminGetButtonSpec(ByVal index As Long, _
             btnKey = "FixFormulas": btnLabel = "Formeln reparieren": btnMacro = "PID_FormelspaltenReparieren": btnStyle = 2
         Case 19
             btnKey = "ClearAll": btnLabel = "Alle Daten l" & PID_UTxtOe() & "schen": btnMacro = "PID_ClearAllWorkbookData": btnStyle = 2
+        Case 20
+            btnKey = "AdminHelp": btnLabel = "ADMIN-Makros": btnMacro = "ADMIN_00_Hilfe": btnStyle = 1
         Case Else
             btnKey = "Hide": btnLabel = "Admin verbergen": btnMacro = "PID_AdminHidePanel": btnStyle = 3
     End Select

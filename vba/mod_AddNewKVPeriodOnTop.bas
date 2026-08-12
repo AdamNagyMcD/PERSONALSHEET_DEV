@@ -865,11 +865,6 @@ CleanFail:
 End Sub
 
 
-Private Sub PID_EnsureLOHNTABELLEButton()
-    PID_EnsureLOHNTABELLEButtons
-End Sub
-
-
 Private Sub PID_EnsureLOHNTABELLEButtons(Optional ByVal forceRecreate As Boolean = False)
     Dim wsKV As Worksheet
     Dim btn As Shape
