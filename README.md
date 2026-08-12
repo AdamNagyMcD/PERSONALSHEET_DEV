@@ -68,16 +68,25 @@ Reszletek: Kurzanleitung HTML.
 
 ## Admin / fejlesztoi makrok (🔴 — ne ettermi usernek)
 
-Modul: `mod_PIDAdmin.bas` — `PID_ShowAdminMacroInfo` listazza.
+Modul: `mod_ADMIN.bas`. Az **Alt+F8** listaban az `ADMIN_` nevek szamozottan,
+egymas mellett, a lista elejen jelennek meg. `ADMIN_00_Hilfe` mutatja az attekintest.
 
-| Makro | Veszely |
-|-------|---------|
-| `ResetAndImportVBAFiles` | Minden VBA modul ujraimport (Bestaetigung) |
-| `FullSystemRefresh` | Teljes workbook refresh (G/H/K/L kepletek potlasa is) |
-| `PID_PruefeFormelspalten` | Csak olvas: hol hianyzik keplet G/H/K/L-ben |
-| `PID_FormelspaltenReparieren` | Hianyzo G/H/K/L kepletek potlasa mind a 12 honapon |
-| `RebuildLOHNTABELLE` | KV tabla ujraepites |
-| `UnprotectEverything` | Minden lap feloldasa (Bestaetigung) |
+| Csoport | Makrok | Mit csinal |
+|---------|--------|------------|
+| **01–05 Setup / VBA** | `ADMIN_01_VBA_Import`, `ADMIN_02_VBA_Export`, `ADMIN_03_VBA_Reparatur_Nach_Import`, `ADMIN_04_Admin_Panel`, `ADMIN_05_Makro_Uebersicht` | VBA import a `vba\` mappabol, export a `vba_export\` mappaba, import utani keplet-helyreallitas, `_ADMIN` panel |
+| **10–18 Teszt / diagnosztika** | `ADMIN_10_Test_Smoke_Check`, `ADMIN_11_Test_Schnellcheck`, `ADMIN_12_Test_Performance`, `ADMIN_13_Test_Formelspalten`, `ADMIN_14_Test_Stunden_Log`, `ADMIN_15_Test_Aktionsprotokoll`, `ADMIN_16_Test_Ergebnisblatt`, `ADMIN_17/18_Tech_Blaetter_*` | Smoke teszt, gyorsellenorzes, teljesitmenymeres, keplet-ellenorzes, naplok, technikai lapok |
+| **20–28 Javitas** | `ADMIN_20_Reparatur_Full_Refresh`, `ADMIN_21_Reparatur_Formelspalten`, `ADMIN_22/23/24_Reparatur_*`, `ADMIN_25_Namen_Aufraeumen`, `ADMIN_26_Schutz_AN`, `ADMIN_27_Schutz_AUS`, `ADMIN_28_UEBERSICHT_Schutz` | Full refresh, G/H/K/L kepletek, dropdownok, `#REF!` nevek torlese, lapvedelem |
+| **30–38 Formazas / LOHNTABELLE** | `ADMIN_30..38` | Honaplapok es UEBERSICHT formazasa, KV tabla ujraepitese es javitasa |
+| **40–41 Adattorles** | `ADMIN_40_Daten_Stunden_Log_Leeren`, `ADMIN_41_Daten_Alles_Loeschen` | Visszafordithatatlan — dupla megerosites |
+
+Elnevezesi szabaly:
+
+- `ADMIN_NN_...` = fejlesztoi / karbantartasi makro (csak neked)
+- rovid nemet nev (`CopyData`, `DataClear`, …) = ettermi felhasznaloi makro
+- `PID_...` = belso technika, kezzel nem inditando
+
+A regi nevek valtozatlanul mukodnek: az `ADMIN_` bejegyzesek csak atiranyitasok,
+a gombok, esemenyek es a dokumentacio erintetlenek.
 
 ## Fejlesztoi ellenorzo szkriptek (Windows nelkul is futnak)
 

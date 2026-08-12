@@ -33,6 +33,7 @@ no Excel needed):
 | `python3 tools/vba_lint.py` | The compile errors you would otherwise only see on Windows: calls to undefined `PID_*` names, cross-module calls into `Private` procedures, duplicate public names ("Ambiguous name"), missing `GoTo` labels, unbalanced blocks, missing `Option Explicit`, wrong `Attribute VB_Name`, non-Excel-2016 formula functions. Exit code 1 on errors. |
 | `python3 tools/check_vba_sync.py` | Drift between the VBA embedded in `Personalsheet.xlsm` and `vba/`. Bootstrap modules are reported separately — they are never imported automatically, so `mod_ResetAndImportVBAFiles` in the workbook is an older revision and must be updated by hand in the VBA editor. |
 | `python3 tools/check_formula_columns.py` | Rows whose formulas in `G`/`H`/`K`/`L` are missing, plus a wrong month index in `A1`. Linux twin of the VBA macro `PID_PruefeFormelspalten`. |
+| `python3 tools/vba_deadcode.py` | Procedures with no reference anywhere. It also searches string literals (`Shape.OnAction`, `Application.Run`, `Application.OnKey`), cell formulas (UDFs), the docs and `tools/*.ps1`, so indirect calls are covered. Results are *candidates* — read the code before deleting, and never delete a plausible manual maintenance entry point. |
 
 The update script installs lightweight Python tooling (`oletools`, `openpyxl`). Use it to validate
 changes without Excel:
@@ -63,3 +64,11 @@ changes without Excel:
   never modify/regenerate/re-import them automatically (see `.cursor/rules.md`).
 - All VBA comments and user-facing strings are **German**; keep Excel 2016 formula compatibility
   (no XLOOKUP/LET/FILTER/dynamic arrays).
+- Excel 2016 compatibility is not only about formulas: an early bound call to an object model
+  member that only exists in Microsoft 365 (for example `Application.FormatStaleValues`) is a
+  **compile** error in 2016 that `On Error Resume Next` cannot catch. Call such members through
+  a late bound `Object` variable, or not at all.
+- Entry point naming: `ADMIN_NN_…` = developer/maintenance macro (grouped at the top of the
+  Alt+F8 list, defined in `vba/mod_ADMIN.bas` as thin forwarders), short German names
+  (`CopyData`, `DataClear`, …) = restaurant manager macros, `PID_…` = internal, never started by
+  hand. New developer tools belong in `mod_ADMIN.bas` as a numbered entry point.
