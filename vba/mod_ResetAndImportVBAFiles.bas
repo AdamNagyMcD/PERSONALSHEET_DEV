@@ -7,6 +7,27 @@ Attribute VB_Name = "mod_ResetAndImportVBAFiles"
 
 Option Explicit
 
+' BOOTSTRAP-MODUL. Zwei Regeln haben hier Vorrang vor allem anderen:
+'
+' 1. Das Modul darf KEINE andere Prozedur des Projekts frueh gebunden aufrufen.
+'    Es laeuft genau dann, wenn die anderen Module fehlen oder kaputt sind - ein
+'    Verweis auf z.B. PID_ConfirmAdminAction wuerde das Kompilieren verhindern und
+'    damit auch dieses Makro unstartbar machen. Deshalb eigene MsgBox-Texte und
+'    Application.Run fuer den Aufruf nach dem Import.
+'
+' 2. In den Import-Schleifen darf keine Hilfsfunktion Dir() aufrufen. Dir ist ein
+'    einziger globaler Iterator: ein zweiter Dir-Aufruf setzt die laufende Suche
+'    zurueck, die Schleife endet nach der ersten Datei - und dann sind alle Module
+'    geloescht, aber nicht wieder importiert. Deshalb werden die Dateinamen zuerst
+'    vollstaendig eingesammelt und erst danach verarbeitet, und Datei-Existenz wird
+'    ueber GetAttr geprueft.
+
+' Skip-Liste laut .cursor/rules.md; Referenz-Implementierung ist
+' tools/import_vba_and_repair.ps1. Gilt im Loesch- UND im Import-Schritt.
+Private Const PID_BOOTSTRAP_MODULE_1 As String = "mod_ResetAndImportVBAFiles"
+Private Const PID_BOOTSTRAP_MODULE_2 As String = "mod_CopyData"
+
+
 Public Sub ResetAndImportVBAFiles()
 
     Dim vbProj As Object
@@ -20,6 +41,8 @@ Public Sub ResetAndImportVBAFiles()
     Dim updatedCodeModules As Long
     Dim skipped As Long
     Dim compName As String
+    Dim basFiles() As String
+    Dim clsFiles() As String
 
     If InStr(1, Application.OperatingSystem, "Mac", vbTextCompare) > 0 Then
         pathSeparator = "/"
@@ -41,9 +64,13 @@ Public Sub ResetAndImportVBAFiles()
         Exit Sub
     End If
 
-    If Not PID_ConfirmAdminAction( _
-        "Alle Standard-VBA-Module werden " & PID_UTxtGeloescht() & " und aus dem Ordner ""vba"" neu importiert.", _
-        "VBA Import") Then
+    ' Eigene Rueckfrage statt PID_ConfirmAdminAction - siehe Regel 1 im Modulkopf.
+    If MsgBox("ADMIN-MAKRO - nur fuer Entwickler." & vbCrLf & vbCrLf & _
+              "Alle Standard-VBA-Module werden geloescht und aus dem Ordner ""vba"" " & _
+              "neu importiert." & vbCrLf & vbCrLf & _
+              "Nicht angetastet: " & PID_BOOTSTRAP_MODULE_1 & ", " & PID_BOOTSTRAP_MODULE_2 & vbCrLf & vbCrLf & _
+              "Fortfahren?", _
+              vbExclamation + vbYesNo, "VBA Import") <> vbYes Then
         Exit Sub
     End If
 
@@ -53,8 +80,22 @@ Public Sub ResetAndImportVBAFiles()
 
     PID_FixLegacyModul11Name vbProj
 
+    ' Dateinamen VOR dem Loeschen einsammeln: steht die Liste erst dann fest, wenn
+    ' die Module schon weg sind, kann ein Fehler beim Einsammeln die Mappe leer
+    ' zuruecklassen. Siehe Regel 2 im Modulkopf.
+    basFiles = CollectFileNames(vbaFolder, "*.bas")
+    clsFiles = CollectFileNames(vbaFolder, "*.cls")
+
+    If UBound(basFiles) < LBound(basFiles) Then
+        MsgBox "Im Ordner ""vba"" wurde keine einzige .bas-Datei gefunden:" & vbCrLf & _
+               vbaFolder & vbCrLf & vbCrLf & _
+               "Es wurde nichts geloescht.", _
+               vbExclamation, "VBA Import"
+        Exit Sub
+    End If
+
     ' Standard-, Klassen- und UserForm-Module loeschen.
-    ' mod_ResetAndImportVBAFiles bleibt erhalten.
+    ' Die Bootstrap-Module bleiben erhalten.
     For i = vbProj.VBComponents.Count To 1 Step -1
 
         Set vbComp = vbProj.VBComponents(i)
@@ -62,7 +103,9 @@ Public Sub ResetAndImportVBAFiles()
         Select Case vbComp.Type
 
             Case 1, 2, 3
-                If vbComp.Name <> "mod_ResetAndImportVBAFiles" Then
+                If IsBootstrapModule(vbComp.Name) Then
+                    skipped = skipped + 1
+                Else
                     vbProj.VBComponents.Remove vbComp
                     deleted = deleted + 1
                 End If
@@ -75,28 +118,26 @@ Public Sub ResetAndImportVBAFiles()
 
     Next i
 
-    fileName = Dir(vbaFolder & "*.bas")
+    For i = LBound(basFiles) To UBound(basFiles)
 
-    Do While fileName <> ""
+        fileName = basFiles(i)
 
-        If LCase$(fileName) <> LCase$("mod_ResetAndImportVBAFiles.bas") Then
+        If IsBootstrapModule(FileNameWithoutExtension(fileName)) Then
+            skipped = skipped + 1
+        Else
             compName = GetVBNameFromBasFile(vbaFolder & fileName)
             If Len(compName) > 0 Then
                 PID_RemoveVBComponentAndNumberedCopies vbProj, compName
             End If
             vbProj.VBComponents.Import vbaFolder & fileName
             imported = imported + 1
-        Else
-            skipped = skipped + 1
         End If
 
-        fileName = Dir
+    Next i
 
-    Loop
+    For i = LBound(clsFiles) To UBound(clsFiles)
 
-    fileName = Dir(vbaFolder & "*.cls")
-
-    Do While fileName <> ""
+        fileName = clsFiles(i)
 
         If ShouldSkipClsImportFile(fileName) Then
             skipped = skipped + 1
@@ -121,9 +162,7 @@ Public Sub ResetAndImportVBAFiles()
             End If
         End If
 
-        fileName = Dir
-
-    Loop
+    Next i
 
     On Error Resume Next
     Application.EnableEvents = True
@@ -134,13 +173,16 @@ Public Sub ResetAndImportVBAFiles()
     Application.StatusBar = False
     On Error GoTo ImportError
 
-    MsgBox deleted & " Module " & PID_UTxtGeloescht() & ", " & imported & " importiert, " & _
-           updatedCodeModules & " aktualisiert." & vbCrLf & vbCrLf & _
+    MsgBox deleted & " Module geloescht, " & imported & " importiert, " & _
+           updatedCodeModules & " aktualisiert, " & skipped & " uebersprungen." & vbCrLf & vbCrLf & _
+           "Erwartet: " & (UBound(basFiles) - LBound(basFiles) + 1) & " .bas-Dateien im Ordner ""vba""." & vbCrLf & _
+           "Weicht die importierte Zahl davon ab, bitte NICHT speichern und melden." & vbCrLf & vbCrLf & _
            "Danach: Kompilieren > Speichern > Excel neu starten > FullSystemRefresh", _
            vbInformation, "VBA Import"
     
+    ' Spaet gebunden: das Modul darf nicht frueh an Modul1 gebunden sein.
     On Error Resume Next
-    PID_RestoreLetztesGehaltFormulasSilent
+    Application.Run "'" & ThisWorkbook.Name & "'!PID_RestoreLetztesGehaltFormulasSilent"
     Err.Clear
 
     Exit Sub
@@ -150,7 +192,7 @@ VBProjectBlocked:
            "Unter Windows muss in Excel aktiviert werden:" & vbCrLf & _
            "Datei > Optionen > Trust Center > Trust Center-Einstellungen > " & _
            "Makroeinstellungen > ""Zugriff auf das VBA-Projektobjektmodell vertrauen""" & vbCrLf & vbCrLf & _
-           "Excel danach neu starten und dieses Makro erneut " & PID_UTxtAusfuehren() & ".", _
+           "Excel danach neu starten und dieses Makro erneut ausfuehren.", _
            vbExclamation, "VBA Import"
     Exit Sub
 
@@ -275,7 +317,7 @@ Private Function GetVBNameFromBasFile(ByVal fullPath As String) As String
     Dim quoteEnd As Long
     
     GetVBNameFromBasFile = ""
-    If Dir(fullPath) = "" Then Exit Function
+    If Not FileExistsVBA(fullPath) Then Exit Function
     
     f = FreeFile
     Open fullPath For Input As #f
@@ -332,6 +374,56 @@ Private Function ShouldSkipClsImportFile(ByVal fileName As String) As Boolean
 End Function
 
 
+' Bewusst mit GetAttr statt Dir: ein Dir-Aufruf wuerde die laufende Dateisuche
+' der Import-Schleifen zuruecksetzen (siehe Regel 2 im Modulkopf).
+Private Function FileExistsVBA(ByVal fullPath As String) As Boolean
+    On Error Resume Next
+    FileExistsVBA = ((GetAttr(fullPath) And vbDirectory) = 0)
+    Err.Clear
+End Function
+
+
+' Sammelt alle Dateinamen eines Musters ein, bevor irgendetwas anderes passiert.
+' Waehrend dieser Schleife wird keine Hilfsfunktion aufgerufen, damit Dir nicht
+' zurueckgesetzt werden kann.
+Private Function CollectFileNames(ByVal folderPath As String, ByVal filePattern As String) As String()
+    Dim names() As String
+    Dim itemCount As Long
+    Dim fileName As String
+
+    ReDim names(0 To 63)
+    itemCount = 0
+
+    fileName = Dir(folderPath & filePattern)
+
+    Do While Len(fileName) > 0
+        If itemCount > UBound(names) Then
+            ReDim Preserve names(0 To UBound(names) + 64)
+        End If
+
+        names(itemCount) = fileName
+        itemCount = itemCount + 1
+
+        fileName = Dir
+    Loop
+
+    If itemCount = 0 Then
+        ' Leeres Array: LBound 0, UBound -1 - die For-Schleifen laufen dann nicht.
+        CollectFileNames = Split(vbNullString)
+    Else
+        ReDim Preserve names(0 To itemCount - 1)
+        CollectFileNames = names
+    End If
+End Function
+
+
+Private Function IsBootstrapModule(ByVal componentName As String) As Boolean
+    IsBootstrapModule = _
+        (StrComp(componentName, PID_BOOTSTRAP_MODULE_1, vbTextCompare) = 0) Or _
+        (StrComp(componentName, PID_BOOTSTRAP_MODULE_2, vbTextCompare) = 0)
+End Function
+
+
 Private Function FolderExistsVBA(ByVal folderPath As String) As Boolean
     On Error Resume Next
     FolderExistsVBA = ((GetAttr(folderPath) And vbDirectory) = vbDirectory)
@@ -367,7 +459,7 @@ Private Function UpdateCodeModuleFromFile(ByVal vbComp As Object, ByVal fullPath
     Dim oldCode As String
     Dim cm As Object
 
-    If Dir(fullPath) = "" Then Exit Function
+    If Not FileExistsVBA(fullPath) Then Exit Function
 
     newCode = ReadVBAFileWithoutAttributes(fullPath)
     If Len(Trim$(newCode)) = 0 Then Exit Function

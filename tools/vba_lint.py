@@ -632,6 +632,42 @@ def check_excel2016(mod: Module, findings):
                     "Formel nicht Excel-2016-kompatibel: %s" % token))
 
 
+# Bootstrap modules run exactly when the rest of the project is missing or broken.
+# An early bound call into another module makes the whole project fail to compile -
+# and then the repair macro itself can no longer be started. See .cursor/rules.md.
+BOOTSTRAP_MODULES = ("mod_ResetAndImportVBAFiles",)
+
+
+def check_bootstrap_isolation(modules, procs, findings):
+    own = {}
+    for mod in modules:
+        own[mod.name] = set()
+    for entries in procs.values():
+        for proc in entries:
+            own.setdefault(proc.module, set()).add(proc.name.lower())
+
+    for mod in modules:
+        if mod.name not in BOOTSTRAP_MODULES:
+            continue
+        for line_no, code, _ in mod.logical:
+            if PROC_RE.match(code):
+                continue
+            for m in IDENT_RE.finditer(code):
+                lower = m.group(0).lower()
+                if lower in own[mod.name] or lower not in procs:
+                    continue
+                if m.start() > 0 and code[m.start() - 1] in ".!":
+                    continue
+                owners = sorted({p.module for p in procs[lower] if p.module != mod.name})
+                if not owners:
+                    continue
+                findings.append(Finding(
+                    "ERROR", mod.name, line_no,
+                    "Bootstrap-Modul ruft '%s' aus %s auf - fehlt das Modul, laesst sich "
+                    "auch dieses Makro nicht mehr starten (Application.Run oder eigenen "
+                    "Text verwenden)" % (m.group(0), ", ".join(owners))))
+
+
 CONST_CALL_RE = re.compile(r"\b([A-Za-z_]\w*)\s*\(")
 
 
@@ -697,6 +733,7 @@ def main():
     check_calls(modules, procs, module_procs, declared, findings)
     check_duplicates(modules, procs, findings)
     check_undeclared(modules, procs, findings)
+    check_bootstrap_isolation(modules, procs, findings)
 
     errors = [f for f in findings if f.level == "ERROR"]
     warnings = [f for f in findings if f.level == "WARN"]
