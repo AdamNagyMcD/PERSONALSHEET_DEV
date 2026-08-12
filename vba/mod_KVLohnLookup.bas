@@ -19,6 +19,14 @@ Private mBatchKVLohnRefresh As Boolean
 Private mCachedWorkbookYear As Long
 Private mWorkbookYearCached As Boolean
 
+' Index ueber den LOHNTABELLE-Cache: Schluessel "PERIODE|KV-CODE" -> Collection der
+' passenden Cache-Zeilen (in Blattreihenfolge). Die Spalte G steht in 960 Zellen als
+' UDF PID_KVLohnLookup; ohne Index durchsucht jede einzelne Zelle die komplette
+' Tabelle zweimal (aktuelle und vorige KV-Periode) und normalisiert dabei jede
+' Periodenangabe erneut. Der Index wird zusammen mit dem Cache aufgebaut und verworfen.
+Private mLohnIndex As Collection
+Private mLohnIndexLoaded As Boolean
+
 
 Private Sub PID_EnsureLohnTableCacheLoaded()
     If mLohnTableCacheLoaded Then Exit Sub
@@ -37,6 +45,7 @@ Private Sub PID_LoadLohnTableCache()
     Dim lastRow As Long
     
     mLohnTableCacheLoaded = False
+    PID_ClearLohnTableIndex
     
     On Error Resume Next
     Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
@@ -60,10 +69,80 @@ End Sub
 Private Sub PID_ClearLohnTableCache()
     mLohnTableCacheLoaded = False
     mWorkbookYearCached = False
+    PID_ClearLohnTableIndex
     On Error Resume Next
     Erase mLohnTableCache
     On Error GoTo 0
 End Sub
+
+
+Private Sub PID_ClearLohnTableIndex()
+    Set mLohnIndex = Nothing
+    mLohnIndexLoaded = False
+End Sub
+
+
+' Baut den Suchindex aus dem bereits geladenen Cache. Die Reihenfolge innerhalb
+' eines Schluessels entspricht der Blattreihenfolge, damit weiterhin der erste
+' passende Eintrag gewinnt. Der Schluessel ist gross geschrieben (Collection-Keys
+' sind ohnehin nicht case-sensitiv); die exakte Pruefung passiert danach im Bucket.
+Private Sub PID_BuildLohnTableIndex()
+    Dim r As Long
+    Dim rowCount As Long
+    Dim normPeriod As String
+    Dim normCode As String
+    Dim bucketKey As String
+    Dim bucket As Collection
+    
+    Set mLohnIndex = New Collection
+    mLohnIndexLoaded = True
+    
+    If Not mLohnTableCacheLoaded Then Exit Sub
+    If IsEmpty(mLohnTableCache) Then Exit Sub
+    
+    On Error GoTo SafeExit
+    
+    rowCount = UBound(mLohnTableCache, 1)
+    
+    For r = 1 To rowCount
+        normPeriod = NormalizeKVPeriodForLookup(CStr(mLohnTableCache(r, 1)))
+        
+        If Len(normPeriod) > 0 Then
+            normCode = NormalizeKVCodeForLookup(CStr(mLohnTableCache(r, 4)))
+            
+            If Len(normCode) > 0 Then
+                bucketKey = UCase$(normPeriod) & "|" & UCase$(normCode)
+                
+                Set bucket = Nothing
+                On Error Resume Next
+                Set bucket = mLohnIndex.item(bucketKey)
+                On Error GoTo SafeExit
+                
+                If bucket Is Nothing Then
+                    Set bucket = New Collection
+                    mLohnIndex.Add bucket, bucketKey
+                End If
+                
+                ' 0 = Cache-Zeile, 1 = normalisierte Periode, 2 = normalisierter KV-Code
+                bucket.Add Array(r, normPeriod, normCode)
+            End If
+        End If
+    Next r
+
+SafeExit:
+End Sub
+
+
+Private Function PID_GetLohnIndexBucket(ByVal normalizedPeriod As String, _
+                                        ByVal kvCode As String) As Collection
+    On Error Resume Next
+    
+    If Not mLohnIndexLoaded Then PID_BuildLohnTableIndex
+    If mLohnIndex Is Nothing Then Exit Function
+    
+    Set PID_GetLohnIndexBucket = mLohnIndex.item(UCase$(normalizedPeriod) & "|" & UCase$(kvCode))
+    Err.Clear
+End Function
 
 
 Private Sub PID_EnsureWorkbookYearCached()
@@ -332,7 +411,8 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
     Dim wsKV As Worksheet
     Dim lastRow As Long
     Dim r As Long
-    Dim rowCount As Long
+    Dim bucket As Collection
+    Dim entry As Variant
     
     Dim rowPeriod As String
     Dim rowKVCode As String
@@ -349,15 +429,15 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
     
     If mLohnTableCacheLoaded And Not IsEmpty(mLohnTableCache) Then
         
-        rowCount = UBound(mLohnTableCache, 1)
+        Set bucket = PID_GetLohnIndexBucket(normalizedTargetPeriod, kvCode)
+        If bucket Is Nothing Then GoTo NotFound
         
-        For r = 1 To rowCount
-            rowPeriod = NormalizeKVPeriodForLookup(CStr(mLohnTableCache(r, 1)))
-            
-            If rowPeriod = normalizedTargetPeriod Then
-                rowKVCode = NormalizeKVCodeForLookup(CStr(mLohnTableCache(r, 4)))
-                
-                If rowKVCode = kvCode Then
+        For Each entry In bucket
+            ' Der Index-Schluessel ist nicht case-sensitiv, der Vergleich hier schon -
+            ' damit bleibt das Ergebnis identisch zur frueheren vollen Suche.
+            If entry(1) = normalizedTargetPeriod Then
+                If entry(2) = kvCode Then
+                    r = CLng(entry(0))
                     rowMonatsstunden = mLohnTableCache(r, 7)
                     
                     If IsNumeric(rowMonatsstunden) Then
@@ -373,7 +453,7 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
                     End If
                 End If
             End If
-        Next r
+        Next entry
         
     Else
         
