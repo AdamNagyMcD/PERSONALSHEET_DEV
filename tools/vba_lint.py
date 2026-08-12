@@ -632,6 +632,30 @@ def check_excel2016(mod: Module, findings):
                     "Formel nicht Excel-2016-kompatibel: %s" % token))
 
 
+CONST_CALL_RE = re.compile(r"\b([A-Za-z_]\w*)\s*\(")
+
+
+def check_const_expressions(mod: Module, findings):
+    """Const values must be compile time constants - Const X = "a" & ChrW(10) is
+    "Konstanter Ausdruck erforderlich" in the VBA compiler."""
+    for line_no, code, _ in mod.logical:
+        cm = CONST_RE.match(code)
+        if not cm:
+            continue
+        value = cm.group(2)
+        if "=" not in value:
+            continue
+        expression = value.split("=", 1)[1]
+        for m in CONST_CALL_RE.finditer(expression):
+            name = m.group(1)
+            if name.lower() in ("array",):
+                continue
+            findings.append(Finding(
+                "ERROR", mod.name, line_no,
+                "Const darf keinen Funktionsaufruf enthalten ('%s') - "
+                "konstanter Ausdruck erforderlich" % name))
+
+
 def check_object_model(mod: Module, findings):
     for line_no, code, _ in mod.logical:
         for m in APPLICATION_MEMBER_RE.finditer(code):
@@ -669,6 +693,7 @@ def main():
         check_labels(mod, findings)
         check_excel2016(mod, findings)
         check_object_model(mod, findings)
+        check_const_expressions(mod, findings)
     check_calls(modules, procs, module_procs, declared, findings)
     check_duplicates(modules, procs, findings)
     check_undeclared(modules, procs, findings)

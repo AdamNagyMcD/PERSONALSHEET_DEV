@@ -363,6 +363,13 @@ Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     End If
     Err.Clear
     
+    ' Hinweis, wenn der Austritt vor dem Eintritt liegt: Spalte H wuerde sonst
+    ' unbemerkt negative Stunden liefern.
+    If Not Intersect(Target, Sh.Range("D3:D82,I3:I82")) Is Nothing Then
+        PID_CheckEintrittAustrittPlausibel Sh, Target
+    End If
+    Err.Clear
+    
     ' Logging ist datenkritisch: ab hier wieder GoTo SafeExit.
     On Error GoTo SafeExit
     
