@@ -59,12 +59,65 @@ VBA_KEYWORDS = {
     "wend", "weekday", "while", "with", "write", "xor", "year",
 }
 
+# Object model members that only exist in Microsoft 365. Early bound
+# (Application.X = ...) they are a *compile* error in Excel 2016, which On Error
+# cannot catch - use a late bound Object variable if the call is really wanted.
+POST_2016_APPLICATION_MEMBERS = (
+    "formatstalevalues", "autosaveon", "checkperformance",
+)
+POST_2016_WORKSHEETFUNCTION_MEMBERS = (
+    "textjoin", "concat", "ifs", "maxifs", "minifs", "switch", "xlookup", "xmatch",
+    "unique", "sortby", "sequence", "randarray", "textbefore", "textafter",
+    "textsplit", "vstack", "hstack", "lambda",
+)
+APPLICATION_MEMBER_RE = re.compile(r"\bApplication\s*\.\s*([A-Za-z_]\w*)", re.IGNORECASE)
+WORKSHEETFUNCTION_MEMBER_RE = re.compile(
+    r"\bWorksheetFunction\s*\.\s*([A-Za-z_]\w*)", re.IGNORECASE)
+
 # Worksheet functions that Excel 2016 (perpetual) does not know. See .cursor/rules.md.
 FORBIDDEN_FORMULA_TOKENS = (
     "XLOOKUP", "XVERWEIS", "LET(", "FILTER(", "UNIQUE(", "SEQUENCE(", "SORTBY(",
     "RANDARRAY(", "TEXTSPLIT(", "TEXTBEFORE(", "TEXTAFTER(", "VSTACK(", "HSTACK(",
     "XMATCH(", "TOCOL(", "TOROW(", "LAMBDA(",
 )
+
+# Identifiers that are always available: VBA language, VBA runtime library and the
+# Excel object model globals. Everything starting with xl/mso/vb is treated as an
+# enum member, everything after a dot is a member access and never checked.
+GLOBAL_IDENTIFIERS = {
+    "application", "thisworkbook", "activesheet", "activeworkbook", "activecell",
+    "activewindow", "selection", "workbooks", "worksheets", "sheets", "range",
+    "cells", "columns", "rows", "err", "debug", "me", "nothing", "true", "false",
+    "empty", "null", "vba", "excel", "worksheetfunction", "commandbars", "names",
+    "shell", "environ", "clipboard", "target", "sh", "cancel", "saveasui",
+    # types used in As clauses
+    "worksheet", "workbook", "variant", "string", "long", "integer", "double",
+    "single", "boolean", "byte", "date", "currency", "object", "collection",
+    "shape", "shapes", "chart", "chartobject", "hyperlink", "comment", "name",
+    "validation", "listobject", "pivottable", "window",
+    # frequently used runtime functions and constants
+    "abs", "array", "asc", "atn", "cbool", "cbyte", "ccur", "cdate", "cdbl",
+    "cdec", "choose", "chr", "chrw", "cint", "clng", "cos", "createobject",
+    "csng", "cstr", "cvar", "cverr", "dateadd", "datediff", "datepart",
+    "dateserial", "datevalue", "day", "dir", "doevents", "eof", "error", "exp",
+    "fileattr", "filecopy", "filedatetime", "filelen", "fix", "format", "freefile",
+    "getattr", "getobject", "hex", "hour", "iif", "inputbox", "instr", "instrrev",
+    "int", "isarray", "isdate", "isempty", "iserror", "ismissing", "isnull",
+    "isnumeric", "isobject", "join", "kill", "lbound", "lcase", "left", "len",
+    "loc", "lof", "log", "ltrim", "mid", "minute", "mkdir", "month", "monthname",
+    "msgbox", "now", "oct", "randomize", "replace", "rgb", "right", "rmdir",
+    "rnd", "round", "rtrim", "second", "seek", "setattr", "sgn", "sin",
+    "space", "split", "sqr", "str", "strcomp", "strconv", "strreverse",
+    "tan", "time", "timer", "timeserial", "timevalue", "trim",
+    "typename", "ubound", "ucase", "val", "vartype", "weekday", "year",
+    # Application methods that may be called unqualified
+    "intersect", "union", "evaluate", "volatile", "caller", "run", "calculate",
+    "goto", "wait", "inputbox", "index", "match", "transpose",
+    # keywords of the Open / Print / Line Input statements
+    "output", "input", "append", "binary", "random", "read", "write", "lock",
+    "shared", "access", "step", "spc", "tab",
+}
+GLOBAL_PREFIXES = ("xl", "mso", "vb", "wd", "ol")
 
 PROC_RE = re.compile(
     r"^\s*(?:(Public|Private|Friend)\s+)?(?:Static\s+)?"
@@ -405,6 +458,112 @@ def check_calls(modules, procs, module_procs, declared, findings):
                         % (ident, owner.module, kind, mod.name)))
 
 
+NAMED_ARG_RE = re.compile(r"([A-Za-z_]\w*)\s*:=")
+AS_TYPE_RE = re.compile(r"\bAs\s+(?:New\s+)?([A-Za-z_][\w.]*)", re.IGNORECASE)
+
+
+def collect_module_level_names(mod: Module):
+    """Names declared outside any procedure (constants, module variables)."""
+    names = set()
+    inside_proc = False
+    for _, code, _ in mod.logical:
+        if PROC_RE.match(code):
+            inside_proc = True
+            continue
+        if END_PROC_RE.match(code):
+            inside_proc = False
+            continue
+        if inside_proc:
+            continue
+        cm = CONST_RE.match(code)
+        if cm:
+            names.update(n.lower() for n in split_declared_names(cm.group(2)))
+            continue
+        dm = DIM_RE.match(code)
+        if dm:
+            head = code.strip().split(None, 1)[0].lower()
+            if head in {"dim", "private", "public", "global", "static"}:
+                names.update(n.lower() for n in split_declared_names(dm.group(1)))
+    return names
+
+
+def check_undeclared(modules, procs, findings):
+    """Option Explicit violations - the classic "Variable not defined" compile error."""
+    known = set()
+    for mod in modules:
+        known |= collect_module_level_names(mod)
+    for proc in procs.values() if isinstance(procs, dict) else []:
+        pass
+    for entries in procs.values():
+        for proc in entries:
+            known.add(proc.name.lower())
+    known |= GLOBAL_IDENTIFIERS
+    known |= VBA_KEYWORDS
+
+    for mod in modules:
+        local = set()
+        labels = set()
+        current_proc = None
+        body = []
+        for line_no, code, _ in mod.logical:
+            pm = PROC_RE.match(code)
+            if pm:
+                current_proc = pm.group(3)
+                local = {current_proc.lower()}
+                labels = set()
+                body = []
+                params = code[code.find("(") + 1:code.rfind(")")] if "(" in code else ""
+                local.update(n.lower() for n in split_declared_names(params))
+                local.update(m.group(1).lower() for m in AS_TYPE_RE.finditer(code))
+                continue
+            if current_proc is None:
+                continue
+            if END_PROC_RE.match(code):
+                for use_line, ident in body:
+                    low = ident.lower()
+                    if low in local or low in labels or low in known:
+                        continue
+                    if low.startswith(GLOBAL_PREFIXES):
+                        continue
+                    findings.append(Finding(
+                        "ERROR", mod.name, use_line,
+                        "'%s' ist in %s nicht deklariert (Option Explicit)"
+                        % (ident, current_proc)))
+                current_proc = None
+                continue
+
+            lm = LABEL_RE.match(code)
+            if lm:
+                labels.add(lm.group(1).lower())
+                continue
+
+            cm = CONST_RE.match(code)
+            if cm:
+                local.update(n.lower() for n in split_declared_names(cm.group(2)))
+                continue
+            dm = DIM_RE.match(code)
+            if dm:
+                head = code.strip().split(None, 1)[0].lower()
+                if head in {"dim", "static", "redim"}:
+                    local.update(n.lower() for n in split_declared_names(dm.group(1)))
+                    continue
+
+            local.update(m.group(1).lower() for m in AS_TYPE_RE.finditer(code))
+            skip_positions = set()
+            for m in NAMED_ARG_RE.finditer(code):
+                skip_positions.add(m.start(1))
+            for m in AS_TYPE_RE.finditer(code):
+                skip_positions.add(m.start(1))
+            for gm in GOTO_RE.finditer(code):
+                skip_positions.add(gm.start(1))
+            for m in IDENT_RE.finditer(code):
+                if m.start() in skip_positions:
+                    continue
+                if m.start() > 0 and code[m.start() - 1] in ".!#[&":
+                    continue
+                body.append((line_no, m.group(0)))
+
+
 def check_duplicates(modules, procs, findings):
     class_names = {m.name for m in modules if m.is_class}
     for lower, entries in sorted(procs.items()):
@@ -473,6 +632,21 @@ def check_excel2016(mod: Module, findings):
                     "Formel nicht Excel-2016-kompatibel: %s" % token))
 
 
+def check_object_model(mod: Module, findings):
+    for line_no, code, _ in mod.logical:
+        for m in APPLICATION_MEMBER_RE.finditer(code):
+            if m.group(1).lower() in POST_2016_APPLICATION_MEMBERS:
+                findings.append(Finding(
+                    "ERROR", mod.name, line_no,
+                    "Application.%s gibt es in Excel 2016 nicht - frueh gebunden ist das "
+                    "ein Compile-Fehler; nur ueber ein Object aufrufen" % m.group(1)))
+        for m in WORKSHEETFUNCTION_MEMBER_RE.finditer(code):
+            if m.group(1).lower() in POST_2016_WORKSHEETFUNCTION_MEMBERS:
+                findings.append(Finding(
+                    "ERROR", mod.name, line_no,
+                    "WorksheetFunction.%s gibt es in Excel 2016 nicht" % m.group(1)))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -494,8 +668,10 @@ def main():
         check_blocks(mod, findings)
         check_labels(mod, findings)
         check_excel2016(mod, findings)
+        check_object_model(mod, findings)
     check_calls(modules, procs, module_procs, declared, findings)
     check_duplicates(modules, procs, findings)
+    check_undeclared(modules, procs, findings)
 
     errors = [f for f in findings if f.level == "ERROR"]
     warnings = [f for f in findings if f.level == "WARN"]
