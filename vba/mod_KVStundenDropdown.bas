@@ -887,6 +887,8 @@ Public Function WriteDropdownValuesToHelper(ByVal wsHelper As Worksheet, _
                                             ByVal helperCol As Long, _
                                             ByVal values As Collection) As Long
     Dim i As Long
+    Dim buffer() As Variant
+    Dim targetRange As Range
     
     On Error GoTo SafeExit
     
@@ -895,10 +897,18 @@ Public Function WriteDropdownValuesToHelper(ByVal wsHelper As Worksheet, _
     If values.count = 0 Then Exit Function
     If helperCol < 1 Then Exit Function
     
+    ' Ein Schreibzugriff statt zwei je Wert. Diese Routine laeuft bei jedem Neuaufbau
+    ' der F-Dropdowns fuer jeden KV-Code des Blattes.
+    ReDim buffer(1 To values.count, 1 To 1)
+    
     For i = 1 To values.count
-        wsHelper.Cells(i, helperCol).Value = CDbl(values.item(i))
-        wsHelper.Cells(i, helperCol).NumberFormat = "0.00"
+        buffer(i, 1) = CDbl(values.item(i))
     Next i
+    
+    Set targetRange = wsHelper.Range(wsHelper.Cells(1, helperCol), _
+                                     wsHelper.Cells(values.count, helperCol))
+    targetRange.Value = buffer
+    targetRange.NumberFormat = "0.00"
     
     WriteDropdownValuesToHelper = values.count
     Exit Function

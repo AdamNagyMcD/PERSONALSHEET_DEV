@@ -404,19 +404,27 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     Dim fDropdownInvalid As Boolean
     Dim needsDropdownRepair As Boolean
     Dim appStateTouched As Boolean
+    Dim isMonthSheet As Boolean
+    Dim singleCell As Boolean
     
     On Error GoTo SafeExit
     
     mFStundenRefreshRanThisSelection = False
     
     If Not TypeOf Sh Is Worksheet Then Exit Sub
-    If PID_IsWorkerMonthSheet(Sh) And Target.CountLarge = 1 Then
+    
+    ' Dieser Handler laeuft bei jedem Klick. PID_IsWorkerMonthSheet liest dabei A1
+    ' des Blattes, wurde bisher aber dreimal je Auswahl aufgerufen - einmal reicht.
+    isMonthSheet = PID_IsWorkerMonthSheet(Sh)
+    singleCell = (Target.CountLarge = 1)
+    
+    If isMonthSheet And singleCell Then
         PID_RefreshFStundenOnSelectionChange Sh, Target
     End If
     
     If mInternalChange Then GoTo UpdateSelectionPrev
-    If Not PID_IsWorkerMonthSheet(Sh) Then GoTo UpdateSelectionPrev
-    If Target.CountLarge > 1 Then GoTo UpdateSelectionPrev
+    If Not isMonthSheet Then GoTo UpdateSelectionPrev
+    If Not singleCell Then GoTo UpdateSelectionPrev
     
     ' Ausserhalb D3:F82: O45 nur loeschen wenn noetig (leichter Pfad).
     If Intersect(Target, Sh.Range("D3:F82")) Is Nothing Then
@@ -493,10 +501,8 @@ Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Ra
     End If
 
 UpdateSelectionPrev:
-    If TypeOf Sh Is Worksheet Then
-        If PID_IsWorkerMonthSheet(Sh) And Target.CountLarge = 1 Then
-            PID_UpdateMonthSelectionPrev Sh, Target
-        End If
+    If isMonthSheet And singleCell Then
+        PID_UpdateMonthSelectionPrev Sh, Target
     End If
 
 SafeExit:
