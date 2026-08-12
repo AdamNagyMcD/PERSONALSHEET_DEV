@@ -25,6 +25,15 @@ Project-wide guidance for AI agents working in this repository. See also
 
 ### What CAN be done on the Linux Cloud VM
 
+**Always run these three repo scripts before finishing a VBA change** (pure Python, read-only,
+no Excel needed):
+
+| Command | Catches |
+|---------|---------|
+| `python3 tools/vba_lint.py` | The compile errors you would otherwise only see on Windows: calls to undefined `PID_*` names, cross-module calls into `Private` procedures, duplicate public names ("Ambiguous name"), missing `GoTo` labels, unbalanced blocks, missing `Option Explicit`, wrong `Attribute VB_Name`, non-Excel-2016 formula functions. Exit code 1 on errors. |
+| `python3 tools/check_vba_sync.py` | Drift between the VBA embedded in `Personalsheet.xlsm` and `vba/`. Bootstrap modules are reported separately — they are never imported automatically, so `mod_ResetAndImportVBAFiles` in the workbook is an older revision and must be updated by hand in the VBA editor. |
+| `python3 tools/check_formula_columns.py` | Rows whose formulas in `G`/`H`/`K`/`L` are missing, plus a wrong month index in `A1`. Linux twin of the VBA macro `PID_PruefeFormelspalten`. |
+
 The update script installs lightweight Python tooling (`oletools`, `openpyxl`). Use it to validate
 changes without Excel:
 

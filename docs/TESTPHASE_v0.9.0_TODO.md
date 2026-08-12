@@ -3,7 +3,7 @@
 **Forrás:** Restaurant-Manager teszt, első nagy tesztfázis  
 **Dátum:** 2026-06-19 (utolsó frissítés: 2026-07-09)  
 **Verzió:** Personalsheet Test-Release v0.9.0-test  
-**Státusz:** Gyűjtés folyamatban — implementáció a következő napokban indul  
+**Státusz:** TR-02/03/06/07/08/09/10 kód kész — Windows-teszt hátravan; TR-01/04/05 blokkolt  
 **Teljes release:** 2027 (addig több kolléga tesztel)
 
 ### Teszt összkép (2026-07-09)
@@ -14,48 +14,72 @@
 
 ---
 
-## ⏭️ KÖVETKEZŐ FELADAT (itt folytatjuk) — 2026-08-11 este
+## ✅ TR-10 lezárva kódszinten (2026-08-12) — Windows teszt hátravan
 
-**TR-10 nincs kész. Két nyitott pont, ebben a sorrendben:**
+### 1. `PID_RestoreFormulaColumnsForRows` „nincs meg" — a repo rendben van
 
-### 1. `PID_RestoreFormulaColumnsForRows` „nincs meg" (compile hiba)
+Ellenőrizve a commitolt munkafüzeten (`tools/check_vba_sync.py`): a
+`Personalsheet.xlsm`-be ágyazott **`Modul1` byte-azonos a `vba/Modul1.bas`-szal**, és
+tartalmazza mind a hármat: `PID_RestoreFormulaColumnsForRows`,
+`PID_GetEmployeeInputCellsForRows`, `PID_EnsureCellFormula`. A 33 modulból **egyetlen**
+tér el:
 
-A makró futtatásakor „Sub or Function not defined". A függvény a `vba/Modul1.bas`
-végén van (a `PID_RestoreUrlaubGeldFormulas` után), tehát a fájl megvan, de a
-munkafüzetben lévő modul nem az aktuális.
+| Modul | Eltérés | Miért |
+|-------|---------|-------|
+| `mod_ResetAndImportVBAFiles` | 230 sor | Az import makró **saját magát kihagyja**, ezért a repo újabb változata soha nem kerül be automatikusan |
 
-Ellenőrizendő sorrendben:
+Vagyis a munkafüzetben egy **régi importáló** fut. Amiben gyengébb az aktuálisnál:
 
-- [ ] `ResetAndImportVBAFiles` lefutott-e a mentés óta, és melyik mappából importál
-      (a repo `vba\` mappája vagy egy másik példány?).
-- [ ] Az import kiírja a „skipped" darabszámot — `Modul1.bas` benne van-e a kihagyottakban.
-- [ ] VBA-szerkesztőben `Modul1` végén ott van-e `PID_RestoreFormulaColumnsForRows`,
-      `PID_GetEmployeeInputCellsForRows`, `PID_EnsureCellFormula`.
-- [ ] Debug → Compile VBAProject: mi az első hibás sor.
-- [ ] Ha az import nem hozza be: kézi import / beillesztés, aztán újra fordítás.
+- import előtt nem törli az azonos nevű és a számozott másolatokat
+  (`Modul11`, `mod_CopyData1` …) → duplikált/elavult modul maradhat, és pont ez adja a
+  „Sub or Function not defined" / „Ambiguous name" hibákat;
+- törli a `mod_CopyData`-t is (a skip-lista szerint tilos), csak utána importálja vissza;
+- nincs benne `Option Explicit`, és a `.cls` fejléc-levágása a régi logika.
 
-### 2. Full Refresh nem hozza vissza a hiányzó képleteket
+**Teendő Windows-on (egyszeri, kézi):** VBA-szerkesztő → `mod_ResetAndImportVBAFiles`
+tartalmát lecserélni a `vba/mod_ResetAndImportVBAFiles.bas` tartalmára → Kompilieren →
+Speichern. Bootstrap modul, ezért **nem** nyúltam hozzá automatikusan, és a
+`tools/import_vba_and_repair.ps1` sem frissíti (skip-lista mindkét lépésben).
 
-`PID_FullSystemRefresh` hívja mind a négyet (`PID_RestoreMonatslohnFormulasSilent`,
-`PID_RestoreAktuelleStundenFormulasSilent`, `PID_RestoreUrlaubGeldFormulasSilent`,
-`PID_RestoreLetztesGehaltFormulasSilent`), a sérült sorok mégis üresek maradnak.
+Ellenőrzés bármikor: `python3 tools/check_vba_sync.py` — 0 eltérés a cél.
 
-Vizsgálandó hipotézisek:
+### 2. Full Refresh nem hozta vissza a képleteket — megvan az ok
 
-- [ ] **Lapvédelem:** `PID_TryUnprotectMonthSheetForMacro` / `ws.Unprotect` sikertelen →
-      a `FormulaR1C1` írás csendben elszáll (a Silent függvények mindent elnyelnek).
-      Teszt: `UnprotectEverything` után Full Refresh — ha így működik, ez az ok.
-- [ ] **Korai kilépés:** `PID_RestoreAktuelleStundenFormulasOnSheet` kilép, ha
-      `A1` nem szám; `PID_RestoreMonatslohnFormulasOnSheet` szintén szűr — meg kell nézni,
-      hogy tényleg a teljes `3:82` tartományra ír-e, vagy csak feltételesen.
-- [ ] **Hibaelnyelés:** minden Silent függvény `On Error GoTo SafeExit` — egy hiba az első
-      lapon csendben leállíthatja a maradék 11-et. Ideiglenes debug-számláló kell.
-- [ ] Egyetlen cellán manuálisan tesztelni: entsperren →
-      `Cells(12,"K").FormulaR1C1 = PID_GetUrlaubGeldFormulaR1C1()` → hibát dob-e.
+A commitolt munkafüzetben **reprodukálható a hiba** (`tools/check_formula_columns.py`):
 
-**Amíg ez nincs kész:** a `MitarbeiterEntfernen` / `DataClear` javítás (nem törli többé a
-G/H/K/L oszlopot) önmagában már véd az ÚJ sérülés ellen — de csak akkor, ha a modulok
-importja rendben lefutott.
+```
+Februar … Dezember:  L3, L4, L5 üres (nincs képlet) = 33 cella
+Januar, valamint G/H/K minden lapon:  hiánytalan
+```
+
+A `Februar!L4` sorban **van dolgozó** (251515 / „ASD asd" / BG1_10 / 173 óra), a
+„Letztes Gehalt" mégis tartósan üres — pontosan a bejelentett tünet.
+
+Miért csak az L? A négy visszaállító nem egyformán védett:
+
+| Oszlop | Kilép, ha… |
+|--------|------------|
+| G | (nincs feltétel, mindig ír) |
+| K | a lapvédelmet nem lehet feloldani; **és** egy hiba az egyik lapon eddig kihagyta a maradék 11-et |
+| H | `A1` nem szám |
+| L | `A1` nem szám **vagy** a lapvédelmet nem lehet feloldani |
+
+Ráadásul mindegyik Silent változat elnyeli a hibát, így semmilyen visszajelzés nincs.
+
+**Javítás (kód kész):**
+
+- `PID_FullSystemRefresh` a négy visszaállítás után meghívja
+  `PID_RepairFormulaColumnsSilent`-et: laponként helyreállítja az `A1` hónapindexet, majd
+  soronként pótolja a hiányzó G/H/K/L képletet (meglévőhöz nem nyúl), és a záró üzenet
+  **számot mond** (ellenőrzött lap / pótolt cella / javított A1).
+- Új `mod_PIDFormelCheck` modul: „Formeln prüfen" (csak olvas) és „Formeln reparieren"
+  gomb az `_ADMIN` lapon, Alt+F8-cal is.
+- K oszlop: laponkénti hibakezelés, egy hiba nem viszi el a többi hónapot, és nem hagyja
+  feloldva a lapot.
+- L oszlop: a legacy-wrapper `IF(OR($B3=",$C3="),…)`-t generált (2 idézőjel 4 helyett) —
+  ez mindig hamis szövegösszehasonlítás volt, nem B/C-védelem. Javítva.
+
+**Windows-on ellenőrizendő:** TEST 31 (A–D forgatókönyv).
 
 ---
 
@@ -63,16 +87,16 @@ importja rendben lefutott.
 
 | ID | Prioritás | Típus | Rövid név | Státusz |
 |----|-----------|-------|-----------|---------|
-| TR-01 | 🔴 Magas | Bug | Personal ID beragad CopyData után | ⬜ Nyitott |
+| TR-01 | 🔴 Magas | Bug | Personal ID beragad CopyData után | ⛔ Blokkolt — `mod_CopyData` jóváhagyás kell |
 | TR-06 | 🔴 Magas | Feature | Personal ID / név javító makró (TR-01 gyakorlati megoldása) | 🟩 Kód kész — teszt nyitott |
 | TR-08 | 🔴 Magas | Feature | Dolgozó eltávolítása a hónapokból (mind / adott hónaptól) | 🟩 Kód kész — teszt nyitott |
 | TR-07 | 🔴 Magas | Feature | Personal ID egyediség-ellenőrzés (megelőzés) | 🟩 Kód kész — teszt nyitott |
 | TR-09 | 🟡 Közepes | Feature | Hibabejelentő gomb + akciónapló (tesztfázis támogatás) | 🟩 Kód kész — teszt nyitott |
-| TR-05 | 🟡 Közepes | Review | Alap gyorsítás & egyszerűsítés áttekintés | ⬜ Nyitott |
-| TR-10 | 🔴 Magas | Bug | Dolgozó törlésekor a képletek is törlődtek (G/H/K/L) | 🟥 **Nyitott — itt folytatjuk** |
+| TR-05 | 🟡 Közepes | Review | Alap gyorsítás & egyszerűsítés áttekintés | ⬜ Nyitott — mérés csak Windows-on |
+| TR-10 | 🔴 Magas | Bug | Dolgozó törlésekor a képletek is törlődtek (G/H/K/L) | 🟩 Kód kész — TEST 31 nyitott |
 | TR-02 | 🟡 Közepes | Bug | Bemásolás mindig csak érték (formázás nélkül) | 🟩 Kód kész — teszt nyitott |
-| TR-03 | 🟡 Közepes | Feature (1. fázis) | Minden adat törlése gomb | ⬜ Nyitott |
-| TR-04 | 🟢 Alacsony (2. fázis) | Feature | Új év indítása | ⬜ Nyitott |
+| TR-03 | 🟡 Közepes | Feature (1. fázis) | Minden adat törlése gomb | 🟩 Kód kész — TEST 32 nyitott |
+| TR-04 | 🟢 Alacsony (2. fázis) | Feature | Új év indítása | ⛔ Blokkolt — döntés kell (lásd „Nyitott kérdések") |
 
 ---
 
@@ -410,6 +434,19 @@ számítási mód, a felhasználó két válasza, és az utolsó 15 naplóbejegy
 - Összhangban a teszt visszajelzéssel: a sheet **jó**, de érdemes tudni, hol lehet még finomítani (sebesség, UX, kevesebb kattintás).
 - **Nem** nagy refactor; **nem** CopyData logika (az TR-01).
 
+### Állapot (2026-08-12)
+
+A mérés **nem pótolható Windows/Excel nélkül** — a Cloud gépen se `PID_RunPerformanceBaseline`,
+se stopperes lépés nem futtatható. Ami készen áll hozzá:
+
+- `PID_RunPerformanceBaseline` új **8. lépése** külön méri a TR-10 biztonsági hálót
+  (`PID_RepairFormulaColumnsSilent`), és a 7. lépés (FullSystemRefresh) ugyanazt a hívást
+  tartalmazza, mint az éles makró — a két szám így összehasonlítható marad.
+- Sérülésmentes állapotban a 8. lépés összesen 12 × 4 `Range.HasFormula` lekérdezés;
+  a 80 soros ciklus csak vegyes tartalmú oszlopnál fut le.
+
+2. fázis (finomítások) továbbra is **csak mérés után** indul.
+
 ### 1. fázis — mérés és gyűjtés
 
 - [ ] **FP-010 MANU** lépések teszt gépen (stoppóra):
@@ -454,8 +491,8 @@ számítási mód, a felhasználó két válasza, és az utolsó 15 naplóbejegy
 
 ## TR-10 — Dolgozó törlésekor a képletek is törlődtek
 
-**Státusz:** 🟥 Nyitott — a kód megvan, de a munkafüzetben nem fut le
-(lásd „KÖVETKEZŐ FELADAT" a dokumentum elején)  
+**Státusz:** 🟩 Kód kész (2026-08-12) — TEST 31 + TEST 30 Windows-on nyitott
+(részletek a dokumentum elején)  
 **Prioritás:** 🔴 Magas (adatvesztés-szerű: a sor véglegesen „halott" marad)  
 **Modul(ok):** `mod_DataClear.bas`, `mod_MitarbeiterPflege.bas`, `Modul1.bas`
 
@@ -489,11 +526,13 @@ H, K és L visszaállítása pedig sehol nem történt meg.
 - A megerősítő dialógusok a tényleges tartományokat írják, és a képletoszlopokat
   „megmarad" tételként sorolják fel.
 
-### Már meglévő sérülés javítása — ⚠️ NEM MŰKÖDIK (2026-08-11 teszt)
+### Már meglévő sérülés javítása — javítva (2026-08-12)
 
-- **Admin → Full Refresh** (`PID_FullSystemRefresh`) elvileg mind a 12 hónaplapon újraírja
-  G/H/K/L képleteit, a gyakorlatban viszont a sérült sorok üresen maradtak.
-  Okok és teendők: lásd „KÖVETKEZŐ FELADAT" a dokumentum elején.
+- **Admin → Full Refresh** most a négy oszlop-visszaállítás után lefuttatja
+  `PID_RepairFormulaColumnsSilent`-et, és a záró üzenetben számot mond.
+- Külön gomb is van rá: `_ADMIN` → „Formeln reparieren", diagnózishoz „Formeln prüfen".
+- Miért nem működött eddig: az `A1` hónapindex és a lapvédelem-guard miatt a H és az L
+  oszlop csendben kimaradt; a K oszlopnál egy hiba elvitte a maradék 11 hónapot.
 
 ### Elfogadási kritériumok
 
@@ -501,6 +540,8 @@ H, K és L visszaállítása pedig sehol nem történt meg.
 - [ ] Ugyanabba a sorba új dolgozót írva a lohn/stunden/urlaub/letztes Gehalt azonnal számol.
 - [ ] `DataClear` után mind a 80 sorban van képlet.
 - [ ] Formátumok, zebra, keretek, lapvédelem változatlan.
+- [ ] Full Refresh után `tools/check_formula_columns.py` = 0 hiányzó cella
+      (mentés után, Linux/CI oldalon is ellenőrizhető).
 
 ---
 
@@ -570,9 +611,26 @@ H, K és L visszaállítása pedig sehol nem történt meg.
 
 ## TR-03 — „Minden adat törlése” gomb (1. fázis)
 
-**Státusz:** ⬜ Nyitott  
+**Státusz:** 🟩 Implementálva (2026-08-12) — manuális teszt (TEST 32) nyitott  
 **Prioritás:** 🟡 Közepes  
-**Modul(ok):** `mod_DataClear.bas` (kiterjesztés), esetleg `mod_PIDAdminSheet.bas` (gomb)
+**Modul(ok):** `mod_DataClear.bas` (kiterjesztés), `mod_PIDAdminSheet.bas` (gomb)
+
+### Megvalósult (2026-08-12)
+
+| Fájl | Mi történt |
+|------|------------|
+| `vba/mod_DataClear.bas` | `AlleDatenLoeschen` (Alt+F8), `PID_ClearAllWorkbookData`, dupla megerősítés, laponkénti hibakezelés |
+| `vba/mod_PIDAdminSheet.bas` | „Alle Daten löschen" gomb (`Case 19`), `PID_ADMIN_BTN_COUNT` 18 → 21 |
+| `vba/mod_PIDUserText.bas` | `PID_UTxtAlleDatenLoeschen`, `PID_UTxtRueckgaengig` |
+| `TEST_CASES.md` | **TEST 32** (A–C forgatókönyv + negatív ellenőrzések) |
+
+Laponként: védelem le → `B:F`, `I:J`, `M:N` ürítés → `PID_RestoreFormulaColumnsForRows`
+(hiányzó képlet pótlása) → `O18:Q28`, `O45`, `Q31` ürítés → formátum, F-dropdown,
+Monatslohn képlet → `MarkFinanzSummaryDirtyForMonth` → védelem vissza.
+Végül `PID_ResetHourOverrideLog`, `MarkFluktuationDirty`, `MarkAllKVDropdownsDirty`.
+
+**Két döntés, amit meg kell erősíteni — lásd „Nyitott kérdések":** a panel tartománya
+(`O18:Q28`) és a gomb helye (egyelőre csak `_ADMIN` + Alt+F8).
 
 ### Igény (teszt visszajelzés)
 
@@ -636,6 +694,20 @@ H, K és L visszaállítása pedig sehol nem történt meg.
 
 ---
 
+## ❓ Nyitott kérdések (döntés kell, nem tippelek)
+
+| # | Kérdés | Miért kell dönteni | Amíg nincs döntés |
+|---|--------|--------------------|-------------------|
+| Q1 | **TR-01:** hozzányúlhatok a `mod_CopyData.bas`-hoz? | Bootstrap modul, `.cursor/rules.md` szerint kifejezett jóváhagyás kell. A javítás a `PID_CollectFutureOverrides` / `PID_AddFutureNewEmployees` ágat érinti (ID-javítás felismerése új belépő helyett). | Érintetlen. A TR-06 + TR-07 páros gyakorlatilag megoldja a fájdalmat. |
+| Q2 | **TR-01 üzleti szabály:** ha C (név) egyezik és B (ID) eltér, az mindig **javítás**, vagy lehet két külön dolgozó azonos névvel? | Ettől függ, szabad-e automatikusan összevonni a sorokat. | Nincs automatikus összevonás. |
+| Q3 | **TR-04:** `SaveAs` új fájlba vagy helyben? Fájlnév minta (`Personalsheet_2027.xlsm`)? December → január mely oszlopok (B, C, D — és M/N?)? Kilépett dolgozók szűrése az `I` oszlop alapján? | Négy önálló üzleti döntés; rossz választás évnyi adatot érint. | Nem implementálom. |
+| Q4 | **TR-03 panel tartomány:** `O18:Q28` (a teljes szerkeszthető panel, ezt választottam) — de `DataClear` és CopyData `O18:Q25`-tel dolgozik. Egységesítsük mind a hármat? | A 26–28 sor szerkeszthető, de nem másolódik és eddig nem is törlődött (a régi TR-XX jegyzet). | TR-03 = `O18:Q28`; `DataClear`/CopyData érintetlen. |
+| Q5 | **TR-03 gomb helye:** maradjon admin-only, vagy kell látható gomb a hónaplapokra is? | Visszafordíthatatlan művelet; a tesztvisszajelzés „egy gomb"-ot kért. | `_ADMIN` gomb + Alt+F8 (`AlleDatenLoeschen`). |
+| Q6 | **TR-03:** a `Q12` (Vormonat) érték is törlődjön? | Nem-kezdőhónapokon kézi adat, kezdőhónapokon (feb/máj/aug/nov) **képlet** — a törlés ott képletet vinne el. | Nem törlöm, a dialógus felsorolja a megmaradó tételek közt. |
+| Q7 | **TR-05:** ki és melyik gépen futtatja az FP-010 MANU mérést? | Stopperes mérés Windows/Excel nélkül nem pótolható. | A mérési lépések készen állnak (`PID_RunPerformanceBaseline`, új 8. lépés). |
+
+---
+
 ## Kapcsolódó, még nem bejelentett tételek
 
 Ezeket a teszt során érdemes figyelni; külön ticket, ha előjönnek:
@@ -652,10 +724,14 @@ Ezeket a teszt során érdemes figyelni; külön ticket, ha előjönnek:
 1. **TR-06 + TR-08** — javító és eltávolító makró (azonnali gyakorlati megoldás, nem érinti a CopyData-t) ✅ kód kész
 2. **TR-07** — ID egyediség-ellenőrzés (megelőzés) ✅ kód kész
 3. **TR-02** — beillesztés csak értékként ✅ kód kész
-4. **TR-01** — CopyData logika fix (gyökeres megoldás, bootstrap modul, jóváhagyás kell)
-5. **TR-05** — perf/UX áttekintés + FP-010 mérés (párhuzamosan gyűjtéssel is mehet)
-6. **TR-03** — nullázás gomb (gyorsítja a tesztelést és az újraindítást)
-7. **TR-04** — új év (önálló release feature, 2027 release előtt)
+4. **TR-10** — képletoszlopok törlés után + Full Refresh javítóháló ✅ kód kész
+5. **TR-03** — nullázás gomb ✅ kód kész
+6. **TR-01** — CopyData logika fix (bootstrap modul, jóváhagyás kell → Q1/Q2)
+7. **TR-05** — perf/UX áttekintés + FP-010 mérés (Windows gép kell → Q7)
+8. **TR-04** — új év (üzleti döntések kellenek → Q3)
+
+**Következő lépés Windows-on:** `mod_ResetAndImportVBAFiles` egyszeri kézi frissítése →
+`ResetAndImportVBAFiles` → Kompilieren → Speichern → TEST 30, 31, 32.
 
 **Változás indoka (2026-08-11):** TR-06 + TR-07 kombinációja a gyakorlatban megoldja a
 TR-01 fájdalmát anélkül, hogy a `mod_CopyData.bas`-hoz hozzá kellene nyúlni.

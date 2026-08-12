@@ -665,3 +665,100 @@ Betroffene Spalten: **G** (Monatslohn), **H** (Aktuelle Stunden), **K** (Urlaub 
   überschrieben (nur fehlende Formeln werden ergänzt).
 - Zeilenhöhe, Zebra-Streifen, Rahmen und Zahlenformate bleiben unverändert.
 - Nach dem Entfernen bleibt das Blatt geschützt.
+---
+
+## TEST 31 — Formelspalten prüfen und reparieren (TR-10)
+
+Module: `mod_PIDFormelCheck.bas`, `mod_PIDAdmin.bas`.
+Voraussetzung: `_ADMIN` sichtbar (**Alt+F8** → `PID_ToggleAdminSheet`).
+
+Ausgangslage in der Testdatei (mit `tools/check_formula_columns.py` ermittelt):
+in **Februar bis Dezember** fehlt in **L3, L4 und L5** die Formel — 33 Zellen insgesamt.
+
+### Scenario A — Diagnose
+1. `_ADMIN` → **„Formeln prüfen"** (oder **Alt+F8** → `PID_PruefeFormelspalten`).
+
+### Expected A
+- Meldung listet „Geprüft: 12 Monatsblätter", die Spalten G, H, K, L und Zeile 3 bis 82.
+- Jedes Blatt mit Lücken erscheint mit der Anzahl fehlender Zellen
+  (erwartet: Februar bis Dezember mit je 3).
+- Es wird nichts verändert: ein zweiter Lauf zeigt dieselben Zahlen.
+
+### Scenario B — Reparatur
+1. `_ADMIN` → **„Formeln reparieren"** (oder **Alt+F8** → `PID_FormelspaltenReparieren`).
+2. Danach erneut **„Formeln prüfen"**.
+
+### Expected B
+- Erste Meldung: „Neue Formeln: 33 Zellen auf 11 Monatsblättern".
+- Zweite Meldung: „Alle Formeln in den Spalten G,H,K,L sind vorhanden."
+- `Februar!L4` (Zeile mit Mitarbeiter) zeigt in der Bearbeitungsleiste wieder eine Formel
+  und rechnet einen Betrag.
+
+### Scenario C — Full Refresh meldet die Reparatur
+1. Datei schließen ohne zu speichern, neu öffnen (Schaden ist wieder da).
+2. `_ADMIN` → **„Full Refresh"**.
+
+### Expected C
+- Abschlussmeldung enthält die drei neuen Zeilen: „Formelspalten G/H/K/L geprüft: 12",
+  „Fehlende Formeln ergänzt: N Zellen", „Monatsindex A1 korrigiert: 0".
+- Danach meldet „Formeln prüfen" keine Lücken mehr.
+
+### Scenario D — Monatsindex A1
+1. Blattschutz aufheben (`UnprotectEverything`), auf **Mai** die Zelle `A1` leeren.
+2. `_ADMIN` → **„Formeln prüfen"**, danach **„Formeln reparieren"**.
+
+### Expected D
+- Die Prüfung meldet „Monatsindex in A1 fehlt oder passt nicht: Mai".
+- Nach der Reparatur steht in `Mai!A1` wieder **5**, und „Monatsindex A1 korrigiert: 1".
+- Hintergrund: ohne A1 überspringen die Wiederherstellungen das Blatt stillschweigend.
+
+### Negative checks
+- Vorhandene Formeln werden nicht überschrieben (nur fehlende ergänzt).
+- Blattschutz ist nach beiden Makros wieder aktiv.
+- Rechenmodus bleibt auf Automatisch.
+- Nach dem Speichern meldet `python3 tools/check_formula_columns.py`
+  „Fehlende Formelzellen gesamt: 0".
+
+---
+
+## TEST 32 — Alle Daten löschen (TR-03)
+
+Modul: `mod_DataClear.bas`. Einstieg: **Alt+F8** → `AlleDatenLoeschen`
+oder `_ADMIN` → **„Alle Daten löschen"**.
+
+**Vorher unbedingt eine Kopie der Datei anlegen.**
+
+### Scenario A — Abbruch
+1. Makro starten, im ersten Dialog **Nein** wählen.
+2. Makro erneut starten, ersten Dialog mit **Ja**, zweiten mit **Nein** beantworten.
+
+### Expected A
+- In beiden Fällen bleibt jede Zelle unverändert.
+- Der zweite Dialog steht standardmäßig auf **Nein**.
+
+### Scenario B — Löschen
+1. Makro starten und beide Dialoge mit **Ja** bestätigen.
+
+### Expected B
+- Alle 12 Monatsblätter: `B:F`, `I:J`, `M:N` (Zeile 3–82), `O18:Q28`, `O45` und `Q31` leer.
+- **G, H, K, L behalten ihre Formeln** in allen 80 Zeilen (Bearbeitungsleiste prüfen).
+- Abschlussmeldung: „Monatsblätter geleert: 12 / 12" und „Stunden-Log geleert".
+- `EINSTELLUNG!C35` (Jahr), LOHNTABELLE und UEBERSICHT sind unverändert.
+- `Q12` (Vormonat) bleibt stehen — bewusst nicht gelöscht.
+- Blattschutz auf allen Monatsblättern weiterhin aktiv.
+
+### Scenario C — Weiterarbeiten auf der leeren Datei
+1. In Januar einen Mitarbeiter eintragen (ID, Name, Eintritt, KV-Gruppe, Stunden).
+2. `CopyData` von Januar aus starten.
+3. FLUKTUATION-Tab öffnen.
+
+### Expected C
+- G, H, K und L rechnen sofort.
+- CopyData verteilt den Mitarbeiter bis Dezember.
+- Fluktuation und UEBERSICHT bauen ohne Fehler neu auf (0 Austritte).
+
+### Negative checks
+- Stunden-Log (`PID_AdminShowActionLog` / `PID_ShowHourOverrideLog`) enthält keine alten
+  Overrides mehr; ein früher überschriebener Monatswert kehrt nicht zurück.
+- Das Aktionsprotokoll enthält den Eintrag „Alle Daten loeschen".
+- Formate, Zebra-Streifen, Kopfzeilen, Buttons und Dropdowns bleiben erhalten.

@@ -51,6 +51,7 @@ A `_xlsm_*` es `_einstellung_probe` mappak **lokalis fejlesztoi probe** celokra 
 | `PersonalIdKorrigieren` | Personal ID / nev javitasa mind a 12 honapon + Stunden-Log |
 | `MitarbeiterEntfernen` | Dolgozo torlese minden honaprol vagy egy valasztott honaptol |
 | `FehlerMelden` | Hibabejelentes: kontext + 2 kerdes → txt fajl a Feedback mappaba + vagolap |
+| `AlleDatenLoeschen` | Minden honap minden adatanak torlese (dupla megerosites, keplet marad) |
 
 Harom gomb minden honaplapon: „Mitarbeiter entfernen" (O7:P7),
 „Personal-ID korrigieren" (Q7:R7) es „Fehler melden" (S7:T7).
@@ -72,9 +73,22 @@ Modul: `mod_PIDAdmin.bas` — `PID_ShowAdminMacroInfo` listazza.
 | Makro | Veszely |
 |-------|---------|
 | `ResetAndImportVBAFiles` | Minden VBA modul ujraimport (Bestaetigung) |
-| `FullSystemRefresh` | Teljes workbook refresh |
+| `FullSystemRefresh` | Teljes workbook refresh (G/H/K/L kepletek potlasa is) |
+| `PID_PruefeFormelspalten` | Csak olvas: hol hianyzik keplet G/H/K/L-ben |
+| `PID_FormelspaltenReparieren` | Hianyzo G/H/K/L kepletek potlasa mind a 12 honapon |
 | `RebuildLOHNTABELLE` | KV tabla ujraepites |
 | `UnprotectEverything` | Minden lap feloldasa (Bestaetigung) |
+
+## Fejlesztoi ellenorzo szkriptek (Windows nelkul is futnak)
+
+| Szkript | Mit ellenoriz |
+|---------|---------------|
+| `python3 tools/vba_lint.py` | A `vba/` forrasok statikus ellenorzese — hianyzo/privat eljaras, duplikalt nev, hianyzo cimke, blokk-hiba, `Option Explicit`, nem Excel 2016-kompatibilis fuggveny |
+| `python3 tools/check_vba_sync.py` | A `Personalsheet.xlsm`-be agyazott VBA egyezik-e a `vba/` mappaval |
+| `python3 tools/check_formula_columns.py` | Hol hianyzik keplet G/H/K/L-ben a munkafuzetben (a `PID_PruefeFormelspalten` Linux-parja) |
+
+Mindharom csak olvas. Ajanlott sorrend VBA modositas utan: `vba_lint.py` → Excelben import
++ Kompilieren → mentes utan `check_vba_sync.py`.
 
 ## Git
 
