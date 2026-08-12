@@ -175,8 +175,10 @@ Public Sub ResetAndImportVBAFiles()
 
     MsgBox deleted & " Module geloescht, " & imported & " importiert, " & _
            updatedCodeModules & " aktualisiert, " & skipped & " uebersprungen." & vbCrLf & vbCrLf & _
-           "Erwartet: " & (UBound(basFiles) - LBound(basFiles) + 1) & " .bas-Dateien im Ordner ""vba""." & vbCrLf & _
-           "Weicht die importierte Zahl davon ab, bitte NICHT speichern und melden." & vbCrLf & vbCrLf & _
+           "Im Ordner ""vba"": " & (UBound(basFiles) - LBound(basFiles) + 1) & " .bas-Dateien." & vbCrLf & _
+           "Erwartete Importe: " & ((UBound(basFiles) - LBound(basFiles) + 1) - 2) & _
+           " (die zwei Bootstrap-Module bleiben stehen)." & vbCrLf & _
+           "Weicht die Zahl ab, bitte NICHT speichern und melden." & vbCrLf & vbCrLf & _
            "Danach: Kompilieren > Speichern > Excel neu starten > FullSystemRefresh", _
            vbInformation, "VBA Import"
     
