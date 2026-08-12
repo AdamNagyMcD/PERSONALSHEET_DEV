@@ -42,7 +42,7 @@ Public Sub PID_PruefeFormelspalten()
     Dim detailText As String
     Dim indexText As String
     Dim protectedText As String
-    Dim expectedIndex As Long
+    Dim indexInCell As Long
 
     On Error GoTo CleanFail
 
@@ -60,8 +60,8 @@ Public Sub PID_PruefeFormelspalten()
                              " Zellen ohne Formel" & vbCrLf
             End If
 
-            expectedIndex = PID_FCReadMonthIndexCell(ws)
-            If expectedIndex <> monthIndex Then
+            indexInCell = PID_FCReadMonthIndexCell(ws)
+            If indexInCell <> monthIndex Then
                 indexText = indexText & "- " & ws.Name & vbCrLf
             End If
 
@@ -93,7 +93,8 @@ Public Sub PID_FormelspaltenReparieren()
     checkedSheets = PID_RepairFormulaColumnsSilent(repairedCells, repairedSheets, fixedIndexSheets)
 
     PID_TrackAction "Formelspalten reparieren", _
-                    repairedCells & " Zellen auf " & repairedSheets & " " & PID_UTxtMonatsblaettern()
+                    repairedCells & " Zellen auf " & repairedSheets & " " & PID_UTxtMonatsblaettern() & _
+                    ", A1: " & fixedIndexSheets
 
     If repairedCells = 0 And fixedIndexSheets = 0 Then
         MsgBox "Alle Formeln in den Spalten " & PID_FC_COLUMNS & " sind vorhanden." & vbCrLf & vbCrLf & _
@@ -118,9 +119,6 @@ Public Function PID_RepairFormulaColumnsSilent(ByRef repairedCells As Long, _
                                                ByRef fixedIndexSheets As Long) As Long
     Dim monthIndex As Long
     Dim ws As Worksheet
-    Dim missingBefore As Long
-    Dim missingAfter As Long
-    Dim wasProtected As Boolean
     Dim checkedSheets As Long
     Dim oldEnableEvents As Boolean
     Dim oldScreenUpdating As Boolean
@@ -142,32 +140,7 @@ Public Function PID_RepairFormulaColumnsSilent(ByRef repairedCells As Long, _
 
         If Not ws Is Nothing Then
             checkedSheets = checkedSheets + 1
-
-            ' Jedes Blatt einzeln: ein Fehler auf Januar darf die restlichen elf
-            ' Monate nicht mitnehmen.
-            missingBefore = PID_FCCountMissingFormulaCells(ws)
-
-            If missingBefore > 0 Or PID_FCReadMonthIndexCell(ws) <> monthIndex Then
-                wasProtected = ws.ProtectContents
-                PID_FCTryUnprotect ws
-
-                If PID_FCEnsureMonthIndexCell(ws, monthIndex) Then
-                    fixedIndexSheets = fixedIndexSheets + 1
-                End If
-
-                If missingBefore > 0 Then
-                    PID_RestoreFormulaColumnsForRows ws, PID_FIRST_ROW, PID_LAST_ROW
-
-                    missingAfter = PID_FCCountMissingFormulaCells(ws)
-
-                    If missingAfter < missingBefore Then
-                        repairedCells = repairedCells + (missingBefore - missingAfter)
-                        repairedSheets = repairedSheets + 1
-                    End If
-                End If
-
-                If wasProtected Then PID_ReprotectWorksheet ws
-            End If
+            PID_FCRepairSheet ws, monthIndex, repairedCells, repairedSheets, fixedIndexSheets
         End If
     Next monthIndex
 
@@ -177,6 +150,49 @@ SafeExit:
     Application.EnableEvents = oldEnableEvents
     PID_RepairFormulaColumnsSilent = checkedSheets
 End Function
+
+
+' Ein Monatsblatt reparieren. Eigene Fehlerbehandlung, damit ein Problem auf Januar
+' die restlichen elf Monate nicht mitnimmt und das Blatt nicht entsperrt zurueckbleibt.
+Private Sub PID_FCRepairSheet(ByVal ws As Worksheet, _
+                              ByVal monthIndex As Long, _
+                              ByRef repairedCells As Long, _
+                              ByRef repairedSheets As Long, _
+                              ByRef fixedIndexSheets As Long)
+    Dim missingBefore As Long
+    Dim missingAfter As Long
+    Dim wasProtected As Boolean
+
+    On Error GoTo SafeExit
+
+    If ws Is Nothing Then Exit Sub
+
+    missingBefore = PID_FCCountMissingFormulaCells(ws)
+
+    If missingBefore = 0 And PID_FCReadMonthIndexCell(ws) = monthIndex Then Exit Sub
+
+    wasProtected = ws.ProtectContents
+    PID_FCTryUnprotect ws
+
+    If PID_FCEnsureMonthIndexCell(ws, monthIndex) Then
+        fixedIndexSheets = fixedIndexSheets + 1
+    End If
+
+    If missingBefore > 0 Then
+        PID_RestoreFormulaColumnsForRows ws, PID_FIRST_ROW, PID_LAST_ROW
+
+        missingAfter = PID_FCCountMissingFormulaCells(ws)
+
+        If missingAfter < missingBefore Then
+            repairedCells = repairedCells + (missingBefore - missingAfter)
+            repairedSheets = repairedSheets + 1
+        End If
+    End If
+
+SafeExit:
+    On Error Resume Next
+    If wasProtected Then PID_ReprotectWorksheet ws
+End Sub
 
 
 ' Anzahl der Zellen in G, H, K und L (Zeile 3 bis 82) ohne Formel.
