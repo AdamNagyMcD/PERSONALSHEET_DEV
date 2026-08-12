@@ -877,12 +877,26 @@ Private Sub PID_FillFormulaDownWithoutFormats(ByVal firstCell As Range, ByVal ta
 End Sub
 
 
+' Erkennt, ob in der Formel schon ein B/C-Schutz steckt. Wird das verneint, obwohl der
+' Schutz vorhanden ist, packt PID_ApplyLetztesGehaltFormulaToSheet die Formel ein
+' ZWEITES Mal ein - und da der Wrapper den alten Ausdruck zweimal einsetzt, verdoppelt
+' sich die Formel bei jedem Lauf. Genau das ist auf Januar passiert (2981 statt 1473
+' Zeichen): die kanonische A1-Form heisst B3="" OHNE Dollarzeichen, die alte Pruefung
+' verlangte aber $B und $C. Nach drei solchen Laeufen sprengt die Formel die
+' Excel-Grenze von 8192 Zeichen und laesst sich gar nicht mehr schreiben.
 Private Function PID_FormulaHasLetztesGehaltEmployeeGuard(ByVal formulaText As String) As Boolean
     Dim compactFormula As String
     
     compactFormula = UCase$(Replace(Replace(Replace(formulaText, " ", ""), vbLf, ""), vbTab, ""))
     
     If InStr(1, compactFormula, "RC[-10]", vbTextCompare) > 0 Then
+        PID_FormulaHasLetztesGehaltEmployeeGuard = True
+        Exit Function
+    End If
+    
+    ' Jede geschuetzte Variante beginnt mit =IF(OR( - egal ob R1C1, A1 mit oder ohne
+    ' Dollarzeichen. Der ungeschuetzte Altbestand beginnt dagegen mit =IFERROR(.
+    If Left$(compactFormula, 7) = "=IF(OR(" Then
         PID_FormulaHasLetztesGehaltEmployeeGuard = True
         Exit Function
     End If
