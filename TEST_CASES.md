@@ -946,3 +946,47 @@ zurück, wenn ein Makro mitten im Lauf abbrach.
   bleiben **PASS**.
 - `CopyData`, `DataClear`, `MitarbeiterEntfernen` und `PersonalIdKorrektur` laufen unverändert
   durch — sie schützen sich selbst um ihre Schreibvorgänge herum.
+
+
+## TEST 36 — Admin-Panel wird nicht bei jedem Öffnen neu gebaut
+
+Modul: `mod_PIDAdminSheet.bas`.
+Hintergrund: `PID_EnsureAdminSheet` läuft bei jedem Öffnen und hat dabei das ganze Blatt neu
+beschriftet und alle 22 Buttons gelöscht und neu angelegt — obwohl `_ADMIN` sofort danach
+wieder auf `xlSheetVeryHidden` geht und ein normaler Benutzer es nie zu sehen bekommt.
+Jetzt entscheidet eine Signatur (Buttonanzahl + Beschriftungen + Makronamen) in `_ADMIN!BZ1`,
+ob ein Neuaufbau nötig ist.
+
+### Scenario A — Erstes Öffnen nach dem Import baut einmal, danach nicht mehr
+1. VBA importieren, speichern, schließen.
+2. Datei öffnen (erster Start: `BZ1` ist leer, das Panel wird einmal gebaut), speichern, schließen.
+3. Datei erneut öffnen und die Zeit bis zur Bedienbarkeit mit vorher vergleichen.
+4. **Alt+F8** → `PID_ToggleAdminSheet` und das Panel ansehen.
+
+### Expected A
+- Alle **22** Buttons sind vorhanden, mit korrekter Beschriftung, und jeder startet sein Makro.
+- Kopfzeile stimmt: `C3` = aktuelles Jahr aus `EINSTELLUNG!C35`, `E3` = Excel-Version.
+- Das Öffnen ist ab dem zweiten Start nicht langsamer, tendenziell schneller (keine 44
+  Shape-Operationen und kein `Cells.Font`-Durchlauf mehr).
+
+### Scenario B — Selbstheilung bleibt erhalten
+1. Panel anzeigen, **einen** Button von Hand löschen, `_ADMIN` wieder ausblenden.
+2. Datei schließen (speichern) und erneut öffnen.
+3. Panel wieder anzeigen.
+
+### Expected B
+- Der fehlende Button ist wieder da (Anzahl weicht ab → vollständiger Neuaufbau).
+
+### Scenario C — Geänderte Button-Liste im Code wird übernommen
+1. Nach einem VBA-Import, der eine Beschriftung oder einen Makronamen in
+   `PID_AdminGetButtonSpec` ändert, die Datei öffnen.
+2. Panel anzeigen.
+
+### Expected C
+- Die neue Beschriftung ist sichtbar; die Signatur hat den Neuaufbau ausgelöst.
+
+### Negative checks
+- `_ADMIN` ist nach dem Öffnen weiterhin **ausgeblendet** (`xlSheetVeryHidden`).
+- `PID_RunSystemSmokeCheck` bleibt vollständig **PASS**.
+- Ein Öffnen ohne jede Änderung markiert die Mappe nicht mehr allein wegen des
+  Admin-Blatts als geändert.
