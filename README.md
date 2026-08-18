@@ -7,6 +7,8 @@ Excel-alapu szemelyzeti es labor-planning rendszer ettermek szamara.
 - **Specifikacio:** [SPEC.md](SPEC.md)
 - **Tesztesetek:** [TEST_CASES.md](TEST_CASES.md)
 - **Valtozasok:** [docs/CHANGELOG.md](docs/CHANGELOG.md)
+- **Interaktiv tudásbázis (német, offline):** [docs/Personalsheet_Wissensbasis.html](docs/Personalsheet_Wissensbasis.html)
+- **Nyomtatható Schnellhilfe:** [docs/Personalsheet_Schnellhilfe.html](docs/Personalsheet_Schnellhilfe.html)
 - **Felhasznaloi rovid utmutato:** [docs/Kurzanleitung_Personalsheet_A4.html](docs/Kurzanleitung_Personalsheet_A4.html)
 - **Release checklist:** [docs/RELEASE.md](docs/RELEASE.md)
 - **Geplante Verbesserungen (Backlog):** [docs/FUTURE_PLANS.md](docs/FUTURE_PLANS.md)
@@ -51,6 +53,7 @@ A `_xlsm_*` es `_einstellung_probe` mappak **lokalis fejlesztoi probe** celokra 
 | `PersonalIdKorrigieren` | Personal ID / nev javitasa mind a 12 honapon + Stunden-Log |
 | `MitarbeiterEntfernen` | Dolgozo torlese minden honaprol vagy egy valasztott honaptol |
 | `FehlerMelden` | Hibabejelentes: kontext + 2 kerdes → txt fajl a Feedback mappaba + vagolap |
+| `AlleDatenLoeschen` | Minden honap minden adatanak torlese (dupla megerosites, keplet marad) |
 
 Harom gomb minden honaplapon: „Mitarbeiter entfernen" (O7:P7),
 „Personal-ID korrigieren" (Q7:R7) es „Fehler melden" (S7:T7).
@@ -67,14 +70,36 @@ Reszletek: Kurzanleitung HTML.
 
 ## Admin / fejlesztoi makrok (🔴 — ne ettermi usernek)
 
-Modul: `mod_PIDAdmin.bas` — `PID_ShowAdminMacroInfo` listazza.
+Modul: `mod_ADMIN.bas`. Az **Alt+F8** listaban az `ADMIN_` nevek szamozottan,
+egymas mellett, a lista elejen jelennek meg. `ADMIN_00_Hilfe` mutatja az attekintest.
 
-| Makro | Veszely |
-|-------|---------|
-| `ResetAndImportVBAFiles` | Minden VBA modul ujraimport (Bestaetigung) |
-| `FullSystemRefresh` | Teljes workbook refresh |
-| `RebuildLOHNTABELLE` | KV tabla ujraepites |
-| `UnprotectEverything` | Minden lap feloldasa (Bestaetigung) |
+| Csoport | Makrok | Mit csinal |
+|---------|--------|------------|
+| **01–05 Setup / VBA** | `ADMIN_01_VBA_Import`, `ADMIN_02_VBA_Export`, `ADMIN_03_VBA_Reparatur_Nach_Import`, `ADMIN_04_Admin_Panel`, `ADMIN_05_Makro_Uebersicht` | VBA import a `vba\` mappabol, export a `vba_export\` mappaba, import utani keplet-helyreallitas, `_ADMIN` panel |
+| **10–18 Teszt / diagnosztika** | `ADMIN_10_Test_Smoke_Check`, `ADMIN_11_Test_Schnellcheck`, `ADMIN_12_Test_Performance`, `ADMIN_13_Test_Formelspalten`, `ADMIN_14_Test_Stunden_Log`, `ADMIN_15_Test_Aktionsprotokoll`, `ADMIN_16_Test_Ergebnisblatt`, `ADMIN_17/18_Tech_Blaetter_*` | Smoke teszt, gyorsellenorzes, teljesitmenymeres, keplet-ellenorzes, naplok, technikai lapok |
+| **20–28 Javitas** | `ADMIN_20_Reparatur_Full_Refresh`, `ADMIN_21_Reparatur_Formelspalten`, `ADMIN_22/23/24_Reparatur_*`, `ADMIN_25_Namen_Aufraeumen`, `ADMIN_26_Schutz_AN`, `ADMIN_27_Schutz_AUS`, `ADMIN_28_UEBERSICHT_Schutz` | Full refresh, G/H/K/L kepletek, dropdownok, `#REF!` nevek torlese, lapvedelem |
+| **30–38 Formazas / LOHNTABELLE** | `ADMIN_30..38` | Honaplapok es UEBERSICHT formazasa, KV tabla ujraepitese es javitasa |
+| **40–41 Adattorles** | `ADMIN_40_Daten_Stunden_Log_Leeren`, `ADMIN_41_Daten_Alles_Loeschen` | Visszafordithatatlan — dupla megerosites |
+
+Elnevezesi szabaly:
+
+- `ADMIN_NN_...` = fejlesztoi / karbantartasi makro (csak neked)
+- rovid nemet nev (`CopyData`, `DataClear`, …) = ettermi felhasznaloi makro
+- `PID_...` = belso technika, kezzel nem inditando
+
+A regi nevek valtozatlanul mukodnek: az `ADMIN_` bejegyzesek csak atiranyitasok,
+a gombok, esemenyek es a dokumentacio erintetlenek.
+
+## Fejlesztoi ellenorzo szkriptek (Windows nelkul is futnak)
+
+| Szkript | Mit ellenoriz |
+|---------|---------------|
+| `python3 tools/vba_lint.py` | A `vba/` forrasok statikus ellenorzese — hianyzo/privat eljaras, duplikalt nev, hianyzo cimke, blokk-hiba, `Option Explicit`, nem Excel 2016-kompatibilis fuggveny |
+| `python3 tools/check_vba_sync.py` | A `Personalsheet.xlsm`-be agyazott VBA egyezik-e a `vba/` mappaval |
+| `python3 tools/check_formula_columns.py` | Hol hianyzik keplet G/H/K/L-ben a munkafuzetben (a `PID_PruefeFormelspalten` Linux-parja) |
+
+Mindharom csak olvas. Ajanlott sorrend VBA modositas utan: `vba_lint.py` → Excelben import
++ Kompilieren → mentes utan `check_vba_sync.py`.
 
 ## Git
 

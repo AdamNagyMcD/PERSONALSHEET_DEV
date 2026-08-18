@@ -19,6 +19,14 @@ Private mBatchKVLohnRefresh As Boolean
 Private mCachedWorkbookYear As Long
 Private mWorkbookYearCached As Boolean
 
+' Index ueber den LOHNTABELLE-Cache: Schluessel "PERIODE|KV-CODE" -> Collection der
+' passenden Cache-Zeilen (in Blattreihenfolge). Die Spalte G steht in 960 Zellen als
+' UDF PID_KVLohnLookup; ohne Index durchsucht jede einzelne Zelle die komplette
+' Tabelle zweimal (aktuelle und vorige KV-Periode) und normalisiert dabei jede
+' Periodenangabe erneut. Der Index wird zusammen mit dem Cache aufgebaut und verworfen.
+Private mLohnIndex As Collection
+Private mLohnIndexLoaded As Boolean
+
 
 Private Sub PID_EnsureLohnTableCacheLoaded()
     If mLohnTableCacheLoaded Then Exit Sub
@@ -37,6 +45,7 @@ Private Sub PID_LoadLohnTableCache()
     Dim lastRow As Long
     
     mLohnTableCacheLoaded = False
+    PID_ClearLohnTableIndex
     
     On Error Resume Next
     Set wsKV = ThisWorkbook.Worksheets(PID_LOHNTABELLE_SHEET)
@@ -60,10 +69,80 @@ End Sub
 Private Sub PID_ClearLohnTableCache()
     mLohnTableCacheLoaded = False
     mWorkbookYearCached = False
+    PID_ClearLohnTableIndex
     On Error Resume Next
     Erase mLohnTableCache
     On Error GoTo 0
 End Sub
+
+
+Private Sub PID_ClearLohnTableIndex()
+    Set mLohnIndex = Nothing
+    mLohnIndexLoaded = False
+End Sub
+
+
+' Baut den Suchindex aus dem bereits geladenen Cache. Die Reihenfolge innerhalb
+' eines Schluessels entspricht der Blattreihenfolge, damit weiterhin der erste
+' passende Eintrag gewinnt. Der Schluessel ist gross geschrieben (Collection-Keys
+' sind ohnehin nicht case-sensitiv); die exakte Pruefung passiert danach im Bucket.
+Private Sub PID_BuildLohnTableIndex()
+    Dim r As Long
+    Dim rowCount As Long
+    Dim normPeriod As String
+    Dim normCode As String
+    Dim bucketKey As String
+    Dim bucket As Collection
+    
+    Set mLohnIndex = New Collection
+    mLohnIndexLoaded = True
+    
+    If Not mLohnTableCacheLoaded Then Exit Sub
+    If IsEmpty(mLohnTableCache) Then Exit Sub
+    
+    On Error GoTo SafeExit
+    
+    rowCount = UBound(mLohnTableCache, 1)
+    
+    For r = 1 To rowCount
+        normPeriod = NormalizeKVPeriodForLookup(CStr(mLohnTableCache(r, 1)))
+        
+        If Len(normPeriod) > 0 Then
+            normCode = NormalizeKVCodeForLookup(CStr(mLohnTableCache(r, 4)))
+            
+            If Len(normCode) > 0 Then
+                bucketKey = UCase$(normPeriod) & "|" & UCase$(normCode)
+                
+                Set bucket = Nothing
+                On Error Resume Next
+                Set bucket = mLohnIndex.item(bucketKey)
+                On Error GoTo SafeExit
+                
+                If bucket Is Nothing Then
+                    Set bucket = New Collection
+                    mLohnIndex.Add bucket, bucketKey
+                End If
+                
+                ' 0 = Cache-Zeile, 1 = normalisierte Periode, 2 = normalisierter KV-Code
+                bucket.Add Array(r, normPeriod, normCode)
+            End If
+        End If
+    Next r
+
+SafeExit:
+End Sub
+
+
+Private Function PID_GetLohnIndexBucket(ByVal normalizedPeriod As String, _
+                                        ByVal kvCode As String) As Collection
+    On Error Resume Next
+    
+    If Not mLohnIndexLoaded Then PID_BuildLohnTableIndex
+    If mLohnIndex Is Nothing Then Exit Function
+    
+    Set PID_GetLohnIndexBucket = mLohnIndex.item(UCase$(normalizedPeriod) & "|" & UCase$(kvCode))
+    Err.Clear
+End Function
 
 
 Private Sub PID_EnsureWorkbookYearCached()
@@ -332,7 +411,8 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
     Dim wsKV As Worksheet
     Dim lastRow As Long
     Dim r As Long
-    Dim rowCount As Long
+    Dim bucket As Collection
+    Dim entry As Variant
     
     Dim rowPeriod As String
     Dim rowKVCode As String
@@ -349,15 +429,15 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
     
     If mLohnTableCacheLoaded And Not IsEmpty(mLohnTableCache) Then
         
-        rowCount = UBound(mLohnTableCache, 1)
+        Set bucket = PID_GetLohnIndexBucket(normalizedTargetPeriod, kvCode)
+        If bucket Is Nothing Then GoTo NotFound
         
-        For r = 1 To rowCount
-            rowPeriod = NormalizeKVPeriodForLookup(CStr(mLohnTableCache(r, 1)))
-            
-            If rowPeriod = normalizedTargetPeriod Then
-                rowKVCode = NormalizeKVCodeForLookup(CStr(mLohnTableCache(r, 4)))
-                
-                If rowKVCode = kvCode Then
+        For Each entry In bucket
+            ' Der Index-Schluessel ist nicht case-sensitiv, der Vergleich hier schon -
+            ' damit bleibt das Ergebnis identisch zur frueheren vollen Suche.
+            If entry(1) = normalizedTargetPeriod Then
+                If entry(2) = kvCode Then
+                    r = CLng(entry(0))
                     rowMonatsstunden = mLohnTableCache(r, 7)
                     
                     If IsNumeric(rowMonatsstunden) Then
@@ -373,7 +453,7 @@ Public Function FindKVLohnInPeriod(ByVal periodName As String, _
                     End If
                 End If
             End If
-        Next r
+        Next entry
         
     Else
         
@@ -608,66 +688,57 @@ Public Function PID_GetMonatslohnFormulaR1C1() As String
 End Function
 
 
+' Diese Pruefung laeuft beim Oeffnen (PID_EnsureMonatslohnFormulas) und bei jedem
+' Blattwechsel (RefreshKVLohnIfDirty). Frueher las sie E, F und G Zelle fuer Zelle -
+' 320 Einzelzugriffe je Monatsblatt. Jetzt kommen die Werte in zwei Bereichslesungen als
+' Array; Logik und Ergebnis sind unveraendert. Auch die frueher separate Pruefung auf
+' KV-Eingabezeilen (PID_MonthSheetHasKvInputRows, weitere 160 Zugriffe) faellt in
+' derselben Schleife mit ab.
 Public Function PID_MonthSheetHasMonatslohnFormula(ByVal wsMonth As Worksheet) As Boolean
+    Dim inputValues As Variant
+    Dim gFormulas As Variant
     Dim r As Long
     Dim eText As String
     Dim fText As String
     Dim gText As String
-    Dim gFormula As String
     Dim hasFormulaTemplate As Boolean
     Dim hasManagedRows As Boolean
+    Dim hasKvInputRows As Boolean
     
     On Error GoTo SafeExit
     
     If wsMonth Is Nothing Then Exit Function
     If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Function
     
-    For r = PID_FIRST_ROW To PID_LAST_ROW
-        gFormula = CStr(wsMonth.Cells(r, "G").FormulaR1C1)
-        If InStr(1, gFormula, "PID_KVLohnLookup", vbTextCompare) > 0 Then
+    inputValues = wsMonth.Range("E" & PID_FIRST_ROW & ":G" & PID_LAST_ROW).Value2
+    gFormulas = wsMonth.Range("G" & PID_FIRST_ROW & ":G" & PID_LAST_ROW).FormulaR1C1
+    
+    For r = 1 To UBound(inputValues, 1)
+        If InStr(1, CStr(gFormulas(r, 1)), "PID_KVLohnLookup", vbTextCompare) > 0 Then
             hasFormulaTemplate = True
         End If
         
-        eText = Trim$(CStr(wsMonth.Cells(r, "E").Value2))
-        fText = Trim$(CStr(wsMonth.Cells(r, "F").Value2))
+        eText = Trim$(CStr(inputValues(r, 1)))
+        fText = Trim$(CStr(inputValues(r, 2)))
         
-        If Len(eText) = 0 Or Len(fText) = 0 Then GoTo NextMonatslohnRow
-        
-        gText = Trim$(CStr(wsMonth.Cells(r, "G").Value2))
-        
-        If IsNumeric(gText) Then
-            hasManagedRows = True
-        ElseIf StrComp(gText, "Nicht gefunden", vbTextCompare) = 0 Then
-            hasManagedRows = True
-        Else
-            PID_MonthSheetHasMonatslohnFormula = False
-            Exit Function
+        If Len(eText) > 0 And Len(fText) > 0 Then
+            hasKvInputRows = True
+            gText = Trim$(CStr(inputValues(r, 3)))
+            
+            If IsNumeric(gText) Then
+                hasManagedRows = True
+            ElseIf StrComp(gText, "Nicht gefunden", vbTextCompare) = 0 Then
+                hasManagedRows = True
+            Else
+                PID_MonthSheetHasMonatslohnFormula = False
+                Exit Function
+            End If
         End If
-
-NextMonatslohnRow:
     Next r
     
-    PID_MonthSheetHasMonatslohnFormula = hasFormulaTemplate Or hasManagedRows Or Not PID_MonthSheetHasKvInputRows(wsMonth)
+    PID_MonthSheetHasMonatslohnFormula = hasFormulaTemplate Or hasManagedRows Or Not hasKvInputRows
 
 SafeExit:
-End Function
-
-
-Private Function PID_MonthSheetHasKvInputRows(ByVal wsMonth As Worksheet) As Boolean
-    Dim r As Long
-    Dim eText As String
-    Dim fText As String
-    
-    If wsMonth Is Nothing Then Exit Function
-    
-    For r = PID_FIRST_ROW To PID_LAST_ROW
-        eText = Trim$(CStr(wsMonth.Cells(r, "E").Value2))
-        fText = Trim$(CStr(wsMonth.Cells(r, "F").Value2))
-        If Len(eText) > 0 And Len(fText) > 0 Then
-            PID_MonthSheetHasKvInputRows = True
-            Exit Function
-        End If
-    Next r
 End Function
 
 

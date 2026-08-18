@@ -13,7 +13,12 @@ _probe_copy.xlsm
 # Fehlermeldungen aus dem Feedback-Button (TR-09): lokale Laufzeit-Artefakte
 Feedback/
 
+# Momentaufnahme aus ADMIN_02_VBA_Export - nur zum Vergleichen, nie die Quelle
+vba_export/
+
 # Lokale Test-/Backup-Kopien (nicht committen)
+backup/
+Personalsheet - Kopie.xlsm
 Kopie von Personalsheet.xlsm
 Personalsheet_import_test*.xlsm
 Personalsheet.zip

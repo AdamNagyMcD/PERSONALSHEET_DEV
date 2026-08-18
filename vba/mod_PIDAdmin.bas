@@ -22,26 +22,9 @@ Public Function PID_ConfirmAdminAction(ByVal actionDescription As String, ByVal 
 End Function
 
 
+' Die Liste steht nur an einer Stelle: in ADMIN_00_Hilfe (mod_ADMIN).
 Public Sub PID_ShowAdminMacroInfo()
-    Dim msg As String
-    
-    msg = "Admin-/Entwickler-Makros (nicht f" & PID_UTxtUe() & "r Restaurant-User):" & vbCrLf & vbCrLf
-    msg = msg & "- PID_ToggleAdminSheet (Admin-Panel ein/aus)" & vbCrLf
-    msg = msg & "- ResetAndImportVBAFiles" & vbCrLf
-    msg = msg & "- FullSystemRefresh / PID_FullSystemRefresh" & vbCrLf
-    msg = msg & "- PID_QuickSystemCheck" & vbCrLf
-    msg = msg & "- PID_RunSystemSmokeCheck" & vbCrLf
-    msg = msg & "- PID_RunPerformanceBaseline (FP-010)" & vbCrLf
-    msg = msg & "- PID_AdminResetHourOverrideLog (Stunden-Log leeren)" & vbCrLf
-    msg = msg & "- PID_AdminKorrigierePersonalId (Personal-ID/Name korrigieren)" & vbCrLf
-    msg = msg & "- PID_AdminMitarbeiterEntfernen (Mitarbeiter aus Monaten entfernen)" & vbCrLf
-    msg = msg & "- PID_AdminFehlerMelden (Fehlermeldung mit Kontext erstellen)" & vbCrLf
-    msg = msg & "- PID_AdminShowActionLog (letzte Aktionen anzeigen)" & vbCrLf
-    msg = msg & "- RebuildLOHNTABELLE" & vbCrLf
-    msg = msg & "- UnprotectEverything" & vbCrLf & vbCrLf
-    msg = msg & "Siehe docs/RELEASE.md"
-    
-    MsgBox msg, vbInformation, "Admin Makros"
+    ADMIN_00_Hilfe
 End Sub
 
 
@@ -70,6 +53,11 @@ Public Sub PID_FullSystemRefresh()
     Dim oldDisplayAlerts As Boolean
     Dim oldCalculation As XlCalculation
     
+    Dim checkedSheets As Long
+    Dim repairedCells As Long
+    Dim repairedSheets As Long
+    Dim fixedIndexSheets As Long
+    
     On Error GoTo CleanFail
     
     oldEnableEvents = Application.EnableEvents
@@ -93,6 +81,11 @@ Public Sub PID_FullSystemRefresh()
     PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty
     
+    ' TR-10: Sicherheitsnetz nach den vier Spalten-Wiederherstellungen. Diese
+    ' ueberspringen ein Monatsblatt still, wenn der Monatsindex in A1 fehlt oder
+    ' nicht passt - hier werden A1 und einzelne fehlende Formeln zeilenweise ergaenzt.
+    checkedSheets = PID_RepairFormulaColumnsSilent(repairedCells, repairedSheets, fixedIndexSheets)
+    
     RefreshFluktuationAll
     
     PID_RestoreFinanzSummaryOnUbersicht
@@ -112,7 +105,10 @@ Public Sub PID_FullSystemRefresh()
     Application.CalculateFull
     On Error GoTo CleanFail
     
-    MsgBox "Personalsheet wurde " & PID_UTxtVollstaendig() & " aktualisiert.", _
+    MsgBox "Personalsheet wurde " & PID_UTxtVollstaendig() & " aktualisiert." & vbCrLf & vbCrLf & _
+           "Formelspalten G/H/K/L " & PID_UTxtGeprueft() & ": " & checkedSheets & " " & PID_UTxtMonatsblaetter() & vbCrLf & _
+           "Fehlende Formeln " & PID_UTxtErgaenzt() & ": " & repairedCells & " Zellen" & vbCrLf & _
+           "Monatsindex A1 korrigiert: " & fixedIndexSheets, _
            vbInformation, "System Refresh"
 
 CleanExit:

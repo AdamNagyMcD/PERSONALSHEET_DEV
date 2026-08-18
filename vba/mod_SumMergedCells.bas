@@ -331,6 +331,7 @@ Public Sub PID_SyncFinanzSummaryToUbersicht()
     Dim oldScreenUpdating As Boolean
     Dim oldCalculation As XlCalculation
     Dim syncSingleMonthOnly As Boolean
+    Dim reprotectDone As Boolean
     
     On Error GoTo SafeExit
     
@@ -395,6 +396,7 @@ Public Sub PID_SyncFinanzSummaryToUbersicht()
     End If
     
     PID_SMReprotectIfWasProtected ubersichtWs, ubersichtProtected
+    reprotectDone = True
     ClearFinanzSummaryDirty
 
 RestoreSettings:
@@ -403,6 +405,16 @@ RestoreSettings:
 
 SafeExit:
     On Error Resume Next
+    ' Fehlerweg: UEBERSICHT und EINSTELLUNG sind hier entsperrt und muessen auch dann
+    ' zurueckgeschuetzt werden, wenn das Schreiben mittendrin abgebrochen ist.
+    If Not reprotectDone Then
+        If Not einstellungWs Is Nothing Then
+            PID_SMReprotectIfWasProtected einstellungWs, einstellungProtected
+        End If
+        If Not ubersichtWs Is Nothing Then
+            PID_SMReprotectIfWasProtected ubersichtWs, ubersichtProtected
+        End If
+    End If
     Application.Calculation = oldCalculation
     Application.ScreenUpdating = oldScreenUpdating
 End Sub
@@ -420,6 +432,7 @@ Public Sub PID_RecalculateFinanzSummaryForMonth(ByVal ws As Worksheet)
     Dim einstellungProtected As Boolean
     Dim oldScreenUpdating As Boolean
     Dim oldCalculation As XlCalculation
+    Dim reprotectDone As Boolean
     
     On Error GoTo SafeExit
     
@@ -466,6 +479,7 @@ Public Sub PID_RecalculateFinanzSummaryForMonth(ByVal ws As Worksheet)
     
     PID_SyncFinanzSummaryQuarterAndTotalRows ubersichtWs
     PID_SMReprotectIfWasProtected ubersichtWs, ubersichtProtected
+    reprotectDone = True
     ClearFinanzSummaryDirty
 
 RestoreSettings:
@@ -474,6 +488,15 @@ RestoreSettings:
 
 SafeExit:
     On Error Resume Next
+    ' Fehlerweg: die beiden entsperrten Blaetter nicht offen zuruecklassen.
+    If Not reprotectDone Then
+        If Not einstellungWs Is Nothing Then
+            PID_SMReprotectIfWasProtected einstellungWs, einstellungProtected
+        End If
+        If Not ubersichtWs Is Nothing Then
+            PID_SMReprotectIfWasProtected ubersichtWs, ubersichtProtected
+        End If
+    End If
     Application.Calculation = oldCalculation
     Application.ScreenUpdating = oldScreenUpdating
 End Sub

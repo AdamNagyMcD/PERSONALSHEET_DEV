@@ -192,6 +192,12 @@ Public Sub RefreshKVStundenDropdownForSingleRow(ByVal wsMonth As Worksheet, ByVa
     Dim oldScreenUpdating As Boolean
     Dim monthWasProtected As Boolean
     
+    ' Zuerst merken, dann pruefen: scheitert eine der Pruefungen mit einem Fehler,
+    ' landet der Ablauf in CleanExit und wuerde ScreenUpdating sonst auf den
+    ' Startwert False einer nicht gesetzten Variablen ziehen - der Bildschirm bliebe
+    ' einfroren.
+    oldScreenUpdating = Application.ScreenUpdating
+    
     On Error GoTo CleanExit
     
     If wsMonth Is Nothing Then Exit Sub
@@ -202,7 +208,6 @@ Public Sub RefreshKVStundenDropdownForSingleRow(ByVal wsMonth As Worksheet, ByVa
     monthNumber = CLng(wsMonth.Range("A1").Value)
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
-    oldScreenUpdating = Application.ScreenUpdating
     Application.ScreenUpdating = False
     
     Set wsHelper = GetOrCreateKVDropdownHelperSheet()
@@ -215,14 +220,19 @@ Public Sub RefreshKVStundenDropdownForSingleRow(ByVal wsMonth As Worksheet, ByVa
     On Error GoTo CleanExit
     
     RefreshKVStundenDropdownForRow wsMonth, wsHelper, rowNumber, monthNumber
-    
-    wsHelper.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
-    
-    If monthWasProtected Then
-        PID_ProtectWorkerMonthSheet wsMonth
-    End If
 
 CleanExit:
+    ' Rueckschutz im Ausgangsblock: bricht der Dropdown-Aufbau ab, blieben Monatsblatt
+    ' und KV_DROPDOWN_HELPER sonst entsperrt zurueck. Analog zu
+    ' RefreshKVStundenDropdownForSheet, das den Schutz schon auf beiden Wegen setzt.
+    On Error Resume Next
+    If Not wsHelper Is Nothing Then
+        wsHelper.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
+    End If
+    If monthWasProtected And Not wsMonth Is Nothing Then
+        PID_ProtectWorkerMonthSheet wsMonth
+    End If
+    Err.Clear
     Application.ScreenUpdating = oldScreenUpdating
 End Sub
 
@@ -739,28 +749,6 @@ SafeExit:
 End Sub
 
 
-Public Sub PID_InvalidateFStundenDropdownForRows(ByVal wsMonth As Worksheet, ByVal changedRange As Range)
-    Dim rowsToCheck As Range
-    Dim c As Range
-    
-    On Error GoTo SafeExit
-    
-    If wsMonth Is Nothing Then Exit Sub
-    If changedRange Is Nothing Then Exit Sub
-    
-    Set rowsToCheck = Intersect(changedRange, wsMonth.Range("E3:E82"))
-    If rowsToCheck Is Nothing Then Exit Sub
-    
-    For Each c In rowsToCheck.Cells
-        On Error Resume Next
-        wsMonth.Cells(c.Row, "F").Validation.Delete
-        Err.Clear
-    Next c
-
-SafeExit:
-End Sub
-
-
 Public Sub PID_ClearStundenValuesCache()
     Set mStundenValuesCache = Nothing
 End Sub
@@ -887,6 +875,8 @@ Public Function WriteDropdownValuesToHelper(ByVal wsHelper As Worksheet, _
                                             ByVal helperCol As Long, _
                                             ByVal values As Collection) As Long
     Dim i As Long
+    Dim buffer() As Variant
+    Dim targetRange As Range
     
     On Error GoTo SafeExit
     
@@ -895,10 +885,18 @@ Public Function WriteDropdownValuesToHelper(ByVal wsHelper As Worksheet, _
     If values.count = 0 Then Exit Function
     If helperCol < 1 Then Exit Function
     
+    ' Ein Schreibzugriff statt zwei je Wert. Diese Routine laeuft bei jedem Neuaufbau
+    ' der F-Dropdowns fuer jeden KV-Code des Blattes.
+    ReDim buffer(1 To values.count, 1 To 1)
+    
     For i = 1 To values.count
-        wsHelper.Cells(i, helperCol).Value = CDbl(values.item(i))
-        wsHelper.Cells(i, helperCol).NumberFormat = "0.00"
+        buffer(i, 1) = CDbl(values.item(i))
     Next i
+    
+    Set targetRange = wsHelper.Range(wsHelper.Cells(1, helperCol), _
+                                     wsHelper.Cells(values.count, helperCol))
+    targetRange.Value = buffer
+    targetRange.NumberFormat = "0.00"
     
     WriteDropdownValuesToHelper = values.count
     Exit Function
@@ -1375,24 +1373,6 @@ CleanFail:
 End Sub
 
 
-Public Sub PID_EnsureKVCodeDropdownValidation()
-    PID_RestoreKVCodeDropdownValidationSilent
-End Sub
-
-
-Public Sub PID_EnsureKVCodeDropdownOnSheet(ByVal wsMonth As Worksheet)
-    On Error GoTo SafeExit
-    
-    If wsMonth Is Nothing Then Exit Sub
-    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
-    If PID_MonthSheetHasValidKVCodeDropdown(wsMonth) Then Exit Sub
-    
-    PID_RestoreKVCodeDropdownOnSheet wsMonth
-
-SafeExit:
-End Sub
-
-
 Public Sub PID_RestoreKVCodeDropdownValidationSilent()
     Dim monthNames As Variant
     Dim ws As Worksheet
@@ -1535,18 +1515,6 @@ Private Function PID_GetExcelColumnLetters(ByVal columnNumber As Long) As String
     
     PID_GetExcelColumnLetters = letters
 End Function
-
-
-Public Sub PID_RestoreFStundenDropdownOnSheet(ByVal wsMonth As Worksheet)
-    On Error GoTo SafeExit
-    
-    If wsMonth Is Nothing Then Exit Sub
-    If Not PID_IsWorkerMonthSheet(wsMonth) Then Exit Sub
-    
-    RefreshKVStundenDropdownForSheet wsMonth
-
-SafeExit:
-End Sub
 
 
 Public Function PID_RestoreKVCodeDropdownOnSheet(ByVal ws As Worksheet) As Boolean

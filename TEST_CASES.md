@@ -665,3 +665,328 @@ Betroffene Spalten: **G** (Monatslohn), **H** (Aktuelle Stunden), **K** (Urlaub 
   überschrieben (nur fehlende Formeln werden ergänzt).
 - Zeilenhöhe, Zebra-Streifen, Rahmen und Zahlenformate bleiben unverändert.
 - Nach dem Entfernen bleibt das Blatt geschützt.
+---
+
+## TEST 31 — Formelspalten prüfen und reparieren (TR-10)
+
+Module: `mod_PIDFormelCheck.bas`, `mod_PIDAdmin.bas`.
+Voraussetzung: `_ADMIN` sichtbar (**Alt+F8** → `PID_ToggleAdminSheet`).
+
+Ausgangslage in der Testdatei (mit `tools/check_formula_columns.py` ermittelt):
+in **Februar bis Dezember** fehlt in **L3, L4 und L5** die Formel — 33 Zellen insgesamt.
+
+### Scenario A — Diagnose
+1. `_ADMIN` → **„Formeln prüfen"** (oder **Alt+F8** → `PID_PruefeFormelspalten`).
+
+### Expected A
+- Meldung listet „Geprüft: 12 Monatsblätter", die Spalten G, H, K, L und Zeile 3 bis 82.
+- Jedes Blatt mit Lücken erscheint mit der Anzahl fehlender Zellen
+  (erwartet: Februar bis Dezember mit je 3).
+- Es wird nichts verändert: ein zweiter Lauf zeigt dieselben Zahlen.
+
+### Scenario B — Reparatur
+1. `_ADMIN` → **„Formeln reparieren"** (oder **Alt+F8** → `PID_FormelspaltenReparieren`).
+2. Danach erneut **„Formeln prüfen"**.
+
+### Expected B
+- Erste Meldung: „Neue Formeln: 33 Zellen auf 11 Monatsblättern".
+- Zweite Meldung: „Alle Formeln in den Spalten G,H,K,L sind vorhanden."
+- `Februar!L4` (Zeile mit Mitarbeiter) zeigt in der Bearbeitungsleiste wieder eine Formel
+  und rechnet einen Betrag.
+
+### Scenario C — Full Refresh meldet die Reparatur
+1. Datei schließen ohne zu speichern, neu öffnen (Schaden ist wieder da).
+2. `_ADMIN` → **„Full Refresh"**.
+
+### Expected C
+- Abschlussmeldung enthält die drei neuen Zeilen: „Formelspalten G/H/K/L geprüft: 12",
+  „Fehlende Formeln ergänzt: N Zellen", „Monatsindex A1 korrigiert: 0".
+- Danach meldet „Formeln prüfen" keine Lücken mehr.
+
+### Scenario D — Monatsindex A1
+1. Blattschutz aufheben (`UnprotectEverything`), auf **Mai** die Zelle `A1` leeren.
+2. `_ADMIN` → **„Formeln prüfen"**, danach **„Formeln reparieren"**.
+
+### Expected D
+- Die Prüfung meldet „Monatsindex in A1 fehlt oder passt nicht: Mai".
+- Nach der Reparatur steht in `Mai!A1` wieder **5**, und „Monatsindex A1 korrigiert: 1".
+- Hintergrund: ohne A1 überspringen die Wiederherstellungen das Blatt stillschweigend.
+
+### Negative checks
+- Vorhandene Formeln werden nicht überschrieben (nur fehlende ergänzt).
+- Blattschutz ist nach beiden Makros wieder aktiv.
+- Rechenmodus bleibt auf Automatisch.
+- Nach dem Speichern meldet `python3 tools/check_formula_columns.py`
+  „Fehlende Formelzellen gesamt: 0".
+
+---
+
+## TEST 32 — Alle Daten löschen (TR-03)
+
+Modul: `mod_DataClear.bas`. Einstieg: **Alt+F8** → `AlleDatenLoeschen`
+oder `_ADMIN` → **„Alle Daten löschen"**.
+
+**Vorher unbedingt eine Kopie der Datei anlegen.**
+
+### Scenario A — Abbruch
+1. Makro starten, im ersten Dialog **Nein** wählen.
+2. Makro erneut starten, ersten Dialog mit **Ja**, zweiten mit **Nein** beantworten.
+
+### Expected A
+- In beiden Fällen bleibt jede Zelle unverändert.
+- Der zweite Dialog steht standardmäßig auf **Nein**.
+
+### Scenario B — Löschen
+1. Makro starten und beide Dialoge mit **Ja** bestätigen.
+
+### Expected B
+- Alle 12 Monatsblätter: `B:F`, `I:J`, `M:N` (Zeile 3–82), `O18:Q28`, `O45` und `Q31` leer.
+- **G, H, K, L behalten ihre Formeln** in allen 80 Zeilen (Bearbeitungsleiste prüfen).
+- Abschlussmeldung: „Monatsblätter geleert: 12 / 12" und „Stunden-Log geleert".
+- `EINSTELLUNG!C35` (Jahr), LOHNTABELLE und UEBERSICHT sind unverändert.
+- `Q12` (Vormonat) bleibt stehen — bewusst nicht gelöscht.
+- Blattschutz auf allen Monatsblättern weiterhin aktiv.
+
+### Scenario C — Weiterarbeiten auf der leeren Datei
+1. In Januar einen Mitarbeiter eintragen (ID, Name, Eintritt, KV-Gruppe, Stunden).
+2. `CopyData` von Januar aus starten.
+3. FLUKTUATION-Tab öffnen.
+
+### Expected C
+- G, H, K und L rechnen sofort.
+- CopyData verteilt den Mitarbeiter bis Dezember.
+- Fluktuation und UEBERSICHT bauen ohne Fehler neu auf (0 Austritte).
+
+### Negative checks
+- Stunden-Log (`PID_AdminShowActionLog` / `PID_ShowHourOverrideLog`) enthält keine alten
+  Overrides mehr; ein früher überschriebener Monatswert kehrt nicht zurück.
+- Das Aktionsprotokoll enthält den Eintrag „Alle Daten loeschen".
+- Formate, Zebra-Streifen, Kopfzeilen, Buttons und Dropdowns bleiben erhalten.
+
+---
+
+## TEST 33 — Einheitliches Layout der Monatsblätter
+
+Module: `mod_FormatMonthSheet.bas`, `mod_FormatEinstellung.bas`.
+Einstieg: **Alt+F8** → `ADMIN_30_Format_Alle_Monate`, danach `ADMIN_32_Format_EINSTELLUNG`.
+
+### Scenario A — Zeilenhöhe
+1. `ADMIN_30_Format_Alle_Monate` ausführen.
+2. Auf mehreren Monatsblättern die Zeilen 3 bis 82 markieren und die Höhe ablesen
+   (Rechtsklick auf den Zeilenkopf → *Zeilenhöhe*).
+
+### Expected A
+- Jede Zeile 3–82 ist **22** hoch, auf allen zwölf Blättern einschließlich Januar.
+- Die Höhe bleibt gleich, auch in Zeilen mit ausgefülltem Austrittsgrund (Spalte N).
+
+### Scenario B — Zeilenhöhe bleibt nach CopyData
+1. In einer Zeile einen Austrittsgrund aus dem Dropdown in Spalte N wählen.
+2. `CopyData` starten.
+
+### Expected B
+- Die betroffene Zeile ist weiterhin 22 hoch — vorher wurde sie auf 18 zusammengezogen.
+
+### Scenario C — Ausrichtung und Schriftgröße
+1. Beliebige Zellen in `A3:N82` anklicken und Ausrichtung sowie Schriftgröße prüfen.
+
+### Expected C
+- Alle Spalten A bis N sind vertikal **mittig** ausgerichtet.
+- Spalten B bis N stehen auf **11 Punkt** (vorher B und N auf 12), Spalte A bleibt bei 8.
+- Die horizontale Ausrichtung ist unverändert: B, C, M, N links, der Rest zentriert.
+
+### Scenario D — EINSTELLUNG Nachtzuschläge
+1. `ADMIN_32_Format_EINSTELLUNG` ausführen, dann `O6:O17` ansehen.
+
+### Expected D
+- Die Beträge erscheinen als Eurowert (z. B. `€ 2.860,00`), nicht als `2860,00`.
+- `N6:N17` zeigt weiterhin die Monatsbeschriftungen.
+
+---
+
+## TEST 34 — Spalte L wächst nicht mehr, Spalte G bleibt als Wert stehen
+
+Module: `Modul1.bas`, `mod_KVLohnLookup.bas`, `mod_PIDFormelCheck.bas`.
+Hintergrund: Die L-Formel wurde bei jedem Öffnen erneut umhüllt (1467 → 2981 Zeichen,
+Kernformel 4× enthalten) und wäre bei rund 8192 Zeichen an der Excel-Grenze gescheitert.
+Die Formelprüfung meldete gleichzeitig bis zu 50 Zeilen je Monatsblatt als „Formel fehlt",
+obwohl der Zahlenwert in `G` der gewollte schnelle Zustand ist.
+
+**Voraussetzung:** VBA neu importieren (`ADMIN_01_VBA_Import` bzw. `ResetAndImportVBAFiles`),
+kompilieren, speichern.
+
+### Scenario A — Einmalige Bereinigung der L-Formel
+1. Vor dem Import in `Januar` die Zelle `L3` anklicken und die Formellänge notieren
+   (Bearbeitungsleiste, alternativ im Direktfenster: `?Len(Range("L3").Formula)`).
+2. VBA importieren, Datei speichern, schließen und **einmal neu öffnen**.
+3. `L3` erneut ansehen: `?Len(Range("L3").Formula)`.
+
+### Expected A
+- Vorher rund **2981** Zeichen, danach rund **745** Zeichen.
+- Die angezeigten Beträge in `L3:L82` sind auf allen zwölf Blättern **unverändert**.
+- `Q17` (`=SUM(L3:L82)`) und `Q42` (AVG Bruttolohn) zeigen dieselben Werte wie vorher.
+- Zeilen ohne Mitarbeiter bleiben **leer** (kein `€ 0,00`) — das übernimmt jetzt das
+  Zahlenformat mit leerem Null-Abschnitt.
+
+### Scenario B — Zweites Öffnen schreibt nichts mehr
+1. Datei erneut schließen und öffnen.
+2. `?Len(Range("L3").Formula)` in mehreren Monatsblättern prüfen.
+
+### Expected B
+- Die Länge bleibt bei rund **745** Zeichen und wächst nicht weiter.
+- Das Öffnen ist nicht langsamer als vorher; es werden keine L-Spalten mehr neu geschrieben.
+
+### Scenario C — Prüfung meldet Spalte G nicht mehr falsch
+1. **Alt+F8** → `PID_PruefeFormelspalten` (oder `_ADMIN` → *Formeln prüfen*).
+
+### Expected C
+- Meldung: **0 Zellen ohne Formel** auf allen zwölf Monatsblättern.
+- Vorher wurden hier rund **402** Zellen gemeldet, obwohl nichts defekt war.
+
+### Scenario D — Reparatur ersetzt keine schnellen G-Werte
+1. In `Februar` eine belegte Zeile suchen, in der `G` einen Zahlenwert ohne Formel trägt
+   (Bearbeitungsleiste zeigt die Zahl, keine `=`-Formel).
+2. **Alt+F8** → `PID_FormelspaltenReparieren` ausführen.
+3. Dieselbe Zelle erneut ansehen.
+
+### Expected D
+- Die Zelle trägt weiterhin den **Zahlenwert**, keine `PID_KVLohnLookup`-Formel.
+- Der angezeigte Lohn ist unverändert.
+
+### Scenario E — Formel kommt zurück, wo sie fehlt
+1. In `März` einen Mitarbeiter über *Dolgozó törlése* (`MitarbeiterEntfernen`) aus einem
+   Monat entfernen.
+2. In derselben Zeile `G`, `H`, `K` und `L` prüfen.
+3. Danach in dieselbe Zeile einen neuen Mitarbeiter mit KV-Gruppe und Stunden eintragen.
+
+### Expected E
+- Nach dem Löschen steht in `G` wieder die Formel (kein stehengebliebener Lohn des
+  gelöschten Mitarbeiters), `H`, `K`, `L` behalten ihre Formeln.
+- Der neue Mitarbeiter erhält sofort Lohn, aktuelle Stunden, Urlaubsgeld und letztes Gehalt.
+
+### Negative checks
+- `python3 tools/check_formula_columns.py` (oder auf Windows `python tools/...`) meldet
+  „Fehlende Formelzellen gesamt: 0".
+- Ein Blattwechsel zwischen den Monaten fühlt sich nicht langsamer an als vorher
+  (die Prüfung liest E, F und G jetzt als Array statt Zelle für Zelle).
+- `PID_RunSystemSmokeCheck`: TEST 15 (Monatslohn Spalte G) bleibt **PASS**.
+
+
+## TEST 35 — Blattschutz ab dem Öffnen und nach einem Abbruch
+
+Module: `mod_SchutzHinzufugen.bas`, `Modul1.bas`, `mod_FormatEinstellung.bas`.
+Hintergrund: Der Schutz wurde bisher erst beim **ersten Besuch** eines Tabs gesetzt. Wer die
+Mappe auf `UEBERSICHT` liegend öffnete, hatte kein einziges Monatsblatt geschützt und konnte
+die Formelspalten `G`, `H`, `K`, `L` überschreiben. Zusätzlich blieben Blätter entsperrt
+zurück, wenn ein Makro mitten im Lauf abbrach.
+
+**Voraussetzung:** VBA neu importieren (`ADMIN_01_VBA_Import`), kompilieren, speichern.
+
+### Scenario A — Alle Blätter sind sofort nach dem Öffnen geschützt
+1. Die Datei auf `UEBERSICHT` stehend speichern und schließen.
+2. Datei öffnen und **ohne** einen Monats-Tab anzuklicken direkt auf `Dezember` wechseln.
+3. In `G3` etwas eintippen (z. B. `1`).
+4. Ebenso in `H3`, `K3`, `L3` und in `A3`.
+5. Rechtsklick auf eine Zeilennummer → *Zeilen löschen* versuchen.
+6. Dasselbe auf `EINSTELLUNG` in einer Zelle außerhalb der Eingabeblöcke (z. B. `B6`).
+
+### Expected A
+- Excel lehnt jede dieser Eingaben mit der Schutzmeldung ab.
+- Das Löschen und Einfügen von Zeilen und Spalten ist gesperrt.
+- Die erlaubten Eingabefelder funktionieren weiter: `B3:F3`, `I3:J3`, `M3:N3` und das
+  Freitextfeld `O18` sind beschreibbar.
+
+### Scenario B — Eine ungeschützt gespeicherte Datei kommt geschützt beim Benutzer an
+1. `ADMIN_03_Schutz_AUS` (`UnprotectEverything`) ausführen und mit *Ja* bestätigen.
+2. Datei **speichern** und schließen (das ist der Fehler, der bisher nicht auffing).
+3. Datei erneut öffnen und Scenario A Punkt 3 bis 5 wiederholen.
+
+### Expected B
+- Nach dem Öffnen sind alle Blätter wieder geschützt, `G3` ist nicht beschreibbar.
+- Die technischen Blätter (`PID_HOUR_OVERRIDES`, `FLUKTUATION_DATEN`, `KV_DROPDOWN_HELPER`,
+  `_ADMIN`) sind wieder ausgeblendet.
+
+### Scenario C — Sortieren bleibt auf Monatsblättern gesperrt
+1. `ADMIN_11_Format_EINSTELLUNG` (bzw. `PID_FormatEinstellungSheet`) ausführen.
+2. Auf `Januar` wechseln, eine Zelle in `C3:C82` anklicken und *Daten → Sortieren* versuchen.
+
+### Expected C
+- Sortieren wird abgelehnt. Vorher hatte dieses Makro auf jedem angefassten Monatsblatt
+  `AllowSorting:=True` hinterlassen — ein versehentliches Sortieren hätte die Zuordnung
+  aller Mitarbeiterzeilen zerrissen.
+- Der AutoFilter funktioniert weiterhin.
+
+### Scenario D — Nach einem Abbruch bleibt kein Blatt offen
+1. Auf `UEBERSICHT` wechseln (das löst den Durchrechnungs-Refresh aus).
+2. Während eines längeren Makros (z. B. `ADMIN_10_Format_Monatsblaetter`) **Strg+Untbr**
+   drücken und im Dialog *Beenden* wählen.
+3. Auf `UEBERSICHT` und auf ein Monatsblatt wechseln und dort in `G3` bzw. in eine
+   Formelzelle schreiben wollen.
+
+### Expected D
+- Beide Blätter sind geschützt; die Eingabe wird abgelehnt.
+- Vor der Änderung blieb genau das Blatt der abgebrochenen Runde dauerhaft entsperrt.
+
+### Scenario E — Excel-Reset löst die häufigsten Blockaden
+1. Ein Makro mit **Strg+Untbr** abbrechen, während es läuft.
+2. Symptome prüfen: Ausfüllkästchen fehlt, Ziehen von Zellen geht nicht, Dropdowns in `E`/`F`
+   aktualisieren nicht mehr, `Q31`/Finanzwerte reagieren nicht auf Eingaben.
+3. **Alt+F8** → `ADMIN_05_Excel_Reset` (bzw. `PID_ResetExcelState`).
+
+### Expected E
+- Meldung „Excel wurde zurückgesetzt".
+- Ausfüllkästchen und Ziehen sind wieder verfügbar (auch in anderen offenen Dateien).
+- Eingaben in `E`/`F` lösen die Dropdown-Aktualisierung wieder aus, `Q31` und die
+  Finanzspalten rechnen wieder mit.
+- Einfügen per Strg+V fügt weiterhin nur Werte ein (TR-02, TEST 29).
+
+### Negative checks
+- Das Öffnen dauert nicht merkbar länger: die Schutzarbeit ist nur vom ersten Tabwechsel nach
+  vorne gewandert, und die Sperrliste läuft je Blatt jetzt **einmal** statt zwei- bis dreimal.
+- `PID_RunSystemSmokeCheck`: TEST 17 (Blattschutz) und TEST 18 (`Q12` auf Feb/Mai/Aug/Nov)
+  bleiben **PASS**.
+- `CopyData`, `DataClear`, `MitarbeiterEntfernen` und `PersonalIdKorrektur` laufen unverändert
+  durch — sie schützen sich selbst um ihre Schreibvorgänge herum.
+
+
+## TEST 36 — Admin-Panel wird nicht bei jedem Öffnen neu gebaut
+
+Modul: `mod_PIDAdminSheet.bas`.
+Hintergrund: `PID_EnsureAdminSheet` läuft bei jedem Öffnen und hat dabei das ganze Blatt neu
+beschriftet und alle 22 Buttons gelöscht und neu angelegt — obwohl `_ADMIN` sofort danach
+wieder auf `xlSheetVeryHidden` geht und ein normaler Benutzer es nie zu sehen bekommt.
+Jetzt entscheidet eine Signatur (Buttonanzahl + Beschriftungen + Makronamen) in `_ADMIN!BZ1`,
+ob ein Neuaufbau nötig ist.
+
+### Scenario A — Erstes Öffnen nach dem Import baut einmal, danach nicht mehr
+1. VBA importieren, speichern, schließen.
+2. Datei öffnen (erster Start: `BZ1` ist leer, das Panel wird einmal gebaut), speichern, schließen.
+3. Datei erneut öffnen und die Zeit bis zur Bedienbarkeit mit vorher vergleichen.
+4. **Alt+F8** → `PID_ToggleAdminSheet` und das Panel ansehen.
+
+### Expected A
+- Alle **22** Buttons sind vorhanden, mit korrekter Beschriftung, und jeder startet sein Makro.
+- Kopfzeile stimmt: `C3` = aktuelles Jahr aus `EINSTELLUNG!C35`, `E3` = Excel-Version.
+- Das Öffnen ist ab dem zweiten Start nicht langsamer, tendenziell schneller (keine 44
+  Shape-Operationen und kein `Cells.Font`-Durchlauf mehr).
+
+### Scenario B — Selbstheilung bleibt erhalten
+1. Panel anzeigen, **einen** Button von Hand löschen, `_ADMIN` wieder ausblenden.
+2. Datei schließen (speichern) und erneut öffnen.
+3. Panel wieder anzeigen.
+
+### Expected B
+- Der fehlende Button ist wieder da (Anzahl weicht ab → vollständiger Neuaufbau).
+
+### Scenario C — Geänderte Button-Liste im Code wird übernommen
+1. Nach einem VBA-Import, der eine Beschriftung oder einen Makronamen in
+   `PID_AdminGetButtonSpec` ändert, die Datei öffnen.
+2. Panel anzeigen.
+
+### Expected C
+- Die neue Beschriftung ist sichtbar; die Signatur hat den Neuaufbau ausgelöst.
+
+### Negative checks
+- `_ADMIN` ist nach dem Öffnen weiterhin **ausgeblendet** (`xlSheetVeryHidden`).
+- `PID_RunSystemSmokeCheck` bleibt vollständig **PASS**.
+- Ein Öffnen ohne jede Änderung markiert die Mappe nicht mehr allein wegen des
+  Admin-Blatts als geändert.

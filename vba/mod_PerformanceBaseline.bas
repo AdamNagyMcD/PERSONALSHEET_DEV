@@ -47,6 +47,7 @@ Public Sub PID_RunPerformanceBaseline()
     report = report & PID_PerfMeasureFluktuationSaveRefresh()
     report = report & PID_PerfMeasureFluktuationTabRefresh()
     report = report & PID_PerfMeasureFullSystemRefresh()
+    report = report & PID_PerfMeasureFormulaColumnCheck()
     report = report & PID_PerfManualStepsFooter()
     
     Set logWs = PID_PerfAppendLogReport(report)
@@ -249,7 +250,36 @@ SafeExit:
 End Function
 
 
+' TR-05/FP-010: Schritt 8 misst nur das Sicherheitsnetz aus TR-10. Nach einer
+' Reparatur liefert Range.HasFormula je Spalte True und der teure Zeilen-Durchlauf
+' entfaellt - der zweite Lauf zeigt daher die Dauer im Normalbetrieb.
+Private Function PID_PerfMeasureFormulaColumnCheck() As String
+    Dim started As Single
+    Dim elapsed As Single
+    Dim checkedSheets As Long
+    Dim repairedCells As Long
+    Dim repairedSheets As Long
+    Dim fixedIndexSheets As Long
+    
+    On Error GoTo SafeExit
+    
+    started = Timer
+    checkedSheets = PID_RepairFormulaColumnsSilent(repairedCells, repairedSheets, fixedIndexSheets)
+    elapsed = Timer - started
+    
+    PID_PerfMeasureFormulaColumnCheck = _
+        "8 Formelspalten G/H/K/L (" & checkedSheets & " " & PID_UTxtMonatsblaetter() & ", " & _
+        repairedCells & " " & PID_UTxtErgaenzt() & "): " & PID_PerfFormatSeconds(elapsed) & vbCrLf
+
+SafeExit:
+End Function
+
+
 Private Sub PID_PerfRunFullSystemRefreshTimed()
+    Dim repairedCells As Long
+    Dim repairedSheets As Long
+    Dim fixedIndexSheets As Long
+    
     On Error GoTo SafeExit
     
     PID_SetupSheetProtectionForMacros
@@ -260,6 +290,7 @@ Private Sub PID_PerfRunFullSystemRefreshTimed()
     PID_RestoreLetztesGehaltFormulasSilent
     PID_RestoreKVCodeDropdownValidationSilent
     ClearAllKVLohnDirty
+    PID_RepairFormulaColumnsSilent repairedCells, repairedSheets, fixedIndexSheets
     RefreshFluktuationAll
     PID_RestoreFinanzSummaryOnUbersicht
     PID_RecalculateAllMonthMergedFormulas

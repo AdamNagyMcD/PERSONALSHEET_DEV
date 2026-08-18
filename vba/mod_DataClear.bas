@@ -7,9 +7,21 @@ Attribute VB_Name = "mod_DataClear"
 
 Option Explicit
 
+' TR-03: Beim Loeschen aller Daten wird das komplette Freitext-Panel geleert.
+' Die Zeilen 18 bis 28 sind auf den Monatsblaettern entsperrt (PID_MONTH_PANEL_FREITEXT_RANGE
+' in mod_SchutzHinzufugen), der Monatsclear und CopyData arbeiten dagegen mit O18:Q25.
+' Bei "alle Daten loeschen" darf nichts stehen bleiben, deshalb hier der volle Bereich.
+Private Const PID_CLEAR_ALL_PANEL_RANGE As String = "O18:Q28"
+
 
 Public Sub DataClear()
     PID_ClearCurrentMonthData
+End Sub
+
+
+' TR-03 — Alt+F8-Einstieg, analog zu DataClear.
+Public Sub AlleDatenLoeschen()
+    PID_ClearAllWorkbookData
 End Sub
 
 
@@ -293,6 +305,175 @@ CleanFail:
            originalErrNumber & " - " & originalErrDescription, _
            vbExclamation, PID_UTxtZeilenLoeschen()
 End Sub
+
+
+'==============================================================================
+' TR-03 — Alle Daten loeschen (alle zwoelf Monatsblaetter)
+'==============================================================================
+
+' Setzt die Arbeitsmappe auf den leeren Ausgangszustand zurueck: alle Eingaben der
+' zwoelf Monatsblaetter und der Stunden-Override-Log werden geleert.
+' Erhalten bleiben Struktur, Formate, Blattschutz, die Formelspalten G/H/K/L sowie
+' EINSTELLUNG, LOHNTABELLE und UEBERSICHT.
+Public Sub PID_ClearAllWorkbookData()
+    Dim monthNames As Variant
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim clearedSheets As Long
+    
+    Dim oldEnableEvents As Boolean
+    Dim oldScreenUpdating As Boolean
+    Dim oldDisplayAlerts As Boolean
+    Dim oldCalculation As XlCalculation
+    Dim originalErrNumber As Long
+    Dim originalErrDescription As String
+    
+    On Error GoTo CleanFail
+    
+    If Not PID_ConfirmClearAllFirstStep() Then Exit Sub
+    If Not PID_ConfirmClearAllSecondStep() Then Exit Sub
+    
+    oldEnableEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
+    oldDisplayAlerts = Application.DisplayAlerts
+    oldCalculation = Application.Calculation
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.Calculation = xlCalculationManual
+    Application.StatusBar = "Alle Monatsdaten werden " & PID_UTxtGeloescht() & "..."
+    
+    monthNames = PID_MonthNames()
+    
+    For i = LBound(monthNames) To UBound(monthNames)
+        Set ws = Nothing
+        
+        On Error Resume Next
+        Set ws = ThisWorkbook.Worksheets(CStr(monthNames(i)))
+        Err.Clear
+        On Error GoTo CleanFail
+        
+        If Not ws Is Nothing Then
+            ' Pro Blatt gekapselt: ein Fehler auf einem Monat darf die restlichen
+            ' Monate nicht ueberspringen.
+            If PID_ClearAllDataOnMonthSheet(ws) Then clearedSheets = clearedSheets + 1
+        End If
+    Next i
+    
+    ' Ohne dieses Leeren wuerden alte Stunden-Overrides bei der naechsten Eingabe
+    ' desselben Mitarbeiters wieder auftauchen.
+    PID_ResetHourOverrideLog
+    
+    MarkFluktuationDirty
+    MarkAllKVDropdownsDirty
+    
+    PID_TrackAction "Alle Daten loeschen", clearedSheets & " " & PID_UTxtMonatsblaetter()
+    
+    Application.StatusBar = False
+    
+    MsgBox "Alle Monatsdaten wurden " & PID_UTxtGeloescht() & "." & vbCrLf & vbCrLf & _
+           PID_UTxtMonatsblaetter() & " geleert: " & clearedSheets & " / 12" & vbCrLf & _
+           "Stunden-Log geleert" & vbCrLf & vbCrLf & _
+           "Die Datei ist jetzt bereit " & PID_UTxtFuer() & " neue Eingaben.", _
+           vbInformation, PID_UTxtAlleDatenLoeschen()
+
+CleanExit:
+    Application.StatusBar = False
+    Application.Calculation = oldCalculation
+    Application.DisplayAlerts = oldDisplayAlerts
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    Exit Sub
+
+CleanFail:
+    originalErrNumber = Err.Number
+    originalErrDescription = Err.Description
+    
+    PID_TryProtectMonthSheet ws
+    
+    Application.StatusBar = False
+    Application.Calculation = oldCalculation
+    Application.DisplayAlerts = oldDisplayAlerts
+    Application.ScreenUpdating = oldScreenUpdating
+    Application.EnableEvents = oldEnableEvents
+    
+    MsgBox "Fehler bei PID_ClearAllWorkbookData:" & vbCrLf & _
+           originalErrNumber & " - " & originalErrDescription, _
+           vbExclamation, PID_UTxtAlleDatenLoeschen()
+End Sub
+
+
+Private Function PID_ConfirmClearAllFirstStep() As Boolean
+    Dim answer As VbMsgBoxResult
+    
+    answer = MsgBox( _
+        "ACHTUNG: Alle Eingabedaten in allen 12 Monaten werden " & PID_UTxtGeloescht() & "." & vbCrLf & vbCrLf & _
+        PID_UTxtGeloeschtWerdenLabel() & vbCrLf & _
+        "- Mitarbeiterdaten B:F, I:J, M:N (Januar bis Dezember)" & vbCrLf & _
+        "- Monatsinfo " & PID_CLEAR_ALL_PANEL_RANGE & vbCrLf & _
+        "- Hinweis O45 und Fluktuation Q31" & vbCrLf & _
+        "- gespeicherte Stunden-" & PID_UTxtAenderung() & "en (Stunden-Log)" & vbCrLf & vbCrLf & _
+        "Nicht " & PID_UTxtGeloescht() & " werden:" & vbCrLf & _
+        "- Formelspalten G, H, K, L" & vbCrLf & _
+        "- Formate, Kopfzeilen, Blattschutz" & vbCrLf & _
+        "- EINSTELLUNG (Jahr), LOHNTABELLE, UEBERSICHT" & vbCrLf & _
+        "- Vormonat-Wert Q12" & vbCrLf & vbCrLf & _
+        "Fortfahren?", _
+        vbExclamation + vbYesNo + vbDefaultButton2, _
+        PID_UTxtAlleDatenLoeschen())
+    
+    PID_ConfirmClearAllFirstStep = (answer = vbYes)
+End Function
+
+
+Private Function PID_ConfirmClearAllSecondStep() As Boolean
+    Dim answer As VbMsgBoxResult
+    
+    answer = MsgBox( _
+        "Letzte " & PID_UTxtPruefung() & ":" & vbCrLf & vbCrLf & _
+        "Wirklich ALLE Mitarbeiterdaten aus allen 12 Monaten " & PID_UTxtLoeschen() & "?" & vbCrLf & vbCrLf & _
+        "Das kann nicht " & PID_UTxtRueckgaengig() & " gemacht werden." & vbCrLf & _
+        "Tipp: vorher eine Kopie der Datei speichern.", _
+        vbCritical + vbYesNo + vbDefaultButton2, _
+        PID_UTxtAlleDatenLoeschen())
+    
+    PID_ConfirmClearAllSecondStep = (answer = vbYes)
+End Function
+
+
+' Ein Monatsblatt leeren. Die Formelspalten G, H, K und L bleiben stehen (TR-10);
+' fehlende Formeln werden dabei gleich ergaenzt.
+Private Function PID_ClearAllDataOnMonthSheet(ByVal ws As Worksheet) As Boolean
+    Dim inputCells As Range
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    
+    PID_TryUnprotectMonthSheet ws
+    
+    Set inputCells = PID_GetEmployeeInputCellsForRows(ws, PID_FIRST_ROW, PID_LAST_ROW)
+    If Not inputCells Is Nothing Then inputCells.ClearContents
+    
+    PID_RestoreFormulaColumnsForRows ws, PID_FIRST_ROW, PID_LAST_ROW
+    
+    ws.Range(PID_CLEAR_ALL_PANEL_RANGE).ClearContents
+    ws.Range("O45").ClearContents
+    ws.Range("Q31").ClearContents
+    
+    PID_ApplyMonthSheetFormatsAfterClear ws
+    
+    RefreshKVStundenDropdownForSheet ws
+    PID_EnsureMonatslohnFormulasOnSheet ws
+    
+    MarkFinanzSummaryDirtyForMonth ws
+    
+    PID_ClearAllDataOnMonthSheet = True
+
+SafeExit:
+    PID_TryProtectMonthSheet ws
+End Function
 
 
 Private Sub PID_TryUnprotectMonthSheet(ByVal ws As Worksheet)

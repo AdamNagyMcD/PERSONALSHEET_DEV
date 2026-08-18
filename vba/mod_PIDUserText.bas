@@ -154,3 +154,33 @@ End Function
 Public Function PID_UTxtMoeglich() As String
     PID_UTxtMoeglich = "m" & PID_UTxtOe() & "glich"
 End Function
+
+
+Public Function PID_UTxtGeprueft() As String
+    PID_UTxtGeprueft = "Gepr" & PID_UTxtUe() & "ft"
+End Function
+
+
+Public Function PID_UTxtErgaenzt() As String
+    PID_UTxtErgaenzt = "erg" & PID_UTxtAe() & "nzt"
+End Function
+
+
+Public Function PID_UTxtAlleDatenLoeschen() As String
+    PID_UTxtAlleDatenLoeschen = "Alle Daten " & PID_UTxtLoeschen()
+End Function
+
+
+Public Function PID_UTxtRueckgaengig() As String
+    PID_UTxtRueckgaengig = "r" & PID_UTxtUe() & "ckg" & PID_UTxtAe() & "ngig"
+End Function
+
+
+Public Function PID_UTxtUebersicht() As String
+    PID_UTxtUebersicht = ChrW(220) & "bersicht"
+End Function
+
+
+Public Function PID_UTxtUebersprungen() As String
+    PID_UTxtUebersprungen = ChrW(252) & "bersprungen"
+End Function

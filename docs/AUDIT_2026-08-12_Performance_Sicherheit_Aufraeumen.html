@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personalsheet — Teljesítmény, kockázatok és takarítás (2026-08-12)</title>
+<style>
+  :root{
+    --navy:#1f3864; --navy-soft:#2c4a80; --bg:#f4f6fa; --card:#ffffff;
+    --line:#dfe4ee; --ink:#1c2331; --muted:#5a6c7d; --accent:#ddebf7;
+    --ok:#127c48; --ok-bg:#e4f4ec; --fix:#1f5fbf; --fix-bg:#e5eefb;
+    --rm:#7a4c9c; --rm-bg:#f0e8f7; --rec:#8a6100; --rec-bg:#fdf1d9;
+    --man:#a3341f; --man-bg:#fbe7e2;
+    --crit:#a3341f; --high:#c26a00; --med:#1f5fbf; --low:#5a6c7d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Segoe UI",Calibri,system-ui,-apple-system,sans-serif;
+       font-size:15px;line-height:1.6}
+  header{background:linear-gradient(135deg,var(--navy),var(--navy-soft));color:#fff;
+         padding:38px 28px 30px}
+  header .wrap{max-width:1180px;margin:0 auto}
+  header h1{margin:0 0 6px;font-size:29px;letter-spacing:.2px}
+  header p{margin:0;opacity:.9}
+  .kpis{max-width:1180px;margin:-22px auto 0;padding:0 28px;
+        display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+       padding:14px 16px;box-shadow:0 2px 6px rgba(31,56,100,.07)}
+  .kpi b{display:block;font-size:25px;color:var(--navy);line-height:1.2}
+  .kpi span{font-size:12.5px;color:var(--muted)}
+  main{max-width:1180px;margin:0 auto;padding:26px 28px 70px}
+  nav.toc{background:var(--card);border:1px solid var(--line);border-radius:10px;
+          padding:16px 20px;margin:22px 0 26px}
+  nav.toc h2{margin:0 0 8px;font-size:14px;text-transform:uppercase;
+             letter-spacing:.6px;color:var(--muted)}
+  nav.toc ol{margin:0;padding-left:20px;columns:2;column-gap:34px}
+  nav.toc a{color:var(--navy);text-decoration:none}
+  nav.toc a:hover{text-decoration:underline}
+  section{background:var(--card);border:1px solid var(--line);border-radius:10px;
+          padding:22px 24px;margin-bottom:20px}
+  section h2{margin:0 0 4px;font-size:20px;color:var(--navy)}
+  section h2 .num{color:#9aa7bb;font-weight:600;margin-right:8px}
+  section h3{margin:22px 0 8px;font-size:16px;color:var(--navy-soft)}
+  section > p:first-of-type{margin-top:6px}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--accent);color:var(--navy);font-weight:600}
+  tr:nth-child(even) td{background:#fafbfd}
+  code{background:#eef1f6;border:1px solid #e2e7f0;border-radius:4px;
+       padding:1px 5px;font-family:Consolas,"Courier New",monospace;font-size:13px}
+  .tag{display:inline-block;border-radius:20px;padding:2px 10px;font-size:11.5px;
+       font-weight:700;letter-spacing:.3px;white-space:nowrap}
+  .t-impl{background:var(--ok-bg);color:var(--ok)}
+  .t-fix{background:var(--fix-bg);color:var(--fix)}
+  .t-rm{background:var(--rm-bg);color:var(--rm)}
+  .t-rec{background:var(--rec-bg);color:var(--rec)}
+  .t-man{background:var(--man-bg);color:var(--man)}
+  .p{font-weight:700;font-size:12.5px}
+  .p-crit{color:var(--crit)} .p-high{color:var(--high)}
+  .p-med{color:var(--med)} .p-low{color:var(--low)}
+  .callout{border-left:4px solid var(--navy);background:#f7f9fc;
+           padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+  .callout.warn{border-left-color:var(--man);background:#fdf3f1}
+  .callout.good{border-left-color:var(--ok);background:#f0f8f4}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 0}
+  .legend div{font-size:12.5px;color:var(--muted)}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:3px 0}
+  .check{list-style:none;padding-left:0;margin:10px 0}
+  .check li{border:1px solid var(--line);border-radius:8px;padding:10px 12px 10px 40px;
+            margin-bottom:8px;position:relative;background:#fdfdfe}
+  .check li::before{content:"☐";position:absolute;left:14px;top:8px;font-size:17px;color:var(--navy)}
+  .check li b{color:var(--navy)}
+  .small{font-size:13px;color:var(--muted)}
+  footer{max-width:1180px;margin:0 auto;padding:0 28px 50px;color:var(--muted);font-size:13px}
+  @media (max-width:760px){nav.toc ol{columns:1}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Personalsheet — teljesítmény, kockázatok és VBA-takarítás</h1>
+    <p>Teljes projektátvizsgálás · 2026-08-12 · branch <code style="background:rgba(255,255,255,.15);border-color:transparent;color:#fff">cursor/perf-audit-cleanup-admin-b17f</code></p>
+  </div>
+</header>
+
+<div class="kpis">
+  <div class="kpi"><b>35</b><span>VBA modul / 903 eljárás / 24 091 sor</span></div>
+  <div class="kpi"><b>0</b><span>statikus hiba a linterben</span></div>
+  <div class="kpi"><b>95×</b><span>kevesebb string-művelet a bér-kereséskor</span></div>
+  <div class="kpi"><b>1</b><span>Excel 2016 fordítási blokkoló javítva</span></div>
+  <div class="kpi"><b>9</b><span>törölt, sehol nem hivatkozott eljárás</span></div>
+  <div class="kpi"><b>35</b><span>új, számozott ADMIN_ belépési pont</span></div>
+</div>
+
+<main>
+
+<nav class="toc">
+  <h2>Tartalom</h2>
+  <ol>
+    <li><a href="#osszefoglalo">Executive Summary</a></li>
+    <li><a href="#vizsgalat">Mit vizsgáltam át és hogyan</a></li>
+    <li><a href="#perf">Teljesítményproblémák</a></li>
+    <li><a href="#optim">Elvégzett optimalizálások</a></li>
+    <li><a href="#kockazat">Veszélyforrások és javításuk</a></li>
+    <li><a href="#torles">Törölt VBA-kód</a></li>
+    <li><a href="#admin">Új ADMIN makró-struktúra</a></li>
+    <li><a href="#logika">Logikai fejlesztések</a></li>
+    <li><a href="#javaslat">További javaslatok</a></li>
+    <li><a href="#egyszeru">Egyszerűsítési lehetőségek</a></li>
+    <li><a href="#teszt">Tesztek és validációk</a></li>
+    <li><a href="#korlat">Amit Linux alatt nem lehetett ellenőrizni</a></li>
+    <li><a href="#checklist">Manual Excel Test Checklist</a></li>
+  </ol>
+  <div class="legend">
+    <div><span class="tag t-impl">IMPLEMENTED</span> új működés</div>
+    <div><span class="tag t-fix">FIXED</span> hibajavítás</div>
+    <div><span class="tag t-rm">REMOVED</span> törölve</div>
+    <div><span class="tag t-rec">RECOMMENDATION</span> javaslat, nem nyúltam hozzá</div>
+    <div><span class="tag t-man">MANUAL TEST</span> Excelben ellenőrizendő</div>
+  </div>
+</nav>
+
+<section id="osszefoglalo">
+  <h2><span class="num">1</span>Executive Summary</h2>
+
+  <p>A teljes VBA-projektet (35 modul, 24 000 sor) és a munkafüzet szerkezetét átvizsgáltam
+  teljesítmény, kockázat és karbantarthatóság szempontjából. A kód alapvetően fegyelmezett:
+  nincs benne <code>DoEvents</code>, alig van <code>Select</code>/<code>Activate</code>,
+  az Excel-állapot visszaállítása (ScreenUpdating / EnableEvents / Calculation) gyakorlatilag
+  mindenhol rendben van, és a feltételes formázás nem terheli a fájlt (összesen 1 szabály).
+  A lassulás nem sok apró hibából, hanem <b>három konkrét, mérhető pontból</b> származik.</p>
+
+  <table>
+    <tr><th style="width:34%">Legfontosabb megállapítás</th><th style="width:12%">Prioritás</th><th>Állapot</th></tr>
+    <tr>
+      <td><b>Excel 2016 fordítási blokkoló:</b> <code>Application.FormatStaleValues</code>
+          4 helyen, köztük minden cellaváltozásnál</td>
+      <td><span class="p p-crit">Critical</span></td>
+      <td><span class="tag t-fix">FIXED</span> késői kötés + sessionönként egyszer</td>
+    </tr>
+    <tr>
+      <td><b>960 UDF-cella lineáris kereséssel:</b> teljes újraszámoláskor ~183 000
+          string-normalizálás</td>
+      <td><span class="p p-high">High</span></td>
+      <td><span class="tag t-fix">FIXED</span> index, 95× kevesebb string-munka</td>
+    </tr>
+    <tr>
+      <td><b>Minden hónap-fülváltásnál</b> lapvédelem le/fel + <code>Cells.Locked = True</code>
+          az egész lapon</td>
+      <td><span class="p p-high">High</span></td>
+      <td><span class="tag t-fix">FIXED</span> kimarad, ha nincs mit írni</td>
+    </tr>
+    <tr>
+      <td>Beillesztéskor a vágólap 2–3× beolvasva, majd cellánkénti írás (max. 20 000 db)</td>
+      <td><span class="p p-med">Medium</span></td>
+      <td><span class="tag t-fix">FIXED</span> egyszeri olvasás + tömbírás</td>
+    </tr>
+    <tr>
+      <td>Negatív munkaóra keletkezhet, ha a kilépés dátuma korábbi a belépésnél</td>
+      <td><span class="p p-med">Medium</span></td>
+      <td><span class="tag t-impl">IMPLEMENTED</span> figyelmeztetés beíráskor</td>
+    </tr>
+    <tr>
+      <td>137 makró az Alt+F8 listában, rendszerezés nélkül</td>
+      <td><span class="p p-med">Medium</span></td>
+      <td><span class="tag t-impl">IMPLEMENTED</span> 35 számozott <code>ADMIN_</code> belépő</td>
+    </tr>
+    <tr>
+      <td>12 definiált név <code>#REF!</code>-re mutat (<code>BG1_Hours</code> …)</td>
+      <td><span class="p p-low">Low</span></td>
+      <td><span class="tag t-impl">IMPLEMENTED</span> <code>ADMIN_25_Namen_Aufraeumen</code></td>
+    </tr>
+  </table>
+
+  <div class="callout good">
+    <b>Üzleti logika:</b> egyetlen számítás, képlet, tartomány vagy CopyData-szabály sem
+    változott. A bér-keresés átalakítását 2190 valós kombináción hasonlítottam össze a régi
+    algoritmussal — <b>nulla eltérés</b>. A két bootstrap modult
+    (<code>mod_CopyData</code>, <code>mod_ResetAndImportVBAFiles</code>) nem érintettem.
+  </div>
+</section>
+
+<section id="vizsgalat">
+  <h2><span class="num">2</span>Mit vizsgáltam át és hogyan</h2>
+
+  <p>Excel nélkül nem lehet makrót futtatni, ezért először mérőeszközöket építettem, és
+  minden állítás mögött adat van, nem benyomás.</p>
+
+  <table>
+    <tr><th style="width:26%">Eszköz</th><th>Mit néz</th><th style="width:22%">Eredmény most</th></tr>
+    <tr><td><code>tools/vba_lint.py</code></td>
+        <td>A „Debug → VBAProject kompilieren” pótléka: nem létező <code>PID_*</code> hívás,
+            modulon átnyúló <code>Private</code> hívás, duplikált publikus név, hiányzó
+            ugrócímke, kiegyensúlyozatlan blokk, hiányzó <code>Option Explicit</code>,
+            <b>nem deklarált változó</b>, <b>Excel 2016-ban nem létező objektum-tag</b>,
+            <b><code>Const</code> függvényhívással</b>, nem 2016-kompatibilis képletfüggvény</td>
+        <td>0 hiba / 35 modul</td></tr>
+    <tr><td><code>tools/vba_deadcode.py</code></td>
+        <td>Sehol nem hivatkozott eljárások — a kód mellett a szövegliterálokat
+            (<code>OnAction</code>, <code>Application.Run</code>, <code>OnKey</code>),
+            a cellaképleteket, a dokumentációt és a PowerShell-szkripteket is nézi</td>
+        <td>18 → 0 jelölt</td></tr>
+    <tr><td><code>tools/check_vba_sync.py</code></td>
+        <td>A munkafüzetbe ágyazott VBA vs. a <code>vba/</code> mappa</td>
+        <td>a most módosított modulok „drift”-ként jelennek meg, amíg Excelben nem importálod</td></tr>
+    <tr><td><code>tools/check_formula_columns.py</code></td>
+        <td>Hiányzó G/H/K/L képletek és rossz A1 hónapindex</td>
+        <td>33 hiányzó cella (a korábbi TR-10 hiba, javítómakró készen áll)</td></tr>
+    <tr><td>munkafüzet-szkennelés<br><span class="small">(egyszeri, oletools + openpyxl)</span></td>
+        <td>Lapméretek, képletszám, volatilis függvények, feltételes formázás, adatérvényesítés,
+            definiált nevek, gombokhoz rendelt makrók, használt tartományok</td>
+        <td>lásd a 3. és 10. fejezetet</td></tr>
+    <tr><td>ekvivalencia-teszt<br><span class="small">(bér-keresés)</span></td>
+        <td>A régi és az új algoritmus Python-másolata a valódi LOHNTABELLE adatokon</td>
+        <td>2190 kombináció, 0 eltérés</td></tr>
+  </table>
+
+  <p class="small">A három <code>tools/</code> szkript a repóban marad és bármikor újrafuttatható;
+  csak olvasnak, a munkafüzetet nem módosítják.</p>
+</section>
+
+<section id="perf">
+  <h2><span class="num">3</span>Teljesítményproblémák — amit találtam</h2>
+
+  <h3>3.1 A munkafüzet szerkezete nem problémás</h3>
+  <p>Ezeket kizártam mint lassulási okot:</p>
+  <ul class="tight">
+    <li><b>Feltételes formázás:</b> az egész fájlban <b>1</b> szabály (UEBERSICHT J32:J35). Nem tényező.</li>
+    <li><b>Volatilis képletfüggvény cellában:</b> nincs (<code>NOW</code>, <code>TODAY</code>,
+        <code>INDIRECT</code>, <code>OFFSET</code>: nulla előfordulás).</li>
+    <li><b>Képletszám:</b> 4 929 az egész fájlban, hónaponként ~362 — kevés.</li>
+    <li><b>Adatérvényesítés:</b> 24 blokk. Rendben.</li>
+    <li><b>Felfújt használt tartomány:</b> csak az UEBERSICHT-en (100 sor a 36 helyett) — jelentéktelen.</li>
+    <li><b>VBA-minták:</b> nincs <code>DoEvents</code>, 20 <code>Select</code>/<code>Activate</code>
+        (mind indokolt nézet-visszaállítás), 3 <code>UsedRange</code>.</li>
+  </ul>
+
+  <h3>3.2 A tényleges terhelés forrásai</h3>
+  <table>
+    <tr><th style="width:22%">Hol</th><th>Mi történt</th><th style="width:15%">Prioritás</th></tr>
+    <tr>
+      <td><b>Spalte G</b><br><span class="small">(minden újraszámolás)</span></td>
+      <td>A monatslohn <b>960 cellában</b> a <code>PID_KVLohnLookup</code> VBA-függvény.
+          Minden cella végigolvasta a LOHNTABELLE 159 sorát — és mivel előbb az aktuális,
+          utána az előző KV-periódusban keres, rossz esetben kétszer. Minden meglátogatott
+          sornál újra normalizálta a periódus szövegét (<code>Trim</code>, <code>InStr</code>,
+          szóköz-ciklus). Egy teljes újraszámolás ≈ <b>183 000 string-normalizálás</b>.</td>
+      <td><span class="p p-high">High</span></td>
+    </tr>
+    <tr>
+      <td><b>Fülváltás</b><br><span class="small">(minden hónaplapra lépés)</span></td>
+      <td><code>PID_SyncMonthSheetFluctuationQ31</code> mindig lefuttatta a teljes ciklust:
+          védelem le → O31/Q31 írás → <code>PID_ProtectWorkerMonthSheet</code>, és abban
+          <code>ws.Cells.Locked = True</code> az <b>egész lapra</b>, majd 6 tartomány
+          feloldása és újravédés — akkor is, ha a fluktuáció értéke nem változott.</td>
+      <td><span class="p p-high">High</span></td>
+    </tr>
+    <tr>
+      <td><b>Minden cellaváltozás</b></td>
+      <td><code>Workbook_SheetChange</code> minden egyes szerkesztésnél beállította az
+          <code>Application.FormatStaleValues</code> tulajdonságot (ami Excel 2016-ban
+          egyébként fordítási hibát okoz — lásd 5. fejezet).</td>
+      <td><span class="p p-crit">Critical</span></td>
+    </tr>
+    <tr>
+      <td><b>Minden kattintás</b></td>
+      <td><code>Workbook_SheetSelectionChange</code> háromszor hívta a
+          <code>PID_IsWorkerMonthSheet</code>-et, ami minden hívásnál kiolvassa a lap
+          <code>A1</code> celláját.</td>
+      <td><span class="p p-med">Medium</span></td>
+    </tr>
+    <tr>
+      <td><b>Beillesztés (Ctrl+V)</b></td>
+      <td>A vágólap szövegét 2–3× olvasta be, minden alkalommal új DataObject-tel; a külső
+          forrásból jövő adatot cellánként írta be (a felső korlát 20 000 cella).</td>
+      <td><span class="p p-med">Medium</span></td>
+    </tr>
+    <tr>
+      <td><b>F-dropdown újraépítés</b></td>
+      <td><code>WriteDropdownValuesToHelper</code> értékenként két COM-hívás (érték +
+          számformátum), minden KV-kódra, minden újraépítéskor.</td>
+      <td><span class="p p-low">Low</span></td>
+    </tr>
+    <tr>
+      <td><b>S36 összegzés</b></td>
+      <td><code>SumMergedCells</code> <b>volatilis</b> UDF 12 cellában (havonta egy).
+          Minden újraszámoláskor lefut, és a duplikátum-szűréshez VBA-hibát dob/kap el
+          minden összevont cellánál. <i>Szándékosan nem nyúltam hozzá</i> — a volatilitás
+          az összevont cellák miatt került bele (lásd 9. fejezet, javaslat).</td>
+      <td><span class="p p-low">Low</span></td>
+    </tr>
+  </table>
+</section>
+
+<section id="optim">
+  <h2><span class="num">4</span>Elvégzett optimalizálások</h2>
+
+  <table>
+    <tr><th style="width:24%">Terület</th><th>Változás</th><th style="width:17%">Állapot</th></tr>
+    <tr>
+      <td><b>KV bér-keresés</b><br><code>mod_KVLohnLookup</code></td>
+      <td>A sor-cache mellé index épül: <code>"PERIÓDUS|KV-KÓD" → sorok</code>. A keresés
+          egyből a megfelelő kis listát kapja, és azon belül <b>pontosan</b> ugyanúgy hasonlít
+          tovább (kis/nagybetű, 0,001 órás tűrés, <code>PID_IsUsableKVLookupLohn</code>,
+          első találat nyer). Az index a cache-sel együtt épül és ürül, így a LOHNTABELLE
+          módosítása után ugyanúgy frissül, mint eddig.
+          <div class="small" style="margin-top:6px">Mérés (Python-modell, 960 UDF-hívás):
+          183 360 → 1 920 periódus-normalizálás.</div></td>
+      <td><span class="tag t-fix">FIXED</span><br><span class="small">0 eltérés 2190 teszten</span></td>
+    </tr>
+    <tr>
+      <td><b>Fülváltás</b><br><code>mod_FluctuationCalculation</code></td>
+      <td>Új <code>PID_MonthSheetFluctuationCellsAreCurrent</code>: ha az O31 felirat, a Q31
+          érték és a számformátum már stimmel, a szinkron egyetlen írás nélkül kilép — így a
+          <code>Cells.Locked = True</code> és a teljes újravédés kimarad. Nem védett lap
+          esetén a régi teljes út fut, hogy a védelem visszaállítása megmaradjon.</td>
+      <td><span class="tag t-fix">FIXED</span></td>
+    </tr>
+    <tr>
+      <td><b>Minden cellaváltozás</b><br><code>Modul1</code>, <code>DieseArbeitsmappe</code></td>
+      <td><code>PID_DisableStaleValueFormatting</code>: késői kötés, sessionönként egyszer.
+          A <code>SheetChange</code> útvonalból teljesen kikerült.</td>
+      <td><span class="tag t-fix">FIXED</span></td>
+    </tr>
+    <tr>
+      <td><b>Minden kattintás</b><br><code>DieseArbeitsmappe</code></td>
+      <td><code>PID_IsWorkerMonthSheet</code> és <code>Target.CountLarge</code> egyszer
+          kiértékelve, utána újrafelhasználva.</td>
+      <td><span class="tag t-fix">FIXED</span></td>
+    </tr>
+    <tr>
+      <td><b>Beillesztés</b><br><code>mod_PIDPasteValues</code></td>
+      <td>A vágólap szövege Ctrl+V-nként egyszer olvasódik be. Téglalap alakú, összevont cellát
+          nem tartalmazó blokk esetén egyetlen tömbírás történik cellánkénti írás helyett.
+          Eltérő oszlopszámú sorok és összevont cellák a régi úton mennek, hogy jobbra semmi
+          ne törlődjön.</td>
+      <td><span class="tag t-fix">FIXED</span></td>
+    </tr>
+    <tr>
+      <td><b>F-dropdown</b><br><code>mod_KVStundenDropdown</code></td>
+      <td><code>WriteDropdownValuesToHelper</code> tömbírás + egyetlen számformátum-beállítás.</td>
+      <td><span class="tag t-fix">FIXED</span></td>
+    </tr>
+    <tr>
+      <td><b>Mérés</b><br><code>mod_PerformanceBaseline</code></td>
+      <td>A 7. lépés (Full Refresh) újra pontosan azt a láncot futtatja, mint az éles makró;
+          új 8. lépés külön méri a TR-10 képlet-ellenőrzést.</td>
+      <td><span class="tag t-impl">IMPLEMENTED</span></td>
+    </tr>
+  </table>
+
+  <div class="callout">
+    <b>Amit szándékosan nem optimalizáltam:</b> a FLUKTUATION és a Durchrechnung riportépítők
+    (137 cellánkénti írás) — átírásuk tömbírásra elveszítené a cellánkénti formázást, és
+    Excel nélkül nem tudnám igazolni, hogy a kimenet változatlan. A CopyData-t sem érintettem
+    (bootstrap modul). Mindkettő javaslatként szerepel a 9. fejezetben.
+  </div>
+</section>
+
+<section id="kockazat">
+  <h2><span class="num">5</span>Veszélyforrások és javításuk</h2>
+
+  <table>
+    <tr><th style="width:30%">Kockázat</th><th>Részlet</th><th style="width:20%">Állapot</th></tr>
+    <tr>
+      <td><b>Excel 2016 fordítási hiba</b><br><span class="p p-crit">Critical</span></td>
+      <td><code>Application.FormatStaleValues</code> csak Microsoft 365-ben létezik. Korai
+          kötéssel a fordító a típuskönyvtárból oldja fel — Excel 2016-ban „Metódus vagy
+          adattag nem található”, és ezt a körülötte lévő <code>On Error Resume Next</code>
+          <b>nem</b> fogja el, mert a hiba már fordításkor keletkezik. Négy helyen fordult elő,
+          köztük a <code>Workbook_Open</code>-ban és a <code>Workbook_SheetChange</code>-ben.</td>
+      <td><span class="tag t-fix">FIXED</span><br>késői kötés, +linter-szabály</td>
+    </tr>
+    <tr>
+      <td><b>Negatív munkaóra</b><br><span class="p p-med">Medium</span></td>
+      <td>Ha az I (kilépés) korábbi, mint a D (belépés) — egy elgépelt évszám elég —, a H oszlop
+          <code>(kilépés − belépés + 1)</code> alapján <b>negatív</b> órát ad, ami észrevétlenül
+          beépül a „Gesamt Crew Stunden” (Q8) értékébe és a fluktuációba.</td>
+      <td><span class="tag t-impl">IMPLEMENTED</span><br>figyelmeztetés beíráskor</td>
+    </tr>
+    <tr>
+      <td><b>Halott definiált nevek</b><br><span class="p p-low">Low</span></td>
+      <td>12 név (<code>BG1_Hours</code>, <code>BG1_Wages</code>, … <code>BG3_15_Wages</code>)
+          <code>#REF!</code>-re mutat. Sem VBA, sem cellaképlet nem használja őket, de a
+          névkezelőben ott vannak és laponkénti másoláskor vándorolnak.</td>
+      <td><span class="tag t-impl">IMPLEMENTED</span><br><code>ADMIN_25_Namen_Aufraeumen</code></td>
+    </tr>
+    <tr>
+      <td><b>LAMBDA-maradványok</b><br><span class="p p-low">Low</span></td>
+      <td><code>_xleta.OR</code>, <code>_xleta.SUM</code>, <code>_xlpm.d/i/w</code> rejtett nevek
+          — egy modern Excel hagyta bent, <code>#NAME?</code> értékkel. Ártalmatlanok, de
+          jelzik, hogy a fájlt 365-ös Excel is nyitotta.</td>
+      <td><span class="tag t-rec">RECOMMENDATION</span><br>szándékosan nem törlöm automatikusan</td>
+    </tr>
+    <tr>
+      <td><b>Nem létező lapra hivatkozás</b><br><span class="p p-low">Low</span></td>
+      <td><code>PID_HideUnwantedTechnicalSheets</code> a <code>Worksheets("Settings")</code> lapot
+          rejtené el — ilyen lap nincs (a beállítások az <code>EINSTELLUNG</code>-on vannak).
+          <code>On Error Resume Next</code> miatt hatástalan, de félrevezető.</td>
+      <td><span class="tag t-rec">RECOMMENDATION</span><br><code>mod_CopyData</code> = bootstrap, jóváhagyás kell</td>
+    </tr>
+    <tr>
+      <td><b>Állapot-visszaállítás</b><br><span class="p p-low">Low</span></td>
+      <td>Minden eljárást átnéztem, amelyik kikapcsolja a ScreenUpdating / EnableEvents /
+          DisplayAlerts / Calculation valamelyikét: három helyen tér el a mentés-visszaállítás
+          párosítás, és mind a három szándékos és helyes
+          (<code>Workbook_Open</code>, <code>SelectionChange</code> <code>appStateTouched</code>
+          logika, <code>PID_BeginHeavyMaintenance</code>/<code>End…</code> páros).</td>
+      <td><span class="tag t-impl">IMPLEMENTED</span><br>nincs teendő, ellenőrizve</td>
+    </tr>
+    <tr>
+      <td><b>Esemény-visszacsatolás</b><br><span class="p p-low">Low</span></td>
+      <td>A <code>SheetChange</code> a LOHNTABELLE ágon visszakapcsolt eseményekkel hívja a
+          <code>PID_RecalculateKVStatusColumns</code>-t. Ellenőriztem: az csak
+          <code>.Calculate</code>-et hív, cellába nem ír, tehát nem indít újabb eseményt.</td>
+      <td><span class="tag t-impl">IMPLEMENTED</span><br>nincs teendő, ellenőrizve</td>
+    </tr>
+  </table>
+
+  <div class="callout warn">
+    <b>Fontos, ami nyitva marad:</b> a munkafüzetbe ágyazott <code>mod_ResetAndImportVBAFiles</code>
+    <b>230 sorral tér el</b> a repóbeli változattól, mert az import makró magát mindig kihagyja.
+    Ez az előző kör (TR-10) megállapítása, és továbbra is egyszeri kézi lépést igényel a
+    VBA-szerkesztőben. Amíg ez nem történik meg, a régi importáló nem törli az azonos nevű és
+    a számozott modul-másolatokat import előtt.
+  </div>
+</section>
+
+<section id="torles">
+  <h2><span class="num">6</span>Törölt VBA-kód</h2>
+
+  <p>Csak olyat töröltem, aminek a <code>tools/vba_deadcode.py</code> szerint <b>egyetlen</b>
+  hivatkozása sincs — sem kódban, sem szövegliterálban (gombok, <code>Application.Run</code>,
+  <code>OnKey</code>), sem cellaképletben, sem a dokumentációban —, és amiről a kód elolvasása
+  után is látszott, hogy nem kézi karbantartó eszköz.</p>
+
+  <table>
+    <tr><th style="width:34%">Eljárás</th><th style="width:20%">Modul</th><th>Miért törölhető</th></tr>
+    <tr><td><code>PID_EnsureWorksheetCalculationEnabled</code></td><td>Modul1</td>
+        <td>Nem hívta senki, a saját <code>ws</code> paraméterét figyelmen kívül hagyta, és a
+            négy <code>FormatStaleValues</code> előfordulás egyike volt (Excel 2016 blokkoló)</td></tr>
+    <tr><td><code>PID_RecalculateAllMonthFluctuation</code></td><td>Modul1</td>
+        <td>Egysoros alias a <code>RefreshFluktuationAll</code>-ra, ami dokumentált néven is elérhető</td></tr>
+    <tr><td><code>PID_EnsureLOHNTABELLEButton</code></td><td>mod_AddNewKVPeriodOnTop</td>
+        <td><code>Private</code> alias — kívülről elvileg sem hívható, belülről sem hívta senki</td></tr>
+    <tr><td><code>PID_EnsureKVCodeDropdownValidation</code></td><td>mod_KVStundenDropdown</td>
+        <td>Átirányítás a ténylegesen használt <code>…Silent</code> változatra</td></tr>
+    <tr><td><code>PID_EnsureKVCodeDropdownOnSheet</code></td><td>mod_KVStundenDropdown</td>
+        <td>Őrfeltételes burkoló a használt <code>PID_RestoreKVCodeDropdownOnSheet</code> köré</td></tr>
+    <tr><td><code>PID_RestoreFStundenDropdownOnSheet</code></td><td>mod_KVStundenDropdown</td>
+        <td>Háromsoros burkoló a <code>RefreshKVStundenDropdownForSheet</code> köré</td></tr>
+    <tr><td><code>PID_InvalidateFStundenDropdownForRows</code></td><td>mod_KVStundenDropdown</td>
+        <td>Csak érvényesítést törölt; a lapszintű újraépítés (FP-005) leváltotta</td></tr>
+    <tr><td><code>PID_StyleApplyEditableCell</code></td><td>mod_PIDSheetStyle</td>
+        <td>Használaton kívüli stílus-segéd (git-ből bármikor visszahozható)</td></tr>
+    <tr><td><code>PID_StyleApplyReadOnlyCell</code></td><td>mod_PIDSheetStyle</td>
+        <td>Ugyanaz</td></tr>
+  </table>
+
+  <h3>Amit szándékosan MEGTARTOTTAM</h3>
+  <p>Kilenc eljárásnak szintén nincs hivatkozása, de mindegyik <b>kézi karbantartó eszköz</b>
+  (saját megerősítő vagy eredmény-üzenettel), amit Alt+F8-cal indítasz. Ezeket nem töröltem,
+  hanem <b>felfedezhetővé tettem</b> az új ADMIN-belépőkkel:</p>
+  <p class="small"><code>FixLOHNTABELLE_HeaderText</code> ·
+  <code>CleanupLOHNTABELLETrailingArea</code> · <code>PID_RefreshDurchrechnungUebersicht</code> ·
+  <code>PID_FormatFinanzUebersicht</code> · <code>PID_FormatDurchrechnungUebersicht</code> ·
+  <code>PID_FormatEinstellungSheet</code> · <code>FormatJanuarMonthSheet</code> ·
+  <code>PID_FixUbersichtPlanInputsEditable</code> · <code>PID_RepairWorkbookAfterVBAImport</code>
+  (ez utóbbi a bootstrap modulban van, ezért csak hívom, nem módosítom).</p>
+</section>
+
+<section id="admin">
+  <h2><span class="num">7</span>Új ADMIN makró-struktúra</h2>
+
+  <p>Az Alt+F8 minden argumentum nélküli publikus <code>Sub</code>-ot felsorol — ez 137 tétel volt,
+  ömlesztve. Új modul: <code>vba/mod_ADMIN.bas</code>, benne 35 <b>számozott</b> belépési pont.
+  A számok miatt egy tömbben, a lista elején jelennek meg.</p>
+
+  <table>
+    <tr><th style="width:16%">Tartomány</th><th style="width:26%">Téma</th><th>Tartalom</th></tr>
+    <tr><td><code>ADMIN_01–05</code></td><td>Setup és VBA</td>
+        <td>VBA import · <b>VBA export</b> (új) · import utáni javítás · <code>_ADMIN</code> panel · makró-áttekintés</td></tr>
+    <tr><td><code>ADMIN_10–18</code></td><td>Teszt és diagnosztika</td>
+        <td>Smoke check · gyorsellenőrzés · teljesítménymérés · képletoszlop-ellenőrzés ·
+            óra-log · akciónapló · eredménylap · technikai lapok mutatása/rejtése</td></tr>
+    <tr><td><code>ADMIN_20–28</code></td><td>Javítás</td>
+        <td>Full refresh · képletoszlopok · F- és E-dropdown · kilépés-dátum érvényesítés ·
+            <b>#REF! nevek törlése</b> (új) · lapvédelem be/ki · UEBERSICHT védelem</td></tr>
+    <tr><td><code>ADMIN_30–38</code></td><td>Formázás és LOHNTABELLE</td>
+        <td>Hónaplapok / Januar / EINSTELLUNG / UEBERSICHT formázása ·
+            Durchrechnung újraépítés · LOHNTABELLE újraépítés, fejléc-javítás, takarítás</td></tr>
+    <tr><td><code>ADMIN_40–41</code></td><td>Adattörlés (veszélyes)</td>
+        <td>Óra-override log ürítése · minden adat törlése</td></tr>
+  </table>
+
+  <h3>Elnevezési szabály</h3>
+  <table>
+    <tr><th style="width:26%">Előtag</th><th>Jelentés</th></tr>
+    <tr><td><code>ADMIN_NN_…</code></td><td>fejlesztői / karbantartói makró — csak neked</td></tr>
+    <tr><td>rövid német név</td><td>éttermi felhasználói makró: <code>CopyData</code>,
+        <code>DataClear</code>, <code>AlleDatenLoeschen</code>, <code>PersonalIdKorrigieren</code>,
+        <code>MitarbeiterEntfernen</code>, <code>FehlerMelden</code>, <code>RefreshFluktuationNow</code></td></tr>
+    <tr><td><code>PID_…</code></td><td>belső technika, kézzel soha nem indítandó</td></tr>
+  </table>
+
+  <div class="callout">
+    <b>Nem neveztem át semmit.</b> Az <code>ADMIN_</code> bejegyzések vékony átirányítások: minden
+    meglévő makrónév, gomb (<code>_ADMIN</code> panel, hónaplapok), esemény, dokumentáció és a
+    <code>tools/import_vba_and_repair.ps1</code> változatlanul működik. Ez tudatos döntés: egy
+    átnevezés Excelben csak akkor derülne ki, amikor egy gomb már nem működik.
+    <div style="margin-top:8px"><b>Őszinte mérleg:</b> a lista most 171 tételes (35 ADMIN_ + 93 PID_
+    + 43 egyéb). Nem lett rövidebb, de navigálhatóvá vált. A tényleges rövidítés lehetőségét lásd
+    a 9. fejezetben (<code>Option Private Module</code>) — az viszont már kockázatos, ezért csak
+    javaslat.</div>
+  </div>
+
+  <h3>Két új fejlesztői eszköz</h3>
+  <table>
+    <tr><th style="width:30%">Makró</th><th>Mit csinál</th></tr>
+    <tr><td><code>ADMIN_02_VBA_Export</code></td>
+        <td>Minden modult kiír a munkafüzet melletti <code>vba_export\</code> mappába —
+            <b>szándékosan nem a <code>vba\</code> mappába</b>, mert az a git forrás, és egy
+            régebbi munkafüzet-állapot felülírná a frissebb fájlokat. A két mappa
+            összehasonlítása megmutatja, mi tér el. A mappa <code>.gitignore</code>-ban van.</td></tr>
+    <tr><td><code>ADMIN_25_Namen_Aufraeumen</code></td>
+        <td>Törli a <code>#REF!</code>-re mutató definiált neveket, listával és megerősítéssel.
+            Az érvényes nevek és az Excel belső nevei (<code>_xlfn</code>, <code>_xlpm</code>,
+            <code>Print_Area</code>) érintetlenek.</td></tr>
+  </table>
+</section>
+
+<section id="logika">
+  <h2><span class="num">8</span>Logikai fejlesztések</h2>
+
+  <table>
+    <tr><th style="width:30%">Fejlesztés</th><th>Miért</th><th style="width:17%">Állapot</th></tr>
+    <tr>
+      <td><b>Figyelmeztetés lehetetlen dátumra</b><br><code>mod_PIDEingabePruefung</code> (új)</td>
+      <td>Kilépés a belépés előtt → negatív óra a H oszlopban, ami csendben beépül a crew
+          órákba és a fluktuációba. A makró <b>nem ír át semmit</b>, csak jelzi az érintett
+          sorokat (max. 8 + számláló), több soros beillesztésnél egyetlen üzenetben.</td>
+      <td><span class="tag t-impl">IMPLEMENTED</span></td>
+    </tr>
+    <tr>
+      <td><b>Mérhető Full Refresh</b><br><code>mod_PIDAdmin</code></td>
+      <td>A záró üzenet megmondja, hány lapot ellenőrzött, hány képletet pótolt és hány A1
+          hónapindexet javított. A „nem csinált semmit” többé nem téveszthető össze az
+          „elszállt”-tal. <span class="small">(előző kör, TR-10)</span></td>
+      <td><span class="tag t-impl">IMPLEMENTED</span></td>
+    </tr>
+    <tr>
+      <td><b>Egy helyen a makró-áttekintés</b></td>
+      <td><code>ADMIN_00_Hilfe</code> az egyetlen forrás; <code>PID_ShowAdminMacroInfo</code> már
+          csak odairányít, így nem tud kétfelé elcsúszni.</td>
+      <td><span class="tag t-impl">IMPLEMENTED</span></td>
+    </tr>
+  </table>
+</section>
+
+<section id="javaslat">
+  <h2><span class="num">9</span>További javaslatok — döntést igényelnek</h2>
+
+  <p>Ezekhez vagy üzleti döntés kell, vagy Excel nélkül nem tudnám igazolni, hogy semmi nem
+  változik. Ezért <b>nem</b> nyúltam hozzájuk.</p>
+
+  <table>
+    <tr><th style="width:26%">Javaslat</th><th>Részlet és várható haszon</th><th style="width:13%">Prioritás</th></tr>
+    <tr>
+      <td><b>A G oszlop UDF nélkül</b></td>
+      <td>A 960 <code>PID_KVLohnLookup</code> hívás önmagában is költség: a VBA-UDF-et tartalmazó
+          cellák kizárják a többszálú újraszámolást, és minden hívás átlép a VBA-motorba. Natív
+          <code>INDEX</code>/<code>MATCH</code> a LOHNTABELLE-re (Excel 2016-kompatibilis)
+          nagyságrenddel gyorsabb lenne. Csakhogy a jelenlegi logika periódus-visszaesést és
+          KV-kód normalizálást is végez — ezt képletbe önteni <b>üzleti döntés</b>, mert a
+          fallback-viselkedés könnyen megváltozhat. Javaslom külön feladatként, méréssel.</td>
+      <td><span class="p p-high">High</span></td>
+    </tr>
+    <tr>
+      <td><b>Riportépítők tömbírásra</b></td>
+      <td><code>mod_BuildFluktuationAnalyse</code> (76) és <code>mod_BuildDurchrechnung</code> (61)
+          cellánként ír. Ez a FLUKTUATION fül megnyitásának és a Full Refresh-nek a fő költsége
+          (mérés szerint 1,3 s ill. 8 s). Átírható, de minden cellának saját formázása van —
+          csak Excellel a kézben biztonságos.</td>
+      <td><span class="p p-med">Medium</span></td>
+    </tr>
+    <tr>
+      <td><b><code>SumMergedCells</code> volatilitása</b></td>
+      <td>12 cellában volatilis UDF, ami minden újraszámoláskor lefut, és a belső duplikátum-
+          szűrés VBA-hibákat dob/kap el összevont cellánként. A volatilitás azért került bele,
+          mert az Excel az összevont cellák változását nem mindig követi. Ha a Q17:R29 panel
+          szerkezete fix, a volatilitás elhagyható lenne — ez viselkedésbeli döntés.</td>
+      <td><span class="p p-low">Low</span></td>
+    </tr>
+    <tr>
+      <td><b>Makrólista rövidítése</b></td>
+      <td><code>Option Private Module</code> elrejti egy modul makróit az Alt+F8 listából.
+          Csakhogy ugyanez letiltja a modul UDF-jeit a cellákban, és a
+          <code>Shape.OnAction</code> / <code>Application.Run</code> hívásokat kívülről. A
+          projektben szinte minden modulban van legalább egy ilyen belépő, ezért csak
+          <code>mod_BuildDurchrechnung</code> és <code>mod_FormatEinstellung</code> volna
+          biztonságos (5 tétel). Kevés haszon, nem nulla kockázat — döntsd el, megéri-e.</td>
+      <td><span class="p p-low">Low</span></td>
+    </tr>
+    <tr>
+      <td><b><code>Worksheets("Settings")</code></b></td>
+      <td>Nem létező lapra hivatkozó, hatástalan sor a <code>mod_CopyData</code>-ban.
+          Törléséhez a bootstrap modul módosítása kell → kifejezett jóváhagyás.</td>
+      <td><span class="p p-low">Low</span></td>
+    </tr>
+    <tr>
+      <td><b>Új dolgozó varázsló</b></td>
+      <td>Ma az új dolgozó felvitele 6 cella kézi kitöltése egy hónaplapon, majd CopyData.
+          Egy „Neuer Mitarbeiter” párbeszéd (ID, név, belépés, KV-csoport, órák) egyszerre
+          írhatná be a sort és futtathatná a propagálást — kevesebb kattintás, kevesebb
+          elgépelés. Új funkció, ezért döntés kell róla.</td>
+      <td><span class="p p-med">Medium</span></td>
+    </tr>
+    <tr>
+      <td><b>Kilépés = teljes folyamat</b></td>
+      <td>Kilépéskor ma az I (dátum) és az N (ok) kitöltése a teendő, a többi hónapban pedig
+          marad a sor. Egy „Mitarbeiter beenden” makró egy lépésben beírhatná mindkettőt és
+          jelezné, mely hónapokra hat.</td>
+      <td><span class="p p-low">Low</span></td>
+    </tr>
+    <tr>
+      <td><b>LAMBDA-maradvány nevek</b></td>
+      <td><code>_xleta.*</code> / <code>_xlpm.*</code> rejtett nevek törlése. Ártalmatlanok, de
+          Excel 2016-ban <code>#NAME?</code>-ként ülnek a névkezelőben. Kérésre beépítem az
+          <code>ADMIN_25</code>-be.</td>
+      <td><span class="p p-low">Low</span></td>
+    </tr>
+  </table>
+</section>
+
+<section id="egyszeru">
+  <h2><span class="num">10</span>Egyszerűsítési lehetőségek a munkafüzetben</h2>
+
+  <table>
+    <tr><th style="width:30%">Megfigyelés</th><th>Mit jelent</th><th style="width:17%">Állapot</th></tr>
+    <tr>
+      <td><b>Két hónaplapon hiányzik 3 gomb</b></td>
+      <td>A <code>Juli</code> és a <code>September</code> lapon jelenleg csak a
+          <code>CopyData</code> gomb van; a „Mitarbeiter entfernen”, „Personal-ID korrigieren”
+          és „Fehler melden” hiányzik. Nem hiba: a lapra lépéskor a kód pótolja őket
+          (<code>PID_EnsureMonthSheetCopyDataButton</code>). Egy <code>ADMIN_30</code> futtatás
+          után mind a 12 lapon egységes lesz.</td>
+      <td><span class="tag t-man">MANUAL TEST</span></td>
+    </tr>
+    <tr>
+      <td><b>Panel-tartomány kettősség</b></td>
+      <td>A szabad szöveges panel <code>O18:Q28</code>-ig szerkeszthető, de a <code>DataClear</code>
+          és a CopyData csak <code>O18:Q25</code>-tel dolgozik. A 26–28. sorba írt szöveg tehát
+          nem másolódik és eddig nem is törlődött. Az új „minden adat törlése” a teljes
+          <code>O18:Q28</code>-at üríti. A három hely egységesítése nyitott kérdés (Q4).</td>
+      <td><span class="tag t-rec">RECOMMENDATION</span></td>
+    </tr>
+    <tr>
+      <td><b>UEBERSICHT használt tartomány</b></td>
+      <td>100 sorig terjed, adat csak a 36. sorig van. Kozmetikai; a görgetősáv hosszabb a
+          kelleténél.</td>
+      <td><span class="tag t-rec">RECOMMENDATION</span></td>
+    </tr>
+    <tr>
+      <td><b><code>vbaProject.bin</code> 1,97 MB</b></td>
+      <td>Nagy a 24 000 sor kódhoz képest — tipikusan törölt modulok maradványa. Egy teljes
+          export → új munkafüzet → import ciklus jellemzően jelentősen zsugorítja, de ez
+          kockázatos művelet, csak biztonsági másolattal.</td>
+      <td><span class="tag t-rec">RECOMMENDATION</span></td>
+    </tr>
+    <tr>
+      <td><b><code>KV_DROPDOWN_HELPER</code> 961 oszlop</b></td>
+      <td>A KV-kód lista az <code>AJY</code> oszlopban ül, emiatt a lap „szélessége” 961 oszlop,
+          holott csak néhány oszlopban van adat. Működik, de a lap átméretezése (a lista
+          áthelyezése előrébb) tisztább lenne. Érintené a <code>PID_KV_CODE_LIST</code> nevet
+          és a helper-oszlop kiosztást → nem nyúltam hozzá.</td>
+      <td><span class="tag t-rec">RECOMMENDATION</span></td>
+    </tr>
+  </table>
+</section>
+
+<section id="teszt">
+  <h2><span class="num">11</span>Tesztek és validációk — mi ment sikeresen</h2>
+
+  <table>
+    <tr><th style="width:34%">Ellenőrzés</th><th style="width:16%">Eredmény</th><th>Mit bizonyít</th></tr>
+    <tr><td>Statikus VBA-ellenőrzés<br><code>tools/vba_lint.py</code></td>
+        <td><b>0 hiba</b><br>35 modul / 903 eljárás</td>
+        <td>Nincs definiálatlan hívás, nem deklarált változó, duplikált publikus név, hiányzó
+            címke, kiegyensúlyozatlan blokk, 2016-ban ismeretlen objektum-tag vagy hibás
+            <code>Const</code>. Ez a legközelebbi dolog a „Debug → Kompilieren”-hez Excel nélkül.</td></tr>
+    <tr><td>Linter önteszt<br><span class="small">szándékosan hibás modulokkal</span></td>
+        <td><b>11/11</b> hibaosztály felismerve</td>
+        <td>A linter tényleg fog, nem csak hallgat. A munka során három valódi hibát talált meg
+            (egy nem deklarált változót, egy <code>Const</code>-ot ChrW-vel, és a 365-ös API-t).</td></tr>
+    <tr><td>Bér-keresés ekvivalencia<br><span class="small">régi vs. új algoritmus</span></td>
+        <td><b>2190 kombináció<br>0 eltérés</b></td>
+        <td>Az index nem változtatta meg az eredményt egyetlen valós vagy szintetikus
+            (ismeretlen kód, tűréshatár, kis/nagybetű) esetben sem.</td></tr>
+    <tr><td>Holt kód elemzés<br><code>tools/vba_deadcode.py</code></td>
+        <td><b>18 → 0</b> jelölt</td>
+        <td>Minden törölt eljárásnak igazoltan nulla hivatkozása volt; a megtartottak most
+            ADMIN-belépőn keresztül elérhetők.</td></tr>
+    <tr><td>Gomb-hozzárendelések<br><span class="small">a munkafüzet XML-jéből</span></td>
+        <td><b>27 makró<br>mind létezik</b></td>
+        <td>Egyetlen gomb sem mutat törölt vagy átnevezett makróra.</td></tr>
+    <tr><td>ADMIN-táblázat konzisztencia</td>
+        <td><b>35/35</b> cél létezik</td>
+        <td>Nincs elgépelt célnév, nincs duplikált sorszám, az <code>_ADMIN</code> gombtáblázat
+            (<code>Case</code> ágak vs. <code>PID_ADMIN_BTN_COUNT</code>) illeszkedik.</td></tr>
+    <tr><td>TR-03 / TR-10 spec-szimuláció</td>
+        <td><b>6/6 PASS</b></td>
+        <td>A valódi munkafüzet másolatán: a képletpótlás 33 → 0 hiányzó cella, a teljes törlés
+            után sem tűnik el képlet, az EINSTELLUNG és a LOHNTABELLE érintetlen.</td></tr>
+    <tr><td>Munkafüzet szerkezeti szken</td>
+        <td>lefutott</td>
+        <td>Volatilis képlet: 0 · feltételes formázás: 1 szabály · UDF-cellák: 960 ·
+            törött nevek: 12.</td></tr>
+  </table>
+</section>
+
+<section id="korlat">
+  <h2><span class="num">12</span>Amit Linux/Cloud alatt nem lehetett ellenőrizni</h2>
+
+  <div class="callout warn">
+    <b>Egyetlen sor VBA sem futott le.</b> Ebben a környezetben nincs Excel; a LibreOffice sem
+    pótolja, mert a VBA-UDF-eket (<code>PID_KVLohnLookup</code>, <code>SumMergedCells</code>) és
+    az eseménykezelőket nem tudja futtatni. Minden állítás statikus elemzésen, a munkafüzet
+    XML-jén és Python-modelleken alapul.
+  </div>
+
+  <ul class="tight">
+    <li><b>Tényleges sebességnyereség:</b> a 95× a string-műveletek száma, nem stopperrel mért idő.
+        A valós javulást az <code>ADMIN_12_Test_Performance</code> mutatja meg (7. és új 8. lépés).</li>
+    <li><b>A fülváltás-optimalizálás</b> helyessége: hogy a Q31 tényleg csak akkor íródik, amikor
+        kell, és hogy a lapvédelem utána is rendben van — csak Excelben látszik.</li>
+    <li><b>A késői kötésű <code>FormatStaleValues</code></b> viselkedése 365 alatt (működik-e még)
+        és 2016 alatt (némán elszáll-e) — mindkettő csak élesben.</li>
+    <li><b>A tömbös beillesztés</b> Word/böngésző/másik Excel forrásból.</li>
+    <li><b>Az <code>ADMIN_02_VBA_Export</code> és <code>ADMIN_25_Namen_Aufraeumen</code></b>
+        futása: mindkettő VBProject- ill. Names-hozzáférést igényel.</li>
+    <li><b>A gombok</b> tényleges kirajzolása és működése az <code>_ADMIN</code> lapon (22 gomb).</li>
+  </ul>
+</section>
+
+<section id="checklist">
+  <h2><span class="num">13</span>Manual Excel Test Checklist</h2>
+  <p class="small">Windows + Microsoft Excel 2016. Minden lépés előtt legyen biztonsági másolat a
+  <code>Personalsheet.xlsm</code>-ről. A sorrend számít.</p>
+
+  <h3>A) Betöltés és fordítás <span class="tag t-man">MANUAL TEST</span></h3>
+  <ol class="check">
+    <li><b>Egyszeri kézi lépés:</b> VBA-szerkesztő → <code>mod_ResetAndImportVBAFiles</code>
+        tartalmát cseréld a <code>vba\mod_ResetAndImportVBAFiles.bas</code> tartalmára.
+        <span class="small">(Az import makró magát mindig kihagyja, ezért a munkafüzetben még a
+        régi változat fut — lásd 5. fejezet.)</span></li>
+    <li><b>Alt+F8 → <code>ResetAndImportVBAFiles</code></b>, majd nézd meg az üzenetben a
+        „geloescht / importiert / aktualisiert” számokat.</li>
+    <li><b>Debug → VBAProject kompilieren</b> — <b>hibátlanul kell lefutnia</b>. Ez a
+        legfontosabb lépés: itt derülne ki, ha a <code>FormatStaleValues</code> javítás nem
+        elég, vagy ha maradt nem deklarált változó.</li>
+    <li><b>Mentés, Excel újraindítás</b>, majd a fájl megnyitása. Nem jöhet hibaüzenet.</li>
+    <li>Ellenőrizd, hogy a számítási mód <b>Automatikus</b> maradt
+        (<code>ADMIN_11_Test_Schnellcheck</code> kiírja).</li>
+  </ol>
+
+  <h3>B) ADMIN struktúra <span class="tag t-man">MANUAL TEST</span></h3>
+  <ol class="check">
+    <li><b>Alt+F8</b>: a lista elején egy tömbben ott az <code>ADMIN_00_Hilfe</code> …
+        <code>ADMIN_41_Daten_Alles_Loeschen</code>.</li>
+    <li><b><code>ADMIN_00_Hilfe</code></b> → megjelenik a kategóriás áttekintés.</li>
+    <li><b><code>ADMIN_04_Admin_Panel</code></b> → az <code>_ADMIN</code> lapon <b>22 gomb</b>
+        látszik, köztük az új „ADMIN-Makros”, „Formeln prüfen”, „Formeln reparieren”,
+        „Alle Daten löschen”. Mindegyik gomb kattintásra a saját makróját indítja.</li>
+    <li><b><code>ADMIN_02_VBA_Export</code></b> → a munkafüzet mellett létrejön a
+        <code>vba_export\</code> mappa, benne minden modul. A <code>vba\</code> mappa
+        <b>változatlan</b> marad (ellenőrizd a fájlok dátumát).</li>
+    <li><b><code>ADMIN_25_Namen_Aufraeumen</code></b> → a lista 12 nevet mutat
+        (<code>BG1_Hours</code> …). Megerősítés után „12 Namen wurden gelöscht”.
+        Utána Formeln → Namensmanager: nincs több <code>#REF!</code> bejegyzés, a
+        <code>PID_KV_CODE_LIST</code> és a <code>BG…</code> érvényes nevek megvannak.</li>
+    <li>A régi nevek is működnek: <code>Alt+F8 → FullSystemRefresh</code> ugyanaz, mint
+        <code>ADMIN_20_Reparatur_Full_Refresh</code>.</li>
+  </ol>
+
+  <h3>C) Teljesítmény — előtte/utána <span class="tag t-man">MANUAL TEST</span></h3>
+  <ol class="check">
+    <li><b><code>ADMIN_12_Test_Performance</code></b> lefuttatása, az eredmény lejegyzése.
+        Külön figyeld a <b>7. lépést</b> (FullSystemRefresh, korábban 7,98 s) és az új
+        <b>8. lépést</b> (Formelspalten).</li>
+    <li><b>Fülváltás stopperrel:</b> Januar → Februar → … → Dezember. A hónapok közti váltás
+        érezhetően gyorsabb kell legyen, mint korábban (itt szűnt meg a
+        <code>Cells.Locked = True</code> minden váltásnál).</li>
+    <li><b>KV-tábla módosítás:</b> LOHNTABELLE-n írj át egy bér-értéket, majd lépj egy hónaplapra.
+        A G oszlop frissül, és a várakozás rövidebb (ez az indexelt keresés útvonala).</li>
+    <li><b>CopyData</b> egy hónapról decemberig — mérd meg, és hasonlítsd a korábbi értékhez.</li>
+    <li><b>Beillesztés:</b> másolj 50–80 sornyi nevet/ID-t Wordből vagy egy másik Excelből a
+        B oszlopba. Gyorsabbnak kell lennie, és <b>továbbra is csak értéket</b> szabad
+        beszúrnia (formázás nélkül).</li>
+  </ol>
+
+  <h3>D) Változatlan üzleti működés <span class="tag t-man">MANUAL TEST</span></h3>
+  <ol class="check">
+    <li><b>G oszlop (Monatslohn):</b> több hónapon, több KV-csoporton (BG1, BG1_5, BG2_10, BG3…)
+        hasonlítsd össze a megjelenő bért a LOHNTABELLE értékével. <b>Ez a legfontosabb
+        regressziós teszt</b> az indexelt keresés miatt.</li>
+    <li><b>Periódus-visszaesés:</b> olyan hónap/KV-kód kombináció, ahol az érték csak az
+        <i>előző</i> KV-periódusban létezik — ugyanazt kell mutatnia, mint korábban.</li>
+    <li><b>„Nicht gefunden”:</b> írj be egy nem létező óraszámot az F oszlopba — a G oszlopnak
+        ugyanúgy „Nicht gefunden”-t kell mutatnia.</li>
+    <li><b>Q31 fluktuáció:</b> írj be egy kilépési dátumot, a Q31 azonnal frissül; váltogass
+        fülek között — az érték stabil marad, és a lap védett marad.</li>
+    <li><b>UEBERSICHT S36 / Crew-órák:</b> változatlan értékek.</li>
+  </ol>
+
+  <h3>E) Új dátum-figyelmeztetés <span class="tag t-man">MANUAL TEST</span></h3>
+  <ol class="check">
+    <li>Egy dolgozó sorában D = <code>01.03.2026</code>, majd I = <code>01.02.2026</code> →
+        figyelmeztetés jelenik meg a sorszámmal. <b>A beírt érték megmarad</b>, semmi nem
+        íródik át.</li>
+    <li>Javítsd az I-t egy későbbi dátumra → nincs több üzenet, a H oszlop pozitív órát mutat.</li>
+    <li>Illessz be egyszerre több hibás dátumot → <b>egyetlen</b> összesített üzenet jön,
+        nem soronként egy.</li>
+    <li>Üres I vagy üres D esetén <b>nincs</b> üzenet.</li>
+    <li><code>ADMIN_15_Test_Aktionsprotokoll</code> → szerepel benne a „Datum unplausibel” sor.</li>
+  </ol>
+
+  <h3>F) Regresszió a korábbi köri munkára (TR-03 / TR-10) <span class="tag t-man">MANUAL TEST</span></h3>
+  <ol class="check">
+    <li><b>TEST 31</b> (képletoszlopok ellenőrzése és javítása) a
+        <code>TEST_CASES.md</code> szerint — az A–D forgatókönyv.</li>
+    <li><b>TEST 32</b> (minden adat törlése) — csak másolaton!</li>
+    <li><b>TEST 25–30</b> a korábbi körből, ha még nem futottak le.</li>
+    <li>Mentés után Linux/CI oldalon: <code>python3 tools/check_formula_columns.py</code> → 0
+        hiányzó cella, és <code>python3 tools/check_vba_sync.py</code> → 0 eltérés.</li>
+  </ol>
+
+  <h3>G) Zárás</h3>
+  <ol class="check">
+    <li><b><code>ADMIN_10_Test_Smoke_Check</code></b> — a SYSTEM_CHECK lapon nem lehet új FAIL a
+        korábbi állapothoz képest.</li>
+    <li>Mentés, majd <code>Personalsheet.xlsm</code> commitolása a repóba
+        (a VBA már benne lesz a fájlban).</li>
+  </ol>
+</section>
+
+</main>
+
+<footer>
+  Készült: 2026-08-12 · Personalsheet Test-Release v0.9.0-test ·
+  A riportban szereplő minden mérés újrafuttatható a <code>tools/</code> mappa szkriptjeivel.
+</footer>
+</body>
+</html>
