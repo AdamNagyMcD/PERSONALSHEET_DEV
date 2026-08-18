@@ -869,3 +869,80 @@ kompilieren, speichern.
 - Ein Blattwechsel zwischen den Monaten fühlt sich nicht langsamer an als vorher
   (die Prüfung liest E, F und G jetzt als Array statt Zelle für Zelle).
 - `PID_RunSystemSmokeCheck`: TEST 15 (Monatslohn Spalte G) bleibt **PASS**.
+
+
+## TEST 35 — Blattschutz ab dem Öffnen und nach einem Abbruch
+
+Module: `mod_SchutzHinzufugen.bas`, `Modul1.bas`, `mod_FormatEinstellung.bas`.
+Hintergrund: Der Schutz wurde bisher erst beim **ersten Besuch** eines Tabs gesetzt. Wer die
+Mappe auf `UEBERSICHT` liegend öffnete, hatte kein einziges Monatsblatt geschützt und konnte
+die Formelspalten `G`, `H`, `K`, `L` überschreiben. Zusätzlich blieben Blätter entsperrt
+zurück, wenn ein Makro mitten im Lauf abbrach.
+
+**Voraussetzung:** VBA neu importieren (`ADMIN_01_VBA_Import`), kompilieren, speichern.
+
+### Scenario A — Alle Blätter sind sofort nach dem Öffnen geschützt
+1. Die Datei auf `UEBERSICHT` stehend speichern und schließen.
+2. Datei öffnen und **ohne** einen Monats-Tab anzuklicken direkt auf `Dezember` wechseln.
+3. In `G3` etwas eintippen (z. B. `1`).
+4. Ebenso in `H3`, `K3`, `L3` und in `A3`.
+5. Rechtsklick auf eine Zeilennummer → *Zeilen löschen* versuchen.
+6. Dasselbe auf `EINSTELLUNG` in einer Zelle außerhalb der Eingabeblöcke (z. B. `B6`).
+
+### Expected A
+- Excel lehnt jede dieser Eingaben mit der Schutzmeldung ab.
+- Das Löschen und Einfügen von Zeilen und Spalten ist gesperrt.
+- Die erlaubten Eingabefelder funktionieren weiter: `B3:F3`, `I3:J3`, `M3:N3` und das
+  Freitextfeld `O18` sind beschreibbar.
+
+### Scenario B — Eine ungeschützt gespeicherte Datei kommt geschützt beim Benutzer an
+1. `ADMIN_03_Schutz_AUS` (`UnprotectEverything`) ausführen und mit *Ja* bestätigen.
+2. Datei **speichern** und schließen (das ist der Fehler, der bisher nicht auffing).
+3. Datei erneut öffnen und Scenario A Punkt 3 bis 5 wiederholen.
+
+### Expected B
+- Nach dem Öffnen sind alle Blätter wieder geschützt, `G3` ist nicht beschreibbar.
+- Die technischen Blätter (`PID_HOUR_OVERRIDES`, `FLUKTUATION_DATEN`, `KV_DROPDOWN_HELPER`,
+  `_ADMIN`) sind wieder ausgeblendet.
+
+### Scenario C — Sortieren bleibt auf Monatsblättern gesperrt
+1. `ADMIN_11_Format_EINSTELLUNG` (bzw. `PID_FormatEinstellungSheet`) ausführen.
+2. Auf `Januar` wechseln, eine Zelle in `C3:C82` anklicken und *Daten → Sortieren* versuchen.
+
+### Expected C
+- Sortieren wird abgelehnt. Vorher hatte dieses Makro auf jedem angefassten Monatsblatt
+  `AllowSorting:=True` hinterlassen — ein versehentliches Sortieren hätte die Zuordnung
+  aller Mitarbeiterzeilen zerrissen.
+- Der AutoFilter funktioniert weiterhin.
+
+### Scenario D — Nach einem Abbruch bleibt kein Blatt offen
+1. Auf `UEBERSICHT` wechseln (das löst den Durchrechnungs-Refresh aus).
+2. Während eines längeren Makros (z. B. `ADMIN_10_Format_Monatsblaetter`) **Strg+Untbr**
+   drücken und im Dialog *Beenden* wählen.
+3. Auf `UEBERSICHT` und auf ein Monatsblatt wechseln und dort in `G3` bzw. in eine
+   Formelzelle schreiben wollen.
+
+### Expected D
+- Beide Blätter sind geschützt; die Eingabe wird abgelehnt.
+- Vor der Änderung blieb genau das Blatt der abgebrochenen Runde dauerhaft entsperrt.
+
+### Scenario E — Excel-Reset löst die häufigsten Blockaden
+1. Ein Makro mit **Strg+Untbr** abbrechen, während es läuft.
+2. Symptome prüfen: Ausfüllkästchen fehlt, Ziehen von Zellen geht nicht, Dropdowns in `E`/`F`
+   aktualisieren nicht mehr, `Q31`/Finanzwerte reagieren nicht auf Eingaben.
+3. **Alt+F8** → `ADMIN_05_Excel_Reset` (bzw. `PID_ResetExcelState`).
+
+### Expected E
+- Meldung „Excel wurde zurückgesetzt".
+- Ausfüllkästchen und Ziehen sind wieder verfügbar (auch in anderen offenen Dateien).
+- Eingaben in `E`/`F` lösen die Dropdown-Aktualisierung wieder aus, `Q31` und die
+  Finanzspalten rechnen wieder mit.
+- Einfügen per Strg+V fügt weiterhin nur Werte ein (TR-02, TEST 29).
+
+### Negative checks
+- Das Öffnen dauert nicht merkbar länger: die Schutzarbeit ist nur vom ersten Tabwechsel nach
+  vorne gewandert, und die Sperrliste läuft je Blatt jetzt **einmal** statt zwei- bis dreimal.
+- `PID_RunSystemSmokeCheck`: TEST 17 (Blattschutz) und TEST 18 (`Q12` auf Feb/Mai/Aug/Nov)
+  bleiben **PASS**.
+- `CopyData`, `DataClear`, `MitarbeiterEntfernen` und `PersonalIdKorrektur` laufen unverändert
+  durch — sie schützen sich selbst um ihre Schreibvorgänge herum.
