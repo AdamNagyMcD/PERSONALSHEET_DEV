@@ -7,6 +7,8 @@ Excel-alapu szemelyzeti es labor-planning rendszer ettermek szamara.
 - **Specifikacio:** [SPEC.md](SPEC.md)
 - **Tesztesetek:** [TEST_CASES.md](TEST_CASES.md)
 - **Valtozasok:** [docs/CHANGELOG.md](docs/CHANGELOG.md)
+- **Interaktiv tudásbázis (német, offline):** [docs/Personalsheet_Wissensbasis.html](docs/Personalsheet_Wissensbasis.html)
+- **Nyomtatható Schnellhilfe:** [docs/Personalsheet_Schnellhilfe.html](docs/Personalsheet_Schnellhilfe.html)
 - **Felhasznaloi rovid utmutato:** [docs/Kurzanleitung_Personalsheet_A4.html](docs/Kurzanleitung_Personalsheet_A4.html)
 - **Release checklist:** [docs/RELEASE.md](docs/RELEASE.md)
 - **Geplante Verbesserungen (Backlog):** [docs/FUTURE_PLANS.md](docs/FUTURE_PLANS.md)

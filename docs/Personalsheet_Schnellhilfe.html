@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personalsheet – Schnellhilfe</title>
+  <style>
+    :root {
+      --navy: #1f4e79;
+      --blue: #ddebf7;
+      --yellow: #fff2cc;
+      --green: #e2f0d9;
+      --red: #fce4e4;
+      --line: #9db2c3;
+      --text: #17212b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 22px;
+      color: var(--text);
+      background: #eef3f7;
+      font-family: "Segoe UI", Calibri, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+    .page {
+      padding: 22px 24px;
+      border: 1px solid var(--line);
+      background: white;
+      box-shadow: 0 7px 24px rgba(31,78,121,.12);
+    }
+    h1 { margin: 0; color: var(--navy); font-size: 27px; line-height: 1.1; }
+    .sub { margin: 4px 0 14px; color: #526273; }
+    h2 {
+      margin: 12px 0 6px;
+      padding: 5px 8px;
+      color: var(--navy);
+      background: var(--blue);
+      border-left: 5px solid var(--navy);
+      font-size: 16px;
+    }
+    p { margin: 5px 0; }
+    ul, ol { margin: 4px 0 8px; padding-left: 22px; }
+    li { margin: 3px 0; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .box { padding: 8px 10px; border: 1px solid var(--line); }
+    .good { background: var(--green); }
+    .warn { background: var(--yellow); }
+    .danger { background: var(--red); }
+    .swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .swatch { padding: 7px; border: 1px solid var(--line); }
+    .white { background: white; }
+    .yellow { background: var(--yellow); }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+    button, a {
+      display: inline-block;
+      padding: 8px 12px;
+      border: 2px solid var(--navy);
+      border-radius: 7px;
+      color: var(--navy);
+      background: white;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .footer { margin-top: 11px; color: #526273; font-size: 12px; text-align: center; }
+    @media (max-width: 650px) {
+      body { padding: 0; }
+      .page { padding: 15px; box-shadow: none; border: 0; }
+      .cols { grid-template-columns: 1fr; }
+    }
+    @page { size: A4 portrait; margin: 10mm; }
+    @media print {
+      body { max-width: none; padding: 0; background: white; font-size: 9.5pt; line-height: 1.27; }
+      .page { padding: 0; border: 0; box-shadow: none; }
+      .actions { display: none; }
+      h1 { font-size: 20pt; }
+      h2 { margin: 3mm 0 1.5mm; padding: 1.5mm 2mm; font-size: 11pt; }
+      ul, ol { margin-bottom: 1.5mm; }
+      .box { padding: 2mm; }
+      .footer { margin-top: 2mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions">
+    <button type="button" onclick="window.print()">🖨 Schnellhilfe drucken</button>
+    <a href="Personalsheet_Wissensbasis.html">← Zur vollständigen Hilfe</a>
+  </div>
+
+  <main class="page">
+    <h1>Personalsheet – Schnellhilfe</h1>
+    <p class="sub">Für Restaurant Manager · Windows · Excel 2016+</p>
+
+    <div class="cols">
+      <div>
+        <h2>1. Datei starten</h2>
+        <ol>
+          <li>Datei aus <b>Teams → Wichtige Unterlagen</b> öffnen.</li>
+          <li><b>„Bearbeitung aktivieren“</b> klicken.</li>
+          <li><b>„Inhalt aktivieren“</b> klicken.</li>
+        </ol>
+
+        <h2>2. Wo darf ich schreiben?</h2>
+        <div class="swatches">
+          <div class="swatch white"><b>Weiß / Grau-Weiß</b><br>Eingabe</div>
+          <div class="swatch yellow"><b>Gelb</b><br>Automatisch – nicht ändern</div>
+        </div>
+        <p>KV Gruppe, Stunden und Austrittsgrund immer aus der Liste wählen.</p>
+
+        <h2>3. Neue Person</h2>
+        <ol>
+          <li>Startmonat öffnen.</li>
+          <li>ID, Name, Eintritt eintragen.</li>
+          <li>KV Gruppe wählen. Standard: <b>BG1 Basis</b>.</li>
+          <li>Stunden wählen.</li>
+          <li>Speichern.</li>
+          <li><b>„Aktualisierung des restlichen Jahres“</b> klicken.</li>
+          <li>Folgemonat prüfen.</li>
+        </ol>
+        <p class="box warn">Hat die Person früher bei McDonald’s gearbeitet? Vor der KV-Einstufung Payroll fragen.</p>
+
+        <h2>4. Austritt</h2>
+        <ol>
+          <li>Austrittsmonat öffnen.</li>
+          <li>Austrittsdatum eintragen.</li>
+          <li>Austrittsgrund aus der Liste wählen.</li>
+          <li>Offene Urlaubstage eintragen. Bei 0 darf das Feld leer bleiben.</li>
+          <li>Speichern und Jahres-Aktualisierung klicken.</li>
+          <li>Folgemonat und FLUKTUATION prüfen.</li>
+        </ol>
+      </div>
+
+      <div>
+        <h2>5. Vormonat +/- Stunden</h2>
+        <p>Stunden-Differenz aus dem Vormonat mit <b>umgekehrtem Vorzeichen</b> eintragen:</p>
+        <ul><li>+15 → −15</li><li>−15 → +15</li></ul>
+        <p>Februar, Mai, August, November: keine manuelle Übernahme.
+           Die Zeile zeigt automatisch „Verfügbare Stunden für DPL“.</p>
+
+        <h2>6. Extra-Kosten</h2>
+        <p>Beispiele: Jubiläumsgeld, Austrittskosten.</p>
+        <ul>
+          <li><b>Zeilen 18–25:</b> werden in Folgemonate kopiert.</li>
+          <li><b>Zeilen 26–28:</b> gelten nur im aktuellen Monat.</li>
+        </ul>
+
+        <h2>7. Speichern</h2>
+        <p><b>Strg+S</b> drücken → warten → Datei normal schließen.</p>
+
+        <h2>8. Nicht machen</h2>
+        <div class="box danger">
+          <ul>
+            <li>Keine gelben Zellen ändern.</li>
+            <li>Nicht sortieren.</li>
+            <li>Keine Zeilen oder Spalten löschen.</li>
+            <li>Keine Zellen nach unten ziehen.</li>
+            <li>Nicht mit Strg+X ausschneiden.</li>
+            <li>Buttons nicht mehrfach schnell klicken.</li>
+          </ul>
+        </div>
+
+        <h2>9. Fehler</h2>
+        <ol>
+          <li>Nicht weiterprobieren.</li>
+          <li>Button <b>„Fehler melden“</b> klicken.</li>
+          <li>Zwei Fragen beantworten.</li>
+          <li>Bericht an Adam senden.</li>
+        </ol>
+        <p>Button funktioniert nicht? <b>adam.nagy@at.mcd.com</b></p>
+        <p><b>Datenschutz:</b> Fehlerberichte nur an die zuständige Unterstützung senden.
+           Nie öffentlich teilen. Sie können Namen, Benutzername und Dateipfad enthalten.</p>
+        <p>Payroll-Abweichung? <b>Zuerst Payroll fragen.</b></p>
+
+        <h2>10. Admin-Hilfe</h2>
+        <p>Bei fehlenden Formeln, kaputtem Layout, Speicherfehlern, nicht reagierenden Buttons oder wiederholten Fehlermeldungen.</p>
+      </div>
+    </div>
+
+    <p class="footer">Personalsheet · Schnellhilfe · Stand August 2026 · Keine Admin-Passwörter oder technischen Werkzeuge</p>
+  </main>
+</body>
+</html>

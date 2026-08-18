@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Personalsheet – Hilfe für Restaurant Manager</title>
+  <style>
+    :root {
+      --navy: #1f4e79;
+      --navy-dark: #173a5b;
+      --blue: #ddebf7;
+      --blue-soft: #f2f7fb;
+      --yellow: #fff2cc;
+      --yellow-line: #b88300;
+      --green: #e2f0d9;
+      --green-line: #3b7d23;
+      --red: #fce4e4;
+      --red-line: #b42318;
+      --zebra: #f8f8f8;
+      --white: #fff;
+      --text: #17212b;
+      --muted: #526273;
+      --line: #c9d6e2;
+      --shadow: 0 7px 24px rgba(31, 78, 121, .10);
+      --radius: 14px;
+      --max: 1220px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: #eef3f7;
+      font-family: "Segoe UI", Calibri, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.58;
+    }
+    a { color: var(--navy); }
+    a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible {
+      outline: 3px solid #ffbf47;
+      outline-offset: 3px;
+    }
+    code {
+      padding: .08rem .32rem;
+      border: 1px solid #d8e1e9;
+      border-radius: 5px;
+      background: #f4f6f8;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: .9em;
+    }
+
+    .hero {
+      color: white;
+      background: linear-gradient(135deg, var(--navy-dark), var(--navy));
+      border-bottom: 6px solid #f2c94c;
+    }
+    .hero-inner {
+      max-width: var(--max);
+      margin: auto;
+      padding: 34px 24px 28px;
+    }
+    .eyebrow {
+      margin: 0 0 5px;
+      opacity: .86;
+      font-size: .9rem;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      line-height: 1.08;
+    }
+    .hero p { max-width: 780px; margin: 12px 0 0; font-size: 1.08rem; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 42px;
+      padding: 9px 14px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      font: inherit;
+      font-weight: 700;
+      line-height: 1.2;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .button.primary { color: var(--navy-dark); background: white; }
+    .button.secondary { color: white; border-color: rgba(255,255,255,.65); background: transparent; }
+    .button:hover { filter: brightness(.96); }
+
+    .search-wrap {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      background: rgba(238, 243, 247, .97);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+    .search-inner {
+      max-width: var(--max);
+      margin: auto;
+      padding: 12px 24px;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .search-box { position: relative; }
+    .search-box span {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+    #kb-search {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 48px 10px 42px;
+      border: 2px solid #9fb8cd;
+      border-radius: 10px;
+      color: var(--text);
+      background: white;
+      font: inherit;
+    }
+    #clear-search {
+      position: absolute;
+      right: 6px;
+      top: 5px;
+      min-width: 36px;
+      min-height: 36px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 1.15rem;
+    }
+    #search-status { color: var(--muted); font-size: .9rem; white-space: nowrap; }
+
+    .layout {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 275px minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+    .side {
+      position: sticky;
+      top: 85px;
+      max-height: calc(100vh - 105px);
+      overflow: auto;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      box-shadow: var(--shadow);
+    }
+    .side h2 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 1rem;
+    }
+    #toc { margin: 0; padding: 0; list-style: none; }
+    #toc a {
+      display: block;
+      padding: 7px 9px;
+      border-radius: 7px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: .92rem;
+    }
+    #toc a:hover { background: var(--blue-soft); color: var(--navy); }
+    #toc .toc-h3 a { padding-left: 22px; color: var(--muted); font-size: .85rem; }
+    .mobile-toc {
+      display: none;
+      margin: 0 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+    }
+    .mobile-toc summary {
+      padding: 12px 15px;
+      color: var(--navy);
+      font-weight: 750;
+      cursor: pointer;
+    }
+    #mobile-toc-list { margin: 0; padding: 0 15px 12px 34px; }
+    #mobile-toc-list li { margin: 4px 0; }
+
+    main { min-width: 0; }
+    .section {
+      margin: 0 0 22px;
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      box-shadow: var(--shadow);
+      scroll-margin-top: 92px;
+    }
+    .section > h2 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: clamp(1.55rem, 3vw, 2rem);
+      line-height: 1.2;
+    }
+    .section > .lead { margin: 0 0 18px; color: var(--muted); font-size: 1.03rem; }
+    h3 { margin: 26px 0 9px; color: var(--navy); font-size: 1.25rem; scroll-margin-top: 94px; }
+    h4 { margin: 18px 0 7px; color: var(--navy-dark); }
+    p { margin: 7px 0 12px; }
+    ul, ol { padding-left: 1.45rem; }
+    li { margin: 5px 0; }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card, details.card {
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #fff;
+    }
+    .card h3, .card h4 { margin-top: 0; }
+    details.card { padding: 0; overflow: clip; }
+    details.card > summary {
+      padding: 15px 44px 15px 17px;
+      color: var(--navy);
+      background: var(--blue-soft);
+      cursor: pointer;
+      font-weight: 750;
+      list-style: none;
+      position: relative;
+    }
+    details.card > summary::-webkit-details-marker { display: none; }
+    details.card > summary::after {
+      content: "+";
+      position: absolute;
+      right: 17px;
+      top: 11px;
+      font-size: 1.45rem;
+    }
+    details.card[open] > summary::after { content: "−"; }
+    details.card[open] > summary { border-bottom: 1px solid var(--line); }
+    .details-body { padding: 16px 18px 18px; }
+
+    .notice {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border: 1px solid;
+      border-left-width: 6px;
+      border-radius: 9px;
+    }
+    .notice strong:first-child { display: block; margin-bottom: 3px; }
+    .info { border-color: #7aa7ce; background: var(--blue-soft); }
+    .good { border-color: var(--green-line); background: var(--green); }
+    .warn { border-color: var(--yellow-line); background: #fff9e6; }
+    .danger { border-color: var(--red-line); background: var(--red); }
+
+    .steps { margin: 13px 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps > li {
+      position: relative;
+      min-height: 44px;
+      margin: 10px 0;
+      padding: 10px 12px 10px 53px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fbfcfd;
+      counter-increment: step;
+    }
+    .steps > li::before {
+      content: counter(step);
+      position: absolute;
+      left: 12px;
+      top: 9px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      color: white;
+      background: var(--navy);
+      text-align: center;
+      font-weight: 800;
+      line-height: 28px;
+    }
+
+    .term {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: var(--blue);
+      color: var(--navy-dark);
+      font-weight: 700;
+      font-size: .88em;
+      white-space: nowrap;
+    }
+    .icon { font-family: "Segoe UI Emoji", "Segoe UI Symbol", sans-serif; }
+    .exact { font-weight: 750; color: var(--navy-dark); }
+    .small { color: var(--muted); font-size: .9rem; }
+
+    .table-wrap { overflow-x: auto; margin: 12px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .94rem; }
+    th, td { padding: 9px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--navy-dark); background: var(--blue); }
+    tr:nth-child(even) td { background: #fbfcfd; }
+
+    .color-line { display: flex; gap: 10px; align-items: center; margin: 7px 0; }
+    .swatch {
+      flex: 0 0 34px;
+      width: 34px;
+      height: 25px;
+      border: 2px solid #8da2b4;
+      border-radius: 4px;
+    }
+    .swatch.white { background: white; }
+    .swatch.yellow { background: var(--yellow); }
+    .swatch.blue { background: var(--blue); }
+    .swatch.gray { background: var(--zebra); }
+
+    .visual {
+      margin: 15px 0;
+      padding: 12px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+    .visual figcaption { margin-top: 8px; color: var(--muted); font-size: .88rem; }
+    .sheet-map {
+      min-width: 690px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      font-size: .8rem;
+    }
+    .sheet-map div {
+      padding: 7px 5px;
+      border: 1px solid #9fb8cd;
+      border-radius: 6px;
+      background: white;
+      text-align: center;
+    }
+    .sheet-map .setup { background: var(--blue); font-weight: 700; }
+    .sheet-map .month { background: #fff; }
+    .sheet-map .report { background: var(--green); font-weight: 700; }
+
+    .column-map { min-width: 920px; display: grid; grid-template-columns: repeat(13, 1fr); }
+    .column-map > div {
+      min-height: 76px;
+      padding: 7px 5px;
+      border: solid #8399ab;
+      border-width: 1px 0 1px 1px;
+      text-align: center;
+      font-size: .77rem;
+    }
+    .column-map > div:last-child { border-right-width: 1px; }
+    .column-map .input { background: white; }
+    .column-map .auto { background: var(--yellow); }
+    .column-map b { display: block; font-size: 1rem; color: var(--navy); }
+
+    .button-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 9px; min-width: 650px; }
+    .excel-btn {
+      padding: 8px 12px;
+      border: 2px solid var(--navy-dark);
+      border-radius: 6px;
+      font-weight: 750;
+      text-align: center;
+    }
+    .excel-btn.copy { color: white; background: var(--navy); }
+    .excel-btn.remove { background: var(--yellow); }
+    .excel-btn.correct { background: var(--blue); }
+    .excel-btn.feedback { background: var(--zebra); }
+
+    .no-results {
+      display: none;
+      padding: 26px;
+      border: 2px dashed #9fb8cd;
+      border-radius: var(--radius);
+      background: white;
+      text-align: center;
+    }
+    mark { padding: 0 .08em; color: inherit; background: #ffdf69; border-radius: 2px; }
+    [hidden] { display: none !important; }
+    #back-top {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 30;
+      width: 48px;
+      height: 48px;
+      border: 0;
+      border-radius: 50%;
+      color: white;
+      background: var(--navy);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+    .footer {
+      padding: 24px;
+      color: var(--muted);
+      text-align: center;
+      font-size: .88rem;
+    }
+
+    .quick-print {
+      border: 3px solid var(--navy);
+      background: white;
+    }
+    .quick-print h3 { margin-top: 15px; }
+    .quick-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    @media (max-width: 950px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { position: static; max-height: none; }
+      #toc { columns: 2; }
+      .grid.three { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 650px) {
+      body { font-size: 15px; }
+      .hero-inner, .layout { padding-left: 14px; padding-right: 14px; }
+      .search-inner { grid-template-columns: 1fr; padding: 9px 14px; }
+      #search-status { white-space: normal; }
+      .section { padding: 19px 15px; border-radius: 10px; }
+      .grid, .grid.three, .quick-cols { grid-template-columns: 1fr; }
+      #toc { columns: 1; }
+      .side { display: none; }
+      .mobile-toc { display: block; }
+    }
+
+    @page { size: A4; margin: 13mm; }
+    @media print {
+      body { color: #000; background: white; font-size: 10.5pt; }
+      .hero { color: #000; background: white; border-bottom: 2px solid #000; }
+      .hero-inner { padding: 0 0 7mm; }
+      .hero-actions, .search-wrap, .side, #back-top, .footer, .screen-only { display: none !important; }
+      .layout { display: block; max-width: none; padding: 0; }
+      .section {
+        margin: 0 0 5mm;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        break-before: page;
+      }
+      .section:first-child { break-before: auto; }
+      details.card { break-inside: avoid; }
+      details.card > summary { color: #000; background: #eee; }
+      details.card > summary::after { display: none; }
+      .card, .notice, table, figure { break-inside: avoid; }
+      .visual { overflow: visible; }
+      .sheet-map, .column-map, .button-row { min-width: 0; }
+      a { color: #000; text-decoration: none; }
+      a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .8em; }
+      .quick-print { break-before: page; border: 2px solid #000; padding: 5mm; }
+    }
+  </style>
+</head>
+<body id="top">
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Offline-Hilfe · Windows · Excel 2016+</p>
+      <h1>Personalsheet</h1>
+      <p>Einfach erklärt für Restaurant Manager. Du brauchst keine Excel-Erfahrung.
+         Folge den Schritten. Wenn etwas unklar ist: nicht raten.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="#schnellstart"><span class="icon">▶</span> Schnell starten</a>
+        <a class="button primary" href="#fehler"><span class="icon">🛟</span> Problem lösen</a>
+        <a class="button secondary" href="Personalsheet_Schnellhilfe.html"><span class="icon">🖨</span> Schnellhilfe öffnen</a>
+        <button class="button secondary" type="button" onclick="window.print()"><span class="icon">🖨</span> Diese Hilfe drucken</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="search-wrap">
+    <div class="search-inner">
+      <div class="search-box">
+        <span class="icon" aria-hidden="true">🔎</span>
+        <label class="sr-only" for="kb-search" style="position:absolute;left:-9999px">Hilfe durchsuchen</label>
+        <input id="kb-search" type="search" autocomplete="off"
+               placeholder="Suche: Mitarbeiter, Austritt, Speichern, Fehlermeldung …">
+        <button id="clear-search" type="button" aria-label="Suche löschen" title="Suche löschen">✕</button>
+      </div>
+      <div id="search-status" aria-live="polite">Tipp: Drücke <b>/</b>, um sofort zu suchen.</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside class="side" aria-label="Inhaltsverzeichnis">
+      <h2>Inhalt</h2>
+      <ol id="toc"></ol>
+    </aside>
+
+    <main id="content">
+      <details class="mobile-toc screen-only">
+        <summary>☰ Inhalt anzeigen</summary>
+        <ol id="mobile-toc-list"></ol>
+      </details>
+
+      <div id="no-results" class="no-results" role="status">
+        <h2>Keine passende Hilfe gefunden</h2>
+        <p>Versuche ein einfaches Wort, zum Beispiel <b>Austritt</b>, <b>Stunden</b>,
+           <b>Speichern</b>, <b>Fehler</b> oder einen Blattnamen.</p>
+        <p>Wenn du nicht weiterkommst: Nutze auf einem Monatsblatt den Button
+           <b>„Fehler melden“</b>.</p>
+      </div>
+
+      <section class="section" id="schnellstart">
+        <h2>1. Schnellstart</h2>
+        <p class="lead">Die wichtigsten Schritte für den ersten Start.</p>
+
+        <article class="notice info search-item" data-keywords="zweck wofür personalplanung labor kosten team">
+          <strong><span class="icon">ℹ</span> Wofür ist die Datei?</strong>
+          <p>Das Personalsheet hilft dir bei Personal, Stunden, Lohnkosten und Fluktuation.
+             Du gibst die Plan- und Mitarbeiterdaten ein. Die Datei rechnet viele Werte automatisch.</p>
+        </article>
+
+        <div class="grid">
+          <article class="card search-item" data-keywords="öffnen download teams wichtige unterlagen datei start">
+            <h3><span class="icon">📂</span> Datei öffnen</h3>
+            <ol class="steps">
+              <li>Lade die richtige Datei aus <b>Teams → Wichtige Unterlagen</b> herunter.</li>
+              <li>Öffne die Datei mit <b>Microsoft Excel für Windows</b>.</li>
+              <li>Warte, bis die Datei vollständig geöffnet ist.</li>
+            </ol>
+            <p class="small">Die Datei ist für Excel 2016 oder neuer auf Windows gedacht.</p>
+          </article>
+
+          <article class="card search-item" data-keywords="makros aktivieren sicherheitswarnung inhalt aktivieren gelber balken">
+            <h3><span class="icon">🧩</span> Makros aktivieren</h3>
+            <ol class="steps">
+              <li>Suche oben in Excel den gelben Hinweis <b>„Sicherheitswarnung“</b>.</li>
+              <li>Klicke auf <b>„Inhalt aktivieren“</b>.</li>
+              <li>Warte kurz. Die Datei bereitet Listen und Schutz vor.</li>
+            </ol>
+            <div class="notice danger">
+              <strong>Makros bleiben aus?</strong>
+              <p>Dann funktionieren die Buttons nicht. Nicht weiterarbeiten. Bitte Admin-Hilfe anfordern.</p>
+            </div>
+          </article>
+
+          <article class="card search-item" data-keywords="geschützte ansicht bearbeiten aktivieren protected view">
+            <h3><span class="icon">🛡</span> Geschützte Ansicht</h3>
+            <ol class="steps">
+              <li>Siehst du oben <b>„Geschützte Ansicht“</b>?</li>
+              <li>Klicke auf <b>„Bearbeitung aktivieren“</b>.</li>
+              <li>Aktiviere danach auch die Makros.</li>
+            </ol>
+          </article>
+
+          <article class="card search-item" data-keywords="wo anfangen reihenfolge lohntabelle einstellung januar team">
+            <h3><span class="icon">1️⃣</span> Wo anfangen?</h3>
+            <ol class="steps">
+              <li>Prüfe zuerst <b>LOHNTABELLE</b>.</li>
+              <li>Pflege danach <b>EINSTELLUNG</b>.</li>
+              <li>Arbeite dann im passenden Monatsblatt.</li>
+              <li>Prüfe am Ende <b>UBERSICHT</b> und <b>FLUKTUATION</b>.</li>
+            </ol>
+          </article>
+        </div>
+
+        <article class="notice warn search-item" data-keywords="wo schreiben weiß gelb geschützt eingabe automatisch">
+          <strong><span class="icon">⌨</span> Wo darfst du schreiben?</strong>
+          <p><b>Weiße oder grau-weiße Felder</b> sind normalerweise für deine Eingabe.
+             <b>Gelbe Felder</b> sind automatisch. Gelbe Felder nicht überschreiben.</p>
+        </article>
+
+        <article class="notice danger search-item" data-keywords="nicht machen sortieren ziehen löschen ausschneiden ctrl x passwort schutz">
+          <strong><span class="icon">⛔</span> Das bitte nicht machen</strong>
+          <ul>
+            <li>Keine Zeilen oder Spalten löschen.</li>
+            <li>Die Mitarbeitertabelle nicht sortieren.</li>
+            <li>Zellen nicht mit der Maus nach unten ziehen.</li>
+            <li>Gelbe Zellen nicht ändern.</li>
+            <li>Nicht mit <b>Strg+X</b> ausschneiden.</li>
+            <li>Den Blattschutz nicht umgehen.</li>
+          </ul>
+        </article>
+
+        <article class="card search-item" data-keywords="speichern schließen strg s x datei beenden">
+          <h3><span class="icon">💾</span> Richtig speichern und schließen</h3>
+          <ol class="steps">
+            <li>Drücke <b>Strg+S</b>.</li>
+            <li>Warte, bis Excel wieder reagiert.</li>
+            <li>Schließe die Datei über das <b>X</b> rechts oben.</li>
+            <li>Wenn Excel noch einmal fragt: Klicke auf <b>Speichern</b>.</li>
+          </ol>
+          <p>Schalte den Computer nicht aus, solange Excel speichert.</p>
+        </article>
+      </section>
+
+      <section class="section" id="excel-grundlagen">
+        <h2>2. Excel-Grundlagen für Anfänger</h2>
+        <p class="lead">Nur das, was du für diese Datei brauchst.</p>
+
+        <div class="grid">
+          <article class="card search-item" data-keywords="arbeitsblatt tab registerkarte unten wechseln">
+            <h3>Was ist ein Arbeitsblatt?</h3>
+            <p>Ein Arbeitsblatt ist eine Seite in Excel. Unten siehst du die Blattnamen.
+               Klicke zum Wechseln auf einen Namen, zum Beispiel <b>Januar</b> oder <b>FLUKTUATION</b>.</p>
+          </article>
+          <article class="card search-item" data-keywords="zelle feld spalte zeile b3 adresse">
+            <h3>Was ist eine Zelle?</h3>
+            <p>Eine Zelle ist ein einzelnes Feld. <code>B3</code> bedeutet:
+               Spalte B, Zeile 3. Du musst diese Adresse normalerweise nicht kennen.</p>
+          </article>
+          <article class="card search-item" data-keywords="eingeben schreiben korrigieren löschen entf backspace">
+            <h3>Wert eingeben oder korrigieren</h3>
+            <ol class="steps">
+              <li>Klicke einmal in ein weißes Feld.</li>
+              <li>Tippe den Wert.</li>
+              <li>Drücke <b>Enter</b>.</li>
+            </ol>
+            <p>Für eine Korrektur: Klicke in das Feld und tippe den richtigen Wert neu.</p>
+          </article>
+          <article class="card search-item" data-keywords="enter tab pfeiltasten tastatur navigieren">
+            <h3>Tasten zum Weitergehen</h3>
+            <ul>
+              <li><b>Enter</b>: eine Zelle nach unten.</li>
+              <li><b>Tab</b>: eine Zelle nach rechts.</li>
+              <li><b>Pfeiltasten</b>: in die gewünschte Richtung.</li>
+            </ul>
+          </article>
+          <article class="card search-item" data-keywords="dropdown liste pfeil kv gruppe stunden austrittsgrund auswählen">
+            <h3>Dropdown-Liste benutzen</h3>
+            <ol class="steps">
+              <li>Klicke in das Feld.</li>
+              <li>Klicke auf den kleinen Pfeil.</li>
+              <li>Wähle einen Wert aus der Liste.</li>
+            </ol>
+            <p>Bei <b>KV Gruppe</b>, <b>Stunden</b> und <b>Austrittsgrund</b> immer die Liste benutzen.</p>
+          </article>
+          <article class="card search-item" data-keywords="datum format tt mm jjjj beispiel eintritt austritt">
+            <h3>Datum richtig eingeben</h3>
+            <p>Nutze das Format <b>TT.MM.JJJJ</b>.</p>
+            <p>Beispiel: <code>05.09.2026</code>.</p>
+            <p>Liegt das Austrittsdatum vor dem Eintrittsdatum, zeigt die Datei eine Warnung.</p>
+          </article>
+          <article class="card search-item" data-keywords="makro erklärung button automatisierung">
+            <h3>Was ist ein Makro?</h3>
+            <p>Ein Makro ist eine automatische Aufgabe. Du startest sie über einen sichtbaren Button.
+               Du musst keine Makronamen kennen.</p>
+          </article>
+          <article class="card search-item" data-keywords="geschützt gesperrt zelle schreiben warum">
+            <h3>Warum sind Felder gesperrt?</h3>
+            <p>Gesperrte Felder enthalten Formeln oder wichtige Strukturen.
+               Der Schutz verhindert versehentliche Änderungen.</p>
+          </article>
+          <article class="card search-item" data-keywords="strg v einfügen paste wert format gesperrte zellen">
+            <h3>Mit Strg+V einfügen</h3>
+            <p>In dieser Datei wird mit <b>Strg+V nur der Wert</b> eingefügt.
+               Farbe und Format der Zielzelle bleiben erhalten.</p>
+            <p>Trifft der kopierte Bereich eine geschützte Zelle, stoppt Excel mit einem Hinweis.
+               Wähle dann weniger Zeilen oder Spalten.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="aufbau">
+        <h2>3. Aufbau der Arbeitsmappe</h2>
+        <p class="lead">Diese sichtbaren Blätter benutzt du. Interne Blätter sind verborgen.</p>
+
+        <figure class="visual search-item" data-keywords="blatt reihenfolge tabs navigation">
+          <div class="sheet-map" aria-label="Vereinfachte Reihenfolge der Arbeitsblätter">
+            <div class="setup">LOHNTABELLE</div>
+            <div class="setup">EINSTELLUNG</div>
+            <div class="month">Januar</div><div class="month">Februar</div><div class="month">Marz</div>
+            <div class="month">April</div><div class="month">Mai</div><div class="month">Juni</div>
+            <div class="month">Juli</div><div class="month">August</div><div class="month">September</div>
+            <div class="month">Oktober</div><div class="month">November</div><div class="month">Dezember</div>
+            <div class="report">UBERSICHT</div><div class="report">FLUKTUATION</div>
+          </div>
+          <figcaption>Vereinfachte Ansicht der sichtbaren Tabs. Die Namen <b>Marz</b> und
+            <b>UBERSICHT</b> stehen in Excel genau so, ohne Umlaut.</figcaption>
+        </figure>
+
+        <details class="card search-item" open data-keywords="lohntabelle kv schema payroll periode stunden lohn">
+          <summary>LOHNTABELLE – KV-Werte pflegen</summary>
+          <div class="details-body">
+            <p><b>Zweck:</b> Hier stehen die offiziellen KV-Lohnwerte. Die Monatsblätter holen
+               den Lohn automatisch aus dieser Tabelle.</p>
+            <p><b>Wann?</b> Beim Jahresstart, bei einem neuen KV-Schema oder bei besonderen Vertragsstunden.</p>
+            <p><b>Quelle:</b> KV-Schema und Informationen von Payroll.</p>
+            <h4>Felder</h4>
+            <p>KV-Periode, Gültig ab/bis, KV-Code, KV-Gruppe, Beschäftigungsdauer,
+               Monatsstunden und Monatslohn. <b>Status</b> und <b>Prüfung</b> sind automatisch.</p>
+            <h4>Erfolgreich fertig</h4>
+            <p>Der Status ist plausibel. Auf einem Monatsblatt erscheint der erwartete Lohn.</p>
+            <div class="notice warn">
+              <strong>Neue Mitarbeiter</strong>
+              <p>Grundsätzlich beginnt ein neuer Mitarbeiter mit <b>BG1 Basis</b>.
+                 Ausnahme: Die Person hat schon früher bei McDonald’s gearbeitet und diese Jahre werden anerkannt.
+                 In diesem Fall immer <b>vorher Payroll fragen</b>.</p>
+            </div>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="einstellung budget plan sales labor guest count urlaub musterdienstplan nacht krank jahr">
+          <summary>EINSTELLUNG – Jahr und Planung</summary>
+          <div class="details-body">
+            <p><b>Zweck:</b> Hier pflegst du Budget, Planung und das Arbeitsjahr.</p>
+            <p><b>Wann?</b> Beim Jahresstart und nach wichtigen Änderungen im Team oder Plan.</p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Bereich</th><th>Was kommt hinein?</th><th>Quelle</th></tr></thead>
+                <tbody>
+                  <tr><td>Budget</td><td>Sales (Umsatz), Crew Labor (Personalkosten),
+                      Guest Count (Gästezahl)</td><td>Budget / Zentrale</td></tr>
+                  <tr><td>URLAUB ABBAU</td><td>monatliche Urlaubsstunden</td><td>Urlaubsplanung</td></tr>
+                  <tr><td>MUSTERDIENSTPLAN STUNDEN</td><td>geplante Stunden</td><td>Musterdienstplan</td></tr>
+                  <tr><td>NACHTZUSCHLÄGE</td><td>monatlicher Euro-Wert</td><td>Restaurantplanung</td></tr>
+                  <tr><td>Projection / Aktuell</td><td>erwarteter Umsatz, erwartete Gästezahl,
+                      Feiertag- und Krankstunden</td><td>aktuelle Planung</td></tr>
+                  <tr><td>AKTUELLES JAHR</td><td>vierstellige Jahreszahl</td><td>z. B. 2027</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p><b>Automatisch:</b> Crew Labor % und gelbe Formelzellen.</p>
+            <p><b>Erfolgreich fertig:</b> Die rechte Seite der Monatsblätter zeigt plausible Planwerte.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="monatsblatt januar februar marz mitarbeiter spalten b c d e f g h i j k l m n">
+          <summary>Monatsblätter Januar bis Dezember – tägliche Arbeit</summary>
+          <div class="details-body">
+            <p>Hier pflegst du das Team in dem Monat, ab dem eine Änderung gilt.</p>
+            <figure class="visual">
+              <div class="column-map" aria-label="Vereinfachte Darstellung der Mitarbeitertabelle">
+                <div class="input"><b>B</b>Personal-ID<br><span class="small">Eingabe</span></div>
+                <div class="input"><b>C</b>Name<br><span class="small">Eingabe</span></div>
+                <div class="input"><b>D</b>Eintritt<br><span class="small">Eingabe</span></div>
+                <div class="input"><b>E</b>KV Gruppe<br><span class="small">Liste</span></div>
+                <div class="input"><b>F</b>Stunden<br><span class="small">Liste</span></div>
+                <div class="auto"><b>G</b>Lohn<br><span class="small">automatisch</span></div>
+                <div class="auto"><b>H</b>Aktuelle Std.<br><span class="small">automatisch</span></div>
+                <div class="input"><b>I</b>Austritt<br><span class="small">Eingabe</span></div>
+                <div class="input"><b>J</b>Offener Urlaub<br><span class="small">bei Austritt</span></div>
+                <div class="auto"><b>K</b>Urlaub €<br><span class="small">automatisch</span></div>
+                <div class="auto"><b>L</b>Letztes Gehalt<br><span class="small">automatisch</span></div>
+                <div class="input"><b>M</b>Bemerkung<br><span class="small">optional</span></div>
+                <div class="input"><b>N</b>Austrittsgrund<br><span class="small">Liste</span></div>
+              </div>
+              <figcaption>Vereinfachte, datenschutzfreundliche Darstellung. Weiß = Eingabe,
+                Gelb = automatisch. Die echten Spaltennamen entsprechen Excel.</figcaption>
+            </figure>
+
+            <h4>Rechte Seite</h4>
+            <ul>
+              <li>Gesamt Crew Stunden, Krank-, Feiertag- und Urlaubsstunden: automatisch.</li>
+              <li><b>Vormonat +/- Stunden</b>: in normalen Monaten manuell.</li>
+              <li>Verfügbare Stunden, Musterdienstplan, Differenz, Laborcost: automatisch.</li>
+              <li><b>Extra-Kosten</b>: weiße Eingabefelder in den Zeilen 18–28.</li>
+              <li>Fluktuation und Budgetvergleich: automatisch.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="ubersicht übersicht finanziell durchrechnung e30 i30 nächstes jahr januar plan">
+          <summary>UBERSICHT – Jahr lesen und nächstes Jahr planen</summary>
+          <div class="details-body">
+            <p><b>Zweck:</b> Jahresüberblick für Finanzen und Durchrechnungsstunden.</p>
+            <p>Fast alles ist automatisch. Du darfst nur zwei weiße Planfelder ändern:</p>
+            <ul>
+              <li><b>E30 – Jänner Verfügbar Plan:</b> Mitarbeiterstunden, die im Januar des
+                  nächsten Jahres für die Planung verfügbar sind.</li>
+              <li><b>I30 – Jänner Muster Plan:</b> benötigte Stunden aus dem
+                  Musterdienstplan für Januar des nächsten Jahres.</li>
+            </ul>
+            <p>Die Werte kommen aus dem bereits vorbereiteten Personalsheet für das nächste Jahr.
+               <b>Musterdienstplan</b> bedeutet: der geplante Beispiel-Dienstplan.
+               <b>Durchrechnungszeitraum</b> bedeutet: mehrere Monate werden bei den Stunden
+               gemeinsam betrachtet.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="fluktuation ampel sofort prüfen austritt rate neutral karenz storetransfer beförderung nicht eingetreten">
+          <summary>FLUKTUATION – nur lesen und prüfen</summary>
+          <div class="details-body">
+            <p><b>Zweck:</b> Zeigt Personalbewegung, Fluktuationsrate und offene Datenprobleme.</p>
+            <p>Du trägst hier nichts ein. Fehler korrigierst du im genannten Monatsblatt.</p>
+            <h4>„Sofort prüfen“</h4>
+            <ul>
+              <li>Grüner Hinweis: keine offenen Datenprobleme.</li>
+              <li>Problemtabelle: Gehe zum genannten Monatsblatt und ergänze die fehlende Angabe.</li>
+            </ul>
+            <h4>Bewertung</h4>
+            <p>Unter 20 % ist das Ziel. Die Stufen reichen von „Sehr gut“ bis „Extrem“.
+               Der Verlust-Score ist nur eine Zusatzinformation.</p>
+            <p>Diese neutralen Gründe erhöhen die Rate nicht: <b>Karenz</b>,
+               <b>Storetransfer</b>, <b>Beförderung</b>, <b>Nicht eingetreten</b>.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="section" id="prozesse">
+        <h2>4. Prozesse Schritt für Schritt</h2>
+        <p class="lead">Wähle deine Aufgabe. Öffne die Schritte per Klick.</p>
+
+        <details class="card search-item" open data-keywords="neues jahr teams wichtige unterlagen leeres sheet start januar">
+          <summary>Neues Jahr starten</summary>
+          <div class="details-body">
+            <p><b>Ziel:</b> Eine neue, leere Datei für das neue Jahr vorbereiten.</p>
+            <ol class="steps">
+              <li>Öffne <b>Teams → Wichtige Unterlagen</b>.</li>
+              <li>Lade das leere Personalsheet für das neue Jahr herunter.</li>
+              <li>Öffne die neue Datei und aktiviere Bearbeitung und Makros.</li>
+              <li>Trage in <b>EINSTELLUNG → AKTUELLES JAHR</b> das neue Jahr ein.</li>
+              <li>Prüfe oder ergänze die <b>LOHNTABELLE</b>.</li>
+              <li>Pflege Budget und Planwerte in <b>EINSTELLUNG</b>.</li>
+              <li>Trage das Team im ersten offenen Monat ein.</li>
+              <li>Klicke <b>„Aktualisierung des restlichen Jahres“</b>.</li>
+              <li>Prüfe den Folgemonat, UBERSICHT und FLUKTUATION.</li>
+            </ol>
+            <div class="notice info">
+              <strong>Durchrechnung über den Jahreswechsel</strong>
+              <p>Nutze die vorbereitete neue Datei für die Januar-Werte des nächsten Jahres.
+                 Übertrage in der alten Datei auf <b>UBERSICHT</b>:
+                 verfügbare Stunden nach <b>E30</b> und Musterstunden nach <b>I30</b>.</p>
+            </div>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="neuer mitarbeiter eintritt neue person bg1 basis payroll">
+          <summary>Neuen Mitarbeiter eintragen</summary>
+          <div class="details-body">
+            <p><b>Wann?</b> Im Monat, in dem die Person beginnt.</p>
+            <ol class="steps">
+              <li>Öffne das Monatsblatt des Startmonats.</li>
+              <li>Suche die erste freie Mitarbeiterzeile.</li>
+              <li>Trage <b>Personal-ID</b>, <b>Name</b> und <b>Eintrittsdatum</b> ein.</li>
+              <li>Wähle zuerst die <b>KV Gruppe</b> aus der Liste.</li>
+              <li>Wähle danach die <b>Stunden</b> aus der Liste.</li>
+              <li>Prüfe den automatisch angezeigten Lohn.</li>
+              <li>Speichere die Datei.</li>
+              <li>Klicke <b>„Aktualisierung des restlichen Jahres“</b>.</li>
+              <li>Öffne den Folgemonat und prüfe die Person.</li>
+            </ol>
+            <div class="notice warn">
+              <strong>KV Gruppe</strong>
+              <p>Standard ist <b>BG1 Basis</b>. Hat die Person früher bei McDonald’s gearbeitet,
+                 kann eine andere Gruppe gelten. Immer zuerst Payroll fragen.</p>
+            </div>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="austritt kündigung offene urlaubstage grund letzter arbeitstag">
+          <summary>Mitarbeiter tritt aus</summary>
+          <div class="details-body">
+            <p><b>Wann?</b> Im Austrittsmonat. Die Person bleibt in diesem Monat sichtbar und
+               verschwindet aus den folgenden Monaten.</p>
+            <ol class="steps">
+              <li>Öffne das Monatsblatt des Austrittsmonats.</li>
+              <li>Trage das <b>Austrittsdatum</b> ein.</li>
+              <li>Wähle den <b>Austrittsgrund</b> aus der Liste.</li>
+              <li>Trage die <b>offenen Urlaubstage</b> ein. Gibt es keine, darf das Feld leer bleiben.</li>
+              <li>Speichere die Datei.</li>
+              <li>Klicke <b>„Aktualisierung des restlichen Jahres“</b>.</li>
+              <li>Prüfe den Folgemonat. Die Person darf dort nicht mehr stehen.</li>
+              <li>Öffne <b>FLUKTUATION</b> und prüfe „Sofort prüfen“.</li>
+            </ol>
+            <div class="notice danger">
+              <strong>Bei einem echten Austritt nicht „Mitarbeiter entfernen“ benutzen.</strong>
+              <p>Nutze immer Austrittsdatum und Austrittsgrund. Sonst fehlen wichtige Daten.</p>
+            </div>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="stunden ändern vertrag teilzeit mehrstufig ab monat override">
+          <summary>Stunden ändern</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Öffne den Monat, ab dem die neuen Stunden gelten.</li>
+              <li>Prüfe die KV Gruppe.</li>
+              <li>Wähle die neuen Stunden aus der Liste.</li>
+              <li>Speichere.</li>
+              <li>Klicke <b>„Aktualisierung des restlichen Jahres“</b>.</li>
+              <li>Prüfe den Folgemonat.</li>
+            </ol>
+            <p>Mehrere Änderungen im Jahr sind möglich. Starte jede Änderung im richtigen Monat.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="copy aktualisierung restlichen jahres folgemonat daten kopieren">
+          <summary>Änderung in folgende Monate übernehmen</summary>
+          <div class="details-body">
+            <p>Button: <b>„Aktualisierung des restlichen Jahres“</b>.</p>
+            <ol class="steps">
+              <li>Öffne den Monat, ab dem die Änderung gilt.</li>
+              <li>Prüfe deine Eingabe.</li>
+              <li>Speichere.</li>
+              <li>Klicke den Button einmal.</li>
+              <li>Warte, bis Excel wieder reagiert.</li>
+              <li>Prüfe einen Folgemonat.</li>
+            </ol>
+            <p><b>Ergebnis:</b> Die folgenden Monate werden aktualisiert. Zukünftige,
+               bereits geplante Änderungen bleiben erhalten.</p>
+            <div class="notice warn">
+              <strong>Kein Erfolgsfenster</strong>
+              <p>Der Button zeigt normalerweise kein Abschlussfenster. Prüfe deshalb einen Folgemonat.
+                 Nicht sofort mehrfach klicken.</p>
+            </div>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="extra kosten jubileumsgeld austrittskosten crew labor 18 25 26 28">
+          <summary>Extra-Kosten eintragen</summary>
+          <div class="details-body">
+            <p>Extra-Kosten sind zusätzliche Kosten, die der Restaurant Manager kennt und einträgt.
+               Beispiele: <b>Jubiläumsgeld</b> oder <b>Austrittskosten</b>.</p>
+            <h4>Kosten gelten auch für spätere Monate</h4>
+            <p>Nutze die weißen Zeilen <b>18–25</b>. Diese Werte werden mit
+               „Aktualisierung des restlichen Jahres“ in folgende Monate übernommen.</p>
+            <h4>Kosten gelten nur in diesem Monat</h4>
+            <p>Nutze die weißen Zeilen <b>26–28</b>. Daneben steht:
+               <b>„Die Zellen werden nicht mitkopiert.“</b></p>
+            <p>Trage eine kurze Beschreibung und den Euro-Wert ein. Prüfe danach die Reine Laborcost.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="vormonat plus minus stunden differenz durchrechnung februar mai august november">
+          <summary>„Vormonat +/- Stunden“ eintragen</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Öffne den Vormonat.</li>
+              <li>Lies rechts den Wert <b>„Stunden Differenz“</b>.</li>
+              <li>Öffne den aktuellen Monat.</li>
+              <li>Trage bei <b>„Vormonat +/- Stunden“</b> das Gegenteil ein.</li>
+              <li>Speichere.</li>
+            </ol>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Stunden Differenz im Vormonat</th><th>Eingabe im aktuellen Monat</th></tr></thead>
+                <tbody><tr><td>+15</td><td><b>−15</b></td></tr>
+                       <tr><td>−15</td><td><b>+15</b></td></tr></tbody>
+              </table>
+            </div>
+            <div class="notice info">
+              <strong>Ausnahme</strong>
+              <p>In <b>Februar, Mai, August und November</b> beginnt ein neuer
+                 Durchrechnungszeitraum. Dort gibt es keine manuelle Übernahme aus dem Vormonat.
+                 Die Zeile zeigt stattdessen die automatisch berechneten
+                 <b>„Verfügbaren Stunden für DPL“</b>.</p>
+            </div>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="kv update schema neue periode payroll mai lohntabelle">
+          <summary>Neues KV-Schema übernehmen</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Öffne die Unterlagen von Payroll.</li>
+              <li>Öffne <b>LOHNTABELLE</b>.</li>
+              <li>Klicke <b>„1) Neue Periode“</b>.</li>
+              <li>Beantworte die Fragen mit den Werten aus dem KV-Schema.</li>
+              <li>Speichere.</li>
+              <li>Prüfe den Lohn von mehreren Mitarbeitern in einem Monatsblatt.</li>
+            </ol>
+            <p>Bei Unsicherheit nicht raten. Payroll fragen.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="personal id korrigieren falsche id name ändern heirat fehler">
+          <summary>Personal-ID oder Name korrigieren</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Markiere die Zeile der Person.</li>
+              <li>Klicke <b>„Personal-ID korrigieren“</b>.</li>
+              <li>Gib die richtige Personal-ID und/oder den richtigen Namen ein.</li>
+              <li>Prüfe die Zusammenfassung.</li>
+              <li>Bestätige.</li>
+              <li>Prüfe die Person in einem weiteren Monat.</li>
+            </ol>
+            <p>Die Korrektur wird in allen Monaten und in den gespeicherten Stundenänderungen durchgeführt.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="mitarbeiter entfernen doppelt falsch angelegt nicht eingetreten löschen">
+          <summary>Falsch angelegten Mitarbeiter entfernen</summary>
+          <div class="details-body">
+            <p>Nutze diesen Button nur bei einem <b>Eingabefehler</b> oder einer
+               <b>doppelten Zeile</b>.</p>
+            <ol class="steps">
+              <li>Markiere die Zeile der Person.</li>
+              <li>Klicke <b>„Mitarbeiter entfernen“</b>.</li>
+              <li>Wähle: alle Monate oder ab einem bestimmten Monat.</li>
+              <li>Lies die Warnung vollständig.</li>
+              <li>Bestätige nur, wenn die Person wirklich entfernt werden soll.</li>
+              <li>Prüfe einen betroffenen Monat.</li>
+            </ol>
+            <div class="notice danger">
+              <strong>Echter Austritt?</strong>
+              <p>Dann abbrechen und das Austrittsdatum verwenden. Das gilt auch, wenn eine
+                 eingeplante Person nicht antritt: Nutze den Austrittsgrund
+                 <b>„Nicht eingetreten“</b>, damit der Vorgang in FLUKTUATION sichtbar bleibt.</p>
+            </div>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="monatsabschluss checklist payroll speichern">
+          <summary>Monatsabschluss</summary>
+          <div class="details-body">
+            <ul>
+              <li>Alle aktiven Personen sind vollständig.</li>
+              <li>Alle Austritte haben Datum und Grund.</li>
+              <li>Offene Urlaubstage sind eingetragen, wenn vorhanden.</li>
+              <li>Extra-Kosten sind eingetragen.</li>
+              <li>Alle Änderungen wurden in folgende Monate übernommen.</li>
+              <li>EINSTELLUNG ist aktuell.</li>
+              <li>Payroll-Checkliste stimmt.</li>
+              <li>FLUKTUATION zeigt keine offenen Datenprobleme.</li>
+              <li>Vormonat +/- für den Folgemonat ist vorbereitet.</li>
+              <li>Die Datei ist gespeichert.</li>
+            </ul>
+          </div>
+        </details>
+      </section>
+
+      <section class="section" id="buttons">
+        <h2>5. Buttons</h2>
+        <p class="lead">Du brauchst keine Makronamen. Nutze nur die sichtbaren Buttons.</p>
+
+        <figure class="visual search-item" data-keywords="button monatsblatt aktualisierung entfernen korrigieren fehler melden">
+          <div class="button-row">
+            <div class="excel-btn copy">Aktualisierung des restlichen Jahres</div>
+            <div class="excel-btn remove">Mitarbeiter entfernen</div>
+            <div class="excel-btn correct">Personal-ID korrigieren</div>
+            <div class="excel-btn feedback">Fehler melden</div>
+          </div>
+          <figcaption>Vereinfachte Darstellung der vier Buttons auf jedem Monatsblatt.</figcaption>
+        </figure>
+
+        <div class="table-wrap search-item" data-keywords="button dauer ergebnis nicht zweimal klicken">
+          <table>
+            <thead><tr><th>Button</th><th>Wo?</th><th>Wofür?</th><th>Warten / Ergebnis</th></tr></thead>
+            <tbody>
+              <tr><td><b>Aktualisierung des restlichen Jahres</b></td><td>Monatsblatt, oben rechts</td>
+                  <td>Änderungen in spätere Monate übernehmen</td>
+                  <td>Meist wenige Sekunden. Kein Erfolgsfenster. Folgemonat prüfen. Nicht mehrfach klicken.</td></tr>
+              <tr><td><b>Mitarbeiter entfernen</b></td><td>Monatsblatt, rechts</td>
+                  <td>Falsch oder doppelt angelegte Person entfernen</td>
+                  <td>Dialoge vollständig lesen. Bei echtem Austritt nicht benutzen.</td></tr>
+              <tr><td><b>Personal-ID korrigieren</b></td><td>Monatsblatt, rechts</td>
+                  <td>ID oder Namen in allen Monaten korrigieren</td>
+                  <td>Abschlussmeldung abwarten. Danach einen anderen Monat prüfen.</td></tr>
+              <tr><td><b>Fehler melden</b></td><td>Monatsblatt, rechts</td>
+                  <td>Technische Hilfe mit Kontext anfordern</td>
+                  <td>Zwei Fragen beantworten. Bericht speichern und an Adam senden.</td></tr>
+              <tr><td><b>1) Neue Periode</b></td><td>LOHNTABELLE</td>
+                  <td>Neues KV-Schema eintragen</td><td>Dialoge der Reihe nach beantworten. Danach Lohn prüfen.</td></tr>
+              <tr><td><b>2) Eigene Stunden</b></td><td>LOHNTABELLE</td>
+                  <td>Besondere Vertragsstunden ergänzen</td><td>Nur mit Vertrag/Payroll-Information.</td></tr>
+              <tr><td><b>3) Alte Periode löschen</b></td><td>LOHNTABELLE</td>
+                  <td>Ein altes, nicht mehr benötigtes KV-Schema löschen</td>
+                  <td>Normalerweise ungefähr das Schema von vor zwei Jahren. Nur löschen, wenn es sicher nicht mehr benötigt wird.</td></tr>
+              <tr><td><b>4) Stunde löschen</b></td><td>LOHNTABELLE</td>
+                  <td>Eine selbst ergänzte Sonderstunde entfernen</td><td>Nur die richtige Zeile auswählen und Warnung prüfen.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid">
+          <details class="card search-item" data-keywords="eigene stunden sondervertrag schritt zeitraum gruppe lohn">
+            <summary>„2) Eigene Stunden“ – Ablauf</summary>
+            <div class="details-body">
+              <p><b>Vorher:</b> Vertrag oder Payroll-Information bereithalten.</p>
+              <ol class="steps">
+                <li>Wähle den KV-Zeitraum.</li>
+                <li>Wähle die KV-Gruppe.</li>
+                <li>Gib die besonderen Monatsstunden ein.</li>
+                <li>Gib den Monatslohn ein, wenn er bekannt ist. Sonst klicke
+                    <b>Abbrechen</b> oder lasse das Feld leer.</li>
+                <li>Excel springt in der LOHNTABELLE zur neu angelegten Stundenzeile.</li>
+                <li>Prüfe dort Stunden und Lohn. Ergänze den Lohn später, wenn er noch fehlt.</li>
+                <li>Prüfe danach die neue Stunde im passenden Monatsblatt.</li>
+              </ol>
+              <p><b>Abbrechen:</b> In Schritt 1–3 beendet Abbrechen den Vorgang.
+                 Im optionalen Lohn-Schritt bedeutet Abbrechen oder leer:
+                 <b>Die Stundenzeile wird trotzdem ohne Lohn angelegt.</b></p>
+              <p><b>Ergebnis:</b> Es gibt kein eigenes Abschlussfenster. Die neue Zeile
+                 in der LOHNTABELLE ist die Bestätigung.</p>
+              <p><b>Fehler:</b> Existieren die Stunden bereits, zeigt Excel einen Hinweis und ändert nichts.</p>
+            </div>
+          </details>
+
+          <details class="card search-item" data-keywords="alte periode löschen kv schema zwei jahre warnung abbrechen">
+            <summary>„3) Alte Periode löschen“ – Ablauf</summary>
+            <div class="details-body">
+              <p><b>Wann?</b> Nur bei einem sehr alten, sicher nicht mehr benötigten KV-Schema.
+                 Normalerweise ungefähr das Schema von vor zwei Jahren.</p>
+              <ol class="steps">
+                <li>Klicke den Button.</li>
+                <li>Wähle genau eine alte Periode.</li>
+                <li>Prüfe den Namen und Zeitraum.</li>
+                <li>Bestätige die letzte Warnung nur bei Sicherheit.</li>
+                <li>Warte, bis die LOHNTABELLE wieder sichtbar und formatiert ist.</li>
+              </ol>
+              <p><b>Abbrechen:</b> „Nein“, Abbrechen oder leere Eingabe. Dann ändert sich nichts.</p>
+              <p><b>Fehler:</b> Mindestens eine Periode bleibt immer erhalten. Bei Unsicherheit Payroll fragen.</p>
+            </div>
+          </details>
+
+          <details class="card search-item" data-keywords="stunde löschen eigene stunden sonderstunde verwendung monatszeile">
+            <summary>„4) Stunde löschen“ – Ablauf</summary>
+            <div class="details-body">
+              <p>Es können nur Stunden gelöscht werden, die vorher mit
+                 <b>„2) Eigene Stunden“</b> ergänzt wurden. Standardstunden bleiben.</p>
+              <ol class="steps">
+                <li>Wähle den KV-Zeitraum.</li>
+                <li>Wähle die KV-Gruppe.</li>
+                <li>Wähle die zu löschenden Stunden.</li>
+                <li>Lies die letzte Warnung. Sie zeigt auch, ob die Stunden noch in Monatszeilen stehen.</li>
+                <li>Bestätige nur, wenn die Auswahl stimmt.</li>
+                <li>Prüfe danach betroffene Mitarbeiterzeilen und wähle dort bei Bedarf neue Stunden.</li>
+              </ol>
+              <p><b>Abbrechen:</b> „Nein“ ändert nichts.</p>
+              <p><b>Fehler:</b> Findet Excel keine eigene Stunde, wird nichts gelöscht.</p>
+            </div>
+          </details>
+        </div>
+
+        <details class="card search-item" data-keywords="fehler melden was wolltest du was ist passiert email Adam">
+          <summary>Button „Fehler melden“ – genauer Ablauf</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Klicke <b>„Fehler melden“</b>.</li>
+              <li>Beantworte: <b>„Was wolltest du gerade tun?“</b></li>
+              <li>Beantworte: <b>„Was ist passiert?“</b></li>
+              <li>Lies den Speicherhinweis.</li>
+              <li>Sende den Bericht an Adam.</li>
+            </ol>
+            <p>Der Bericht enthält technische Informationen zur Datei und zu Excel.
+               Bitte nicht öffentlich teilen.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="section" id="farben">
+        <h2>6. Farben, Zeichen und Status</h2>
+        <p class="lead">Nicht nur die Farbe zählt. Achte auch auf Text, Überschrift und Schutz.</p>
+        <div class="grid">
+          <article class="card search-item" data-keywords="weiß eingabe schreiben">
+            <div class="color-line"><span class="swatch white"></span><b>Weiß / Zebra-Grau: Eingabe</b></div>
+            <p>Hier darfst du normalerweise schreiben. Einige Eingaben haben eine Liste.</p>
+          </article>
+          <article class="card search-item" data-keywords="gelb automatisch formel nicht ändern">
+            <div class="color-line"><span class="swatch yellow"></span><b>Gelb: automatisch</b></div>
+            <p>Hier rechnet die Datei. Nicht überschreiben.</p>
+          </article>
+          <article class="card search-item" data-keywords="blau kopf information">
+            <div class="color-line"><span class="swatch blue"></span><b>Blau: Überschrift / Information</b></div>
+            <p>Dient zur Orientierung. Normalerweise keine Eingabe.</p>
+          </article>
+          <article class="card search-item" data-keywords="lakat admin geschützt">
+            <h3><span class="icon">🔒</span> Gesperrt</h3>
+            <p>Die Zelle oder Funktion ist geschützt. Nicht versuchen, den Schutz zu entfernen.</p>
+          </article>
+        </div>
+
+        <h3>Häufige Status und Warnungen</h3>
+        <div class="table-wrap search-item" data-keywords="status nicht gefunden schlecht gut fluktuation personal id">
+          <table>
+            <thead><tr><th>Was siehst du?</th><th>Bedeutung</th><th>Was tun?</th></tr></thead>
+            <tbody>
+              <tr><td><b>„Nicht gefunden“</b> bei Lohn</td><td>KV Gruppe oder Stunden passen nicht zur LOHNTABELLE.</td><td>Listenwahl prüfen. Dann Payroll/KV-Schema prüfen.</td></tr>
+              <tr><td><b>„Personal-ID bereits vergeben“</b></td><td>Die ID existiert im Monat schon.</td><td>Bestehende Zeile prüfen. Nicht eine zweite Person mit derselben ID anlegen.</td></tr>
+              <tr><td><b>„Personal-ID prüfen“</b></td><td>Die ID gehört in einem anderen Monat zu einem anderen Namen.</td><td>Button „Personal-ID korrigieren“ nutzen.</td></tr>
+              <tr><td><b>„Datum prüfen“</b></td><td>Austritt liegt vor Eintritt.</td><td>Beide Datumswerte kontrollieren.</td></tr>
+              <tr><td><b>FLUKTUATION „Sofort prüfen“</b></td><td>Eine Austrittsangabe fehlt oder ist unklar.</td><td>Im genannten Monatsblatt korrigieren.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section" id="fehler">
+        <h2>7. Häufige Fehler und Lösungen</h2>
+        <p class="lead">Lies zuerst „Was sehe ich?“. Folge dann den Schritten.</p>
+
+        <details class="card search-item" open data-keywords="makro nicht startet button reagiert nicht inhalt aktivieren">
+          <summary>Button reagiert nicht / Makro startet nicht</summary>
+          <div class="details-body">
+            <p><b>Du siehst:</b> Beim Klick passiert nichts.</p>
+            <p><b>Mögliche Ursache:</b> Makros sind nicht aktiv.</p>
+            <ol class="steps">
+              <li>Speichere deine Eingaben, wenn möglich.</li>
+              <li>Schließe die Datei.</li>
+              <li>Öffne sie neu.</li>
+              <li>Klicke auf <b>„Bearbeitung aktivieren“</b> und <b>„Inhalt aktivieren“</b>.</li>
+              <li>Versuche den Button einmal.</li>
+            </ol>
+            <p><b>Nicht tun:</b> Nicht schnell mehrfach klicken.</p>
+            <p><b>Admin:</b> Wenn es weiter nicht funktioniert.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="geschützte ansicht protected view">
+          <summary>Datei ist in „Geschützte Ansicht“</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Klicke oben auf <b>„Bearbeitung aktivieren“</b>.</li>
+              <li>Aktiviere danach die Makros.</li>
+            </ol>
+            <p>Wenn die Buttons weiter nicht reagieren: Datei schließen und Admin fragen.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="kann nicht schreiben zelle gesperrt geschützt gelb">
+          <summary>Ich kann nicht in eine Zelle schreiben</summary>
+          <div class="details-body">
+            <p>Prüfe die Farbe und die Überschrift. Gelbe oder geschützte Zellen sind automatisch.</p>
+            <p>Schreibe nur in weiße Eingabefelder. Schutz nicht entfernen.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="falsche daten eingegeben korrigieren undo rückgängig id name">
+          <summary>Ich habe einen falschen Wert eingegeben</summary>
+          <div class="details-body">
+            <ul>
+              <li>Normale Eingabe: Tippe den richtigen Wert neu.</li>
+              <li>Falsche Personal-ID oder Name in mehreren Monaten: Nutze
+                  <b>„Personal-ID korrigieren“</b>.</li>
+              <li>Falsch angelegte Person: Nutze <b>„Mitarbeiter entfernen“</b>.</li>
+              <li>Echter Austritt: Nutze immer Austrittsdatum und Austrittsgrund.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="ergebnis fehlt lohn nicht gefunden formel leer aktualisierung">
+          <summary>Das erwartete Ergebnis erscheint nicht</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Prüfe, ob alle notwendigen Eingaben vorhanden sind.</li>
+              <li>Prüfe KV Gruppe und Stunden.</li>
+              <li>Speichere.</li>
+              <li>Bei Folgemonaten: Klicke einmal „Aktualisierung des restlichen Jahres“.</li>
+              <li>Öffne den Folgemonat erneut.</li>
+            </ol>
+            <p>Bleibt der Fehler: Nutze „Fehler melden“.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="langsam excel hängt keine rückmeldung reagiert nicht eingefroren">
+          <summary>Excel ist langsam oder zeigt „Keine Rückmeldung“</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Nicht noch einmal klicken.</li>
+              <li>Warte. Auf älteren PCs können Berechnungen länger dauern.</li>
+              <li>Prüfe, ob Excel danach wieder reagiert.</li>
+              <li>Wenn Excel dauerhaft nicht zurückkommt: Informiere Admin.</li>
+            </ol>
+            <p><b>Nicht tun:</b> Den Computer nicht sofort ausschalten. Nicht viele Buttons nacheinander drücken.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="falsche stelle geklickt auswahl nichts passiert">
+          <summary>Ich habe falsch geklickt</summary>
+          <div class="details-body">
+            <p>Ein einfacher Klick ändert noch keine Daten. Klicke auf das richtige Feld und arbeite weiter.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="speichern nicht möglich schreibgeschützt teams konflikt">
+          <summary>Speichern funktioniert nicht</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Lies die Meldung von Excel vollständig.</li>
+              <li>Prüfe, ob die Datei schreibgeschützt geöffnet wurde.</li>
+              <li>Prüfe den von deinem Restaurant vorgegebenen Speicherort.</li>
+              <li>Wenn der richtige Speicherort unklar ist, frage Admin.</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="fehlermeldung runtime error 1004">
+          <summary>Eine Fehlermeldung erscheint</summary>
+          <div class="details-body">
+            <ol class="steps">
+              <li>Schließe die Meldung nicht sofort.</li>
+              <li>Notiere den genauen Text oder mache ein Foto ohne Personaldaten.</li>
+              <li>Klicke auf einem Monatsblatt <b>„Fehler melden“</b>.</li>
+              <li>Sende den Bericht an Adam.</li>
+            </ol>
+            <p>Wenn „Fehler melden“ nicht funktioniert: Schreibe an
+               <a href="mailto:adam.nagy@at.mcd.com">adam.nagy@at.mcd.com</a>.</p>
+          </div>
+        </details>
+
+        <details class="card search-item" data-keywords="payroll abweichung lohn kv id">
+          <summary>Die Daten weichen von Payroll ab</summary>
+          <div class="details-body">
+            <p>Nicht raten und nicht viele Werte auf einmal ändern.</p>
+            <ol class="steps">
+              <li>Prüfe Personal-ID, KV Gruppe, Stunden und Zeitraum.</li>
+              <li>Vergleiche mit der Payroll-Checkliste.</li>
+              <li>Frage zuerst Payroll.</li>
+            </ol>
+          </div>
+        </details>
+      </section>
+
+      <section class="section" id="faq">
+        <h2>8. Häufige Fragen – FAQ</h2>
+        <p class="lead">Klicke auf eine Frage.</p>
+
+        <details class="card search-item" data-keywords="wo schreiben eingabe">
+          <summary>Wo darf ich schreiben?</summary>
+          <div class="details-body"><p>In weißen oder grau-weißen Eingabefeldern. Gelbe Felder sind automatisch.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="warum gesperrt ändern zelle">
+          <summary>Warum kann ich diese Zelle nicht ändern?</summary>
+          <div class="details-body"><p>Sie enthält wahrscheinlich eine Formel oder Struktur. Der Schutz verhindert Fehler.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="warum makros aktivieren">
+          <summary>Warum muss ich Makros aktivieren?</summary>
+          <div class="details-body"><p>Die sichtbaren Buttons und mehrere Prüfungen arbeiten mit Makros. Ohne Makros sind diese Funktionen aus.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="datei kaputt machen sicherheit">
+          <summary>Kann ich die Datei kaputt machen?</summary>
+          <div class="details-body"><p>Der Schutz verhindert viele Fehler. Schreibe nur in Eingabefelder, nutze Listen und sichtbare Buttons. Bei Unsicherheit abbrechen und Hilfe holen.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="falsch eingetragen">
+          <summary>Was mache ich bei einer falschen Eingabe?</summary>
+          <div class="details-body"><p>Normale Werte neu eingeben. Für Personal-ID oder Name den Button „Personal-ID korrigieren“ nutzen.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="button nochmal erneut drücken">
+          <summary>Darf ich einen Button noch einmal drücken?</summary>
+          <div class="details-body"><p>Erst warten und das Ergebnis prüfen. Nicht mehrfach schnell klicken. Nur erneut starten, wenn der erste Lauf sicher beendet ist.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="fertig abgeschlossen status">
+          <summary>Woher weiß ich, dass eine Aufgabe fertig ist?</summary>
+          <div class="details-body"><p>Excel reagiert wieder. Manche Buttons zeigen eine Abschlussmeldung. Bei „Aktualisierung des restlichen Jahres“ prüfst du einen Folgemonat.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="excel eingefroren hängt">
+          <summary>Was mache ich, wenn Excel hängt?</summary>
+          <div class="details-body"><p>Nicht weiterklicken. Warten. Kommt Excel nicht zurück, Admin informieren.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="datei gespeichert wo teams ordner">
+          <summary>Wo finde ich die gespeicherte Datei?</summary>
+          <div class="details-body"><p>Am Ort, an dem dein Restaurant die Arbeitsdatei speichert.
+            Wenn der Speicherort unklar ist, frage Admin.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="wann admin hilfe">
+          <summary>Wann brauche ich Admin-Hilfe?</summary>
+          <div class="details-body"><p>Wenn Buttons nicht funktionieren, Formeln fehlen, Blätter falsch aussehen, Speichern nicht geht oder eine technische Fehlermeldung wiederkommt.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="offene urlaubstage null leer">
+          <summary>Was trage ich bei 0 offenen Urlaubstagen ein?</summary>
+          <div class="details-body"><p>Das Feld darf leer bleiben. Austrittsdatum und Austrittsgrund sind trotzdem Pflicht.</p></div>
+        </details>
+        <details class="card search-item" data-keywords="marz märz ubersicht übersicht name">
+          <summary>Warum heißen „Marz“ und „UBERSICHT“ so?</summary>
+          <div class="details-body"><p>Das sind die technischen Blattnamen in Excel. Die Schreibweise ist absichtlich so. Nicht umbenennen.</p></div>
+        </details>
+      </section>
+
+      <section class="section" id="admin">
+        <h2>9. Wann ist Admin-Hilfe nötig?</h2>
+        <p class="lead">In diesen Fällen nicht weiterprobieren.</p>
+        <article class="notice danger search-item" data-keywords="admin stop nicht weiter">
+          <strong><span class="icon">🔒</span> Sofort stoppen und Hilfe holen</strong>
+          <ul>
+            <li>Die Datei zeigt eine technische Fehlermeldung wiederholt.</li>
+            <li>Ein Button reagiert nach neuem Öffnen nicht.</li>
+            <li>Gelbe Formelzellen sind leer oder zeigen Fehler.</li>
+            <li>Ein Blatt sieht anders oder beschädigt aus.</li>
+            <li>Die Datei lässt sich nicht speichern.</li>
+            <li>Ein Blatt oder eine wichtige Spalte fehlt.</li>
+            <li>Du bist unsicher, ob eine alte KV-Periode noch gebraucht wird.</li>
+          </ul>
+        </article>
+        <div class="grid">
+          <article class="card search-item" data-keywords="technischer fehler Adam mail">
+            <h3>Technischer Fehler</h3>
+            <p>Erst <b>„Fehler melden“</b> nutzen. Bericht an Adam senden.</p>
+            <p>Funktioniert der Button nicht:
+               <a href="mailto:adam.nagy@at.mcd.com">adam.nagy@at.mcd.com</a>.</p>
+          </article>
+          <article class="card search-item" data-keywords="payroll lohn kv personal id abweichung">
+            <h3>Payroll-Abweichung</h3>
+            <p>Bei Personal-ID, KV-Gruppe, Vertragsstunden oder Lohn zuerst Payroll kontaktieren.</p>
+          </article>
+        </div>
+        <div class="notice warn">
+          <strong>Keine sensiblen Daten öffentlich teilen</strong>
+          <p>Screenshots und Fehlerberichte können Namen, IDs, Dateipfade oder Benutzernamen enthalten.
+             Nur an die zuständige Stelle senden.</p>
+        </div>
+      </section>
+
+      <section class="section quick-print" id="schnellhilfe">
+        <h2>10. Schnellhilfe – eine Seite</h2>
+        <p class="lead">Für den Ausdruck gibt es auch eine eigene Seite:
+           <a href="Personalsheet_Schnellhilfe.html"><b>Personalsheet_Schnellhilfe.html öffnen</b></a>.</p>
+        <div class="quick-cols">
+          <div>
+            <h3><span class="icon">⌨</span> Hier schreiben</h3>
+            <ul><li>Weiße / grau-weiße Felder</li><li>KV, Stunden und Austrittsgrund aus der Liste</li></ul>
+            <h3><span class="icon">💾</span> Speichern</h3>
+            <p><b>Strg+S</b> → warten → Datei normal schließen.</p>
+            <h3><span class="icon">▶</span> Folgemonate</h3>
+            <p>Änderung prüfen → speichern → „Aktualisierung des restlichen Jahres“ → Folgemonat prüfen.</p>
+          </div>
+          <div>
+            <h3><span class="icon">⛔</span> Nicht machen</h3>
+            <ul><li>Gelbe Zellen ändern</li><li>Sortieren oder Zeilen löschen</li><li>Strg+X</li><li>Buttons mehrfach schnell drücken</li></ul>
+            <h3><span class="icon">🛟</span> Fehler</h3>
+            <p>„Fehler melden“ → Fragen beantworten → Bericht an Adam senden.</p>
+            <h3><span class="icon">🔒</span> Admin</h3>
+            <p>Bei kaputtem Layout, fehlenden Formeln, Speicherfehlern oder nicht reagierenden Buttons.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="glossar">
+        <h2>11. Kleine Begriffshilfe</h2>
+        <div class="table-wrap search-item" data-keywords="glossar begriffe">
+          <table>
+            <thead><tr><th>Begriff</th><th>Einfache Erklärung</th></tr></thead>
+            <tbody>
+              <tr><td>Arbeitsblatt / Tab</td><td>Eine Seite in Excel. Blattnamen stehen unten.</td></tr>
+              <tr><td>Zelle</td><td>Ein einzelnes Feld in Excel.</td></tr>
+              <tr><td>Dropdown</td><td>Eine Liste, aus der du einen Wert auswählst.</td></tr>
+              <tr><td>Makro</td><td>Eine automatische Aufgabe hinter einem sichtbaren Button.</td></tr>
+              <tr><td>KV Gruppe</td><td>Einstufung für den Lohn. Bei Unsicherheit Payroll fragen.</td></tr>
+              <tr><td>KV-Schema</td><td>Offizielle Tabelle mit KV-Gruppen, Stunden und Löhnen von Payroll.</td></tr>
+              <tr><td>Payroll</td><td>Die Stelle, die Lohn- und Vertragsdaten prüft.</td></tr>
+              <tr><td>Payroll-Checkliste</td><td>Monatliche Liste von Payroll zum Abgleich der Personaldaten.</td></tr>
+              <tr><td>Sales</td><td>Umsatz.</td></tr>
+              <tr><td>Crew Labor</td><td>Personalkosten der Crew.</td></tr>
+              <tr><td>Guest Count</td><td>Anzahl der Gäste.</td></tr>
+              <tr><td>Laborcost</td><td>Personalkosten.</td></tr>
+              <tr><td>Musterdienstplan / DPL</td><td>Geplanter Beispiel-Dienstplan und die dafür benötigten Stunden.</td></tr>
+              <tr><td>Aktualisierung des restlichen Jahres</td><td>Übernimmt Änderungen in folgende Monate.</td></tr>
+              <tr><td>Durchrechnungszeitraum</td><td>Zeitraum, in dem geplante und verfügbare Stunden zusammen betrachtet werden.</td></tr>
+              <tr><td>Projection</td><td>Aktuelle Erwartung oder Hochrechnung.</td></tr>
+              <tr><td>Fluktuation</td><td>Zeigt, wie viele Mitarbeiter im Verhältnis zum Team austreten.</td></tr>
+              <tr><td>Admin</td><td>Technische Unterstützung. Admin-Funktionen sind nicht Teil deiner normalen Arbeit.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <button id="back-top" type="button" title="Zurück nach oben" aria-label="Zurück nach oben">↑</button>
+  <footer class="footer">
+    Personalsheet · Hilfe für Restaurant Manager · Offline-Version · Stand August 2026<br>
+    Die vereinfachten Abbildungen enthalten keine echten Personaldaten.
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const search = document.getElementById("kb-search");
+      const clear = document.getElementById("clear-search");
+      const status = document.getElementById("search-status");
+      const noResults = document.getElementById("no-results");
+      const items = [...document.querySelectorAll(".search-item")];
+      const sections = [...document.querySelectorAll("main > .section")];
+      const toc = document.getElementById("toc");
+      const details = [...document.querySelectorAll("details")];
+      let openedForSearch = new Set();
+      let printState = [];
+
+      function normalize(value) {
+        return (value || "")
+          .toLocaleLowerCase("de")
+          .replace(/ß/g, "ss")
+          .replace(/ae/g, "a")
+          .replace(/oe/g, "o")
+          .replace(/ue/g, "u")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9+\-./ ]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function normalizedMap(value) {
+        let text = "";
+        const map = [];
+        [...value].forEach((char, index) => {
+          let n = char.toLocaleLowerCase("de").replace(/ß/g, "ss")
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          [...n].forEach(c => { text += c; map.push(index); });
+        });
+        return { text, map };
+      }
+
+      function clearMarks(root = document) {
+        root.querySelectorAll("mark[data-search-mark]").forEach(mark => {
+          mark.replaceWith(document.createTextNode(mark.textContent));
+        });
+        root.normalize();
+      }
+
+      function highlight(root, token) {
+        if (!token) return;
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+          acceptNode(node) {
+            if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+            if (node.parentElement.closest("script,style,mark")) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+          }
+        });
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+
+        nodes.forEach(node => {
+          const mapped = normalizedMap(node.nodeValue);
+          const pos = mapped.text.indexOf(token);
+          if (pos < 0) return;
+          const start = mapped.map[pos];
+          const end = mapped.map[Math.min(pos + token.length - 1, mapped.map.length - 1)] + 1;
+          if (start == null || end == null || end <= start) return;
+          const range = document.createRange();
+          range.setStart(node, start);
+          range.setEnd(node, end);
+          const mark = document.createElement("mark");
+          mark.dataset.searchMark = "1";
+          try { range.surroundContents(mark); } catch (_) { /* harmless */ }
+        });
+      }
+
+      function runSearch() {
+        clearMarks();
+        const query = normalize(search.value);
+        const tokens = query.split(" ").filter(Boolean);
+        let count = 0;
+
+        if (!query) {
+          items.forEach(item => item.hidden = false);
+          sections.forEach(section => section.hidden = false);
+          openedForSearch.forEach(detail => detail.open = false);
+          openedForSearch.clear();
+          noResults.style.display = "none";
+          status.innerHTML = "Tipp: Drücke <b>/</b>, um sofort zu suchen.";
+          return;
+        }
+
+        items.forEach(item => {
+          const haystack = normalize(item.textContent + " " + (item.dataset.keywords || ""));
+          const match = tokens.every(token => haystack.includes(token));
+          item.hidden = !match;
+          if (match) {
+            count++;
+            if (item.tagName === "DETAILS" && !item.open) {
+              item.open = true;
+              openedForSearch.add(item);
+            }
+            tokens.forEach(token => highlight(item, token));
+          }
+        });
+
+        sections.forEach(section => {
+          const visible = [...section.querySelectorAll(".search-item")].some(item => !item.hidden);
+          section.hidden = !visible;
+        });
+        noResults.style.display = count ? "none" : "block";
+        status.textContent = count === 1 ? "1 passender Bereich" : `${count} passende Bereiche`;
+      }
+
+      function buildToc() {
+        const heads = document.querySelectorAll("main .section > h2, main .section > h3");
+        heads.forEach((head, index) => {
+          if (!head.id) head.id = "thema-" + (index + 1);
+          const li = document.createElement("li");
+          li.className = head.tagName === "H3" ? "toc-h3" : "toc-h2";
+          const link = document.createElement("a");
+          link.href = "#" + head.id;
+          link.textContent = head.textContent;
+          li.appendChild(link);
+          toc.appendChild(li);
+
+          const mobileLi = document.createElement("li");
+          const mobileLink = link.cloneNode(true);
+          mobileLi.appendChild(mobileLink);
+          document.getElementById("mobile-toc-list").appendChild(mobileLi);
+        });
+      }
+
+      search.addEventListener("input", runSearch);
+      clear.addEventListener("click", () => {
+        search.value = "";
+        runSearch();
+        search.focus();
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "/" && document.activeElement !== search) {
+          event.preventDefault();
+          search.focus();
+        }
+        if (event.key === "Escape" && document.activeElement === search) {
+          search.value = "";
+          runSearch();
+        }
+      });
+      document.getElementById("back-top").addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      window.addEventListener("beforeprint", () => {
+        printState = details.map(d => d.open);
+        details.forEach(d => d.open = true);
+      });
+      window.addEventListener("afterprint", () => {
+        details.forEach((d, i) => d.open = printState[i]);
+      });
+
+      buildToc();
+      runSearch();
+    })();
+  </script>
+</body>
+</html>
