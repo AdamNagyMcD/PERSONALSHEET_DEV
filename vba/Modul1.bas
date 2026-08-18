@@ -1364,7 +1364,9 @@ Public Sub PID_RestoreFormulaColumnsForRows(ByVal ws As Worksheet, _
     formulaL = PID_GetLetztesGehaltFormulaR1C1()
 
     For r = firstRow To lastRow
-        PID_EnsureCellFormula ws.Cells(r, "G"), formulaG
+        If PID_RowNeedsMonatslohnFormula(ws, r) Then
+            PID_EnsureCellFormula ws.Cells(r, "G"), formulaG
+        End If
         PID_EnsureCellFormula ws.Cells(r, "H"), formulaH
         PID_EnsureCellFormula ws.Cells(r, "K"), formulaK
         PID_EnsureCellFormula ws.Cells(r, "L"), formulaL
@@ -1372,6 +1374,43 @@ Public Sub PID_RestoreFormulaColumnsForRows(ByVal ws As Worksheet, _
 
 SafeExit:
 End Sub
+
+
+' Spalte G ist der einzige Sonderfall unter den vier Formelspalten: sind KV-Gruppe (E)
+' und Stunden (F) gefuellt, schreiben RefreshKVLohnForRow und
+' PID_ForceMonatslohnRecalcForRow dort absichtlich den fertigen Wert statt der
+' UDF-Formel. Ein Zahlenwert oder "Nicht gefunden" ist deshalb ein gueltiger,
+' schneller Zustand und darf von der Formelreparatur nicht ersetzt werden.
+' Fehlt E oder F, gehoert die Formel als struktureller Platzhalter zurueck; sie zeigt
+' wegen ihres E/F-Guards leer an und verhindert stehengebliebene Werte.
+Public Function PID_RowNeedsMonatslohnFormula(ByVal ws As Worksheet, _
+                                              ByVal rowNumber As Long) As Boolean
+    Dim gCell As Range
+    Dim gText As String
+
+    On Error GoTo SafeExit
+
+    If ws Is Nothing Then Exit Function
+    If rowNumber < PID_FIRST_ROW Or rowNumber > PID_LAST_ROW Then Exit Function
+
+    Set gCell = ws.Cells(rowNumber, "G")
+    If gCell.HasFormula Then Exit Function
+
+    If Len(Trim$(CStr(ws.Cells(rowNumber, "E").Value2))) = 0 _
+       Or Len(Trim$(CStr(ws.Cells(rowNumber, "F").Value2))) = 0 Then
+        PID_RowNeedsMonatslohnFormula = True
+        Exit Function
+    End If
+
+    If IsNumeric(gCell.Value2) Then Exit Function
+
+    gText = Trim$(CStr(gCell.Value2))
+    If StrComp(gText, "Nicht gefunden", vbTextCompare) = 0 Then Exit Function
+
+    PID_RowNeedsMonatslohnFormula = True
+
+SafeExit:
+End Function
 
 
 Private Sub PID_EnsureCellFormula(ByVal targetCell As Range, ByVal formulaR1C1 As String)
