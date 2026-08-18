@@ -153,6 +153,8 @@ class Module:
     is_class: bool
     lines: list = field(default_factory=list)      # raw physical lines
     logical: list = field(default_factory=list)    # (line_no, code_without_strings_comments)
+    # (line_no, code, literals, code with "\x00index\x00" in place of each literal)
+    formula_lines: list = field(default_factory=list)
 
 
 @dataclass
@@ -259,6 +261,62 @@ def split_declared_names(decl: str):
     return names
 
 
+def strip_code_marked(line: str):
+    """Like strip_code, but each string literal is replaced by a placeholder so the
+    concatenation of a line can be replayed later."""
+    out, literals, current = [], [], []
+    in_string = False
+    i = 0
+    while i < len(line):
+        ch = line[i]
+        if in_string:
+            if ch == '"':
+                if i + 1 < len(line) and line[i + 1] == '"':
+                    current.append('"')
+                    i += 2
+                    continue
+                in_string = False
+                literals.append("".join(current))
+                current = []
+                out.append("\x00%d\x00" % (len(literals) - 1))
+            else:
+                current.append(ch)
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            i += 1
+            continue
+        if ch == "'":
+            break
+        out.append(ch)
+        i += 1
+    return "".join(out), literals
+
+
+def join_continuations_marked(raw_lines):
+    buffer_code = ""
+    buffer_literals = []
+    start_no = None
+    for idx, raw in enumerate(raw_lines, start=1):
+        code, literals = strip_code_marked(raw)
+        code = re.sub(r"\x00(\d+)\x00",
+                      lambda m: "\x00%d\x00" % (int(m.group(1)) + len(buffer_literals)), code)
+        if start_no is None:
+            start_no = idx
+        buffer_literals = buffer_literals + literals
+        stripped = code.rstrip()
+        if stripped.endswith("_") and (len(stripped) == 1 or stripped[-2].isspace()):
+            buffer_code += stripped[:-1]
+            continue
+        buffer_code += code
+        plain = re.sub(r"\x00(\d+)\x00", '""', buffer_code)
+        yield start_no, plain, buffer_literals, buffer_code
+        buffer_code = ""
+        buffer_literals = []
+        start_no = None
+
+
 def load_modules(vba_dir: str):
     modules = []
     for entry in sorted(os.listdir(vba_dir)):
@@ -275,6 +333,7 @@ def load_modules(vba_dir: str):
             lines=lines,
         )
         mod.logical = list(join_continuations(lines))
+        mod.formula_lines = list(join_continuations_marked(lines))
         modules.append(mod)
     return modules
 
@@ -668,6 +727,61 @@ def check_bootstrap_isolation(modules, procs, findings):
                     "Text verwenden)" % (m.group(0), ", ".join(owners))))
 
 
+ASSIGN_RE = re.compile(r"^\s*([A-Za-z_]\w*)\s*=\s*(.+)$")
+BLOCK_START_RE = re.compile(r"^\s*(If|ElseIf|For|Do|While|Select|With)\b", re.IGNORECASE)
+
+
+def check_formula_builders(mod: Module, findings):
+    """Parenthesis balance of formulas assembled in VBA.
+
+    A formula string is often built from a core expression that the final formula
+    inserts twice. One surplus bracket in the core therefore shows up twice in the
+    result, Excel rejects the whole formula, and every FormulaR1C1 write fails with
+    error 1004 - which the surrounding On Error swallows. The column then stays empty
+    while the macro reports a successful run. This is exactly what happened to the
+    Letztes-Gehalt formula, so the concatenation is replayed here.
+    """
+    current_proc = None
+    variables = {}
+
+    def value_of(expression, literals):
+        parts = []
+        for token in expression.split("&"):
+            token = token.strip()
+            m = re.fullmatch(r"\x00(\d+)\x00", token)
+            if m:
+                parts.append(literals[int(m.group(1))])
+                continue
+            name = re.sub(r"\(\s*\)$", "", token).strip().lower()
+            parts.append(variables.get(name, ""))
+        return "".join(parts)
+
+    for line_no, code, literals, marked in mod.formula_lines:
+        pm = PROC_RE.match(code)
+        if pm:
+            current_proc = pm.group(3)
+            variables = {}
+            continue
+        if END_PROC_RE.match(code):
+            if current_proc and "formula" in current_proc.lower():
+                built = variables.get(current_proc.lower(), "")
+                if built.startswith("=") or "RC[" in built:
+                    opened, closed = built.count("("), built.count(")")
+                    if opened != closed:
+                        findings.append(Finding(
+                            "ERROR", mod.name, line_no,
+                            "Formel aus %s ist nicht balanciert: %d '(' gegen %d ')' "
+                            "- Excel lehnt sie ab und jeder Schreibversuch scheitert still"
+                            % (current_proc, opened, closed)))
+            current_proc = None
+            continue
+        if current_proc is None:
+            continue
+        am = ASSIGN_RE.match(marked)
+        if am and not BLOCK_START_RE.match(marked):
+            variables[am.group(1).lower()] = value_of(am.group(2), literals)
+
+
 CONST_CALL_RE = re.compile(r"\b([A-Za-z_]\w*)\s*\(")
 
 
@@ -730,6 +844,7 @@ def main():
         check_excel2016(mod, findings)
         check_object_model(mod, findings)
         check_const_expressions(mod, findings)
+        check_formula_builders(mod, findings)
     check_calls(modules, procs, module_procs, declared, findings)
     check_duplicates(modules, procs, findings)
     check_undeclared(modules, procs, findings)
