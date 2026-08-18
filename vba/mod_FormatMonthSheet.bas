@@ -330,6 +330,8 @@ Public Sub PID_FixMonthSheetPanelBorders()
     Dim ws As Worksheet
     Dim wasProtected As Boolean
     Dim countDone As Long
+    Dim errNumber As Long
+    Dim errText As String
     
     On Error GoTo CleanFail
     
@@ -363,8 +365,19 @@ Public Sub PID_FixMonthSheetPanelBorders()
     Exit Sub
 
 CleanFail:
+    ' Fehlertext zuerst sichern: der Rueckschutz laeuft unter On Error Resume Next und
+    ' wuerde Err sonst leeren, bevor die Meldung sie anzeigt.
+    errNumber = Err.Number
+    errText = Err.Description
+    
+    ' Das Blatt der laufenden Schleifenrunde ist hier entsperrt und wuerde sonst offen
+    ' zurueckbleiben.
+    On Error Resume Next
+    If wasProtected And Not ws Is Nothing Then PID_ReprotectWorksheet ws
+    Err.Clear
+    
     MsgBox "Fehler bei PID_FixMonthSheetPanelBorders:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, vbExclamation, "Monatsblatt Rahmen"
+           errNumber & " - " & errText, vbExclamation, "Monatsblatt Rahmen"
 End Sub
 
 
@@ -432,6 +445,10 @@ CleanExit:
 End Sub
 
 
+' Beide Blaetter sind hier entsperrt. Ohne Fehlerbehandlung blieben sie es auch, wenn
+' eine der Kopierschritte scheitert - der Aufrufer FormatAllMonthSheets zeigt nur eine
+' Meldung und schuetzt nichts zurueck. Deshalb laufen der Rueckschutz und nur der
+' Rueckschutz im Ausgangsblock.
 Private Sub PID_MSCopyMonthFormatsFromReference(ByVal wsRef As Worksheet, ByVal wsTarget As Worksheet)
     Dim refProtected As Boolean
     Dim tgtProtected As Boolean
@@ -445,7 +462,9 @@ Private Sub PID_MSCopyMonthFormatsFromReference(ByVal wsRef As Worksheet, ByVal 
     On Error Resume Next
     wsRef.Unprotect Password:=PID_WORKBOOK_PASSWORD
     wsTarget.Unprotect Password:=PID_WORKBOOK_PASSWORD
-    On Error GoTo 0
+    Err.Clear
+    
+    On Error GoTo SafeExit
     
     PID_MSCopyMonthEmployeeHeaderFromReference wsRef, wsTarget
     
@@ -460,7 +479,8 @@ Private Sub PID_MSCopyMonthFormatsFromReference(ByVal wsRef As Worksheet, ByVal 
     PID_MSApplyEmployeeBlockStyles wsTarget
     PID_MSEnsureAktualisierungButtonOnSheet wsTarget
     PID_ApplyMonthSheetDateColumnWidths wsTarget
-    
+
+SafeExit:
     On Error Resume Next
     If refProtected Then
         If PID_IsWorkerMonthSheet(wsRef) Then
@@ -473,7 +493,7 @@ Private Sub PID_MSCopyMonthFormatsFromReference(ByVal wsRef As Worksheet, ByVal 
     If tgtProtected Then
         PID_ReprotectWorksheet wsTarget
     End If
-    On Error GoTo 0
+    Err.Clear
 End Sub
 
 

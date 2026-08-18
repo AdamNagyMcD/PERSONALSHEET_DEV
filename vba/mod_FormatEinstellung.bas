@@ -231,13 +231,13 @@ Private Sub PID_ESApplyCompactMonthSheetRowHeights()
                 ws.Rows("1:2").RowHeight = PID_STYLE_COMPACT_HEADER_ROW_HEIGHT
                 ws.Rows(PID_FIRST_ROW & ":" & PID_LAST_ROW).RowHeight = PID_STYLE_COMPACT_DATA_ROW_HEIGHT
                 
+                ' Ueber den zentralen Helfer statt mit eigenen Protect-Argumenten:
+                ' hier stand AllowSorting:=True, wodurch auf jedem so angefassten
+                ' Monatsblatt das Sortieren erlaubt blieb, bis der naechste regulaere
+                ' Schutzlauf es wieder abschaltete. Ein versehentliches Sortieren
+                ' zerreisst die Zuordnung der Mitarbeiterzeilen.
                 On Error Resume Next
-                If wasProtected Then
-                    ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
-                               UserInterfaceOnly:=True, _
-                               AllowFiltering:=True, _
-                               AllowSorting:=True
-                End If
+                If wasProtected Then PID_ProtectWorkerMonthSheet ws
                 On Error GoTo 0
             End If
         End If

@@ -800,3 +800,72 @@ Einstieg: **Alt+F8** → `ADMIN_30_Format_Alle_Monate`, danach `ADMIN_32_Format_
 ### Expected D
 - Die Beträge erscheinen als Eurowert (z. B. `€ 2.860,00`), nicht als `2860,00`.
 - `N6:N17` zeigt weiterhin die Monatsbeschriftungen.
+
+---
+
+## TEST 34 — Spalte L wächst nicht mehr, Spalte G bleibt als Wert stehen
+
+Module: `Modul1.bas`, `mod_KVLohnLookup.bas`, `mod_PIDFormelCheck.bas`.
+Hintergrund: Die L-Formel wurde bei jedem Öffnen erneut umhüllt (1467 → 2981 Zeichen,
+Kernformel 4× enthalten) und wäre bei rund 8192 Zeichen an der Excel-Grenze gescheitert.
+Die Formelprüfung meldete gleichzeitig bis zu 50 Zeilen je Monatsblatt als „Formel fehlt",
+obwohl der Zahlenwert in `G` der gewollte schnelle Zustand ist.
+
+**Voraussetzung:** VBA neu importieren (`ADMIN_01_VBA_Import` bzw. `ResetAndImportVBAFiles`),
+kompilieren, speichern.
+
+### Scenario A — Einmalige Bereinigung der L-Formel
+1. Vor dem Import in `Januar` die Zelle `L3` anklicken und die Formellänge notieren
+   (Bearbeitungsleiste, alternativ im Direktfenster: `?Len(Range("L3").Formula)`).
+2. VBA importieren, Datei speichern, schließen und **einmal neu öffnen**.
+3. `L3` erneut ansehen: `?Len(Range("L3").Formula)`.
+
+### Expected A
+- Vorher rund **2981** Zeichen, danach rund **745** Zeichen.
+- Die angezeigten Beträge in `L3:L82` sind auf allen zwölf Blättern **unverändert**.
+- `Q17` (`=SUM(L3:L82)`) und `Q42` (AVG Bruttolohn) zeigen dieselben Werte wie vorher.
+- Zeilen ohne Mitarbeiter bleiben **leer** (kein `€ 0,00`) — das übernimmt jetzt das
+  Zahlenformat mit leerem Null-Abschnitt.
+
+### Scenario B — Zweites Öffnen schreibt nichts mehr
+1. Datei erneut schließen und öffnen.
+2. `?Len(Range("L3").Formula)` in mehreren Monatsblättern prüfen.
+
+### Expected B
+- Die Länge bleibt bei rund **745** Zeichen und wächst nicht weiter.
+- Das Öffnen ist nicht langsamer als vorher; es werden keine L-Spalten mehr neu geschrieben.
+
+### Scenario C — Prüfung meldet Spalte G nicht mehr falsch
+1. **Alt+F8** → `PID_PruefeFormelspalten` (oder `_ADMIN` → *Formeln prüfen*).
+
+### Expected C
+- Meldung: **0 Zellen ohne Formel** auf allen zwölf Monatsblättern.
+- Vorher wurden hier rund **402** Zellen gemeldet, obwohl nichts defekt war.
+
+### Scenario D — Reparatur ersetzt keine schnellen G-Werte
+1. In `Februar` eine belegte Zeile suchen, in der `G` einen Zahlenwert ohne Formel trägt
+   (Bearbeitungsleiste zeigt die Zahl, keine `=`-Formel).
+2. **Alt+F8** → `PID_FormelspaltenReparieren` ausführen.
+3. Dieselbe Zelle erneut ansehen.
+
+### Expected D
+- Die Zelle trägt weiterhin den **Zahlenwert**, keine `PID_KVLohnLookup`-Formel.
+- Der angezeigte Lohn ist unverändert.
+
+### Scenario E — Formel kommt zurück, wo sie fehlt
+1. In `März` einen Mitarbeiter über *Dolgozó törlése* (`MitarbeiterEntfernen`) aus einem
+   Monat entfernen.
+2. In derselben Zeile `G`, `H`, `K` und `L` prüfen.
+3. Danach in dieselbe Zeile einen neuen Mitarbeiter mit KV-Gruppe und Stunden eintragen.
+
+### Expected E
+- Nach dem Löschen steht in `G` wieder die Formel (kein stehengebliebener Lohn des
+  gelöschten Mitarbeiters), `H`, `K`, `L` behalten ihre Formeln.
+- Der neue Mitarbeiter erhält sofort Lohn, aktuelle Stunden, Urlaubsgeld und letztes Gehalt.
+
+### Negative checks
+- `python3 tools/check_formula_columns.py` (oder auf Windows `python tools/...`) meldet
+  „Fehlende Formelzellen gesamt: 0".
+- Ein Blattwechsel zwischen den Monaten fühlt sich nicht langsamer an als vorher
+  (die Prüfung liest E, F und G jetzt als Array statt Zelle für Zelle).
+- `PID_RunSystemSmokeCheck`: TEST 15 (Monatslohn Spalte G) bleibt **PASS**.

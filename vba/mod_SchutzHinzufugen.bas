@@ -187,8 +187,17 @@ Public Sub PID_SetupSheetProtectionForOpen()
     Application.ScreenUpdating = False
     Set mSessionProtectedSheets = New Collection
     
+    ' Monatsblaetter gehoeren mit dazu. Frueher wurden sie erst beim ersten Besuch des
+    ' jeweiligen Tabs geschuetzt (PID_EnsureSheetProtectionForMacros im
+    ' Workbook_SheetActivate). Wer die Mappe also auf UEBERSICHT oder EINSTELLUNG
+    ' liegend geoeffnet hat, konnte in allen zwoelf Monatsblaettern alles ueberschreiben -
+    ' auch die Formelspalten G, H, K und L - und Zeilen einfuegen oder loeschen. Der
+    ' Schutz selbst kostet je Blatt nur die Sperrliste plus ein Protect; dafuer sind die
+    ' Blaetter beim ersten Tabwechsel bereits fertig und die Sitzungsmarkierung
+    ' verhindert ein zweites Setzen.
     For Each ws In ThisWorkbook.Worksheets
-        If ws.Name = "FLUKTUATION_DATEN" Or ws.Name = "KV_DROPDOWN_HELPER" Then
+        If ws.Name = "FLUKTUATION_DATEN" Or ws.Name = "KV_DROPDOWN_HELPER" _
+           Or PID_IsWorkerMonthSheetSafe(ws) Then
             PID_ApplySheetProtectionForMacros ws
             PID_MarkSheetProtectionReady ws.Name
         End If
@@ -309,10 +318,14 @@ Public Sub PID_ApplyMonthSheetFillHandleGuard()
 End Sub
 
 
-Public Sub PID_ClearMonthSheetFillHandleGuard()
+' forceRestore ist fuer PID_ResetExcelState gedacht: nach einem Reset des VBA-Projekts
+' sind die Modulvariablen leer, die Einstellungen der Anwendung aber noch aus - dann
+' meldet der Merker "kein Schutz aktiv", waehrend Ausfuellkaestchen und Ziehen weiterhin
+' fehlen. Im Normalbetrieb (Blattwechsel) bleibt das Verhalten unveraendert.
+Public Sub PID_ClearMonthSheetFillHandleGuard(Optional ByVal forceRestore As Boolean = False)
     On Error Resume Next
     
-    If Not mMonthSheetFillHandleGuardActive Then Exit Sub
+    If Not mMonthSheetFillHandleGuardActive And Not forceRestore Then Exit Sub
     
     If Not IsEmpty(mSavedEnableFillHandle) Then
         Application.EnableFillHandle = CBool(mSavedEnableFillHandle)

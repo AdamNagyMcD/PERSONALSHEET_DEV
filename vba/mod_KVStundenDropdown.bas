@@ -192,6 +192,12 @@ Public Sub RefreshKVStundenDropdownForSingleRow(ByVal wsMonth As Worksheet, ByVa
     Dim oldScreenUpdating As Boolean
     Dim monthWasProtected As Boolean
     
+    ' Zuerst merken, dann pruefen: scheitert eine der Pruefungen mit einem Fehler,
+    ' landet der Ablauf in CleanExit und wuerde ScreenUpdating sonst auf den
+    ' Startwert False einer nicht gesetzten Variablen ziehen - der Bildschirm bliebe
+    ' einfroren.
+    oldScreenUpdating = Application.ScreenUpdating
+    
     On Error GoTo CleanExit
     
     If wsMonth Is Nothing Then Exit Sub
@@ -202,7 +208,6 @@ Public Sub RefreshKVStundenDropdownForSingleRow(ByVal wsMonth As Worksheet, ByVa
     monthNumber = CLng(wsMonth.Range("A1").Value)
     If monthNumber < 1 Or monthNumber > 12 Then Exit Sub
     
-    oldScreenUpdating = Application.ScreenUpdating
     Application.ScreenUpdating = False
     
     Set wsHelper = GetOrCreateKVDropdownHelperSheet()
@@ -215,14 +220,19 @@ Public Sub RefreshKVStundenDropdownForSingleRow(ByVal wsMonth As Worksheet, ByVa
     On Error GoTo CleanExit
     
     RefreshKVStundenDropdownForRow wsMonth, wsHelper, rowNumber, monthNumber
-    
-    wsHelper.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
-    
-    If monthWasProtected Then
-        PID_ProtectWorkerMonthSheet wsMonth
-    End If
 
 CleanExit:
+    ' Rueckschutz im Ausgangsblock: bricht der Dropdown-Aufbau ab, blieben Monatsblatt
+    ' und KV_DROPDOWN_HELPER sonst entsperrt zurueck. Analog zu
+    ' RefreshKVStundenDropdownForSheet, das den Schutz schon auf beiden Wegen setzt.
+    On Error Resume Next
+    If Not wsHelper Is Nothing Then
+        wsHelper.Protect Password:=PID_WORKBOOK_PASSWORD, UserInterfaceOnly:=True
+    End If
+    If monthWasProtected And Not wsMonth Is Nothing Then
+        PID_ProtectWorkerMonthSheet wsMonth
+    End If
+    Err.Clear
     Application.ScreenUpdating = oldScreenUpdating
 End Sub
 

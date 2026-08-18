@@ -191,14 +191,18 @@ Public Sub PID_SyncFluktuationToUbersicht(ByRef monthFluctuation() As Double, _
     ws.Cells(23, 17).Value2 = ytdFluctuation
     ws.Cells(23, 17).NumberFormat = PID_FLUKTUATION_PERCENT_FORMAT
     
-    If wasProtected Then
+SafeExit:
+    ' Der Rueckschutz gehoert in den Ausgangsblock, nicht in den Normalweg: bricht das
+    ' Schreiben mittendrin ab, blieb UEBERSICHT sonst offen, bis der naechste
+    ' erfolgreiche Lauf oder ein Blattwechsel den Schutz wieder setzt.
+    On Error Resume Next
+    If wasProtected And Not ws Is Nothing Then
         ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                    UserInterfaceOnly:=True, _
                    AllowFiltering:=True, _
                    AllowSorting:=True
     End If
-
-SafeExit:
+    Err.Clear
 End Sub
 
 

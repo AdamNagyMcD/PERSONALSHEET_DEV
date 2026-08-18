@@ -294,6 +294,17 @@ Public Sub PID_ResetExcelState()
     PID_ResetManagedPasteState
     PID_InstallPasteHooks
     
+    ' Haengengebliebene Sperrflaggen. Ohne diese drei Zeilen half der Reset nicht gegen
+    ' die haeufigsten Blockaden nach einem Abbruch mit Strg+Untbr:
+    ' - mInternalChange = True laesst jedes Workbook-Event still verpuffen, die Mappe
+    '   wirkt "tot" (keine Dropdowns, keine Neuberechnung, kein Q31).
+    ' - gCopyDataRunning = True unterdrueckt das Stunden-Log (mod_CopyData).
+    ' - der Fill-Handle-Schutz laesst Ausfuellkaestchen und Ziehen anwendungsweit
+    '   ausgeschaltet, auch in anderen Dateien.
+    ThisWorkbook.PID_ResetInternalChangeFlag
+    gCopyDataRunning = False
+    PID_ClearMonthSheetFillHandleGuard True
+    
     On Error GoTo 0
     
     MsgBox "Excel wurde " & PID_UTxtZurueckgesetzt() & ".", _
