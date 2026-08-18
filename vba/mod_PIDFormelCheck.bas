@@ -26,6 +26,11 @@ Option Explicit
 '
 ' Geschrieben wird nur, wo tatsaechlich eine Formel fehlt: PID_EnsureCellFormula
 ' (Modul1) prueft HasFormula und laesst vorhandene Formeln unangetastet.
+'
+' Ausnahme Spalte G: dort ist ein von PID_ForceMonatslohnRecalcForRow geschriebener
+' Zahlenwert der gewollte Zustand (schneller als 960 UDF-Aufrufe). Zeilen mit KV-Gruppe,
+' Stunden und Zahlenwert gelten deshalb als in Ordnung — Details in
+' PID_RowNeedsMonatslohnFormula (Modul1).
 
 Private Const PID_FC_TITLE As String = "Formelspalten"
 Private Const PID_FC_COLUMNS As String = "G,H,K,L"
@@ -225,6 +230,17 @@ Private Function PID_FCCountMissingInColumn(ByVal ws As Worksheet, ByVal columnK
     Dim missing As Long
 
     On Error GoTo SafeExit
+
+    ' Spalte G darf statt der Formel den von PID_ForceMonatslohnRecalcForRow
+    ' geschriebenen Zahlenwert tragen. Ohne diese Ausnahme meldete die Pruefung bis zu
+    ' 50 Zeilen je Monatsblatt als "Formel fehlt" und die Reparatur haette die schnellen
+    ' Werte durch 960 UDF-Formeln ersetzt.
+    If StrComp(columnKey, "G", vbTextCompare) = 0 Then
+        For r = PID_FIRST_ROW To PID_LAST_ROW
+            If PID_RowNeedsMonatslohnFormula(ws, r) Then missing = missing + 1
+        Next r
+        GoTo SafeExit
+    End If
 
     Set columnRange = ws.Range(columnKey & PID_FIRST_ROW & ":" & columnKey & PID_LAST_ROW)
     hasFormulaState = columnRange.HasFormula

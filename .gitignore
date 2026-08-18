@@ -17,6 +17,8 @@ Feedback/
 vba_export/
 
 # Lokale Test-/Backup-Kopien (nicht committen)
+backup/
+Personalsheet - Kopie.xlsm
 Kopie von Personalsheet.xlsm
 Personalsheet_import_test*.xlsm
 Personalsheet.zip

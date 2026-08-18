@@ -6,6 +6,11 @@ cleared B:N when an employee was deleted, which took the four formula columns wi
 it; such rows stay dead - a new employee entered there gets no Monatslohn, no
 Aktuelle Stunden, no Urlaub in Euro and no Letztes Gehalt.
 
+Column G is the one exception: when KV Gruppe (E) and Stunden (F) are filled, VBA
+(PID_ForceMonatslohnRecalcForRow) deliberately stores the finished number instead of
+the UDF formula, because 960 live PID_KVLohnLookup calls are slow. Such a row counts
+as healthy here, exactly like in PID_RowNeedsMonatslohnFormula.
+
 The script only reads the workbook, it never writes. Use it before and after
 running "Formeln reparieren" / Full Refresh in Excel to prove the repair worked.
 
@@ -31,6 +36,29 @@ LAST_ROW = 82
 
 def has_formula(cell) -> bool:
     return isinstance(cell.value, str) and cell.value.startswith("=")
+
+
+def is_number(value) -> bool:
+    if isinstance(value, bool) or value is None:
+        return False
+    if isinstance(value, (int, float)):
+        return True
+    try:
+        float(str(value).replace(",", ".").strip())
+    except ValueError:
+        return False
+    return True
+
+
+def needs_monatslohn_formula(sheet, row) -> bool:
+    """Twin of PID_RowNeedsMonatslohnFormula: a cached number in G is a healthy state."""
+    cell = sheet["G%d" % row]
+    if has_formula(cell):
+        return False
+    for column in ("E", "F"):
+        if str(sheet["%s%d" % (column, row)].value or "").strip() == "":
+            return True
+    return not is_number(cell.value)
 
 
 def compress(rows):
@@ -81,8 +109,12 @@ def main():
         counts = {}
         detail = {}
         for column in FORMULA_COLUMNS:
-            rows = [row for row in range(FIRST_ROW, LAST_ROW + 1)
-                    if not has_formula(sheet["%s%d" % (column, row)])]
+            if column == "G":
+                rows = [row for row in range(FIRST_ROW, LAST_ROW + 1)
+                        if needs_monatslohn_formula(sheet, row)]
+            else:
+                rows = [row for row in range(FIRST_ROW, LAST_ROW + 1)
+                        if not has_formula(sheet["%s%d" % (column, row)])]
             counts[column] = len(rows)
             detail[column] = rows
             total_missing += len(rows)

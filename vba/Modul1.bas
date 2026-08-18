@@ -19,6 +19,9 @@ Public Const PID_FLUKTUATION_REASON_LAST_ROW As Long = 49
 Public Const PID_FLUKTUATION_TIME_FIRST_ROW As Long = 53
 Public Const PID_FLUKTUATION_TIME_LAST_ROW As Long = 59
 
+' Obergrenze fuer eine gesunde Formel in Spalte L (kanonisch rund 780 Zeichen).
+Private Const PID_LG_BLOAT_FORMULA_LEN As Long = 1200
+
 Private mHeavyMaintOldCalculation As XlCalculation
 Private mHeavyMaintDepth As Long
 
@@ -705,7 +708,12 @@ Private Function PID_AnyMonthNeedsLetztesGehaltRestore() As Boolean
         Exit Function
     End If
     
-    If Not PID_MonthSheetHasLetztesGehaltEmptyZeroFix(ws) Then
+    If Not PID_MonthSheetHasLetztesGehaltEmployeeGuard(ws) Then
+        PID_AnyMonthNeedsLetztesGehaltRestore = True
+        Exit Function
+    End If
+    
+    If PID_MonthSheetHasBloatedLetztesGehaltFormula(ws) Then
         PID_AnyMonthNeedsLetztesGehaltRestore = True
     End If
 End Function
@@ -840,15 +848,22 @@ Private Sub PID_ApplyLetztesGehaltFormulaToSheet(ByVal ws As Worksheet, _
     Set firstCell = targetRange.Cells(1, 1)
     existingFormula = Trim$(CStr(firstCell.Formula))
     
-    If PID_FormulaHasLetztesGehaltEmployeeGuard(existingFormula) Then
+    ' Alles, was den B/C-Schutz hat ODER die eigene Kernformel enthaelt, wird durch die
+    ' kanonische Fassung ersetzt. Die Huelle unten ist nur fuer eine echte Altformel
+    ' gedacht - eine schon umhuellte Formel darf sie nie ein zweites Mal umschliessen.
+    If PID_FormulaHasLetztesGehaltEmployeeGuard(existingFormula) _
+       Or PID_FormulaContainsLetztesGehaltCore(existingFormula) Then
         firstCell.FormulaR1C1 = formulaR1C1
     ElseIf Len(existingFormula) > 3 And InStr(1, existingFormula, "#REF", vbTextCompare) = 0 Then
         If Left$(existingFormula, 1) = "=" Then existingFormula = Mid$(existingFormula, 2)
         ' Vier Anfuehrungszeichen ergeben in der Formel den leeren Text "".
         ' Mit zwei Zeichen entstand frueher OR($B3=",$C3=") - ein Textvergleich,
         ' der immer FALSCH ist, statt des gewollten B/C-Schutzes.
+        ' Die Altformel wird nur einmal eingesetzt: das frueher zusaetzliche
+        ' IF(...=0;"";...) haette sie verdoppelt, und die Null blendet ohnehin schon
+        ' das Zahlenformat aus.
         wrappedFormula = "=IF(OR($B" & CStr(rowNum) & "="""",$C" & CStr(rowNum) & "=""""),""""," & _
-            "IF(" & existingFormula & "=0,""""," & existingFormula & "))"
+            existingFormula & ")"
         firstCell.Formula = wrappedFormula
     Else
         firstCell.FormulaR1C1 = formulaR1C1
@@ -877,20 +892,40 @@ Private Sub PID_FillFormulaDownWithoutFormats(ByVal firstCell As Range, ByVal ta
 End Sub
 
 
+' Traegt die Formel den B/C-Schutz am Anfang? Beide Schreibweisen zaehlen: die
+' R1C1-Fassung, mit der geschrieben wird, und die A1-Fassung, die Excel danach in der
+' Zelle zeigt - mit oder ohne Dollarzeichen. Der frueher geforderte "$B"/"$C" liess die
+' aktuelle Fassung (relative Bezuege B3/C3) durchfallen; dadurch hielt
+' PID_ApplyLetztesGehaltFormulaToSheet die eigene Formel fuer eine Altformel und legte
+' bei jedem Lauf eine weitere Huelle darum - die Formel wuchs von 1467 auf 2981 Zeichen
+' und waere in wenigen Laeufen an der 8192-Zeichen-Grenze von Excel gescheitert.
 Private Function PID_FormulaHasLetztesGehaltEmployeeGuard(ByVal formulaText As String) As Boolean
     Dim compactFormula As String
     
     compactFormula = UCase$(Replace(Replace(Replace(formulaText, " ", ""), vbLf, ""), vbTab, ""))
+    compactFormula = Replace(compactFormula, "$", "")
     
     If InStr(1, compactFormula, "RC[-10]", vbTextCompare) > 0 Then
         PID_FormulaHasLetztesGehaltEmployeeGuard = True
         Exit Function
     End If
     
-    PID_FormulaHasLetztesGehaltEmployeeGuard = _
-        (InStr(1, compactFormula, "$B", vbTextCompare) > 0) And _
-        (InStr(1, compactFormula, "$C", vbTextCompare) > 0) And _
-        (InStr(1, compactFormula, "=""", vbTextCompare) > 0 Or InStr(1, compactFormula, "="";", vbTextCompare) > 0)
+    If Left$(compactFormula, 8) <> "=IF(OR(B" Then Exit Function
+    
+    PID_FormulaHasLetztesGehaltEmployeeGuard = PID_FormulaContainsLetztesGehaltCore(compactFormula)
+End Function
+
+
+' Erkennt die eigene Kernformel unabhaengig davon, wie oft sie verschachtelt ist.
+' Damit wird eine bereits mehrfach umhuellte Fassung ersetzt und nie erneut umhuellt.
+Private Function PID_FormulaContainsLetztesGehaltCore(ByVal formulaText As String) As Boolean
+    Dim compactFormula As String
+    
+    compactFormula = UCase$(Replace(Replace(Replace(formulaText, " ", ""), vbLf, ""), vbTab, ""))
+    
+    PID_FormulaContainsLetztesGehaltCore = _
+        (InStr(1, compactFormula, "IFERROR(IF(OR(ISBLANK(", vbTextCompare) > 0) And _
+        (InStr(1, compactFormula, "EOMONTH(", vbTextCompare) > 0)
 End Function
 
 
@@ -937,21 +972,44 @@ Public Function PID_GetLetztesGehaltFormulaR1C1() As String
         "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(RC[-3]-RC[-8]+1)+RC[-1])," & _
         "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(DAY(EOMONTH(RC[-8],0))-DAY(RC[-8])+1)+RC[-1]),0)),0))),0)"
     
-    ' Kein Mitarbeiter (B/C leer) oder Ergebnis 0 -> leer, analog Spalte G ohne KV/Stunden.
+    ' Kein Mitarbeiter (B/C leer) -> leer, analog Spalte G ohne KV/Stunden.
+    ' Ein Ergebnis von 0 wird NICHT mehr per IF(...=0;"";...) ausgeblendet: das
+    ' Zahlenformat aus PID_ApplyLetztesGehaltNumberFormat hat einen leeren
+    ' Null-Abschnitt (";;") und zeigt 0 bereits als leere Zelle. Die alte Fassung
+    ' enthielt die 720 Zeichen lange Kernformel zweimal und musste sie bei jeder
+    ' Neuberechnung doppelt auswerten - auf 12 Blaettern mal 80 Zeilen. Sichtbares
+    ' Ergebnis identisch; SUM(L3:L82) in Q17 ist der einzige Abnehmer und behandelt
+    ' 0 und "" gleich.
     PID_GetLetztesGehaltFormulaR1C1 = _
-        "=IF(OR(RC[-10]="""",RC[-9]=""""),""""," & _
-        "IF(" & coreFormula & "=0,""""," & coreFormula & "))"
+        "=IF(OR(RC[-10]="""",RC[-9]=""""),""""," & coreFormula & ")"
 End Function
 
 
-Private Function PID_MonthSheetHasLetztesGehaltEmptyZeroFix(ByVal wsMonth As Worksheet) As Boolean
+Private Function PID_MonthSheetHasLetztesGehaltEmployeeGuard(ByVal wsMonth As Worksheet) As Boolean
     On Error GoTo SafeExit
     
     If wsMonth Is Nothing Then Exit Function
     If Not PID_MonthSheetHasLetztesGehaltFormula(wsMonth) Then Exit Function
     
-    PID_MonthSheetHasLetztesGehaltEmptyZeroFix = _
+    PID_MonthSheetHasLetztesGehaltEmployeeGuard = _
         PID_FormulaHasLetztesGehaltEmployeeGuard(CStr(wsMonth.Range("L" & PID_FIRST_ROW).Formula))
+
+SafeExit:
+End Function
+
+
+' Aeltere Fassungen der L-Formel enthalten die 720 Zeichen lange Kernformel zwei-, vier-
+' oder achtmal, weil jeder frueher gelaufene Wiederherstellungslauf eine weitere Huelle
+' angelegt hat. Die kanonische Fassung liegt bei rund 780 Zeichen, deshalb gilt alles ab
+' PID_LG_BLOAT_FORMULA_LEN als Altlast und wird einmalig ersetzt. Danach greift die
+' Erkennung und es wird nicht mehr geschrieben.
+Private Function PID_MonthSheetHasBloatedLetztesGehaltFormula(ByVal wsMonth As Worksheet) As Boolean
+    On Error GoTo SafeExit
+    
+    If wsMonth Is Nothing Then Exit Function
+    
+    PID_MonthSheetHasBloatedLetztesGehaltFormula = _
+        (Len(CStr(wsMonth.Range("L" & PID_FIRST_ROW).Formula)) >= PID_LG_BLOAT_FORMULA_LEN)
 
 SafeExit:
 End Function
@@ -1350,7 +1408,9 @@ Public Sub PID_RestoreFormulaColumnsForRows(ByVal ws As Worksheet, _
     formulaL = PID_GetLetztesGehaltFormulaR1C1()
 
     For r = firstRow To lastRow
-        PID_EnsureCellFormula ws.Cells(r, "G"), formulaG
+        If PID_RowNeedsMonatslohnFormula(ws, r) Then
+            PID_EnsureCellFormula ws.Cells(r, "G"), formulaG
+        End If
         PID_EnsureCellFormula ws.Cells(r, "H"), formulaH
         PID_EnsureCellFormula ws.Cells(r, "K"), formulaK
         PID_EnsureCellFormula ws.Cells(r, "L"), formulaL
@@ -1358,6 +1418,41 @@ Public Sub PID_RestoreFormulaColumnsForRows(ByVal ws As Worksheet, _
 
 SafeExit:
 End Sub
+
+
+' Spalte G ist der einzige Sonderfall unter den vier Formelspalten: sind KV-Gruppe (E)
+' und Stunden (F) gefuellt, schreibt PID_ForceMonatslohnRecalcForRow dort absichtlich
+' den fertigen Zahlenwert statt der UDF-Formel — das ist der schnelle Weg und gilt in
+' PID_MonthSheetHasMonatslohnFormula als gueltiger Zustand. Wuerde die Reparatur diesen
+' Wert durch die Formel ersetzen, liefen wieder 960 UDF-Aufrufe je Neuberechnung.
+' Die Formel gehoert nur zurueck, wenn G leer ist oder die Zeile keine KV/Stunden mehr
+' hat — dann waere ein stehengebliebener Wert (z.B. nach dem Loeschen eines
+' Mitarbeiters) sogar falsch.
+Public Function PID_RowNeedsMonatslohnFormula(ByVal ws As Worksheet, _
+                                              ByVal rowNumber As Long) As Boolean
+    Dim gCell As Range
+
+    On Error GoTo SafeExit
+
+    If ws Is Nothing Then Exit Function
+
+    Set gCell = ws.Cells(rowNumber, "G")
+    If gCell.HasFormula Then Exit Function
+
+    If Len(Trim$(CStr(ws.Cells(rowNumber, "E").Value2))) = 0 Then
+        PID_RowNeedsMonatslohnFormula = True
+        Exit Function
+    End If
+
+    If Len(Trim$(CStr(ws.Cells(rowNumber, "F").Value2))) = 0 Then
+        PID_RowNeedsMonatslohnFormula = True
+        Exit Function
+    End If
+
+    PID_RowNeedsMonatslohnFormula = Not IsNumeric(gCell.Value2)
+
+SafeExit:
+End Function
 
 
 Private Sub PID_EnsureCellFormula(ByVal targetCell As Range, ByVal formulaR1C1 As String)
