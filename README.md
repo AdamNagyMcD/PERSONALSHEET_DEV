@@ -1,108 +1,262 @@
 # PERSONALSHEET
 
-Excel-alapu szemelyzeti es labor-planning rendszer ettermek szamara.
+Excel-basiertes Personal-, Lohn- und Planungswerkzeug für Restaurants.
 
-- **Workbook:** `Personalsheet.xlsm`
-- **VBA forraskod:** `vba/` (git source of truth fejleszteshez)
-- **Specifikacio:** [SPEC.md](SPEC.md)
-- **Tesztesetek:** [TEST_CASES.md](TEST_CASES.md)
-- **Valtozasok:** [docs/CHANGELOG.md](docs/CHANGELOG.md)
-- **Interaktiv tudásbázis (német, offline):** [docs/Personalsheet_Wissensbasis.html](docs/Personalsheet_Wissensbasis.html)
-- **Nyomtatható Schnellhilfe:** [docs/Personalsheet_Schnellhilfe.html](docs/Personalsheet_Schnellhilfe.html)
-- **Felhasznaloi rovid utmutato:** [docs/Kurzanleitung_Personalsheet_A4.html](docs/Kurzanleitung_Personalsheet_A4.html)
-- **Release checklist:** [docs/RELEASE.md](docs/RELEASE.md)
-- **Geplante Verbesserungen (Backlog):** [docs/FUTURE_PLANS.md](docs/FUTURE_PLANS.md)
+> **Aktueller Stand:** `v0.9.1-test` – zweite Testversion, noch nicht für den uneingeschränkten Produktivbetrieb freigegeben.
 
-## Kompatibilitas
+## Überblick
 
-- Excel 2016+
-- Csak Windows (macOS nem tamogatott)
-- Nincs XLOOKUP, LET, FILTER, dinamikus tombok
+PERSONALSHEET unterstützt Restaurantleitungen und autorisierte Führungskräfte bei der strukturierten Verwaltung personalbezogener Daten. Die Arbeitsmappe verbindet eine vertraute Excel-Oberfläche mit automatisierten VBA-Abläufen, Eingabeprüfungen, Formelkontrollen, administrativen Werkzeugen und einer ausführlichen deutschsprachigen Wissensbasis.
 
-## Projektstruktura
+Das Projekt wurde für den Einsatz auf Windows-Arbeitsplätzen mit Microsoft Excel 2016 oder neuer entwickelt. Ein besonderer Schwerpunkt liegt auf stabiler Ausführung auf älteren Laptops und kleineren Bürocomputern sowie auf dem Schutz vor unbeabsichtigten Änderungen durch unerfahrene Benutzer.
 
+## Hauptfunktionen
+
+- Verwaltung und Pflege personalbezogener Stammdaten
+- Monatsblätter von Januar bis Dezember
+- automatische Berechnung und Pflege relevanter Formelspalten
+- Verarbeitung von Monatslohn, aktuellen Stunden, Urlaubswerten und letztem Gehalt
+- KV- und Lohnzuordnung
+- Fluktuationsberechnung und Auswertungen
+- kontrollierte Übernahme und Aktualisierung von Daten
+- administrative Wartungs-, Reparatur- und Prüffunktionen
+- Schutz wichtiger Formeln, Arbeitsblätter und Arbeitsmappenstrukturen
+- Plausibilitätsprüfung bei Benutzereingaben
+- deutschsprachige Offline-Wissensbasis mit Suche, Inhaltsverzeichnis und FAQ
+- druckbare Schnellhilfe für Benutzer mit wenig Excel-Erfahrung
+
+## Zielgruppe
+
+Die Arbeitsmappe ist für unterschiedliche Benutzergruppen ausgelegt:
+
+- **Normale Benutzer** bearbeiten ausschließlich die freigegebenen Eingabefelder.
+- **Restaurantleitungen und Führungskräfte** verwenden die operativen Personal- und Planungsfunktionen.
+- **Administratoren** verwalten geschützte Bereiche, führen Reparaturen durch und aktualisieren den eingebetteten VBA-Code.
+- **Entwickler** bearbeiten die exportierten VBA-Quellen, führen Prüfungen aus und synchronisieren anschließend die Arbeitsmappe.
+
+## Systemvoraussetzungen
+
+- Windows
+- Microsoft Excel 2016 oder neuer
+- aktivierte VBA-Makros
+- für bestimmte administrative Wartungsfunktionen: aktivierter vertrauenswürdiger Zugriff auf das VBA-Projektobjektmodell
+- Python 3 nur für Entwicklungs- und Release-Prüfungen
+
+### Kompatibilitätsregeln
+
+Das Projekt verwendet bewusst keine Funktionen, die in Excel 2016 nicht verfügbar sind. Dazu gehören insbesondere:
+
+- `XLOOKUP`
+- `LET`
+- `FILTER`
+- `UNIQUE`
+- dynamische Arrayformeln neuerer Excel-Versionen
+
+macOS wird derzeit nicht unterstützt.
+
+## Schnellstart für Benutzer
+
+1. `Personalsheet.xlsm` herunterladen.
+2. Die Datei auf einem lokalen, vertrauenswürdigen Speicherort ablegen.
+3. Die Arbeitsmappe mit Microsoft Excel öffnen.
+4. Falls angezeigt, die geschützte Ansicht verlassen.
+5. Über **Inhalt aktivieren** die Makros freigeben.
+6. Nur die vorgesehenen und freigegebenen Eingabefelder bearbeiten.
+7. Die Hinweise und Meldungen der Arbeitsmappe beachten.
+8. Nach der Arbeit speichern und Excel ordnungsgemäß schließen.
+
+Für eine ausführliche Einführung steht die interaktive Wissensbasis unter [`docs/Personalsheet_Wissensbasis.html`](docs/Personalsheet_Wissensbasis.html) zur Verfügung.
+
+## Wichtige Sicherheitshinweise
+
+- Vor dem ersten Einsatz und vor größeren Änderungen immer eine Sicherungskopie erstellen.
+- Formeln, geschützte Zellen, Arbeitsblätter und Steuerelemente nicht manuell verändern.
+- Dateien nicht gleichzeitig in mehreren Excel-Instanzen öffnen.
+- Während eines VBA-Imports oder einer Reparatur Excel nicht schließen.
+- Administrative Funktionen nur verwenden, wenn ihre Auswirkungen bekannt sind.
+- Passwörter, personenbezogene Daten und produktive Arbeitsmappen nicht öffentlich im Repository speichern.
+
+Die eingebauten Schutzmechanismen verhindern typische Bedienfehler, stellen jedoch keinen vollständigen Schutz gegen gezielte technische Manipulation dar.
+
+## Dokumentation
+
+| Datei | Inhalt |
+|---|---|
+| [`docs/Personalsheet_Wissensbasis.html`](docs/Personalsheet_Wissensbasis.html) | Interaktive deutschsprachige Offline-Wissensbasis mit Suche und FAQ |
+| [`docs/Personalsheet_Schnellhilfe.html`](docs/Personalsheet_Schnellhilfe.html) | Kurze, druckbare Hilfe für den täglichen Einsatz |
+| [`docs/Kurzanleitung_Personalsheet_A4.html`](docs/Kurzanleitung_Personalsheet_A4.html) | Kompakte A4-Kurzanleitung für Benutzer |
+| [`docs/Personalsheet_Wissensbasis_Wartung.md`](docs/Personalsheet_Wissensbasis_Wartung.md) | Hinweise zur Pflege und Aktualisierung der Dokumentation |
+| [`docs/Personalsheet_Wissensbasis_Abdeckung.md`](docs/Personalsheet_Wissensbasis_Abdeckung.md) | Dokumentationsabdeckung der Funktionen und Arbeitsblätter |
+| [`docs/Personalsheet_Wissensbasis_Offene_Fragen.md`](docs/Personalsheet_Wissensbasis_Offene_Fragen.md) | Noch offene fachliche Punkte |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Technische und funktionale Änderungen |
+| [`docs/AUDIT_2026-08.md`](docs/AUDIT_2026-08.md) | Performance- und Sicherheitsprüfung |
+| [`docs/RELEASE.md`](docs/RELEASE.md) | Release-Ablauf und Checkliste |
+| [`docs/FUTURE_PLANS.md`](docs/FUTURE_PLANS.md) | Geplante Verbesserungen und Backlog |
+| [`TEST_CASES.md`](TEST_CASES.md) | Manuelle und technische Testszenarien |
+| [`SPEC.md`](SPEC.md) | Fachliche Regeln und Projektspezifikation |
+
+## Projektstruktur
+
+```text
+Personalsheet.xlsm                 Ausführbare Excel-Arbeitsmappe
+vba/                               Exportierte VBA-Quellen
+tools/                             Statische Prüf- und Analysewerkzeuge
+docs/                              Benutzer-, Audit- und Wartungsdokumentation
+SPEC.md                            Fachliche Spezifikation
+TEST_CASES.md                      Testfälle und Prüfschritte
+README.md                          Projektübersicht
 ```
-Personalsheet.xlsm     <- futtathato workbook (1 etterem / ev)
-vba/                   <- exportalt VBA modulok
-docs/                  <- dokumentacio
-SPEC.md                <- uzleti szabalyok
-TEST_CASES.md          <- manualis tesztesetek
+
+Lokale Sicherungen, Arbeitskopien und temporäre Auditdateien gehören nicht in das Repository und werden über `.gitignore` ausgeschlossen.
+
+## Entwicklungsprinzip
+
+Die Dateien im Ordner `vba/` sind die maßgebliche, versionierte Quelle für die VBA-Entwicklung. `Personalsheet.xlsm` ist das ausführbare Ergebnis und muss vor einem Commit oder Release mit diesen Quellen synchronisiert werden.
+
+Änderungen sollen:
+
+- die bestehende fachliche Logik erhalten;
+- vollständig mit Excel 2016 kompatibel bleiben;
+- auch auf schwächeren Bürocomputern zuverlässig funktionieren;
+- keine unnötigen Neuberechnungen oder zellweisen VBA-Schleifen einführen;
+- bei Fehlern Excel-Einstellungen wie `ScreenUpdating`, `EnableEvents`, `Calculation` und `DisplayAlerts` zuverlässig wiederherstellen;
+- mit deutschen Kommentaren und verständlichen Bezeichnungen dokumentiert werden.
+
+## Empfohlener Entwicklungsablauf
+
+1. Vor Arbeitsbeginn den aktuellen Stand abrufen:
+
+   ```powershell
+   git pull --ff-only
+   ```
+
+2. VBA ausschließlich in den exportierten Dateien unter `vba/` bearbeiten.
+
+3. Die Arbeitsmappe öffnen und das Makro `ResetAndImportVBAFiles` ausführen.
+
+4. Falls erforderlich, `SyncDieseArbeitsmappeFromExport` ausführen.
+
+5. Arbeitsmappe speichern und Excel vollständig schließen.
+
+6. VBA-Quellen und eingebetteten Code vergleichen:
+
+   ```powershell
+   python tools/check_vba_sync.py
+   ```
+
+7. Statische VBA-Prüfung ausführen:
+
+   ```powershell
+   python tools/vba_lint.py
+   ```
+
+8. Formelspalten prüfen:
+
+   ```powershell
+   python tools/check_formula_columns.py --verbose
+   ```
+
+9. Relevante manuelle Tests aus `TEST_CASES.md` durchführen.
+
+10. Nur geprüfte und zusammengehörige Änderungen committen und pushen.
+
+## Automatische Prüfwerkzeuge
+
+### VBA-Lint
+
+```powershell
+python tools/vba_lint.py
 ```
 
-A `_xlsm_*` es `_einstellung_probe` mappak **lokalis fejlesztoi probe** celokra — nincsenek git-ben.
+Die Prüfung erkennt unter anderem:
 
-## Fejlesztoi workflow
+- nicht deklarierte Prozeduren und Funktionen;
+- unzulässige Aufrufe privater Prozeduren;
+- doppelte öffentliche Namen;
+- fehlende Sprungmarken;
+- unausgeglichene VBA-Blöcke;
+- fehlendes `Option Explicit`;
+- Modulnamen, die nicht zum Dateinamen passen;
+- nicht mit Excel 2016 kompatible Formeln.
 
-1. VBA modositas a `vba/` mappaban (UTF-8)
-2. Excelben: **Alt+F8** → `ResetAndImportVBAFiles`
-3. Compile ellenorzes (VBA Editor)
-4. Mentés → Excel ujrainditas (ajanlott)
-5. **Alt+F8** → `FullSystemRefresh`
-6. **Alt+F8** → `PID_RunSystemSmokeCheck`
-7. Manualis tesztek: TEST 1–3 ([TEST_CASES.md](TEST_CASES.md))
-8. `docs/CHANGELOG.md` frissitese
-9. Release: [docs/RELEASE.md](docs/RELEASE.md)
+Erwartetes Ergebnis vor einem Release:
 
-## Ettermi felhasznalok (🟢 makrok)
+```text
+Errors: 0   Warnings: 0
+```
 
-| Makro | Mit csinal |
-|-------|------------|
-| `CopyData` | Honap adatainak masolasa a kovetkezo honapokba |
-| `DataClear` | Aktualis honap adatainak torlese (megerosites kell) |
-| `RefreshFluktuationNow` | Fluktuacio ujraszamolas |
-| `PersonalIdKorrigieren` | Personal ID / nev javitasa mind a 12 honapon + Stunden-Log |
-| `MitarbeiterEntfernen` | Dolgozo torlese minden honaprol vagy egy valasztott honaptol |
-| `FehlerMelden` | Hibabejelentes: kontext + 2 kerdes → txt fajl a Feedback mappaba + vagolap |
-| `AlleDatenLoeschen` | Minden honap minden adatanak torlese (dupla megerosites, keplet marad) |
+### Synchronisationsprüfung
 
-Harom gomb minden honaplapon: „Mitarbeiter entfernen" (O7:P7),
-„Personal-ID korrigieren" (Q7:R7) es „Fehler melden" (S7:T7).
+```powershell
+python tools/check_vba_sync.py
+```
 
-Egy dolgozo = egy Personal ID: ugyanaz az ID egy honaplapon belul nem irhato be ketszer
-(a masodik bevitel torlodik), es figyelmeztetes jon, ha az ID mas honapban mas nevhez tartozik.
+Sie vergleicht den eingebetteten VBA-Code der Arbeitsmappe mit den versionierten Dateien in `vba/`.
 
-Bemasolas mindig csak ertekkent: a Ctrl+V (es a menuszalag / jobbklikk beillesztes) sosem
-hozza at a forras formazasat. Zarolt formulaoszlopot nem lehet vele felulirni, es a
-Ctrl+X + beillesztes le van tiltva. A Ctrl+V atallitas csak addig el, amig ez a fajl az
-aktiv — mas Excel fajlban valtozatlan marad.
+Erwartetes Ergebnis:
 
-Reszletek: Kurzanleitung HTML.
+```text
+Abweichungen: 0
+```
 
-## Admin / fejlesztoi makrok (🔴 — ne ettermi usernek)
+### Prüfung der Formelspalten
 
-Modul: `mod_ADMIN.bas`. Az **Alt+F8** listaban az `ADMIN_` nevek szamozottan,
-egymas mellett, a lista elejen jelennek meg. `ADMIN_00_Hilfe` mutatja az attekintest.
+```powershell
+python tools/check_formula_columns.py --verbose
+```
 
-| Csoport | Makrok | Mit csinal |
-|---------|--------|------------|
-| **01–05 Setup / VBA** | `ADMIN_01_VBA_Import`, `ADMIN_02_VBA_Export`, `ADMIN_03_VBA_Reparatur_Nach_Import`, `ADMIN_04_Admin_Panel`, `ADMIN_05_Makro_Uebersicht` | VBA import a `vba\` mappabol, export a `vba_export\` mappaba, import utani keplet-helyreallitas, `_ADMIN` panel |
-| **10–18 Teszt / diagnosztika** | `ADMIN_10_Test_Smoke_Check`, `ADMIN_11_Test_Schnellcheck`, `ADMIN_12_Test_Performance`, `ADMIN_13_Test_Formelspalten`, `ADMIN_14_Test_Stunden_Log`, `ADMIN_15_Test_Aktionsprotokoll`, `ADMIN_16_Test_Ergebnisblatt`, `ADMIN_17/18_Tech_Blaetter_*` | Smoke teszt, gyorsellenorzes, teljesitmenymeres, keplet-ellenorzes, naplok, technikai lapok |
-| **20–28 Javitas** | `ADMIN_20_Reparatur_Full_Refresh`, `ADMIN_21_Reparatur_Formelspalten`, `ADMIN_22/23/24_Reparatur_*`, `ADMIN_25_Namen_Aufraeumen`, `ADMIN_26_Schutz_AN`, `ADMIN_27_Schutz_AUS`, `ADMIN_28_UEBERSICHT_Schutz` | Full refresh, G/H/K/L kepletek, dropdownok, `#REF!` nevek torlese, lapvedelem |
-| **30–38 Formazas / LOHNTABELLE** | `ADMIN_30..38` | Honaplapok es UEBERSICHT formazasa, KV tabla ujraepitese es javitasa |
-| **40–41 Adattorles** | `ADMIN_40_Daten_Stunden_Log_Leeren`, `ADMIN_41_Daten_Alles_Loeschen` | Visszafordithatatlan — dupla megerosites |
+Kontrolliert die Formelversorgung der relevanten Spalten G, H, K und L auf allen Monatsblättern.
 
-Elnevezesi szabaly:
+## Release-Checkliste
 
-- `ADMIN_NN_...` = fejlesztoi / karbantartasi makro (csak neked)
-- rovid nemet nev (`CopyData`, `DataClear`, …) = ettermi felhasznaloi makro
-- `PID_...` = belso technika, kezzel nem inditando
+Vor jeder Test- oder Produktivversion müssen mindestens folgende Punkte erfüllt sein:
 
-A regi nevek valtozatlanul mukodnek: az `ADMIN_` bejegyzesek csak atiranyitasok,
-a gombok, esemenyek es a dokumentacio erintetlenek.
+- Arbeitsmappe lässt sich ohne Reparaturmeldung öffnen.
+- Makros sind importiert und kompilierbar.
+- `vba_lint.py` meldet keine Fehler und keine Warnungen.
+- `check_vba_sync.py` meldet keine Abweichungen.
+- `check_formula_columns.py` meldet keine fehlenden Formeln.
+- alle kritischen Funktionen wurden gemäß `TEST_CASES.md` geprüft.
+- `README.md`, Wissensbasis und Changelog entsprechen dem aktuellen Stand.
+- keine personenbezogenen Daten, Passwörter oder lokalen Backups sind enthalten.
+- die für Tester bestimmte `Personalsheet.xlsm` ist als Release-Datei beigefügt.
+- Testversionen werden auf GitHub als **Pre-release** gekennzeichnet.
 
-## Fejlesztoi ellenorzo szkriptek (Windows nelkul is futnak)
+## Aktueller Teststand
 
-| Szkript | Mit ellenoriz |
-|---------|---------------|
-| `python3 tools/vba_lint.py` | A `vba/` forrasok statikus ellenorzese — hianyzo/privat eljaras, duplikalt nev, hianyzo cimke, blokk-hiba, `Option Explicit`, nem Excel 2016-kompatibilis fuggveny |
-| `python3 tools/check_vba_sync.py` | A `Personalsheet.xlsm`-be agyazott VBA egyezik-e a `vba/` mappaval |
-| `python3 tools/check_formula_columns.py` | Hol hianyzik keplet G/H/K/L-ben a munkafuzetben (a `PID_PruefeFormelspalten` Linux-parja) |
+Für `v0.9.1-test` wurden zuletzt folgende technische Ergebnisse dokumentiert:
 
-Mindharom csak olvas. Ajanlott sorrend VBA modositas utan: `vba_lint.py` → Excelben import
-+ Kompilieren → mentes utan `check_vba_sync.py`.
+- 35 VBA-Module
+- 911 geprüfte Prozeduren
+- 24.468 geprüfte VBA-Zeilen
+- 0 VBA-Fehler
+- 0 VBA-Warnungen
+- 0 Abweichungen zwischen Arbeitsmappe und exportierten VBA-Quellen
+- 0 fehlende Formeln in den geprüften Formelspalten
+- alle Monatsblätter von Januar bis Dezember geprüft
 
-## Git
+Die aktuelle Testversion ist unter [GitHub Releases](https://github.com/AdamNagyMcD/PERSONALSHEET_DEV/releases) verfügbar.
 
-- Branch: `main` (release-ready)
-- Commit uzenetek: rovid, nemet prefix (pl. `EINSTELLUNG: ...`)
-- A `vba/` diff olvashato; a `Personalsheet.xlsm` binary
+## Fehler melden
+
+Bei einem Fehler bitte möglichst folgende Informationen dokumentieren:
+
+- verwendete PERSONALSHEET-Version;
+- Excel- und Windows-Version;
+- betroffenes Arbeitsblatt und betroffene Funktion;
+- genaue Schritte bis zum Fehler;
+- Wortlaut oder Screenshot der Fehlermeldung;
+- erwartetes und tatsächliches Ergebnis;
+- Information, ob der Fehler erneut reproduzierbar ist.
+
+Keine echten Mitarbeiterdaten oder Passwörter in öffentlich zugängliche Fehlermeldungen aufnehmen.
+
+## Status
+
+Das Projekt befindet sich weiterhin in der Testphase. `v0.9.1-test` ist für kontrollierte Tests vorgesehen und noch keine uneingeschränkt freigegebene Produktivversion.
+
+## Urheberrecht
+
+Copyright © Adam Nagy / McOpCo. Alle Rechte vorbehalten.
+
+Sofern nicht ausdrücklich schriftlich erlaubt, sind unbefugtes Kopieren, Verändern, Veröffentlichen oder Weitergeben des Projekts und seiner Bestandteile nicht gestattet.
