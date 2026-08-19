@@ -191,14 +191,18 @@ Public Sub PID_SyncFluktuationToUbersicht(ByRef monthFluctuation() As Double, _
     ws.Cells(23, 17).Value2 = ytdFluctuation
     ws.Cells(23, 17).NumberFormat = PID_FLUKTUATION_PERCENT_FORMAT
     
-    If wasProtected Then
+SafeExit:
+    ' Der Rueckschutz gehoert in den Ausgangsblock, nicht in den Normalweg: bricht das
+    ' Schreiben mittendrin ab, blieb UEBERSICHT sonst offen, bis der naechste
+    ' erfolgreiche Lauf oder ein Blattwechsel den Schutz wieder setzt.
+    On Error Resume Next
+    If wasProtected And Not ws Is Nothing Then
         ws.Protect Password:=PID_WORKBOOK_PASSWORD, _
                    UserInterfaceOnly:=True, _
                    AllowFiltering:=True, _
                    AllowSorting:=True
     End If
-
-SafeExit:
+    Err.Clear
 End Sub
 
 
@@ -246,6 +250,13 @@ Public Sub PID_SyncMonthSheetFluctuationQ31(ByVal ws As Worksheet)
     currentYear = PID_GetWorkbookYear()
     If currentYear <= 0 Then Exit Sub
     
+    ' Dieser Sync laeuft bei JEDEM Wechsel auf ein Monatsblatt. Das Wiederherstellen
+    ' des Schutzes setzt ueber PID_ApplyMonthSheetLockPolicy "Cells.Locked = True"
+    ' auf dem ganzen Blatt - das ist der teuerste Teil des Tabwechsels. Stehen
+    ' Label und Wert bereits richtig, ist nichts zu tun und der ganze
+    ' Entsperren-Schreiben-Sperren-Zyklus entfaellt.
+    If PID_MonthSheetFluctuationCellsAreCurrent(ws, currentYear, monthNumber) Then Exit Sub
+    
     ' Schutz aufheben (mit Passwort, Fallback ohne), damit O31/Q31 beschreibbar sind.
     On Error Resume Next
     ws.Unprotect Password:=PID_WORKBOOK_PASSWORD
@@ -273,6 +284,40 @@ SafeExit:
         If Not ws.ProtectContents Then PID_ProtectWorkerMonthSheet ws
     End If
 End Sub
+
+
+' True, wenn O31, Q31 und das Zahlenformat bereits genau das enthalten, was der Sync
+' schreiben wuerde. Nur dann darf der Sync ohne Schreibzugriff aussteigen.
+Private Function PID_MonthSheetFluctuationCellsAreCurrent(ByVal ws As Worksheet, _
+                                                          ByVal currentYear As Long, _
+                                                          ByVal monthNumber As Long) As Boolean
+    Dim currentValue As Variant
+    Dim expectedValue As Double
+    
+    On Error GoTo SafeExit
+    
+    ' Ein ungeschuetztes Blatt wird weiterhin ueber den vollen Weg gefuehrt, damit der
+    ' Sync den Schutz wie bisher wiederherstellt.
+    If Not ws.ProtectContents Then Exit Function
+    
+    If Trim$(CStr(ws.Range("O31").Value)) <> "Fluktuation:" Then Exit Function
+    If ws.Range("Q31").NumberFormat <> PID_FLUKTUATION_PERCENT_FORMAT Then Exit Function
+    
+    currentValue = ws.Range("Q31").Value2
+    If Not IsNumeric(currentValue) Then Exit Function
+    If Len(Trim$(CStr(currentValue))) = 0 Then Exit Function
+    
+    expectedValue = PID_ComputeFluctuationForPeriod( _
+        DateSerial(currentYear, monthNumber, 1), _
+        DateSerial(currentYear, monthNumber + 1, 0))
+    
+    ' Rundungsrauschen aus der Division darf keinen Schreibzugriff ausloesen.
+    If Abs(CDbl(currentValue) - expectedValue) > 0.0000001 Then Exit Function
+    
+    PID_MonthSheetFluctuationCellsAreCurrent = True
+
+SafeExit:
+End Function
 
 
 Private Function PID_FluctuationRowHasEmployee(ByVal employeeID As Variant, ByVal employeeName As Variant) As Boolean

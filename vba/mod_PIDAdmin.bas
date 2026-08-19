@@ -22,29 +22,9 @@ Public Function PID_ConfirmAdminAction(ByVal actionDescription As String, ByVal 
 End Function
 
 
+' Die Liste steht nur an einer Stelle: in ADMIN_00_Hilfe (mod_ADMIN).
 Public Sub PID_ShowAdminMacroInfo()
-    Dim msg As String
-    
-    msg = "Admin-/Entwickler-Makros (nicht f" & PID_UTxtUe() & "r Restaurant-User):" & vbCrLf & vbCrLf
-    msg = msg & "- PID_ToggleAdminSheet (Admin-Panel ein/aus)" & vbCrLf
-    msg = msg & "- ResetAndImportVBAFiles" & vbCrLf
-    msg = msg & "- FullSystemRefresh / PID_FullSystemRefresh" & vbCrLf
-    msg = msg & "- PID_QuickSystemCheck" & vbCrLf
-    msg = msg & "- PID_RunSystemSmokeCheck" & vbCrLf
-    msg = msg & "- PID_RunPerformanceBaseline (FP-010)" & vbCrLf
-    msg = msg & "- PID_AdminResetHourOverrideLog (Stunden-Log leeren)" & vbCrLf
-    msg = msg & "- PID_AdminKorrigierePersonalId (Personal-ID/Name korrigieren)" & vbCrLf
-    msg = msg & "- PID_AdminMitarbeiterEntfernen (Mitarbeiter aus Monaten entfernen)" & vbCrLf
-    msg = msg & "- PID_AdminFehlerMelden (Fehlermeldung mit Kontext erstellen)" & vbCrLf
-    msg = msg & "- PID_AdminShowActionLog (letzte Aktionen anzeigen)" & vbCrLf
-    msg = msg & "- PID_PruefeFormelspalten (Formeln G/H/K/L pr" & PID_UTxtUe() & "fen)" & vbCrLf
-    msg = msg & "- PID_FormelspaltenReparieren (fehlende Formeln " & PID_UTxtErgaenzt() & ")" & vbCrLf
-    msg = msg & "- AlleDatenLoeschen / PID_ClearAllWorkbookData (alle 12 Monate leeren)" & vbCrLf
-    msg = msg & "- RebuildLOHNTABELLE" & vbCrLf
-    msg = msg & "- UnprotectEverything" & vbCrLf & vbCrLf
-    msg = msg & "Siehe docs/RELEASE.md"
-    
-    MsgBox msg, vbInformation, "Admin Makros"
+    ADMIN_00_Hilfe
 End Sub
 
 

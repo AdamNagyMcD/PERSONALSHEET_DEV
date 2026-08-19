@@ -37,6 +37,13 @@ Private Const PID_PV_MAX_CELLS As Long = 20000
 ' Zaehler statt Boolean: verschachtelte Aufrufe duerfen die Markierung nicht vorzeitig loeschen.
 Private mManagedPasteDepth As Long
 
+' Der Text der Zwischenablage wird waehrend eines Einfuegens mehrfach gebraucht
+' (einmal fuer die Groesse des Zielbereichs, einmal zum Schreiben). Jede Abfrage legt
+' ein DataObject an und liest die Zwischenablage neu - das kostet spuerbar Zeit.
+' Deshalb genau einmal je Strg+V lesen und danach wieder verwerfen.
+Private mClipboardCache As String
+Private mClipboardCached As Boolean
+
 
 Public Sub PID_InstallPasteHooks()
     Dim macroName As String
@@ -71,6 +78,8 @@ Public Sub PID_PasteValuesOnly()
 
     If TypeName(ActiveSheet) <> "Worksheet" Then Exit Sub
     If TypeName(Selection) <> "Range" Then Exit Sub
+
+    PID_PVClearClipboardCache
 
     Set selRange = Selection
 
@@ -124,10 +133,12 @@ Public Sub PID_PasteValuesOnly()
     End If
 
     PID_PVEndManagedPaste
+    PID_PVClearClipboardCache
     Exit Sub
 
 PasteFailed:
     PID_PVEndManagedPaste
+    PID_PVClearClipboardCache
 
     On Error Resume Next
     Application.CutCopyMode = False
@@ -200,6 +211,11 @@ Private Sub PID_PVWriteClipboardText(ByVal topLeft As Range)
     lineTotal = PID_PVLineCount(lines)
     If lineTotal = 0 Then Exit Sub
 
+    ' Rechteckiger Block ohne verbundene Zellen: in einem Zug schreiben statt
+    ' Zelle fuer Zelle. Bei bis zu 20.000 Zellen ist das der Unterschied zwischen
+    ' einem und 20.000 Schreibzugriffen.
+    If PID_PVWriteClipboardBlock(topLeft, lines, lineTotal) Then Exit Sub
+
     For r = 0 To lineTotal - 1
         cols = Split(lines(r), vbTab)
 
@@ -217,6 +233,50 @@ Private Sub PID_PVWriteClipboardText(ByVal topLeft As Range)
         Next c
     Next r
 End Sub
+
+
+' True, wenn der Block als Array geschrieben wurde. Nur wenn alle Zeilen gleich viele
+' Spalten haben (sonst wuerde das Array bestehende Werte rechts davon ueberschreiben)
+' und im Zielbereich keine verbundene Zelle liegt.
+Private Function PID_PVWriteClipboardBlock(ByVal topLeft As Range, _
+                                           ByRef lines() As String, _
+                                           ByVal lineTotal As Long) As Boolean
+    Dim cols() As String
+    Dim colTotal As Long
+    Dim buffer() As Variant
+    Dim targetRange As Range
+    Dim r As Long
+    Dim c As Long
+
+    On Error GoTo SafeExit
+
+    If lineTotal < 1 Then Exit Function
+
+    colTotal = UBound(Split(lines(0), vbTab)) + 1
+    If colTotal < 1 Then Exit Function
+
+    For r = 0 To lineTotal - 1
+        If UBound(Split(lines(r), vbTab)) + 1 <> colTotal Then Exit Function
+    Next r
+
+    Set targetRange = topLeft.Resize(lineTotal, colTotal)
+    If targetRange.MergeCells <> False Then Exit Function
+
+    ReDim buffer(1 To lineTotal, 1 To colTotal)
+
+    For r = 0 To lineTotal - 1
+        cols = Split(lines(r), vbTab)
+        For c = 0 To colTotal - 1
+            buffer(r + 1, c + 1) = PID_PVCleanCellText(cols(c))
+        Next c
+    Next r
+
+    targetRange.Value = buffer
+
+    PID_PVWriteClipboardBlock = True
+
+SafeExit:
+End Function
 
 
 ' Anfuehrungszeichen um mehrzeilige Zellen sowie harte Zeilenumbrueche entfernen -
@@ -302,6 +362,11 @@ End Function
 Private Function PID_PVGetClipboardText() As String
     Dim dataObj As Object
 
+    If mClipboardCached Then
+        PID_PVGetClipboardText = mClipboardCache
+        Exit Function
+    End If
+
     On Error Resume Next
 
     ' Spaete Bindung an MSForms.DataObject - so wird kein zusaetzlicher Verweis gebraucht.
@@ -309,8 +374,18 @@ Private Function PID_PVGetClipboardText() As String
     If dataObj Is Nothing Then Exit Function
 
     dataObj.GetFromClipboard
-    PID_PVGetClipboardText = dataObj.GetText
+    mClipboardCache = dataObj.GetText
+    mClipboardCached = True
+    Err.Clear
+
+    PID_PVGetClipboardText = mClipboardCache
 End Function
+
+
+Private Sub PID_PVClearClipboardCache()
+    mClipboardCache = ""
+    mClipboardCached = False
+End Sub
 
 
 ' Waehrend eines selbst gesteuerten Einfuegens muss das Netz in EnforcePasteValuesOnly
@@ -334,6 +409,7 @@ End Function
 
 Public Sub PID_ResetManagedPasteState()
     mManagedPasteDepth = 0
+    PID_PVClearClipboardCache
 End Sub
 
 

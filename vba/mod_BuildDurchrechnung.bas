@@ -137,7 +137,11 @@ CleanProtect:
     GoTo CleanExit
 
 CleanFail:
-    ' Keine Meldung beim Blattwechsel.
+    ' Keine Meldung beim Blattwechsel, aber UEBERSICHT darf nicht entsperrt
+    ' zurueckbleiben - genau hier lief das Blatt frueher offen weiter.
+    On Error Resume Next
+    If Not ws Is Nothing Then PID_ApplyUbersichtSheetProtection ws
+    Err.Clear
 
 CleanExit:
     Application.ScreenUpdating = oldScreenUpdating
@@ -152,6 +156,8 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     Dim oldDisplayAlerts As Boolean
     Dim savedJaenVerf As Variant
     Dim savedJaenMust As Variant
+    Dim errNumber As Long
+    Dim errText As String
     
     On Error GoTo CleanFail
     
@@ -212,9 +218,17 @@ Private Sub PID_BuildDurchrechnungUebersichtInternal(ByVal showMessage As Boolea
     GoTo CleanExit
 
 CleanFail:
+    errNumber = Err.Number
+    errText = Err.Description
+    
+    ' UEBERSICHT ist ab hier entsperrt und muss auch nach einem Abbruch wieder zu.
+    On Error Resume Next
+    If Not ws Is Nothing Then PID_ApplyUbersichtSheetProtection ws
+    Err.Clear
+    
     If showMessage Then
         MsgBox "Fehler bei PID_BuildDurchrechnungUebersicht:" & vbCrLf & _
-               Err.Number & " - " & Err.Description, _
+               errNumber & " - " & errText, _
                vbExclamation, "Durchrechnung"
     End If
 
@@ -900,6 +914,8 @@ End Sub
 Public Sub PID_FormatFinanzUebersicht()
     Dim ws As Worksheet
     Dim oldScreenUpdating As Boolean
+    Dim errNumber As Long
+    Dim errText As String
     
     On Error GoTo CleanFail
     
@@ -928,8 +944,16 @@ Public Sub PID_FormatFinanzUebersicht()
     GoTo CleanExit
 
 CleanFail:
+    errNumber = Err.Number
+    errText = Err.Description
+    
+    ' UEBERSICHT nach einem Abbruch nicht entsperrt zuruecklassen.
+    On Error Resume Next
+    If Not ws Is Nothing Then PID_ApplyUbersichtSheetProtection ws
+    Err.Clear
+    
     MsgBox "Fehler bei FormatFinanzUebersicht:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
+           errNumber & " - " & errText, _
            vbExclamation, "UEBERSICHT"
 
 CleanExit:
@@ -1092,6 +1116,8 @@ End Sub
 Public Sub PID_FormatDurchrechnungUebersicht()
     Dim ws As Worksheet
     Dim oldScreenUpdating As Boolean
+    Dim errNumber As Long
+    Dim errText As String
     
     On Error GoTo CleanFail
     
@@ -1127,8 +1153,16 @@ CleanProtect:
     GoTo CleanExit
 
 CleanFail:
+    errNumber = Err.Number
+    errText = Err.Description
+    
+    ' UEBERSICHT nach einem Abbruch nicht entsperrt zuruecklassen.
+    On Error Resume Next
+    If Not ws Is Nothing Then PID_ApplyUbersichtSheetProtection ws
+    Err.Clear
+    
     MsgBox "Fehler bei FormatDurchrechnungUebersicht:" & vbCrLf & _
-           Err.Number & " - " & Err.Description, _
+           errNumber & " - " & errText, _
            vbExclamation, "Durchrechnung"
 
 CleanExit:

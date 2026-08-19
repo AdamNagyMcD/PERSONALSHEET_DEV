@@ -27,13 +27,34 @@ Private mViewPreserveScrollRow As Long
 Private mViewPreserveScrollCol As Long
 Private mViewPreserveDepth As Long
 
+Private mStaleValueFormattingChecked As Boolean
+
+
+' Application.FormatStaleValues gibt es erst ab Microsoft 365. Frueh gebunden
+' (Application.FormatStaleValues = ...) meldet Excel 2016 beim Kompilieren
+' "Methode oder Datenobjekt nicht gefunden" — On Error hilft dort nicht, weil der
+' Fehler schon beim Kompilieren entsteht. Ueber ein Object laeuft die Aufloesung
+' erst zur Laufzeit; in Excel 2016 schlaegt der Aufruf still fehl.
+' Die Eigenschaft gilt fuer die ganze Excel-Anwendung, deshalb genuegt einmal
+' je Sitzung statt bei jeder Zellaenderung.
+Public Sub PID_DisableStaleValueFormatting()
+    Dim excelApp As Object
+    
+    If mStaleValueFormattingChecked Then Exit Sub
+    
+    On Error Resume Next
+    mStaleValueFormattingChecked = True
+    Set excelApp = Application
+    excelApp.FormatStaleValues = False
+    Err.Clear
+End Sub
+
 
 ' Frueher: Manual fuer schnelles Oeffnen — Endanwender sahen leere H/K/L-Formeln.
 ' Jetzt: Automatisch + EnableCalculation; Open bleibt kurz Manual nur in Workbook_Open.
 Public Sub PID_ConfigureDeferredWorkbookCalculationOnOpen()
     On Error Resume Next
-    Application.FormatStaleValues = False
-    Err.Clear
+    PID_DisableStaleValueFormatting
     PID_EnableCalculationForAllSheets
     Application.Calculation = xlCalculationAutomatic
 End Sub
@@ -155,12 +176,6 @@ Public Sub PID_RecalculateMonthFormulaColumns(ByVal wsMonth As Worksheet)
 End Sub
 
 
-Public Sub PID_EnsureWorksheetCalculationEnabled(ByVal ws As Worksheet)
-    On Error Resume Next
-    Application.FormatStaleValues = False
-End Sub
-
-
 Public Sub PID_EnableCalculationForAllSheets()
     Dim ws As Worksheet
     
@@ -169,11 +184,6 @@ Public Sub PID_EnableCalculationForAllSheets()
         ws.EnableCalculation = True
         Err.Clear
     Next ws
-End Sub
-
-
-Public Sub PID_RecalculateAllMonthFluctuation()
-    RefreshFluktuationAll
 End Sub
 
 
@@ -867,12 +877,26 @@ Private Sub PID_FillFormulaDownWithoutFormats(ByVal firstCell As Range, ByVal ta
 End Sub
 
 
+' Erkennt, ob in der Formel schon ein B/C-Schutz steckt. Wird das verneint, obwohl der
+' Schutz vorhanden ist, packt PID_ApplyLetztesGehaltFormulaToSheet die Formel ein
+' ZWEITES Mal ein - und da der Wrapper den alten Ausdruck zweimal einsetzt, verdoppelt
+' sich die Formel bei jedem Lauf. Genau das ist auf Januar passiert (2981 statt 1473
+' Zeichen): die kanonische A1-Form heisst B3="" OHNE Dollarzeichen, die alte Pruefung
+' verlangte aber $B und $C. Nach drei solchen Laeufen sprengt die Formel die
+' Excel-Grenze von 8192 Zeichen und laesst sich gar nicht mehr schreiben.
 Private Function PID_FormulaHasLetztesGehaltEmployeeGuard(ByVal formulaText As String) As Boolean
     Dim compactFormula As String
     
     compactFormula = UCase$(Replace(Replace(Replace(formulaText, " ", ""), vbLf, ""), vbTab, ""))
     
     If InStr(1, compactFormula, "RC[-10]", vbTextCompare) > 0 Then
+        PID_FormulaHasLetztesGehaltEmployeeGuard = True
+        Exit Function
+    End If
+    
+    ' Jede geschuetzte Variante beginnt mit =IF(OR( - egal ob R1C1, A1 mit oder ohne
+    ' Dollarzeichen. Der ungeschuetzte Altbestand beginnt dagegen mit =IFERROR(.
+    If Left$(compactFormula, 7) = "=IF(OR(" Then
         PID_FormulaHasLetztesGehaltEmployeeGuard = True
         Exit Function
     End If
@@ -917,12 +941,12 @@ Public Function PID_GetLetztesGehaltFormulaR1C1() As String
         "IF(YEAR(RC[-8])<" & yearRef & "," & _
         "IF(ISNUMBER(RC[-3]),IF(YEAR(RC[-3])<" & yearRef & ",0," & _
         "IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
-        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1]))))," & _
+        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1])))," & _
         "RC[-5]+RC[-1])," & _
         "IF(YEAR(RC[-8])=" & yearRef & "," & _
         "IF(MONTH(RC[-8])<R1C1,IF(ISNUMBER(RC[-3]),IF(YEAR(RC[-3])<" & yearRef & ",0," & _
         "IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
-        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1])))),RC[-5])," & _
+        "IF(MONTH(RC[-3])<R1C1,0,(RC[-5]/DAY(EOMONTH(DATE(" & yearRef & ",R1C1,1),0)))*DAY(RC[-3])+RC[-1]))),RC[-5])," & _
         "IF(MONTH(RC[-8])=R1C1,IF(ISNUMBER(RC[-3]),IF(OR(YEAR(RC[-3])>" & yearRef & ",MONTH(RC[-3])>R1C1),RC[-5]," & _
         "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(RC[-3]-RC[-8]+1)+RC[-1])," & _
         "(RC[-5]/DAY(EOMONTH(RC[-8],0)))*(DAY(EOMONTH(RC[-8],0))-DAY(RC[-8])+1)+RC[-1]),0)),0))),0)"

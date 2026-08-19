@@ -15,9 +15,19 @@ Private Const PID_ADMIN_BTN_HEIGHT As Double = 30#
 Private Const PID_ADMIN_BTN_GAP_H As Double = 14#
 Private Const PID_ADMIN_BTN_GAP_V As Double = 10#
 Private Const PID_ADMIN_BTN_COLS As Long = 2
-Private Const PID_ADMIN_BTN_COUNT As Long = 21
+Private Const PID_ADMIN_BTN_COUNT As Long = 22
+' Weit rechts und ausserhalb jedes Layoutbereichs: hier steht die Signatur der zuletzt
+' gebauten Button-Liste, damit PID_EnsureAdminSheet den Neuaufbau ueberspringen kann.
+Private Const PID_ADMIN_SIGNATURE_CELL As String = "BZ1"
 
 
+' Laeuft bei jedem Oeffnen (Workbook_Open) und vor jedem Anzeigen des Panels.
+' Frueher wurde dabei jedes Mal das komplette Blatt neu beschriftet und alle 22 Buttons
+' geloescht und neu angelegt - 22 Shape-Loeschungen plus 22 Shape-Erzeugungen mit je
+' Text, OnAction und Stil, obwohl das Blatt danach sofort wieder auf xlSheetVeryHidden
+' geht und ein normaler Benutzer es nie sieht. Der Neuaufbau passiert jetzt nur noch,
+' wenn er wirklich noetig ist: bei fehlenden Buttons oder wenn sich die Button-Liste im
+' Code geaendert hat (Signatur). Damit bleibt die Selbstheilung erhalten.
 Public Sub PID_EnsureAdminSheet()
     Dim ws As Worksheet
     
@@ -29,13 +39,106 @@ Public Sub PID_EnsureAdminSheet()
         ws.Name = PID_ADMIN_SHEET_NAME
     Else
         PID_AdminMoveSheetToFront ws
+        
+        If PID_AdminSheetIsUpToDate(ws) Then
+            PID_AdminRefreshHeaderValues ws
+            PID_HideAdminSheet False
+            Exit Sub
+        End If
     End If
     
     PID_BuildAdminSheetLayout ws
     PID_EnsureAdminSheetButtons ws
+    PID_AdminWriteSpecSignature ws
     PID_HideAdminSheet False
 
 SafeExit:
+End Sub
+
+
+' Nur dann "aktuell", wenn alle Buttons vorhanden sind UND die gespeicherte Signatur zur
+' aktuellen Button-Liste im Code passt. Nach einem VBA-Import mit geaenderten Beschriftungen
+' oder Makronamen stimmt die Signatur nicht mehr und das Blatt wird neu gebaut.
+Private Function PID_AdminSheetIsUpToDate(ByVal ws As Worksheet) As Boolean
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    If PID_AdminToolbarShapeCount(ws) <> PID_ADMIN_BTN_COUNT Then Exit Function
+    
+    PID_AdminSheetIsUpToDate = _
+        (StrComp(CStr(ws.Range(PID_ADMIN_SIGNATURE_CELL).Value2), _
+                 PID_AdminSheetSpecSignature(), vbBinaryCompare) = 0)
+SafeExit:
+End Function
+
+
+Private Function PID_AdminToolbarShapeCount(ByVal ws As Worksheet) As Long
+    Dim shp As Shape
+    Dim found As Long
+    
+    On Error GoTo SafeExit
+    
+    If ws Is Nothing Then Exit Function
+    
+    For Each shp In ws.Shapes
+        If Left$(shp.Name, Len(PID_ADMIN_BTN_PREFIX)) = PID_ADMIN_BTN_PREFIX Then
+            found = found + 1
+        End If
+    Next shp
+    
+SafeExit:
+    PID_AdminToolbarShapeCount = found
+End Function
+
+
+' Reine VBA-Stringarbeit, kein Zellzugriff je Button.
+Private Function PID_AdminSheetSpecSignature() As String
+    Dim i As Long
+    Dim parts As String
+    Dim btnKey As String
+    Dim btnLabel As String
+    Dim btnMacro As String
+    Dim btnStyle As Long
+    
+    For i = 0 To PID_ADMIN_BTN_COUNT - 1
+        PID_AdminGetButtonSpec i, btnKey, btnLabel, btnMacro, btnStyle
+        parts = parts & btnKey & Chr$(31) & btnLabel & Chr$(31) & btnMacro & _
+                Chr$(31) & CStr(btnStyle) & Chr$(30)
+    Next i
+    
+    PID_AdminSheetSpecSignature = "PID_ADMIN_V1/" & CStr(PID_ADMIN_BTN_COUNT) & "/" & parts
+End Function
+
+
+' Jahr und Excel-Version stehen als Werte auf dem Blatt und muessen auch stimmen, wenn der
+' Neuaufbau uebersprungen wird. Nur bei echter Abweichung schreiben, damit das Oeffnen die
+' Mappe nicht ohne Not als geaendert markiert.
+Private Sub PID_AdminRefreshHeaderValues(ByVal ws As Worksheet)
+    On Error Resume Next
+    
+    If ws Is Nothing Then Exit Sub
+    
+    If StrComp(CStr(ws.Range("C3").Value2), CStr(PID_GetWorkbookYear()), vbTextCompare) <> 0 Then
+        ws.Range("C3").Value = PID_GetWorkbookYear()
+    End If
+    
+    ' Val statt Textvergleich: Excel legt "16.0" als Zahl 16 ab, ein Textvergleich haette
+    ' die Zelle bei jedem Oeffnen erneut geschrieben und die Mappe als geaendert markiert.
+    If Val(CStr(ws.Range("E3").Value2)) <> Val(Application.Version) Then
+        ws.Range("E3").Value = Application.Version
+    End If
+    
+    Err.Clear
+End Sub
+
+
+Private Sub PID_AdminWriteSpecSignature(ByVal ws As Worksheet)
+    On Error Resume Next
+    
+    If ws Is Nothing Then Exit Sub
+    
+    ws.Range(PID_ADMIN_SIGNATURE_CELL).Value2 = PID_AdminSheetSpecSignature()
+    Err.Clear
 End Sub
 
 
@@ -367,6 +470,8 @@ Private Sub PID_AdminGetButtonSpec(ByVal index As Long, _
             btnKey = "FixFormulas": btnLabel = "Formeln reparieren": btnMacro = "PID_FormelspaltenReparieren": btnStyle = 2
         Case 19
             btnKey = "ClearAll": btnLabel = "Alle Daten l" & PID_UTxtOe() & "schen": btnMacro = "PID_ClearAllWorkbookData": btnStyle = 2
+        Case 20
+            btnKey = "AdminHelp": btnLabel = "ADMIN-Makros": btnMacro = "ADMIN_00_Hilfe": btnStyle = 1
         Case Else
             btnKey = "Hide": btnLabel = "Admin verbergen": btnMacro = "PID_AdminHidePanel": btnStyle = 3
     End Select

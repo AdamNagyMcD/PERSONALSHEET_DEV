@@ -674,11 +674,18 @@ Private Function PID_MPApplyRenameToMonthSheets(ByVal oldKey As String, _
 
             If sheetTouched Then
                 PID_MPTryProtectMonthSheet ws
+                sheetTouched = False
             End If
         End If
     Next monthIndex
 
 SafeExit:
+    ' Bricht die Schleife mitten in einem Blatt ab, ist genau dieses Blatt noch
+    ' entsperrt - der Aufrufer stellt nur die Application-Einstellungen wieder her.
+    On Error Resume Next
+    If sheetTouched And Not ws Is Nothing Then PID_MPTryProtectMonthSheet ws
+    Err.Clear
+    
     PID_MPApplyRenameToMonthSheets = changed
 End Function
 
@@ -728,11 +735,17 @@ Private Function PID_MPClearEmployeeRows(ByVal empKey As String, ByVal startMont
                 PID_EnsureMonatslohnFormulasOnSheet ws
                 MarkFinanzSummaryDirtyForMonth ws
                 PID_MPTryProtectMonthSheet ws
+                sheetTouched = False
             End If
         End If
     Next monthIndex
 
 SafeExit:
+    ' Wie oben: das Blatt der abgebrochenen Runde nicht entsperrt zuruecklassen.
+    On Error Resume Next
+    If sheetTouched And Not ws Is Nothing Then PID_MPTryProtectMonthSheet ws
+    Err.Clear
+    
     PID_MPClearEmployeeRows = cleared
 End Function
 

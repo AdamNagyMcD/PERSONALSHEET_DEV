@@ -88,23 +88,6 @@ Public Function PID_IsMonthSheetVormonatInputEditable(ByVal ws As Worksheet) As 
 End Function
 
 
-Public Sub PID_UnlockSheetEditRanges(ByVal ws As Worksheet)
-    On Error Resume Next
-    
-    If ws Is Nothing Then Exit Sub
-    
-    PID_ForceUnprotectWorksheet ws
-    
-    If PID_IsWorkerMonthSheetSafe(ws) Then
-        PID_ApplyMonthSheetLockPolicy ws
-    ElseIf PID_IsUbersichtSheet(ws) Then
-        PID_ApplyUbersichtEditableCells ws
-    End If
-    
-    Err.Clear
-End Sub
-
-
 Public Sub PID_ApplyUbersichtSheetProtection(ByVal ws As Worksheet)
     On Error Resume Next
     
@@ -149,8 +132,11 @@ Public Sub PID_ReprotectWorksheet(ByVal ws As Worksheet)
         Exit Sub
     End If
     
-    PID_ForceUnprotectWorksheet ws
-    PID_UnlockSheetEditRanges ws
+    ' PID_ApplySheetProtectionForMacros entsperrt selbst und setzt die Sperrliste des
+    ' jeweiligen Blatttyps. Der frueher hier stehende Vorlauf (Entsperren plus
+    ' Sperrliste) hat dieselbe Arbeit ein zweites Mal gemacht; auf Monatsblaettern lief
+    ' die komplette Sperrliste damit dreimal je Reprotect - und der Reprotect laeuft
+    ' nach jedem Makro, das ein Blatt anfasst.
     PID_ApplySheetProtectionForMacros ws
 End Sub
 
@@ -187,22 +173,22 @@ Public Sub PID_SetupSheetProtectionForOpen()
     Application.ScreenUpdating = False
     Set mSessionProtectedSheets = New Collection
     
+    ' Alle Blaetter, nicht nur die technischen. Frueher wurden Monatsblaetter,
+    ' EINSTELLUNG und LOHNTABELLE erst beim ersten Besuch ihres Tabs geschuetzt
+    ' (PID_EnsureSheetProtectionForMacros in Workbook_SheetActivate). Zwei Folgen:
+    ' Wer die Mappe auf UEBERSICHT liegend oeffnete, konnte in allen zwoelf
+    ' Monatsblaettern alles ueberschreiben - auch die Formelspalten G, H, K und L -
+    ' und Zeilen einfuegen oder loeschen. Und eine Datei, die nach "Schutz AUS"
+    ' gespeichert wurde, kam ungeschuetzt beim Benutzer an.
+    ' Der Aufwand bleibt klein: je Blatt eine Sperrliste plus ein Protect. Die Arbeit
+    ' verschwindet dafuer vom ersten Tabwechsel, und die Sitzungsmarkierung verhindert,
+    ' dass sie dort ein zweites Mal laeuft. Bewusst nicht ueber
+    ' PID_SetupSheetProtectionForMacros: das schaltet ScreenUpdating am Ende hart auf
+    ' True und wuerde den Rest des Oeffnens flackern lassen.
     For Each ws In ThisWorkbook.Worksheets
-        If ws.Name = "FLUKTUATION_DATEN" Or ws.Name = "KV_DROPDOWN_HELPER" Then
-            PID_ApplySheetProtectionForMacros ws
-            PID_MarkSheetProtectionReady ws.Name
-        End If
-    Next ws
-    
-    Set ws = PID_GetUbersichtWorksheet()
-    If Not ws Is Nothing Then
-        PID_ApplyUbersichtSheetProtection ws
+        PID_ApplySheetProtectionForMacros ws
         PID_MarkSheetProtectionReady ws.Name
-    End If
-    
-    If Not ActiveSheet Is Nothing Then
-        PID_EnsureSheetProtectionForMacros ActiveSheet
-    End If
+    Next ws
 
 SafeExit:
     Application.ScreenUpdating = oldScreenUpdating
@@ -227,8 +213,12 @@ Private Sub PID_ApplySheetProtectionForMacros(ByVal ws As Worksheet)
     
     If ws Is Nothing Then Exit Sub
     
+    ' Nur entsperren; die Sperrliste setzt der Zweig unten. Auf Monatsblaettern stand
+    ' hier zusaetzlich PID_UnlockSheetEditRanges, das genau dieselbe Sperrliste
+    ' angelegt hat wie PID_ProtectWorkerMonthSheet direkt danach; auf UEBERSICHT wurde
+    ' sein Ergebnis vom Cells.Locked = True in PID_ApplyUbersichtSheetProtection wieder
+    ' verworfen.
     PID_ForceUnprotectWorksheet ws
-    PID_UnlockSheetEditRanges ws
     
     If PID_IsUbersichtSheet(ws) Then
         PID_ApplyUbersichtSheetProtection ws
@@ -309,10 +299,14 @@ Public Sub PID_ApplyMonthSheetFillHandleGuard()
 End Sub
 
 
-Public Sub PID_ClearMonthSheetFillHandleGuard()
+' forceRestore ist fuer PID_ResetExcelState gedacht: nach einem Reset des VBA-Projekts
+' sind die Modulvariablen leer, die Einstellungen der Anwendung aber noch aus - dann
+' meldet der Merker "kein Schutz aktiv", waehrend Ausfuellkaestchen und Ziehen weiterhin
+' fehlen. Im Normalbetrieb (Blattwechsel) bleibt das Verhalten unveraendert.
+Public Sub PID_ClearMonthSheetFillHandleGuard(Optional ByVal forceRestore As Boolean = False)
     On Error Resume Next
     
-    If Not mMonthSheetFillHandleGuardActive Then Exit Sub
+    If Not mMonthSheetFillHandleGuardActive And Not forceRestore Then Exit Sub
     
     If Not IsEmpty(mSavedEnableFillHandle) Then
         Application.EnableFillHandle = CBool(mSavedEnableFillHandle)
@@ -330,17 +324,6 @@ Public Sub PID_ClearMonthSheetFillHandleGuard()
     mSavedEnableFillHandle = Empty
     mSavedCellDragAndDrop = Empty
     Err.Clear
-End Sub
-
-
-Private Sub PID_ApplyUbersichtEditableCells(ByVal ws As Worksheet)
-    If ws Is Nothing Then Exit Sub
-    If Not PID_IsUbersichtSheet(ws) Then Exit Sub
-    
-    ws.Cells.Locked = True
-    PID_EnsureUbersichtDurchrechnungInputsEditable ws
-    ws.Range(PID_UBERSICHT_JAEN_VERF_CELL).Locked = False
-    ws.Range(PID_UBERSICHT_JAEN_MUST_CELL).Locked = False
 End Sub
 
 
